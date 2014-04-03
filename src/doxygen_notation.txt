@@ -1,0 +1,53 @@
+/** @defgroup group_pf Particle filtering
+ *  
+ */
+ 
+/** @defgroup group_pf_init Initialization
+*@ingroup group_pf
+*/
+
+/** @defgroup group_pf_update Updating particles (Sampling the next state)
+*@ingroup group_pf
+*/
+ 
+ 
+/** @defgroup group_pf_resample Resampling
+*@ingroup group_pf
+*/
+
+/** @defgroup group_systemetic Systemetic resampling
+*@ingroup group_pf_resample
+*/
+
+/** @defgroup group_naive Naive resampling
+*@ingroup group_pf_resample
+*/
+
+/** @defgroup group_Ne Estimate Ne
+*
+*/
+
+/** @defgroup group_count_coal Count coalescent events
+* @ingroup group_Ne
+*/
+
+/** @defgroup group_count_bl Count branch lengths
+* @ingroup group_Ne
+*/
+
+/** @defgroup group_EM EM
+* @ingroup group_Ne
+*/
+
+
+/** @defgroup group_resource Check resource
+*
+*/
+
+/** @defgroup group_data Process data
+ *  
+ */
+
+/** @defgroup group_debug Debug utilities
+*
+*/

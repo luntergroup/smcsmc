@@ -1,0 +1,3 @@
+1. Need to work on likelihood calculation, use finite site model, consider case for not seeing mutation. use conditional probability for observing mutation. 
+2. migration counts
+3. need to use phased data, consider the affect of using unphased data, at a single site, what impact it could result to the particles
