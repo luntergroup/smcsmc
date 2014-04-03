@@ -98,6 +98,7 @@ class ForestState : public Forest{
          */ 
         ForestState *previous_state; /*!< Pointer to the previous particle, i.e. the previous genealogy */
         int pointer_counter; /*!< Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
+        
         vector <Coalevent*> CoaleventContainer; /*!< Coalescent and recombination events recorder */
         
     private:
