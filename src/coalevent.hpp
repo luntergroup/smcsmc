@@ -24,28 +24,27 @@
 
 #include "scrm/time_interval.h"
 
-#ifndef COALEVENT
-#define COALEVENT
+#ifndef STAREVENT
+#define STAREVENT
 
 /*!
- * \class Coalevent is used for recording the number and the time intervals of the recombination and coalescent events between two ARGs 
+ * \class Starevent is used for recording the number and the time intervals of the recombination and coalescent events between two ARGs 
  */
 
-class Coalevent{
-    public:
-        
+
+class Starevent{
+
         /*!
          * Constructors and Destructors
          */  
-        Coalevent();
-        Coalevent(Coalevent* previous_Coalevent);
-        Coalevent(size_t pop_i, 
-                  size_t mig_pop,
+        Starevent();
+        Starevent(Starevent* previous_Starevent);
+        Starevent(size_t pop_i, 
                   double start_time,
                   double end_time, 
                   double opportunity,
                   eventCode event_code );
-        ~Coalevent(){};
+        ~Starevent(){};
 
         /*!
          * Methods
@@ -58,24 +57,23 @@ class Coalevent{
          */ 
         size_t pop_i() const {return this->pop_i_; } 
         void set_pop_i( size_t i ){ this->pop_i_ = i; }
-        
-        size_t mig_pop() const {return this->mig_pop_; } 
-        void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }
-         
+                 
         double start_height() const { return this->start_height_; };
         void set_start_height(double start_height) { this->start_height_ = start_height; };
         
         double end_height() const { return this->end_height_; };
         void set_end_height(double end_height) { this->end_height_ = end_height; };
-    
-        size_t num_coal() const { return this->num_coal_ ;};
-        void set_num_coal(size_t num_coal) { this->num_coal_ = num_coal; };
         
-        size_t num_recomb() const { return this->num_recomb_ ;};
-        void set_num_recomb(size_t num_recomb) { this->num_recomb_ = num_recomb; };
+        size_t num_event () const { return this->num_event_;}
+        void  set_num_event ( size_t num ){ this->num_event_ = num; }    
+        //size_t num_coal() const { return this->num_coal_ ;};
+        //void set_num_coal(size_t num_coal) { this->num_coal_ = num_coal; };
         
-        size_t num_mig() const { return this->num_mig_ ;};
-        void set_num_mig(size_t num_mig) { this->num_mig_ = num_mig; };
+        //size_t num_recomb() const { return this->num_recomb_ ;};
+        //void set_num_recomb(size_t num_recomb) { this->num_recomb_ = num_recomb; };
+        
+        //size_t num_mig() const { return this->num_mig_ ;};
+        //void set_num_mig(size_t num_mig) { this->num_mig_ = num_mig; };
         
         double opportunity() const {return this->opportunity_;};
         void set_opportunity( double value ) { this->opportunity_ = value;}
@@ -84,23 +82,63 @@ class Coalevent{
         void set_event_state(eventCode state){ this->event_state_ = state; };
         
     private:
-
         /*!
          * Members
          */ 
-        size_t pop_i_;
-        size_t mig_pop_;
+        size_t pop_i_;        
         
         double start_height_;
         double end_height_; 
                 
         double opportunity_;
         
-        size_t num_coal_;
-        size_t num_recomb_;
-        size_t num_mig_;
+        size_t num_event_;
+        //size_t num_coal_;
+        //size_t num_recomb_;
+        //size_t num_mig_;
         
-        eventCode event_state_;
-};
+        eventCode event_state_;    
+    };
+
+
+
+class Coalevent : public Starevent{
+    public:
+        Coalevent(size_t pop_i, 
+                  size_t mig_pop,
+                  double start_time,
+                  double end_time, 
+                  double opportunity,
+                  eventCode event_code );        
+
+    };
+    
+class Recombevent : public Starevent{
+    public:    
+        Recombevent(size_t pop_i, 
+                    size_t mig_pop,
+                    double start_time,
+                    double end_time, 
+                    double opportunity,
+                    eventCode event_code );
+    };
+    
+class Migrevent : public Starevent{
+    public:
+
+
+        Starevent(size_t pop_i, 
+                  size_t mig_pop,
+                  double start_time,
+                  double end_time, 
+                  double opportunity,
+                  eventCode event_code );
+
+        size_t mig_pop() const {return this->mig_pop_; } 
+        void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }
+    
+    private:
+        size_t mig_pop_;
+    }
 
 #endif

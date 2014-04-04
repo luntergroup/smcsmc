@@ -27,60 +27,51 @@
  * another constructor for rec_point, to be called from sample the next genealogy
  */ 
 
-Coalevent::Coalevent(){
+Starevent::Starevent(){
     this->init();
     }
     
     
-Coalevent::Coalevent(Coalevent* previous_Coalevent){ /*!< Copy the Coalevent from the previous ForestState*/
-    this->pop_i_        = previous_Coalevent->pop_i();
-    this->mig_pop_      = previous_Coalevent->mig_pop();
-    this->start_height_ = previous_Coalevent->start_height();
-    this->end_height_   = previous_Coalevent->end_height(); 
-    this->num_coal_     = previous_Coalevent->num_coal();
-    this->num_mig_      = previous_Coalevent->num_mig();
-    this->num_recomb_   = previous_Coalevent->num_recomb();
-    this->opportunity_  = previous_Coalevent->opportunity();
-    this->event_state_  = previous_Coalevent->event_state();;
+Starevent::Starevent(Starevent* previous_Starevent){ /*!< Copy the Starevent from the previous ForestState*/
+    this->pop_i_        = previous_Starevent->pop_i();
+    this->start_height_ = previous_Starevent->start_height();
+    this->end_height_   = previous_Starevent->end_height(); 
+    this->num_event_    = previous_Starevent->num_event();
+    this->opportunity_  = previous_Starevent->opportunity();
+    this->event_state_  = previous_Starevent->event_state();;
     }
     
 
-Coalevent::Coalevent( 
+Starevent::Starevent( 
            size_t pop_i,
-           size_t mig_pop,
            double start_time,
            double end_time, 
            double opportunity,
            eventCode event_code ) {
-    this->init();
-    
+    this->init();    
     this->set_pop_i(pop_i);
-    this->set_mig_pop_i(mig_pop);
     this->set_start_height( start_time );
     this->set_end_height ( end_time );
     this->set_opportunity( opportunity );
     this->set_event_state(event_code);
-
-    switch (this->event_state()) {
-        case COAL_EVENT:        this->set_num_coal(1);   break;
-        case REC_EVENT:         this->set_num_recomb(1); break;
-        case MIGR_EVENT:        this->set_num_mig(1);    break;
-        default: /*no events!*/ this->set_num_coal(0);
-                                this->set_num_coal(0);
-                                this->set_num_coal(0);   break;    
-        }
+    this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
+    //switch (this->event_state()) {
+        //case COAL_EVENT:        this->set_num_coal(1);   break;
+        //case REC_EVENT:         this->set_num_recomb(1); break;
+        //case MIGR_EVENT:        this->set_num_mig(1);    break;
+        //default: /*no events!*/ this->set_num_coal(0);
+                                //this->set_num_coal(0);
+                                //this->set_num_coal(0);   break;    
+        //}
 
     }
 
 
-void Coalevent::init(){
+void Starevent::init(){
     this->set_pop_i(0);
-    this->set_mig_pop_i(-1);
     this->set_start_height(0);
     this->set_end_height(0);    
-    this->set_num_recomb(0);
-    this->set_num_mig(0);
-    this->set_num_coal(0);
-    this->opportunity_ = 0;
+    this->set_num_event(0);
+    this->set_opportunity(0);
     this->set_event_state(INIT_NULL);
     }
