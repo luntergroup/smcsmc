@@ -228,3 +228,18 @@ void pfARG::param::appending_log_file(string log_file_input){
         //Vparticle(Vparticle * pointer_to_current_particles, valarray<int> & sample_count);// this is used to create a new vector of new particles, that are based on the previous particles. 
         //Vparticle(Vparticle * pointer_to_current_particles, double L_hat, size_t post_initial_num_particles, Model* model, RandomGenerator* rg, vector <bool> data_for_init_particles, bool withdata);
 
+
+/*! 
+ * @ingroup group_resource
+ * Count the total number of nodes for all particles 
+ */
+int ParticleContainer::count_total_number_of_nodes(){
+	int total_num_of_nodes=0;
+	for (size_t i=0; i<this->particles.size(); i++){
+		if (this->particles[i]){
+			//dout << "particle " << i<<" has " << this->particles[i]->getNodes()->size()<<" nodes" << endl;
+			total_num_of_nodes += this->particles[i]->nodes()->size();
+            }
+        }
+	return total_num_of_nodes;
+    }

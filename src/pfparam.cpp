@@ -108,17 +108,9 @@ pfARG::param::param(int argc, char *argv[]): argc_(argc), argv_(argv) {
             out_NAME_prefix = argv_[argc_i];
             }
         
-        else if (argv_i == "-log"){
-            log_bool=true;
-            }
-        
-        else if (argv_i == "-heat"){
-            heat_bool=true;
-            }
-        
-        else if (argv_i == "-hist"){
-            hist_bool=true;
-            }
+        else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
+        else if ( argv_i == "-heat" ){ this->heat_bool = true; }        
+        else if ( argv_i == "-hist" ){ this->hist_bool = true; }
         
         else if (argv_i == "-h" || argv_i == "-help") {
             this->print_option();
@@ -150,7 +142,6 @@ void pfARG::param::nextArg(std::string option) {
  * Set default parameters
  */  
 void pfARG::param::init(){
-
     this->default_nsam        = 2;
     this->default_mut_rate    = 0.00000001;
     this->default_recomb_rate = 0.000000001;
@@ -196,22 +187,15 @@ void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input ( Vcf * VCFfile )
     else {
         // skipping the number of recombination first
         size_t pos_start = scrm_input.find(" ", found+2, 1);
-        size_t pos_end = scrm_input.find(" ", pos_start+1, 1);
-        
+        size_t pos_end = scrm_input.find(" ", pos_start+1, 1);        
         // extract the loci length
         pos_start = scrm_input.find(" ", pos_start+2, 1);
-        pos_end = scrm_input.find(" ", pos_start+1, 1);
-        
+        pos_end = scrm_input.find(" ", pos_start+1, 1);        
         this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
-        //cout <<"############ HERE "<<endl;
-        //cout<<scrm_input<<endl;
-        //cout << scrm_input.substr(pos_start, pos_end - pos_start) <<endl;
-        //cout <<"############ HERE "<<endl;
         }
 
     if (!VCFfile->withdata()){
             VCFfile->set_event_interval( this->default_loci_length / 10 );
-            //VCFfile->set_event_interval( model->loci_length() / 10 );
         }            
 
     }
@@ -359,8 +343,6 @@ void pfARG::param::appending_Ne_file(Model *model, bool hist){
     return;
     }        
 
-// NEED TO CHECK THIS!!!
-
 
 void pfARG::param::print_help(){
     cout << endl;
@@ -375,7 +357,7 @@ void pfARG::param::print_help(){
     this->print_option();
     this->print_example();
     exit(1);
-}
+    }
 
 
 void pfARG::param::print_option(){
@@ -392,9 +374,9 @@ void pfARG::param::print_option(){
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
-    //cout << setw(20)<<"-TMRCA" << "  --  " << "User define the output file for the time to the most recent common ancester, if it is not speciefied, the file name is TMRCA by default." << endl;
-    
-}
+    //cout << setw(20)<<"-TMRCA" << "  --  " << "User define the output file for the time to the most recent common ancester, if it is not speciefied, the file name is TMRCA by default." << endl;   
+    }
+
 
 void pfARG::param::print_example(){
     cout << "Example:" << endl;
@@ -405,5 +387,5 @@ void pfARG::param::print_example(){
     cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -vcf eg_vcf.vcf" << endl;
     cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -vcf eg_vcf.vcf " << endl;
     cout << "./pf-ARG -Np 8 -t 0.002 -r 400 -log LOGFILE -vcf eg_vcf.vcf" << endl;
-}
+    }
 

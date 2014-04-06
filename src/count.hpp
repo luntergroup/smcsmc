@@ -34,7 +34,7 @@ class CountModel: public Model{
          * Constructors and Destructors
          */  
         CountModel():Model(){};     
-        CountModel(const Model& model):Model(model){};
+        CountModel(const Model& model):Model( model ){};
         ~CountModel(){};
         
         /*!
@@ -50,12 +50,12 @@ class CountModel: public Model{
         void check_model_updated_Ne(Model * model);
         void check_CountModel_Ne();
         
-        void print_pop_size();
-        void print_change_time();
-        void print_Time_count_pop();
         
         // DEBUG
         void print_recomb_counts();
+        void print_pop_size();
+        void print_change_time();
+        void print_Time_count_pop();
         
         /*!
          * Members

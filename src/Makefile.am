@@ -31,7 +31,10 @@ scrm_src = scrm/node.cc scrm/node.h \
         scrm/random/fastfunc.cc           scrm/random/fastfunc.h 
 
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
-            scrm/forest-debug.cc 
+            scrm/forest-debug.cc \
+            particle-debug.cpp \
+            count-debug.cpp \
+            vcf-debug.cpp
 
 
 arg_src = coalevent.hpp coalevent.cpp \
@@ -45,9 +48,9 @@ param_src = pattern.cpp pfparam.cpp
 
 usage_src = usage.hpp usage.cpp 
 
-pf_ARG_SOURCES = $(debug_src) $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
+pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
 
-pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES)
+pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
 #vcf_SOURCES = $(vcf_src) testvcf.cpp $(param_src) $(usage_src) $(scrm_param)
 

@@ -312,23 +312,7 @@ string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     }
     
 
-void Vcf::print_vcf_line( vector<string> sample_names ){
-    dout << "CHROM = " <<chrom_<<endl;
-    dout << "POS = " << site_ <<endl;
-    for (size_t i=0;i<sample_names.size();i++){
-        dout << sample_names[i]<<": ";
-        for (size_t j=0;j<sample_alt[i].size();j++){
-            dout << sample_alt[i][j]<<" ";
-            }  dout << endl;
-        }  dout << endl;
-    }
 
-
-void Vcf::print(){
-    for (size_t i = 0; i < vec_of_sample_alt_bool.size(); i++){
-            cout << vec_of_sample_alt_bool[i]<<" ";
-        } cout << endl;
-    }
 
 
 void Vcf::check_feilds(string line){
@@ -364,10 +348,3 @@ void Vcf::check_feilds(string line){
     }
 
 
-bool Vcf::print_sample_name(){
-    dout << "Sample names:" << endl;
-    for (size_t i = 0; i < this->nsam(); i++){
-        dout << sample_names[i]<<" ";
-        }  dout << endl;
-    return true;
-    }

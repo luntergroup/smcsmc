@@ -35,6 +35,7 @@
 #pragma GCC diagnostic ignored "-Wunused-value"
 #define dout 0 && std::cout
 #endif
+#pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE
 #define PARTICLE
@@ -66,13 +67,28 @@ class ForestState : public Forest{
                   ForestState * previous_state = NULL); /*!< Initialize ForestState member particle_weight_ and site_where_weight_was_updated_ */
 
         void clear_CoaleventContainer();
+        void clear_RecombeventContainer();
+        void clear_MigreventContainer();
+        
         void record_all_event(TimeInterval const &ti);
-        void record_event(size_t pop_i,
-                          size_t mig_pop,
+        void record_Coalevent(size_t pop_i,
                           double start_time, 
                           double end_time, 
                           double opportunity, 
                           eventCode event_code);
+        
+        void record_Recombevent(size_t pop_i,
+                          double start_time, 
+                          double end_time, 
+                          double opportunity, 
+                          eventCode event_code);
+
+        void record_Migrevent(size_t pop_i,
+                          size_t mig_pop,
+                          double start_time, 
+                          double end_time, 
+                          double opportunity, 
+                          eventCode event_code);                          
         
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< Update data to the particle */        
         valarray<double> cal_marginal_likelihood(Node * node); /*!< Calculate the marginal likelihood of each node */
@@ -91,7 +107,8 @@ class ForestState : public Forest{
          * Debugging tools
          */ 
         bool print_Coalevent();
-        bool print_Coalevent_out();
+        bool print_Recombevent();
+        //bool print_Coalevent_out();
 
         /*!
          * Members
@@ -99,7 +116,9 @@ class ForestState : public Forest{
         ForestState *previous_state; /*!< Pointer to the previous particle, i.e. the previous genealogy */
         int pointer_counter; /*!< Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
         
-        vector <Coalevent*> CoaleventContainer; /*!< Coalescent and recombination events recorder */
+        vector < Coalevent*  > CoaleventContainer;   /*!< Coalescent events recorder */
+        vector < Recombevent*> RecombeventContainer; /*!< Recombination events recorder */
+        vector < Migrevent*  > MigreventContainer;   /*!< Migration events recorder */
         
     private:
 
@@ -149,7 +168,6 @@ class ParticleContainer{
         void systemetic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
         
         int count_total_number_of_nodes();        
-        bool check_state_orders();
         void clear();
         void clean_old_states(double xstart);
         
@@ -175,6 +193,7 @@ class ParticleContainer{
          * Debugging tools
          */ 
         void print();
+        bool check_state_orders();
 
         /*!
          * Members

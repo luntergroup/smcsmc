@@ -86,41 +86,6 @@ void ForestState::init(double weight, double site , ForestState* previous_state)
 	//init();
 //}
 
-/*! @ingroup group_debug
-*/
-bool ForestState::print_Coalevent(){
-	for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
-		dout << setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             << setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             << setw(13) << this->CoaleventContainer[i]->opportunity()   << " opportunity for " 
-             << setw(2) << this->CoaleventContainer[i]->num_coal() 	     << " coalescent, " 
-             << setw(2) << this->CoaleventContainer[i]->num_recomb()     << " recombination, " 
-             << setw(2) << this->CoaleventContainer[i]->num_mig()     << " migration, " ;
-            
-        switch (this->CoaleventContainer[i]->event_state()){
-            case COAL_NOEVENT:  dout<< "potetial coalsecent";                 break;
-            case REC_NOEVENT:   dout<< "potetial recombination";              break;
-            case MIGR_NOEVENT:  dout<< "potetial migration";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            case MIGR_EVENT:    dout<< "                  ";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            default:  break;
-            }  dout << endl;
-        }
-	return true;
-    }
-
-
-/*! @ingroup group_debug
-*/
-bool ForestState::print_Coalevent_out(){
-	for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
-		cout << setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             << setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             << setw(2) << this->CoaleventContainer[i]->opportunity()   << " opportunity, " 
-             << setw(2) << this->CoaleventContainer[i]->num_coal() 	     << " coalescent, " 
-             << setw(2) << this->CoaleventContainer[i]->num_recomb()     << " recombination. " << endl;
-        }
-	return true;
-    }
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
@@ -154,31 +119,31 @@ void ForestState::record_all_event(TimeInterval const &ti){
         //this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT );
         //// check: do we need to consider different cases? is it possible to coalesce in active_node(1)->population() ???? Joe: I dont think so ...
         if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {      
-            this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT );
+            this->record_Coalevent(active_node(0)->population(), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             } 
         else if (states_[0] == 1){
-            this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT ); 
+            this->record_Coalevent(active_node(0)->population(), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT ); 
             } 
         else if (states_[1] == 1){
-            this->record_event(active_node(1)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT );
+            this->record_Coalevent(active_node(1)->population(), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             }
         }
 
     if (migr_opportunity > 0) {
         if ( tmp_event_.isMigration() ){
-            this->record_event(tmp_event_.node()->population(), tmp_event_.mig_pop(), ti.start_height(), ti.start_height() + opportunity_y, migr_opportunity, MIGR_EVENT );    
+            this->record_Migrevent(tmp_event_.node()->population(), tmp_event_.mig_pop(), ti.start_height(), ti.start_height() + opportunity_y, migr_opportunity, EVENT );    
             } 
         else {
-            this->record_event(active_node(0)->population(),    size_t(-1),           ti.start_height(), ti.start_height() + opportunity_y, migr_opportunity, MIGR_NOEVENT );
+            this->record_Migrevent(active_node(0)->population(),    size_t(-1),           ti.start_height(), ti.start_height() + opportunity_y, migr_opportunity, NOEVENT );
             }
         }
     
     if (recomb_opportunity > 0) {
         if (states_[0] == 2){
-            this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, recomb_opportunity, tmp_event_.isRecombination() ? REC_EVENT : REC_NOEVENT );
+            this->record_Recombevent(active_node(0)->population(), ti.start_height(), ti.start_height() + opportunity_y, recomb_opportunity, tmp_event_.isRecombination() ? EVENT : NOEVENT );
             } 
         else if (states_[1] == 2){
-            this->record_event(active_node(1)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, recomb_opportunity, tmp_event_.isRecombination() ? REC_EVENT : REC_NOEVENT );
+            this->record_Recombevent(active_node(1)->population(), ti.start_height(), ti.start_height() + opportunity_y, recomb_opportunity, tmp_event_.isRecombination() ? EVENT : NOEVENT );
             }
         }
     
@@ -224,18 +189,16 @@ void ForestState::record_all_event(TimeInterval const &ti){
     }
 
 
-/*! \brief Record Coalevent
+/*! \brief Record Coalescent events
 * @ingroup group_count_coal
 */
-void ForestState::record_event(
+void ForestState::record_Coalevent(
                   size_t pop_i,
-                  size_t mig_pop,
                   double start_time, 
                   double end_time, 
                   double opportunity, 
                   eventCode event_code) {
     Coalevent* new_event = new Coalevent( pop_i,
-                                          mig_pop,
                                           start_time,
                                           end_time, 
                                           opportunity,
@@ -244,12 +207,66 @@ void ForestState::record_event(
     }
 
 
+/*! \brief Record Recombination events
+* @ingroup group_count_coal
+*/
+void ForestState::record_Recombevent(size_t pop_i,
+                          double start_time, 
+                          double end_time, 
+                          double opportunity, 
+                          eventCode event_code){
+    Recombevent* new_event = new Recombevent( pop_i,
+                                          start_time,
+                                          end_time, 
+                                          opportunity,
+			                              event_code);	
+	this->RecombeventContainer.push_back(new_event);
+    }
+    
+    
+/*! \brief Record Migration events
+* @ingroup group_count_coal
+*/
+void ForestState::record_Migrevent(size_t pop_i,
+                          size_t mig_pop,
+                          double start_time, 
+                          double end_time, 
+                          double opportunity, 
+                          eventCode event_code) {
+    Migrevent* new_event = new Migrevent( pop_i,
+                                          mig_pop,
+                                          start_time,
+                                          end_time, 
+                                          opportunity,
+			                              event_code);	
+	this->MigreventContainer.push_back(new_event);
+    }    
+
+
 /*! Clear coalescent and recombination events recorded between two states.*/
 void ForestState::clear_CoaleventContainer(){ 
 	for (size_t i=0; i < this->CoaleventContainer.size(); i++){
 		delete CoaleventContainer[i];
     	}
 	this->CoaleventContainer.clear();
+    }
+
+
+/*! Clear recombination events recorded between two states.*/
+void ForestState::clear_RecombeventContainer(){ 
+	for (size_t i=0; i < this->RecombeventContainer.size(); i++){
+		delete RecombeventContainer[i];
+    	}
+	this->RecombeventContainer.clear();
+    }
+    
+    
+/*! Clear migration events recorded between two states.*/
+void ForestState::clear_MigreventContainer(){ 
+	for (size_t i=0; i < this->MigreventContainer.size(); i++){
+		delete MigreventContainer[i];
+    	}
+	this->MigreventContainer.clear();
     }
     
 
@@ -467,12 +484,6 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     }
 
 
-void ParticleContainer::print(){
-	for (size_t i = 0 ; i < this->particles.size();  i++){
-		this->particles[i]->printTree();
-		cout << "paritcle " << i<<" has weight " << this->particles[i]->weight()<<endl;
-        }
-    }
 
 
 ParticleContainer::~ParticleContainer(){
@@ -500,32 +511,7 @@ void ParticleContainer::push(ForestState* state, double weight){
     }
 
 
-bool ParticleContainer::check_state_orders(){
-	dout << "check particle orders, there are " << this->particles.size()<<" particles" <<endl;
-	for (size_t i = 0; i < this->particles.size(); i++){
-		dout << "Particle " << i << " next genealogy change occurs at position: " << std::setw(14) << this->particles[i]->next_base();
-		dout << "  lambda=" << std::setw(10) << particles[i]->local_tree_length();
-		dout << " weight =" << std::setw(10) << this->particles[i]->weight() <<std::endl;
-        }
-    dout << std::endl;
-    return true;
-    }
 
-
-/*! 
- * @ingroup group_resource
- * Count the total number of nodes for all particles 
- */
-int ParticleContainer::count_total_number_of_nodes(){
-	int total_num_of_nodes=0;
-	for (size_t i=0; i<this->particles.size(); i++){
-		if (this->particles[i]){
-			//dout << "particle " << i<<" has " << this->particles[i]->getNodes()->size()<<" nodes" << endl;
-			total_num_of_nodes += this->particles[i]->nodes()->size();
-            }
-        }
-	return total_num_of_nodes;
-    }
 
 /*! 
  * @ingroup group_pf_resample
@@ -607,6 +593,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
                 this->particles[particle_i]->sampleNextGenealogy();
                 }
 
+            assert(this->particles[particle_i]->print_Recombevent());
             assert(this->particles[particle_i]->print_Coalevent());
             }
         
@@ -759,7 +746,7 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
             sample_count[interval_j] += 1;        
             sample_i += 1;
             dout << "  yes, update sample count of particle " << interval_j<<" to " << sample_count[interval_j] <<std::endl;
-            u_j=u_j+1.0/double(N);    
+            u_j += 1.0/double(N);    
             } 
         else {
             dout << "   no, try next interval " << std::endl;        
@@ -777,6 +764,7 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
     for (size_t i=0;i<sample_count.size();i++){dout << sample_count[i]<<"  ";}  dout << std::endl;
     assert(sample_count.sum()==sample_size);
     }
+
 
 bool ParticleContainer::appendingStuffToFile( double x_end,  pfARG::param pfparam){
     // Record the TMRCA and weight when a heatmap is generated
