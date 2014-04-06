@@ -108,6 +108,7 @@ class ForestState : public Forest{
          */ 
         bool print_Coalevent();
         bool print_Recombevent();
+        bool print_Migrevent();
         //bool print_Coalevent_out();
 
         /*!

@@ -96,10 +96,6 @@ int main(int argc, char *argv[]){
         /*! Initialize mersenneTwister seed */
         MersenneTwister *rg = new MersenneTwister(scrm_para->random_seed);
                                 
-        /*! Initialize timer, for checking the resource usage */ 
-        //pfTime * runningtime = new pfTime(time(0)); // Initialize the timer       
-        //runningtime->stopwatch_start();
-
         /*! Initialize updated weighted coalescent count and BL  */ 
         CountModel *countNe = new CountModel(*model);
         //countNe->check_CountModel_Ne();               
@@ -115,8 +111,6 @@ int main(int argc, char *argv[]){
         
         //countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
         pfARG_para.appending_Ne_file(model);
-                        
-        //runningtime->the_end();
         
         //int main_return = pfARG_para.log(model, rg->seed(), runningtime, countNe->inferred_recomb_rate);
         int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
@@ -125,7 +119,6 @@ int main(int argc, char *argv[]){
         delete VCFfile;
         delete model; // 
         delete rg;
-        //delete runningtime;
         delete countNe;
         
         cout<<"Forest state was created " << new_forest_counter << " times" << endl;

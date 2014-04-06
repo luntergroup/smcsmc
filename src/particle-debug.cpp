@@ -54,13 +54,6 @@ bool ForestState::print_Coalevent(){
         if ( this->CoaleventContainer[i]->event_state() == NOEVENT ){
             dout<< " potetial coalsecent";
             }
-        //switch ( this->CoaleventContainer[i]->event_state() ){
-            //case NOEVENT:  dout<< " potetial coalsecent";     break;
-            //case EVENT:    dout<< " coalsecent";              break;
-            ////case MIGR_NOEVENT:  dout<< "potetial migration";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            ////case MIGR_EVENT:    dout<< "                  ";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            //default:  break;
-            //}  dout << endl;
         dout << endl;
         }
 	return true;
@@ -79,6 +72,26 @@ bool ForestState::print_Recombevent(){
         if ( this->RecombeventContainer[i]->event_state() == NOEVENT ){
             dout<< " potetial recombination";
             }
+        dout << endl;
+        }
+	return true;
+    }
+
+/*! @ingroup group_debug
+*/
+bool ForestState::print_Migrevent(){
+    dout << " ### Migration events:" << endl;
+	for (size_t i = 0 ; i < MigreventContainer.size() ; i++ ){
+		dout << setw(10) << this->MigreventContainer[i]->start_height()  << " to " 
+             << setw(10) << this->MigreventContainer[i]->end_height()    << ", " 
+             << setw(13) << this->MigreventContainer[i]->opportunity()   << " opportunity for " 
+             << setw(2)  << this->MigreventContainer[i]->num_event()     << " migration, ";
+        if ( this->MigreventContainer[i]->event_state() == NOEVENT ){
+            dout<< "potetial migration";    dout << " from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
+            }
+        else {
+            dout<< "                  ";    dout << " from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
+            }
         //switch ( this->CoaleventContainer[i]->event_state() ){
             //case NOEVENT:  dout<< " potetial coalsecent";     break;
             //case EVENT:    dout<< " coalsecent";              break;
@@ -91,16 +104,3 @@ bool ForestState::print_Recombevent(){
 	return true;
     }
 
-
-///*! @ingroup group_debug
-//*/
-//bool ForestState::print_Coalevent_out(){
-	//for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
-		//cout << setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             //<< setw(2) << this->CoaleventContainer[i]->opportunity()   << " opportunity, " 
-             //<< setw(2) << this->CoaleventContainer[i]->num_coal() 	     << " coalescent, " 
-             //<< setw(2) << this->CoaleventContainer[i]->num_recomb()     << " recombination. " << endl;
-        //}
-	//return true;
-    //}
