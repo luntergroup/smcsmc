@@ -29,13 +29,14 @@
 #include<boost/assign/std/vector.hpp>
 #include<cassert>
 #include<stdexcept>
-
+#include <stdlib.h>     /* strtol */
 using namespace std;
 
 #ifndef NDEBUG
 #define dout std::cout
 #else
 #pragma GCC diagnostic ignored "-Wunused-value"
+#pragma clang diagnostic ignored "-Wdeprecated-register"
 #define dout 0 && std::cout
 #endif
 
@@ -65,8 +66,6 @@ class Vcf{
         void read_new_block();
         void read_new_line();
         void reset_VCF_to_data();
-        void print_vcf_line(vector<string> sample_names);
-        void print();
 
         /*!
          *  Setters and getters:
@@ -81,7 +80,13 @@ class Vcf{
         bool end_data() const { return this->end_data_; }
         void force_to_end_data() { this->end_data_ = true; }
         double even_interval() const { return this-> even_interval_; }
-        void set_event_interval( double interval ) { this->even_interval_ = interval; }
+        void set_even_interval( double interval ) { this->even_interval_ = interval; }
+        
+        // DEBUG
+        void print_vcf_line(vector<string> sample_names);
+        void print();
+        
+        
         
         /*!
          * Members

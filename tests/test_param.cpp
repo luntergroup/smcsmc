@@ -3,7 +3,7 @@
 #include <boost/lexical_cast.hpp> 
 
 #include "../src/pfparam.hpp"
-#include "../src/usage.hpp"
+//#include "../src/usage.hpp"
 #include "../src/vcf.hpp"
 
 #include "../src/scrm/param.h"
@@ -20,7 +20,7 @@ class TestParam : public CppUnit::TestCase {
   //CPPUNIT_TEST( testParseMigrationOptions );
   //CPPUNIT_TEST( testParseGrowthOptions );
   CPPUNIT_TEST( testReadInput );
-  CPPUNIT_TEST(test_initialize_model);
+  //CPPUNIT_TEST(test_initialize_model);
   
   
   CPPUNIT_TEST_SUITE_END();

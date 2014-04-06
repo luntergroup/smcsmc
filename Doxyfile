@@ -680,8 +680,6 @@ src/pattern.hpp \
 src/pf-ARG.cpp \
 src/pfparam.cpp \
 src/pfparam.hpp \
-src/usage.cpp \
-src/usage.hpp \
 src/vcf.cpp \
 src/vcf.hpp \
 src/scrm/copy_forest.cc \
@@ -695,11 +693,7 @@ utility/doxygen_notation.txt \
 utility/ms2something.py \
 utility/pop_struct.py  \
 utility/top_level_code.py \
-models/diCal-experiment/diCal.py  \
-models/msmc-experiment/msmc.py  \
-models/pfARG/pfARG.py  \
-models/psmc-experiment/psmc.py \
-models/psmc-experiment/generate_heatmap.py  \
+utility/generate_heatmap.py  \
 
 
 # This tag can be used to specify the character encoding of the source files

@@ -17,8 +17,9 @@ scrm_param = scrm/param.cc scrm/param.h \
         scrm/summary_statistics/newick_tree.cc \
         scrm/summary_statistics/frequency_spectrum.cc \
         scrm/summary_statistics/seg_sites.cc \
-		scrm/summary_statistics/tmrca.cc
-        
+		scrm/summary_statistics/tmrca.cc \
+		scrm/summary_statistics/first_last_tmrca.cc
+		        
 
 scrm_src = scrm/node.cc scrm/node.h \
         scrm/node_container.cc scrm/node_container.h \
@@ -39,14 +40,14 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
 
 arg_src = coalevent.hpp coalevent.cpp \
         particle.hpp particle.cpp \
-        count.cpp count.hpp \
+        count.cpp count.hpp count-semi-debug.cpp\
         pf-ARG.cpp
 
 vcf_src = vcf.hpp vcf.cpp 
 
 param_src = pattern.cpp pfparam.cpp 
 
-usage_src = usage.hpp usage.cpp 
+#usage_src = usage.hpp usage.cpp 
 
 pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
 

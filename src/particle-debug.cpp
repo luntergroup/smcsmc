@@ -35,6 +35,7 @@ bool ParticleContainer::check_state_orders(){
     return true;
     }
 
+
 void ParticleContainer::print(){
 	for (size_t i = 0 ; i < this->particles.size();  i++){
 		this->particles[i]->printTree();
@@ -42,8 +43,7 @@ void ParticleContainer::print(){
         }
     }
 
-/*! @ingroup group_debug
-*/
+
 bool ForestState::print_Coalevent(){
     dout << " ### Coalescent events:" << endl;
 	for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
@@ -60,8 +60,6 @@ bool ForestState::print_Coalevent(){
     }
     
 
-/*! @ingroup group_debug
-*/
 bool ForestState::print_Recombevent(){
     dout << " ### Recombination events:" << endl;
 	for (size_t i = 0 ; i < RecombeventContainer.size() ; i++ ){
@@ -77,8 +75,7 @@ bool ForestState::print_Recombevent(){
 	return true;
     }
 
-/*! @ingroup group_debug
-*/
+
 bool ForestState::print_Migrevent(){
     dout << " ### Migration events:" << endl;
 	for (size_t i = 0 ; i < MigreventContainer.size() ; i++ ){
@@ -87,20 +84,12 @@ bool ForestState::print_Migrevent(){
              << setw(13) << this->MigreventContainer[i]->opportunity()   << " opportunity for " 
              << setw(2)  << this->MigreventContainer[i]->num_event()     << " migration, ";
         if ( this->MigreventContainer[i]->event_state() == NOEVENT ){
-            dout<< "potetial migration";    dout << " from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
+            dout << "potetial migration, from pop " << this->MigreventContainer[i]->pop_i() << " to some other population "; 
             }
         else {
-            dout<< "                  ";    dout << " from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
+            dout << "from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
             }
-        //switch ( this->CoaleventContainer[i]->event_state() ){
-            //case NOEVENT:  dout<< " potetial coalsecent";     break;
-            //case EVENT:    dout<< " coalsecent";              break;
-            ////case MIGR_NOEVENT:  dout<< "potetial migration";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            ////case MIGR_EVENT:    dout<< "                  ";    dout << " from pop " << this->CoaleventContainer[i]->pop_i() << " to pop " << this->CoaleventContainer[i]->mig_pop();   break;
-            //default:  break;
-            //}  dout << endl;
         dout << endl;
         }
 	return true;
     }
-

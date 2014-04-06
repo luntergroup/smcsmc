@@ -195,7 +195,7 @@ void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input ( Vcf * VCFfile )
         }
 
     if (!VCFfile->withdata()){
-            VCFfile->set_event_interval( this->default_loci_length / 10 );
+            VCFfile->set_even_interval( this->default_loci_length / 10 );
         }            
 
     }

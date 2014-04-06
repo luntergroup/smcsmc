@@ -55,15 +55,6 @@ Starevent::Starevent(
     this->set_opportunity( opportunity );
     this->set_event_state(event_code);
     this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
-    //switch (this->event_state()) {
-        //case COAL_EVENT:        this->set_num_coal(1);   break;
-        //case REC_EVENT:         this->set_num_recomb(1); break;
-        //case MIGR_EVENT:        this->set_num_mig(1);    break;
-        //default: /*no events!*/ this->set_num_coal(0);
-                                //this->set_num_coal(0);
-                                //this->set_num_coal(0);   break;    
-        //}
-
     }
 
 

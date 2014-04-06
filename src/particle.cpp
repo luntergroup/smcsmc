@@ -46,6 +46,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
 	this->init(); // initialize members of ForestState
 	this->buildInitialTree();
     assert( this->print_Coalevent() );
+    assert( this->print_Migrevent() );
     }
 
 
@@ -595,6 +596,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
 
             assert(this->particles[particle_i]->print_Recombevent());
             assert(this->particles[particle_i]->print_Coalevent());
+            assert(this->particles[particle_i]->print_Migrevent());
             }
         
         assert (updated_to == mutation_at);        

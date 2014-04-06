@@ -1,3 +1,13 @@
+/** @defgroup group_predata Pre process data
+ *  TO COME ... need to consider cases for phasing and other cases
+ */
+
+
+/** @defgroup group_data Read data
+ *  
+ */
+
+
 /** @defgroup group_pf Particle filtering
  *  
  */
@@ -23,31 +33,33 @@
 *@ingroup group_pf_resample
 */
 
-/** @defgroup group_Ne Estimate Ne
+/** @defgroup group_infer Inference
 *
+*/
+
+/** @defgroup group_Ne Infer Ne
+* @ingroup group_infer
+*/
+
+/** @defgroup group_migr Infer migration rate
+* @ingroup group_infer
+*/
+
+/** @defgroup group_recomb Infer recombination rate
+* @ingroup group_infer
 */
 
 /** @defgroup group_count_coal Count coalescent events
-* @ingroup group_Ne
+* @ingroup group_infer
 */
 
 /** @defgroup group_count_bl Count branch lengths
-* @ingroup group_Ne
+* @ingroup group_infer
 */
 
 /** @defgroup group_EM EM
-* @ingroup group_Ne
+* @ingroup group_infer
 */
 
 
-/** @defgroup group_resource Check resource
-*
-*/
 
-/** @defgroup group_data Process data
- *  
- */
-
-/** @defgroup group_debug Debug utilities
-*
-*/

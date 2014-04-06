@@ -8,7 +8,13 @@ src_dir = ../src/
 scrm_dir = ../src/scrm/
 
 scrm_param = ../src/scrm/param.cc ../src/scrm/param.h \
-        ../src/scrm/model.cc ../src/scrm/model.h 
+        ../src/scrm/model.cc ../src/scrm/model.h \
+        ../src/scrm/summary_statistics/newick_tree.cc \
+        ../src/scrm/summary_statistics/frequency_spectrum.cc \
+        ../src/scrm/summary_statistics/seg_sites.cc \
+		../src/scrm/summary_statistics/tmrca.cc \
+		../src/scrm/summary_statistics/first_last_tmrca.cc
+
 
 scrm_src = ../src/scrm/node.cc ../src/scrm/node.h \
         ../src/scrm/node_container.cc ../src/scrm/node_container.h \
@@ -21,35 +27,36 @@ scrm_src = ../src/scrm/node.cc ../src/scrm/node.h \
         ../src/scrm/random/fastfunc.cc           ../src/scrm/random/fastfunc.h 
 
 debug_src = ../src/scrm/random/constant_generator.cc ../src/scrm/random/constant_generator.h \
-            ../src/scrm/forest-debug.cc 
+            ../src/scrm/forest-debug.cc \
+            ../src/particle-debug.cpp \
+            ../src/count-debug.cpp \
+            ../src/vcf-debug.cpp
 
 
 arg_src = ../src/coalevent.hpp ../src/coalevent.cpp \
         ../src/particle.hpp ../src/particle.cpp \
-        ../src/count.cpp ../src/count.hpp 
+        ../src/count.cpp ../src/count.hpp ../src/count-semi-debug.cpp 
 
 vcf_src = ../src/vcf.hpp ../src/vcf.cpp 
 
-param_src = ../src/pfparam.hpp ../src/pfparam.cpp 
 
-usage_src = ../src/usage.hpp ../src/usage.cpp 
+param_src = ../src/pattern.cpp ../src/pfparam.cpp 
 
-pf_ARG_SOURCES = $(debug_src) $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) $(usage_src) 
 
-#pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES)
+pf_ARG_SOURCES = $(debug_src) $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
 
-#vcf_SOURCES = $(vcf_src) testvcf.cpp $(param_src) $(usage_src) $(scrm_param)
-
-unit_tests_SOURCES = test_runner.cpp\
-                     test_param.cpp\
-                     test_random_generator.cpp\
-                     test_Coalevent.cpp\
-                     test_FroestState.cpp\
-                     test_PfCount.cpp\
-                     test_Vparticle.cpp\
-                     test_Count.cpp\
-                     test_Vcf.cpp\
-                     $(pf_ARG_SOURCES)
+unit_tests_SOURCES = test_Vcf.cpp\
+                     $(pf_ARG_SOURCES) \
+                     test_runner.cpp
+                     #test_param.cpp\
+                     #test_random_generator.cpp\
+                     #test_Coalevent.cpp\
+                     #test_FroestState.cpp\
+                     #test_PfCount.cpp\
+                     #test_Vparticle.cpp\
+                     #test_Count.cpp\
+                     #test_Vcf.cpp\
+                     #$(pf_ARG_SOURCES)
 
 unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
 #unit_tests_CXXFLAGS = -DUNITTEST  -std=c++0x 

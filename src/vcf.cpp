@@ -73,21 +73,23 @@ Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf
     this->end_pos_ = this->header_end_pos_;
     in_file.close();
     this->read_new_block(); // END by start reading a block
-}
+    }
+    
 
 void Vcf::reset_VCF_to_data(){
     /*! Reset the data to the first line, end of the header file 
      *  Extract new block of data
      */ 
-    this->end_pos_ = this->header_end_pos_;
-    this->end_data_= false;
-    this->eof_ = false;
+    this->end_pos_            = this->header_end_pos_;
+    this->end_data_           = false;
+    this->eof_                = false;
     this->current_line_index_ = 0;    
     this->current_block_line_ = 0;
-    this->site_ = 0;
-    this->chrom_ = 0;
-    this->previous_site_at_ = 0;
+    this->site_               = 0;
+    this->chrom_              = 0;
+    this->previous_site_at_   = 0;
     if ( !this->withdata() ){ this->empty_file_line_counter_ = 0;  }
+    //this->empty_file_line_counter_ = 0;
     this->read_new_block();
     }
     
@@ -95,25 +97,22 @@ void Vcf::reset_VCF_to_data(){
 void Vcf::init(string infile_name, int buffer_length){
     /*! Initialize the Vcf class members
      */ 
-    this->current_line_index_= 0;
-    this->file_name_ = infile_name;
-    this->withdata_ = false;
-    this->empty_file_line_counter_ = 0;
-    this->nsam_ = 0;
-    this->nfield_ = 0;
-    
-    this->current_block_line_ = 0;
-    this->site_ = 0;
-    this->chrom_ = 0;
-    this->previous_site_at_ = 0;
+    this->current_line_index_        = 0;
+    this->empty_file_line_counter_   = 0;
+    this->nsam_                      = 0;
+    this->nfield_                    = 0;    
+    this->current_block_line_        = 0;
+    this->site_                      = 0;
+    this->chrom_                     = 0;
+    this->previous_site_at_          = 0;
+    this->vcf_length_                = 0;
+    this->even_interval_             = 0.0;
+    this->eof_                       = false;
+    this->end_data_                  = false;
     this->buffer_max_number_of_lines = buffer_length;
-    this->eof_=false;
-    if ( file_name_.size() > 0 ){
-        this->withdata_ = true;
-    }
-    this->vcf_length_ = 0;
-    this->end_data_ = false;
-    this->even_interval_ = 0.0;
+    this->file_name_                 = infile_name;    
+    this->withdata_ = ( file_name_.size() > 0 ) ? true : false;
+    
 }
 
 void Vcf::read_new_line(){
@@ -130,15 +129,8 @@ void Vcf::read_new_line(){
     if (!withdata()){
         empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
-        //if (current_line_index_ == 1){
-            //this->site_ = 0;
-        //} else {
-            //this->site_ = this->site_ + even_interval_;
-        //}
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        if (this->empty_file_line_counter_ > 10){
-            this->end_data_=true;    
-        }
+        this->end_data_ = (this->empty_file_line_counter_ > 10);
         return;    
     }
     
@@ -214,8 +206,9 @@ void Vcf::read_new_line(){
             istringstream alt_index_0_strm(tmp_str.substr(0,1));
             size_t alt_index_0;
             alt_index_0_strm>>alt_index_0;
+            //size_t alt_index_0 = strtol (tmp_str.substr(0,1).c_str(), NULL, 0);;
             // use strtod to replace the previous three lines
-            vec_of_sample_alt_bool.push_back( (alt_index_0 == 0)? false : true);
+            vec_of_sample_alt_bool.push_back( (alt_index_0 == (size_t)0) ? false : true);
             //if (alt_index_0==0){
                 //vec_of_sample_alt_bool.push_back(false);
             //} else {
@@ -226,7 +219,7 @@ void Vcf::read_new_line(){
             size_t alt_index_2;
             alt_index_2_strm>>alt_index_2;
             
-            vec_of_sample_alt_bool.push_back( (alt_index_2 == 0)? false : true);
+            vec_of_sample_alt_bool.push_back( (alt_index_2 == (size_t)0) ? false : true);
             //if (alt_index_2==0){
                 //vec_of_sample_alt_bool.push_back(false);
             //} else {
@@ -285,34 +278,38 @@ void Vcf::read_new_block(){
         getline(infile, tmp_str);
         }
     
-    if (vcf_length_ <= this->end_pos_){
-        this->eof_=true;
-        }
+    //if ( vcf_length_ <= this->end_pos_ ){
+        //this->eof_ = true;
+        //}
+    this->eof_ = ( vcf_length_ <= this->end_pos_ );
     
     infile.close();
     }
 
+
 string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     /*! Extract haplotype
      */ 
-    string alt_index_str=tmp_str.substr(start,end-start);
+    string alt_index_str = tmp_str.substr(start,end-start);
     istringstream alt_index_strm(alt_index_str.c_str());
     size_t alt_index;
     alt_index_strm>>alt_index;
-    
-    string alt_dummy;
+    //cout<< strtol (alt_index_str.c_str(), NULL, 0) << "  "<<alt_index<<endl;
+    //size_t alt_index = strtol (alt_index_str.c_str(), NULL, 0);
+     string alt_dummy;
     alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
-    //if (alt_index==0){
-        //alt_dummy=ref;
-    //}
-    //else{
-        //alt_dummy=alt[alt_index-1];
-    //}        
+    if (alt_index==0){
+        alt_dummy=ref;
+    }
+    else{
+        alt_dummy=alt[alt_index-1];
+    }        
+
+    //string alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
+    //cout << alt_dummy <<endl;
     return alt_dummy;
     }
     
-
-
 
 
 void Vcf::check_feilds(string line){
@@ -321,8 +318,8 @@ void Vcf::check_feilds(string line){
     int counter=0;
     string tmp_str;
     while( feild_end < line.size() ) {
-        feild_end=min(line.find('\t',feild_start),line.find('\n',feild_start)); 
-        tmp_str=line.substr(feild_start,feild_end-feild_start);
+        feild_end = min( line.find('\t',feild_start), line.find('\n',feild_start) ); 
+        tmp_str = line.substr( feild_start, feild_end-feild_start );
         switch (counter){
             case 0: if ( tmp_str != "#CHROM" ){ throw std::invalid_argument( "First Header entry should be #CHROM: "   + tmp_str ); } break;
             case 1: if ( tmp_str != "POS"    ){ throw std::invalid_argument( "Second Header entry should be POS: "     + tmp_str ); } break;
@@ -337,13 +334,13 @@ void Vcf::check_feilds(string line){
         
         if (counter > 8){  sample_names.push_back(tmp_str); }
         
-        feild_start=feild_end+1;
+        feild_start = feild_end+1;
         counter++;
         } // End of while loop: feild_end < line.size()
     
-    nfield_=counter;
-    set_nsam(int(sample_names.size()));
-    assert(print_sample_name());   
+    this->nfield_ = counter;
+    set_nsam( (int)sample_names.size() );
+    assert( print_sample_name() );   
     
     }
 

@@ -24,45 +24,37 @@ class TestVcf : public CppUnit::TestCase {
  public:
     
     void test_empty_file(){
-        vcf_file = new Vcf("");
-        CPPUNIT_ASSERT_EQUAL(string(""), vcf_file->file_name_);
-        CPPUNIT_ASSERT_EQUAL(size_t(-1), vcf_file->vcf_length_);  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
+        vcf_file = new Vcf( "" );
+        double testing_even_interval = 1000 ;
+        CPPUNIT_ASSERT_NO_THROW( vcf_file->even_interval_ = testing_even_interval );
+        CPPUNIT_ASSERT_EQUAL( string(""), vcf_file->file_name_ );
+        CPPUNIT_ASSERT_EQUAL( size_t(-1), vcf_file->vcf_length_ );  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
 
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->nsam());
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->nfield());
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->withdata());
+        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nsam() );
+        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nfield() );
+        CPPUNIT_ASSERT_EQUAL( int(0), vcf_file->chrom() );
+        CPPUNIT_ASSERT_EQUAL( false, vcf_file->withdata() );
         
-        CPPUNIT_ASSERT_EQUAL(true, vcf_file->eof()); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->end_data()); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
+        CPPUNIT_ASSERT_EQUAL( true, vcf_file->eof() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
+        CPPUNIT_ASSERT_EQUAL( false, vcf_file->end_data() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
         
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->current_line_index_);
+        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_line_index_ );
         
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->empty_file_line_counter_);        
-        CPPUNIT_ASSERT_EQUAL(double(0), vcf_file->site());
+        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->empty_file_line_counter_ );        
+        CPPUNIT_ASSERT_EQUAL( double(0), vcf_file->site() );
         
         // Start reading new "lines" in empty file
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->current_block_line_);
-        CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->empty_file_line_counter_);
-        CPPUNIT_ASSERT_EQUAL(double(0), vcf_file->site());
-        
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->empty_file_line_counter_);
-        CPPUNIT_ASSERT_EQUAL(double(10000), vcf_file->site());
-        
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
-        CPPUNIT_ASSERT_EQUAL(size_t(3), vcf_file->empty_file_line_counter_);
-        CPPUNIT_ASSERT_EQUAL(double(20000), vcf_file->site());
-
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), vcf_file->empty_file_line_counter_);
-        CPPUNIT_ASSERT_EQUAL(double(30000), vcf_file->site());
-
-        CPPUNIT_ASSERT_EQUAL(true, vcf_file->end_data());
+        for (size_t i = 0; i < 11; i++){
+            CPPUNIT_ASSERT_NO_THROW( vcf_file->read_new_line() );
+            CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_block_line_ );
+            CPPUNIT_ASSERT_EQUAL( size_t(1+i), vcf_file->empty_file_line_counter_ );
+            CPPUNIT_ASSERT_EQUAL( double(i*testing_even_interval), vcf_file->site() );
+            }
+            
+        CPPUNIT_ASSERT_EQUAL( true, vcf_file->end_data() );
         
         delete vcf_file;
-    }  
+        }  
     
     void test_Constructors() {
         vcf_file = new Vcf("test2sample.vcf");
