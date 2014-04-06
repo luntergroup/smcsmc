@@ -49,9 +49,9 @@ param_src = pattern.cpp pfparam.cpp
 
 #usage_src = usage.hpp usage.cpp 
 
-pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
+pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) $(debug_src)
 
-pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
+pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) 
 
 #vcf_SOURCES = $(vcf_src) testvcf.cpp $(param_src) $(usage_src) $(scrm_param)
 

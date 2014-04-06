@@ -45,32 +45,32 @@ void ParticleContainer::print(){
 
 
 bool ForestState::print_Coalevent(){
-    dout << " ### Coalescent events:" << endl;
+    cout << " ### Coalescent events:" << endl;
 	for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
-		dout << setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
+		cout << setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
              << setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
              << setw(13) << this->CoaleventContainer[i]->opportunity()   << " opportunity for " 
              << setw(2)  << this->CoaleventContainer[i]->num_event()     << " coalescent, ";
         if ( this->CoaleventContainer[i]->event_state() == NOEVENT ){
-            dout<< " potetial coalsecent";
+            cout<< " potetial coalsecent";
             }
-        dout << endl;
+        cout << endl;
         }
 	return true;
     }
     
 
 bool ForestState::print_Recombevent(){
-    dout << " ### Recombination events:" << endl;
+    cout << " ### Recombination events:" << endl;
 	for (size_t i = 0 ; i < RecombeventContainer.size() ; i++ ){
-		dout << setw(10) << this->RecombeventContainer[i]->start_height()  << " to " 
+		cout << setw(10) << this->RecombeventContainer[i]->start_height()  << " to " 
              << setw(10) << this->RecombeventContainer[i]->end_height()    << ", " 
              << setw(13) << this->RecombeventContainer[i]->opportunity()   << " opportunity for " 
              << setw(2)  << this->RecombeventContainer[i]->num_event()     << " recombination, ";
         if ( this->RecombeventContainer[i]->event_state() == NOEVENT ){
-            dout<< " potetial recombination";
+            cout<< " potetial recombination";
             }
-        dout << endl;
+        cout << endl;
         }
 	return true;
     }

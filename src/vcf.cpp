@@ -199,32 +199,12 @@ void Vcf::read_new_line(){
             size_t colon_index=tmp_str.find(':',0);
             size_t break_index=min(bar_index, slash_index);
             assert(break_index<colon_index);
-            vec_of_sample_alt.push_back(extract_alt_(tmp_str, 0, break_index));
-            
-            vec_of_sample_alt.push_back(extract_alt_(tmp_str, break_index+1, colon_index));
-            
-            istringstream alt_index_0_strm(tmp_str.substr(0,1));
-            size_t alt_index_0;
-            alt_index_0_strm>>alt_index_0;
-            //size_t alt_index_0 = strtol (tmp_str.substr(0,1).c_str(), NULL, 0);;
-            // use strtod to replace the previous three lines
+            vec_of_sample_alt.push_back(extract_alt_(tmp_str, 0, break_index));            
+            vec_of_sample_alt.push_back(extract_alt_(tmp_str, break_index+1, colon_index));            
+            size_t alt_index_0 = strtol (tmp_str.substr(0,1).c_str(), NULL, 0);;
             vec_of_sample_alt_bool.push_back( (alt_index_0 == (size_t)0) ? false : true);
-            //if (alt_index_0==0){
-                //vec_of_sample_alt_bool.push_back(false);
-            //} else {
-                //vec_of_sample_alt_bool.push_back(true);
-            //}
-            
-            istringstream alt_index_2_strm(tmp_str.substr(2,1));
-            size_t alt_index_2;
-            alt_index_2_strm>>alt_index_2;
-            
+            size_t alt_index_2 = strtol (tmp_str.substr(2,1).c_str(), NULL, 0);;
             vec_of_sample_alt_bool.push_back( (alt_index_2 == (size_t)0) ? false : true);
-            //if (alt_index_2==0){
-                //vec_of_sample_alt_bool.push_back(false);
-            //} else {
-                //vec_of_sample_alt_bool.push_back(true);
-            //}
             }
         feild_start=feild_end+1;        
         counter++;
@@ -278,9 +258,6 @@ void Vcf::read_new_block(){
         getline(infile, tmp_str);
         }
     
-    //if ( vcf_length_ <= this->end_pos_ ){
-        //this->eof_ = true;
-        //}
     this->eof_ = ( vcf_length_ <= this->end_pos_ );
     
     infile.close();
@@ -290,23 +267,8 @@ void Vcf::read_new_block(){
 string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     /*! Extract haplotype
      */ 
-    string alt_index_str = tmp_str.substr(start,end-start);
-    istringstream alt_index_strm(alt_index_str.c_str());
-    size_t alt_index;
-    alt_index_strm>>alt_index;
-    //cout<< strtol (alt_index_str.c_str(), NULL, 0) << "  "<<alt_index<<endl;
-    //size_t alt_index = strtol (alt_index_str.c_str(), NULL, 0);
-     string alt_dummy;
-    alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
-    if (alt_index==0){
-        alt_dummy=ref;
-    }
-    else{
-        alt_dummy=alt[alt_index-1];
-    }        
-
-    //string alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
-    //cout << alt_dummy <<endl;
+    size_t alt_index = strtol (tmp_str.substr(start,end-start).c_str(), NULL, 0);
+    string alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
     return alt_dummy;
     }
     
@@ -343,5 +305,6 @@ void Vcf::check_feilds(string line){
     assert( print_sample_name() );   
     
     }
+
 
 

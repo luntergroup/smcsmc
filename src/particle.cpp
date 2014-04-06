@@ -130,7 +130,7 @@ void ForestState::record_all_event(TimeInterval const &ti){
             }
         }
 
-    if (migr_opportunity > 0) {
+    if (migr_opportunity > 0 && this->model().population_number()>1) {
         if ( tmp_event_.isMigration() ){
             this->record_Migrevent(tmp_event_.node()->population(), tmp_event_.mig_pop(), ti.start_height(), ti.start_height() + opportunity_y, migr_opportunity, EVENT );    
             } 
@@ -480,7 +480,7 @@ void ParticleContainer::update_state_weights_at_A_single_site(
 		dout << "particle " <<  particle_i<<" done" << endl;
         }
     
-    //this->normalize_probability();
+    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
     }
 
@@ -604,7 +604,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
         }
     
     /*! normalize the probability upon until the mutation */
-    //this->normalize_probability();
+    //this->normalize_probability(); // This normalization doesn't seem to do much ...
     }
 
 
@@ -622,7 +622,6 @@ void ParticleContainer::normalize_probability(){
 void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valarray<double> & weight_cum_sum){
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
-    //runningtime->stopwatch_start();
     double mutation_at = VCFfile->site();
     bool withdata = VCFfile->withdata();
     double mutation_rate = model->mutation_rate();

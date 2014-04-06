@@ -41,7 +41,7 @@ void Vcf::print(){
             cout << vec_of_sample_alt_bool[i]<<" ";
         } cout << endl;
     }
-    
+        
     
 bool Vcf::print_sample_name(){
     dout << "Sample names:" << endl;

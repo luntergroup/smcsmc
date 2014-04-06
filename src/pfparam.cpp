@@ -224,7 +224,7 @@ void pfARG::param::finalize_scrm_input ( Vcf * VCFfile ){
 void pfARG::param::finalize( Vcf * VCFfile ){
     
     this->finalize_scrm_input ( VCFfile );
-    this->lag = this->default_loci_length / 20; // TESTING, just to try use full lagging...
+    //this->lag = this->default_loci_length / 20; // TESTING, just to try use full lagging...
     this->ESSthreshold = this->N * this->ESS;        
  
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
