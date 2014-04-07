@@ -59,7 +59,8 @@ ForestState::~ForestState(){
                              << " is about to be removed" << endl;	
 	assert( this->pointer_counter == 0 );
 	this->clear_CoaleventContainer();
-	
+	this->clear_RecombeventContainer();
+    this->clear_MigreventContainer();
 	//Remove any of the previous states, if the counter is equal to zero.
 	ForestState* prior_state = this->previous_state;
 	if ( prior_state != NULL ) {
