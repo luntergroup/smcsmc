@@ -42,14 +42,13 @@ vcf_src = ../src/vcf.hpp ../src/vcf.cpp
 
 param_src = ../src/pattern.cpp ../src/pfparam.cpp 
 
-
 pf_ARG_SOURCES = $(debug_src) $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) 
 
 unit_tests_SOURCES = test_Vcf.cpp\
                      $(pf_ARG_SOURCES) \
-                     test_runner.cpp
-                     #test_param.cpp\
-                     #test_random_generator.cpp\
+                     test_runner.cpp \
+                     test_param.cpp \
+                     test_random_generator.cpp
                      #test_Coalevent.cpp\
                      #test_FroestState.cpp\
                      #test_PfCount.cpp\

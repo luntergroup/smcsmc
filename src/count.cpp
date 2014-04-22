@@ -122,7 +122,8 @@ void CountModel::compute_recomb_rate () {
                 
 size_t CountModel::find_time_interval (double start_height, double end_height){
     double pop_start_height = 0.0; 
-    size_t time_i = 0;
+    //size_t time_i = 0;
+    auto time_i = 0;
     for (; time_i < change_times_.size() ; time_i++){
         double pop_end_height = (time_i == this->change_times_.size()-1) ? FLT_MAX : change_times_[time_i+1];
         if ( log(pop_start_height) <= log(start_height) + std::numeric_limits<double>::epsilon()  && 

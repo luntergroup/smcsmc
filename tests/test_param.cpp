@@ -43,20 +43,20 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( 0.5, pfARG_para1.ESS );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para1.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.online_bool );  
-    CPPUNIT_ASSERT_EQUAL( (double)250, pfARG_para1.window );  
-    CPPUNIT_ASSERT_EQUAL( 0, pfARG_para1.repeat );  
-    CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.repeat_bool );  
+    CPPUNIT_ASSERT_EQUAL( (double)100, pfARG_para1.window );  
+    CPPUNIT_ASSERT_EQUAL( 0, pfARG_para1.EM_steps );  
+    CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.EM_bool );  
 
 
-    Param pars = Param(1, argv1, false);    
+    Param pars = Param(pfARG_para1.scrm_argc_, pfARG_para1.scrm_argv_, false);    
     CPPUNIT_ASSERT_EQUAL( false, pars.directly_called_);
     CPPUNIT_ASSERT_NO_THROW( pars.parse(model) );
-    CPPUNIT_ASSERT_EQUAL( false, pars.tree_bool );
-    CPPUNIT_ASSERT_EQUAL( true, pars.seg_bool() );  
-    CPPUNIT_ASSERT_EQUAL( false, pars.tmrca_bool );
+    //CPPUNIT_ASSERT_EQUAL( false, pars.tree_bool );
+    CPPUNIT_ASSERT_EQUAL( false, pars.seg_bool() );  
+    //CPPUNIT_ASSERT_EQUAL( false, pars.tmrca_bool );
 
 
-    char *argv2[] = { "pf-ARG", "-Np", "10", "-log", "-lag", "10", "-online", "-repeat", "5", "-ESS", "0.75"};
+    char *argv2[] = { "pf-ARG", "-Np", "10", "-log", "-lag", "10", "-online", "-EM", "5", "-ESS", "0.75"};
     pfARG::param pfARG_para2(11, argv2);
     CPPUNIT_ASSERT_EQUAL( (size_t)10, pfARG_para2.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.log_bool );  
@@ -68,25 +68,25 @@ class TestParam : public CppUnit::TestCase {
     //cout<<" !!!!!!!! "<<pfARG_para2.ESS<<endl;
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para2.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.online_bool );  
-    CPPUNIT_ASSERT_EQUAL( double(250), pfARG_para2.window );  
-    CPPUNIT_ASSERT_EQUAL( 5, pfARG_para2.repeat );  
-    CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.repeat_bool );  
+    CPPUNIT_ASSERT_EQUAL( double(100), pfARG_para2.window );  
+    CPPUNIT_ASSERT_EQUAL( 5, pfARG_para2.EM_steps );  
+    CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.EM_bool );  
 
-    Param pars2 = Param(7, argv2, false);    
+    Param pars2 = Param(7, pfARG_para2.scrm_argv_, false);    
     CPPUNIT_ASSERT_EQUAL( false, pars2.directly_called_);
     CPPUNIT_ASSERT_NO_THROW( pars2.parse(model) );
-    CPPUNIT_ASSERT_EQUAL( false, pars2.tree_bool );
+    //CPPUNIT_ASSERT_EQUAL( false, pars2.tree_bool );
     CPPUNIT_ASSERT_EQUAL( true, pars2.seg_bool() );  
-    CPPUNIT_ASSERT_EQUAL( false, pars2.tmrca_bool );
+    //CPPUNIT_ASSERT_EQUAL( false, pars2.tmrca_bool );
 
     
     char *argv3[] = { "pf-ARG", "-log", "-lag", "10", "-online" , "-Na"};
     //CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument); // "-Na" is invalid
     argv3[5] = "-ESS";
     CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-ESS" expect more input
-    argv3[5] = "-repeat";
-    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-repeat" expect more input
-    argv3[2] = "-repeat";
+    argv3[5] = "-EM";
+    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-EM" expect more input
+    argv3[2] = "-EM";
     argv3[5] = "-lag";
     CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-lag" expect more input
     argv3[5] = "-Np";
@@ -203,7 +203,7 @@ class TestParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW( scrm_para->parse(model) );
         
         Model * model1 = new Model();        
-        initialize_model(model1, scrm_para, vcf_file, default_nsam, default_mut_rate, default_recomb_rate, default_loci_length);
+        //initialize_model(model1, scrm_para, vcf_file, default_nsam, default_mut_rate, default_recomb_rate, default_loci_length);
         CPPUNIT_ASSERT_EQUAL( (size_t)default_nsam, model1->sample_size());
         CPPUNIT_ASSERT_EQUAL( (double)default_mut_rate, model1->mutation_rate());
         CPPUNIT_ASSERT_EQUAL( (double)default_recomb_rate, model1->recombination_rate());
@@ -222,7 +222,7 @@ class TestParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW( scrm_para2->parse(model) );
         
         Model * model2 = new Model();        
-        initialize_model(model2, scrm_para2, vcf_file, default_nsam, default_mut_rate, default_recomb_rate, default_loci_length);
+        //initialize_model(model2, scrm_para2, vcf_file, default_nsam, default_mut_rate, default_recomb_rate, default_loci_length);
         
         CPPUNIT_ASSERT_EQUAL( (size_t)6, model2->sample_size());
         CPPUNIT_ASSERT_EQUAL( (double)default_mut_rate, model2->mutation_rate());

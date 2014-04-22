@@ -123,8 +123,16 @@ pfARG::param::param(int argc, char *argv[]): argc_(argc), argv_(argv) {
         
         argc_i++;
         }
+        
+        this->finalize( );
     }
 
+
+pfARG::param::~param(){ 
+    //delete VCFfile; 
+    }
+    
+    
 //void pfARG::param::get_scrm_argv(){
     //scrm_input += convert_pattern(pattern, top_t);
     //cout << scrm_input << endl;
@@ -160,13 +168,15 @@ void pfARG::param::init(){
     this->window           = 100; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
-
+    
+    this->VCFfile          = NULL;
+    this->scrm_argc_       = 0;
     this->scrm_input       = "";
     this->top_t            = 2;
 }
 
 
-void pfARG::param::insert_mutation_rate_in_scrm_input ( Vcf * VCFfile ) {
+void pfARG::param::insert_mutation_rate_in_scrm_input ( ) {
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) { // if "-t" option is not find ... 
         this->scrm_input = "-t " + to_string ( this->default_mut_rate * this->default_loci_length * 4 * 10000 ) + " " + this->scrm_input;
@@ -177,8 +187,9 @@ void pfARG::param::insert_mutation_rate_in_scrm_input ( Vcf * VCFfile ) {
         //}
     
     }
+
     
-void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input ( Vcf * VCFfile ){
+void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     size_t found = scrm_input.find("-r");
     if ( found == std::string::npos ) { // if "-r" option is not find ... 
         this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )  // number of recombination events in 4N0, as the scaling N0 in screen is 10000
@@ -199,8 +210,9 @@ void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input ( Vcf * VCFfile )
         }            
 
     }
+
     
-void pfARG::param::insert_sample_size_in_scrm_input ( Vcf * VCFfile ){
+void pfARG::param::insert_sample_size_in_scrm_input (  ){
     size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
     if (!VCFfile->withdata()){
         nsam = this->default_nsam;
@@ -208,22 +220,40 @@ void pfARG::param::insert_sample_size_in_scrm_input ( Vcf * VCFfile ){
     this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input; 
     }
 
-void pfARG::param::finalize_scrm_input ( Vcf * VCFfile ){
+
+void pfARG::param::finalize_scrm_input (  ){
     // These options insert parameters to the beginning of the current scrm_input
-    this->insert_recomb_rate_and_seqlen_in_scrm_input ( VCFfile );
-    //cout << scrm_input <<endl;
-    this->insert_mutation_rate_in_scrm_input (VCFfile );
-    //cout << scrm_input <<endl;
-    this->insert_sample_size_in_scrm_input ( VCFfile );       
+    this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
+    this->insert_mutation_rate_in_scrm_input ( );
+    this->insert_sample_size_in_scrm_input ( );       
     
     this->scrm_input = "scrm " + this->scrm_input + convert_pattern(pattern, top_t);    
     cout << scrm_input <<endl;
-
+    this->convert_scrm_input ();
     }
 
-void pfARG::param::finalize( Vcf * VCFfile ){
-    
-    this->finalize_scrm_input ( VCFfile );
+
+void pfARG::param::convert_scrm_input (){
+    /*! convert scrm_input string to argv */
+    enum { kMaxArgs = 264 };
+    int scrm_argc = 0;
+    char *scrm_argv[kMaxArgs];        
+    char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
+    while (p2 && scrm_argc < kMaxArgs) {
+        scrm_argv[scrm_argc++] = p2;
+        p2 = strtok(0, " ");
+        }
+    this->scrm_argv_ = scrm_argv;
+    this->scrm_argc_ = scrm_argc;
+    }
+
+
+void pfARG::param::finalize(  ){
+     /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
+    this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
+    //pfARG_para.finalize ( );
+
+    this->finalize_scrm_input ( );
     //this->lag = this->default_loci_length / 20; // TESTING, just to try use full lagging...
     this->ESSthreshold = this->N * this->ESS;        
  
@@ -241,7 +271,6 @@ void pfARG::param::finalize( Vcf * VCFfile ){
     remove( this->log_NAME.c_str()   );
     remove( this->HIST_NAME.c_str()  );
 }
-
 
 
 //int pfARG::param::log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate){

@@ -2,7 +2,7 @@ bin_PROGRAMS = pf-ARG pf-ARG_dbg
 PROG = PF-ARG 
 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -pg -O3 -Wall -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -g -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall 
 
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages

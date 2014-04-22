@@ -39,8 +39,8 @@ int delete_forest_counter = 0;
 
 void pfARG_core(Model *model, 
                 MersenneTwister *rg,
-                pfARG::param pfARG_para,
-                Vcf *VCFfile,
+                pfARG::param &pfARG_para,
+                //Vcf *VCFfile,
                 CountModel *countNe,
                 bool print_update_count);
 
@@ -72,22 +72,24 @@ int main(int argc, char *argv[]){
          * INITIALIZE
          */
 
-        /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
-        Vcf * VCFfile =  new Vcf(pfARG_para.vcf_NAME, pfARG_para.buff_length);
-        pfARG_para.finalize ( VCFfile );
+        ///*! Initialize vcf file, and data up to the first data entry says "PASS"   */
+        //Vcf * VCFfile =  new Vcf(pfARG_para.vcf_NAME, pfARG_para.buff_length);
+        //pfARG_para.finalize ( VCFfile );
 
-        /*! convert scrm_input string to argv */
-        enum { kMaxArgs = 264 };
-        int scrm_argc = 0;
-        char *scrm_argv[kMaxArgs];        
-        char * p2 = strtok((char *)pfARG_para.scrm_input.c_str(), " ");
-        while (p2 && scrm_argc < kMaxArgs) {
-            scrm_argv[scrm_argc++] = p2;
-            p2 = strtok(0, " ");
-            }
+        /////*! convert scrm_input string to argv */
+        //enum { kMaxArgs = 264 };
+        //int scrm_argc = 0;
+        //char *scrm_argv[kMaxArgs];        
+        //char * p2 = strtok((char *)pfARG_para.scrm_input.c_str(), " ");
+        //while (p2 && scrm_argc < kMaxArgs) {
+            //scrm_argv[scrm_argc++] = p2;
+            //p2 = strtok(0, " ");
+            //}
         
-        /*! Extract scrm parameters */        
-        Param * scrm_para = new Param(scrm_argc, scrm_argv, false);        
+        ///*! Extract scrm parameters */        
+        //Param * scrm_para = new Param(scrm_argc, scrm_argv, false);        
+
+        Param * scrm_para = new Param(pfARG_para.scrm_argc_, pfARG_para.scrm_argv_, false);        
                 
         /*! Initialize scrm model */
         Model * model = new Model();        
@@ -105,7 +107,8 @@ int main(int argc, char *argv[]){
          */ 
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
-            pfARG_core(model, rg, pfARG_para, VCFfile, countNe, print_update_count);
+            //pfARG_core(model, rg, pfARG_para, VCFfile, countNe, print_update_count);
+            pfARG_core(model, rg, pfARG_para, countNe, print_update_count);
             cout << "End of EM_step " << I << endl;
         }
         
@@ -116,11 +119,11 @@ int main(int argc, char *argv[]){
         int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
         /*! Clean up */
         delete scrm_para;
-        delete VCFfile;
+        //delete VCFfile;
         delete model; // 
         delete rg;
         delete countNe;
-        
+        delete pfARG_para.VCFfile;
         cout<<"Forest state was created " << new_forest_counter << " times" << endl;
         dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
@@ -135,10 +138,11 @@ int main(int argc, char *argv[]){
 
 void pfARG_core(Model *model, 
                 MersenneTwister *rg,
-                pfARG::param pfARG_para,
-                Vcf *VCFfile,
+                pfARG::param &pfARG_para,
+                //Vcf *VCFfile,
                 CountModel *countNe,
                 bool print_update_count){
+    Vcf *VCFfile = pfARG_para.VCFfile;
     VCFfile->read_new_line();
     cout<< "############# starting vcf file at base " <<VCFfile->site()<<endl;
     /*! Initial particles */ 

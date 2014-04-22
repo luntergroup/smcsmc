@@ -40,20 +40,11 @@ namespace pfARG{
              */              
 
             param(int argc, char *argv[]);            
-            ~param(){};//none of the members need to be freed manually...
-            // this is not neccessary, as param was constructed in stack, the memory will be freed when the function is finished...
+            ~param();
             
             /*!
              * Methods
              */ 
-            void nextArg(std::string option);
-
-            void init();
-            void insert_mutation_rate_in_scrm_input ( Vcf * VCFfile );
-            void insert_recomb_rate_and_seqlen_in_scrm_input ( Vcf * VCFfile );
-            void insert_sample_size_in_scrm_input ( Vcf * VCFfile );
-            void finalize_scrm_input ( Vcf * VCFfile );
-            void finalize ( Vcf * VCFfile );
             
             //int  log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate);
             int  log(Model *model, size_t random_seed, double inferred_recomb_rate);
@@ -68,6 +59,7 @@ namespace pfARG{
             /*!
              * Members
              */
+            
             int    default_nsam;
             double default_mut_rate; 
             double default_recomb_rate; 
@@ -109,11 +101,22 @@ namespace pfARG{
             string BL_NAME;            
             double window;
 
+            Vcf * VCFfile;
+            char **scrm_argv_;
+            int scrm_argc_;
             
         private:
+            void nextArg(std::string option);
+            void init();
+            void insert_mutation_rate_in_scrm_input ( );
+            void insert_recomb_rate_and_seqlen_in_scrm_input ( );
+            void insert_sample_size_in_scrm_input ( );
+            void finalize_scrm_input ( );
+            void finalize ( );
+            void convert_scrm_input();
             const int argc_;
             int argc_i;
-            char * const* argv_;
+            char * const* argv_;            
     };
     
 }
