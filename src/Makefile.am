@@ -43,13 +43,13 @@ arg_src = coalevent.hpp coalevent.cpp \
         count.cpp count.hpp count-semi-debug.cpp\
         pf-ARG.cpp
 
-vcf_src = vcf.hpp vcf.cpp 
+#vcf_src = vcf.hpp vcf.cpp 
 
-param_src = pattern.cpp pfparam.cpp 
+param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
 #usage_src = usage.hpp usage.cpp 
 
-pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(vcf_src) $(param_src) $(debug_src)
+pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(debug_src)
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) 
 
