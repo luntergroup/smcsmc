@@ -29,7 +29,7 @@
 #include<boost/assign/std/vector.hpp>
 #include<cassert>
 #include<stdexcept>
-#include <stdlib.h>     /* strtol */
+#include<stdlib.h>     /* strtol */
 using namespace std;
 
 #ifndef NDEBUG
@@ -45,10 +45,14 @@ using namespace std;
 
 /*! @ingroup group_data */
 class Vcf{
+    friend class PfParam;
+    
+    #ifdef UNITTEST
+    friend class TestVcf;
+    friend class TestParam;
+    #endif
+
     public:
-     #ifdef UNITTEST
-      friend class TestVcf;
-     #endif
     
         /*!
          * Constructors and Destructors
@@ -60,34 +64,21 @@ class Vcf{
         /*!
          * Methods
          */ 
-        void init(string infile_name, int buffer_length);
-
-        void empty_block();
-        void read_new_block();
         void read_new_line();
         void reset_VCF_to_data();
-
-        /*!
-         *  Setters and getters:
-         */ 
-        size_t nsam() const { return this->nsam_; }
-        void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
-        size_t nfield() const { return this->nfield_; }    
-        double site() const { return this->site_; }
-        int chrom() const { return this ->chrom_; }
-        bool withdata() const { return this->withdata_; }
-        bool eof() const { return this->eof_; }
-        bool end_data() const { return this->end_data_; }
         void force_to_end_data() { this->end_data_ = true; }
-        double even_interval() const { return this-> even_interval_; }
-        void set_even_interval( double interval ) { this->even_interval_ = interval; }
         
         // DEBUG
         void print_vcf_line(vector<string> sample_names);
         void print();
         
-        
-        
+        /*!
+         *  Getters:
+         */ 
+        double site() const { return this->site_; }
+        bool withdata() const { return this->withdata_; }
+        bool end_data() const { return this->end_data_; }
+
         /*!
          * Members
          */       
@@ -111,6 +102,23 @@ class Vcf{
         /*!
          * Methods
          */ 
+        void empty_block();
+        void read_new_block();
+        void init(string infile_name, int buffer_length);
+
+        /*!
+         *  Setters and getters:
+         */ 
+        size_t nsam() const { return this->nsam_; }
+ 
+        void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
+        size_t nfield() const { return this->nfield_; }    
+        int chrom() const { return this ->chrom_; }
+
+        bool eof() const { return this->eof_; }
+        double even_interval() const { return this-> even_interval_; }
+        void set_even_interval( double interval ) { this->even_interval_ = interval; }
+                 
         void check_feilds(string line);
         string extract_alt_(string tmp_str, size_t start, size_t end);
         bool print_sample_name();
@@ -140,6 +148,6 @@ class Vcf{
         double previous_site_at_;
         int chrom_;
         int pervious_chrom_;
-};
+    };
 
 #endif

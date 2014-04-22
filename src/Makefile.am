@@ -1,4 +1,7 @@
-bin_PROGRAMS = pf-ARG pf-ARG_dbg 
+bin_PROGRAMS = pf-ARG 
+check_PROGRAMS = pf-ARG_dbg unit_tests
+TESTS = unit_tests 
+
 PROG = PF-ARG 
 
 
@@ -33,15 +36,15 @@ scrm_src = scrm/node.cc scrm/node.h \
 
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             scrm/forest-debug.cc \
-            particle-debug.cpp \
-            count-debug.cpp \
-            vcf-debug.cpp
+            debug/particle-debug.cpp \
+            debug/count-debug.cpp \
+            debug/vcf-debug.cpp
 
 
 arg_src = coalevent.hpp coalevent.cpp \
         particle.hpp particle.cpp \
-        count.cpp count.hpp count-semi-debug.cpp\
-        pf-ARG.cpp
+        count.cpp count.hpp count-semi-debug.cpp
+       
 
 #vcf_src = vcf.hpp vcf.cpp 
 
@@ -49,11 +52,31 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
 
 #usage_src = usage.hpp usage.cpp 
 
-pf_ARG_SOURCES =  $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(debug_src)
+shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) 
 
-pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) 
+pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
+
+pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
 #vcf_SOURCES = $(vcf_src) testvcf.cpp $(param_src) $(usage_src) $(scrm_param)
+
+unit_tests_SOURCES = tests/test_Vcf.cpp\
+                     $(shared_SOURCES) \
+                     tests/test_runner.cpp \
+                     tests/test_param.cpp \
+                     tests/test_random_generator.cpp
+                     #test_Coalevent.cpp\
+                     #test_FroestState.cpp\
+                     #test_PfCount.cpp\
+                     #test_Vparticle.cpp\
+                     #test_Count.cpp\
+                     #test_Vcf.cpp\
+                     #$(pf_ARG_SOURCES)
+
+unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
+
+unit_tests_LDADD= -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
+#unit_tests_LDADD= -L/usr/include 
 
 include_HEADERS = vcf.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/forest.h scrm/model.h scrm/node.h scrm/node_container.h \

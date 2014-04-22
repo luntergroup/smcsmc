@@ -28,7 +28,7 @@
 //#include"usage.hpp"
 #include"count.hpp"
 #include"pfparam.hpp"
-using namespace pfARG;
+//using namespace pfARG;
 
 
 /*!
@@ -39,7 +39,7 @@ int delete_forest_counter = 0;
 
 void pfARG_core(Model *model, 
                 MersenneTwister *rg,
-                pfARG::param &pfARG_para,
+                PfParam &pfARG_para,
                 //Vcf *VCFfile,
                 CountModel *countNe,
                 bool print_update_count);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
     bool print_update_count = false;
 
     /*! Extract pfARG parameters */
-    pfARG::param pfARG_para( argc, argv );
+    PfParam pfARG_para( argc, argv );
     
     if ( argc==1 ){
         //pfARG_para.print_help();
@@ -76,31 +76,29 @@ int main(int argc, char *argv[]){
         //Vcf * VCFfile =  new Vcf(pfARG_para.vcf_NAME, pfARG_para.buff_length);
         //pfARG_para.finalize ( VCFfile );
 
-        /////*! convert scrm_input string to argv */
-        //enum { kMaxArgs = 264 };
-        //int scrm_argc = 0;
-        //char *scrm_argv[kMaxArgs];        
-        //char * p2 = strtok((char *)pfARG_para.scrm_input.c_str(), " ");
-        //while (p2 && scrm_argc < kMaxArgs) {
-            //scrm_argv[scrm_argc++] = p2;
-            //p2 = strtok(0, " ");
-            //}
+        /*! \todo make the following in to pfparam*/
+        ///*! convert scrm_input string to argv */
+        enum { kMaxArgs = 264 };
+        int scrm_argc = 0;
+        char *scrm_argv[kMaxArgs];        
+        char * p2 = strtok((char *)pfARG_para.scrm_input.c_str(), " ");
+        while (p2 && scrm_argc < kMaxArgs) {
+            scrm_argv[scrm_argc++] = p2;
+            p2 = strtok(0, " ");
+            }
         
         ///*! Extract scrm parameters */        
-        //Param * scrm_para = new Param(scrm_argc, scrm_argv, false);        
+        Param * scrm_para = new Param(scrm_argc, scrm_argv, false);        
+        //Param * scrm_para = new Param(pfARG_para.scrm_argc_, pfARG_para.scrm_argv_, false);        
 
-        Param * scrm_para = new Param(pfARG_para.scrm_argc_, pfARG_para.scrm_argv_, false);        
-                
         /*! Initialize scrm model */
         Model * model = new Model();        
         scrm_para->parse( *model );
-
         /*! Initialize mersenneTwister seed */
         MersenneTwister *rg = new MersenneTwister(scrm_para->random_seed);
                                 
         /*! Initialize updated weighted coalescent count and BL  */ 
         CountModel *countNe = new CountModel(*model);
-        //countNe->check_CountModel_Ne();               
         
         /*!
          * PfARG CORE 
@@ -138,7 +136,7 @@ int main(int argc, char *argv[]){
 
 void pfARG_core(Model *model, 
                 MersenneTwister *rg,
-                pfARG::param &pfARG_para,
+                PfParam &pfARG_para,
                 //Vcf *VCFfile,
                 CountModel *countNe,
                 bool print_update_count){

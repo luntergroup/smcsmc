@@ -51,7 +51,7 @@ class CountModel: public Model{
         void compute_mig_rate();
         void reset_model_Ne( Model * model, bool online = true, bool print = true);
         void check_model_updated_Ne(Model * model);
-        void check_CountModel_Ne();
+        //void check_CountModel_Ne();
         
         
         // DEBUG

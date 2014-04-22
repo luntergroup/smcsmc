@@ -28,10 +28,10 @@
 #include"scrm/param.h"
 #include"pattern.hpp"
 
-using namespace pfARG;
+//using namespace pfARG;
 
 
-pfARG::param::param(int argc, char *argv[]): argc_(argc), argv_(argv) {
+PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
     this->init(); // Initialize pfARG program parameters
     argc_i=1; // Skipping argv[0], which is pf-ARG calling
     
@@ -128,18 +128,18 @@ pfARG::param::param(int argc, char *argv[]): argc_(argc), argv_(argv) {
     }
 
 
-pfARG::param::~param(){ 
+PfParam::~PfParam(){ 
     //delete VCFfile; 
     }
     
     
-//void pfARG::param::get_scrm_argv(){
+//void PfParam::get_scrm_argv(){
     //scrm_input += convert_pattern(pattern, top_t);
     //cout << scrm_input << endl;
     //}
     
 
-void pfARG::param::nextArg(std::string option) {
+void PfParam::nextArg(std::string option) {
     ++argc_i;
     if (argc_i >= argc_) {
         throw std::invalid_argument(std::string("Not enough parameters when parsing option ") + option);
@@ -149,7 +149,7 @@ void pfARG::param::nextArg(std::string option) {
 /*! 
  * Set default parameters
  */  
-void pfARG::param::init(){
+void PfParam::init(){
     this->default_nsam        = 2;
     this->default_mut_rate    = 0.00000001;
     this->default_recomb_rate = 0.000000001;
@@ -170,13 +170,13 @@ void pfARG::param::init(){
     this->EM_bool          = false;
     
     this->VCFfile          = NULL;
-    this->scrm_argc_       = 0;
+    //this->scrm_argc_       = 0;
     this->scrm_input       = "";
     this->top_t            = 2;
 }
 
 
-void pfARG::param::insert_mutation_rate_in_scrm_input ( ) {
+void PfParam::insert_mutation_rate_in_scrm_input ( ) {
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) { // if "-t" option is not find ... 
         this->scrm_input = "-t " + to_string ( this->default_mut_rate * this->default_loci_length * 4 * 10000 ) + " " + this->scrm_input;
@@ -189,7 +189,7 @@ void pfARG::param::insert_mutation_rate_in_scrm_input ( ) {
     }
 
     
-void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
+void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     size_t found = scrm_input.find("-r");
     if ( found == std::string::npos ) { // if "-r" option is not find ... 
         this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )  // number of recombination events in 4N0, as the scaling N0 in screen is 10000
@@ -212,7 +212,7 @@ void pfARG::param::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     }
 
     
-void pfARG::param::insert_sample_size_in_scrm_input (  ){
+void PfParam::insert_sample_size_in_scrm_input (  ){
     size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
     if (!VCFfile->withdata()){
         nsam = this->default_nsam;
@@ -221,7 +221,7 @@ void pfARG::param::insert_sample_size_in_scrm_input (  ){
     }
 
 
-void pfARG::param::finalize_scrm_input (  ){
+void PfParam::finalize_scrm_input (  ){
     // These options insert parameters to the beginning of the current scrm_input
     this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
     this->insert_mutation_rate_in_scrm_input ( );
@@ -229,26 +229,26 @@ void pfARG::param::finalize_scrm_input (  ){
     
     this->scrm_input = "scrm " + this->scrm_input + convert_pattern(pattern, top_t);    
     cout << scrm_input <<endl;
-    this->convert_scrm_input ();
+    //this->convert_scrm_input ();
     }
 
 
-void pfARG::param::convert_scrm_input (){
-    /*! convert scrm_input string to argv */
-    enum { kMaxArgs = 264 };
-    int scrm_argc = 0;
-    char *scrm_argv[kMaxArgs];        
-    char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
-    while (p2 && scrm_argc < kMaxArgs) {
-        scrm_argv[scrm_argc++] = p2;
-        p2 = strtok(0, " ");
-        }
-    this->scrm_argv_ = scrm_argv;
-    this->scrm_argc_ = scrm_argc;
-    }
+//void PfParam::convert_scrm_input (){
+    ///*! convert scrm_input string to argv */
+    //enum { kMaxArgs = 264 };
+    //int scrm_argc = 0;
+    //char *scrm_argv[kMaxArgs];        
+    //char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
+    //while (p2 && scrm_argc < kMaxArgs) {
+        //scrm_argv[scrm_argc++] = p2;
+        //p2 = strtok(0, " ");
+        //}
+    //this->scrm_argv_ = scrm_argv;
+    //this->scrm_argc_ = scrm_argc;
+    //}
 
 
-void pfARG::param::finalize(  ){
+void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
     this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
     //pfARG_para.finalize ( );
@@ -273,10 +273,10 @@ void pfARG::param::finalize(  ){
 }
 
 
-//int pfARG::param::log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate){
-int pfARG::param::log(Model *model, size_t random_seed, double inferred_recomb_rate){
+//int PfParam::log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate){
+int PfParam::log(Model *model, size_t random_seed, double inferred_recomb_rate){
     if (log_bool){  
-        log_param(model, random_seed, inferred_recomb_rate);
+        this->log_param(model, random_seed, inferred_recomb_rate);
         //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());  
@@ -285,7 +285,7 @@ int pfARG::param::log(Model *model, size_t random_seed, double inferred_recomb_r
     }
 }
 
-void pfARG::param::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
+void PfParam::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
     ofstream log_file;
     string emptyfile("EMPTY FILE");
     string vcf_file = ( vcf_NAME.size() > 0 ) ?  vcf_NAME : emptyfile;
@@ -349,7 +349,7 @@ void pfARG::param::log_param(Model *model, size_t random_seed, double inferred_r
     log_file.close();
 }        
 
-//void pfARG::param::log_end(pfTime * running_time){
+//void PfParam::log_end(pfTime * running_time){
     //ofstream log_file ( log_NAME.c_str(), ios::out | ios::app | ios::binary); 
     //log_file << "Initial particles building took about " << running_time->timing_[0] << " second(s) \n";
     ////log_file << "Simulation took about " << end_time - initial_state_end_time << " second(s) \n";
@@ -359,7 +359,7 @@ void pfARG::param::log_param(Model *model, size_t random_seed, double inferred_r
     //}
 
 
-void pfARG::param::appending_Ne_file(Model *model, bool hist){
+void PfParam::appending_Ne_file(Model *model, bool hist){
     string file_name = hist ? HIST_NAME : Ne_NAME ;
     ofstream Ne_file( file_name.c_str(), ios::out | ios::app | ios::binary);   
     model->resetTime();
@@ -373,7 +373,7 @@ void pfARG::param::appending_Ne_file(Model *model, bool hist){
     }        
 
 
-void pfARG::param::print_help(){
+void PfParam::print_help(){
     cout << endl;
     cout << endl;
     cout << "*****************************************************************" << endl;
@@ -389,7 +389,7 @@ void pfARG::param::print_help(){
     }
 
 
-void pfARG::param::print_option(){
+void PfParam::print_option(){
     cout <<"   Options:" << endl;
     cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]." << endl;
     cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Proportion of the effective sample size [ 0.6 ]." << endl;
@@ -407,7 +407,7 @@ void pfARG::param::print_option(){
     }
 
 
-void pfARG::param::print_example(){
+void PfParam::print_example(){
     cout << "Example:" << endl;
     cout << "pf-ARG 10 -nsam 3" << endl;
     cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf -buff 4" << endl;

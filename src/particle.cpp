@@ -768,7 +768,7 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
     }
 
 
-bool ParticleContainer::appendingStuffToFile( double x_end,  pfARG::param pfparam){
+bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam pfparam){
     // Record the TMRCA and weight when a heatmap is generated
     if (!pfparam.heat_bool){
         return true;

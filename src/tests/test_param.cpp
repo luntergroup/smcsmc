@@ -34,7 +34,7 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_NO_THROW( Param().parse(model) );
 
     char *argv1[] = { "pf-ARG"};
-    pfARG::param pfARG_para1(1, argv1);
+    PfParam pfARG_para1(1, argv1);
     CPPUNIT_ASSERT_EQUAL( (size_t)100, pfARG_para1.N );
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.log_bool );  
     CPPUNIT_ASSERT_EQUAL( 200, pfARG_para1.buff_length );  
@@ -48,16 +48,16 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.EM_bool );  
 
 
-    Param pars = Param(pfARG_para1.scrm_argc_, pfARG_para1.scrm_argv_, false);    
-    CPPUNIT_ASSERT_EQUAL( false, pars.directly_called_);
-    CPPUNIT_ASSERT_NO_THROW( pars.parse(model) );
-    //CPPUNIT_ASSERT_EQUAL( false, pars.tree_bool );
-    CPPUNIT_ASSERT_EQUAL( false, pars.seg_bool() );  
-    //CPPUNIT_ASSERT_EQUAL( false, pars.tmrca_bool );
+    //Param pars = Param(pfARG_para1.scrm_argc_, pfARG_para1.scrm_argv_, false);    
+    //CPPUNIT_ASSERT_EQUAL( false, pars.directly_called_);
+    //CPPUNIT_ASSERT_NO_THROW( pars.parse(model) );
+    ////CPPUNIT_ASSERT_EQUAL( false, pars.tree_bool );
+    //CPPUNIT_ASSERT_EQUAL( false, pars.seg_bool() );  
+    ////CPPUNIT_ASSERT_EQUAL( false, pars.tmrca_bool );
 
 
     char *argv2[] = { "pf-ARG", "-Np", "10", "-log", "-lag", "10", "-online", "-EM", "5", "-ESS", "0.75"};
-    pfARG::param pfARG_para2(11, argv2);
+    PfParam pfARG_para2(11, argv2);
     CPPUNIT_ASSERT_EQUAL( (size_t)10, pfARG_para2.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.log_bool );  
     CPPUNIT_ASSERT_EQUAL( (int)200, pfARG_para2.buff_length );  
@@ -72,32 +72,32 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( 5, pfARG_para2.EM_steps );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.EM_bool );  
 
-    Param pars2 = Param(7, pfARG_para2.scrm_argv_, false);    
-    CPPUNIT_ASSERT_EQUAL( false, pars2.directly_called_);
-    CPPUNIT_ASSERT_NO_THROW( pars2.parse(model) );
-    //CPPUNIT_ASSERT_EQUAL( false, pars2.tree_bool );
-    CPPUNIT_ASSERT_EQUAL( true, pars2.seg_bool() );  
-    //CPPUNIT_ASSERT_EQUAL( false, pars2.tmrca_bool );
+    //Param pars2 = Param(7, pfARG_para2.scrm_argv_, false);    
+    //CPPUNIT_ASSERT_EQUAL( false, pars2.directly_called_);
+    //CPPUNIT_ASSERT_NO_THROW( pars2.parse(model) );
+    ////CPPUNIT_ASSERT_EQUAL( false, pars2.tree_bool );
+    //CPPUNIT_ASSERT_EQUAL( true, pars2.seg_bool() );  
+    ////CPPUNIT_ASSERT_EQUAL( false, pars2.tmrca_bool );
 
     
     char *argv3[] = { "pf-ARG", "-log", "-lag", "10", "-online" , "-Na"};
-    //CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument); // "-Na" is invalid
+    //CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument); // "-Na" is invalid
     argv3[5] = "-ESS";
-    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-ESS" expect more input
+    CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument ); // "-ESS" expect more input
     argv3[5] = "-EM";
-    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-EM" expect more input
+    CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument ); // "-EM" expect more input
     argv3[2] = "-EM";
     argv3[5] = "-lag";
-    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-lag" expect more input
+    CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument ); // "-lag" expect more input
     argv3[5] = "-Np";
-    CPPUNIT_ASSERT_THROW( pfARG::param(6, argv3), std::invalid_argument ); // "-Np" expect more input
+    CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument ); // "-Np" expect more input
     argv3[6] = "10.4";                                                      // "-Np" expect an integer
-    CPPUNIT_ASSERT_THROW( pfARG::param(7, argv3), boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_lexical_cast> > ); 
+    CPPUNIT_ASSERT_THROW( PfParam(7, argv3), boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::bad_lexical_cast> > ); 
     argv3[6] = "10";
-    CPPUNIT_ASSERT_NO_THROW( pfARG::param(7, argv3)); // "Valid input! "
+    CPPUNIT_ASSERT_NO_THROW( PfParam(7, argv3)); // "Valid input! "
     
     //char *argv4[] = { "pf-ARG", "-logo"}; // "-logo" is unknown option
-    //CPPUNIT_ASSERT_THROW( pfARG::param(2, argv4), std::invalid_argument);
+    //CPPUNIT_ASSERT_THROW( PfParam(2, argv4), std::invalid_argument);
     // Check for -eN, -l, and so on ...
     
     //char *argv3[] = { "scrm", "20", "10", "-t", "3.74", "-I", "3", "7", "8", "5", "-T", "-M", "5.0" };
@@ -196,7 +196,7 @@ class TestParam : public CppUnit::TestCase {
         double default_loci_length = 50000;  
     
         char *argv1[] = { "pf-ARG"};
-        pfARG::param pfARG_para1(1, argv1);
+        PfParam pfARG_para1(1, argv1);
         vcf_file =  new Vcf(pfARG_para1.vcf_NAME, pfARG_para1.buff_length);
         
         Param * scrm_para = new Param(1, argv1, false);    
@@ -214,7 +214,7 @@ class TestParam : public CppUnit::TestCase {
         delete scrm_para;
         
         char *argv2[] = { "pf-ARG", "-vcf", "test6sample.vcf"};
-        pfARG::param pfARG_para2(3, argv2);
+        PfParam pfARG_para2(3, argv2);
         vcf_file =  new Vcf(pfARG_para2.vcf_NAME, pfARG_para2.buff_length);
         CPPUNIT_ASSERT_EQUAL( (size_t)3, vcf_file->nsam());
         

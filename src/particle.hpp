@@ -172,7 +172,7 @@ class ParticleContainer{
         void clear();
         void clean_old_states(double xstart);
         
-        bool appendingStuffToFile(double x_end, pfARG::param pfparam);
+        bool appendingStuffToFile(double x_end, PfParam pfparam);
         
         /*!
          *  Setters and getters:
