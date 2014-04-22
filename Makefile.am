@@ -1,4 +1,4 @@
-SUBDIRS = src tex-files tests 
+SUBDIRS = src tex-files 
 
 
 #include aminclude.am 

@@ -122,6 +122,6 @@ fi
 
 AM_CONDITIONAL([HAVE_PDFLATEX], test -n "$PDFLATEX")
 
-AC_CONFIG_FILES([Makefile src/Makefile tex-files/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tex-files/Makefile ])
 AC_OUTPUT
 #

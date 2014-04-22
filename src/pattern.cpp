@@ -45,7 +45,9 @@ size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_ve
     char op = *expr;
 
     if( op == '+' || op == '\0' ){
-        seg_level2_vec.push_back( (size_t)1 );
+        seg_level1_vec.pop_back();
+        seg_level1_vec.push_back( (size_t)1 );
+        seg_level2_vec.push_back(seg_level1);
         return seg_level1;
         }
     expr++;
@@ -81,12 +83,25 @@ vector <double> extract_Segment (size_t num_seg, double top_t){
     vector <double> t_i(num_seg);
     for (size_t i = 0; i < num_seg ; i++ ){
         t_i [i] = 0.1 * exp ( (double)i / (double)(num_seg-1) * log(1 + 10 * top_t) ) - 0.1; 
+        //cout<<t_i[i]<<" ";
         }
+    //cout<<endl;
     return t_i;
     }
 
 
 vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
+    //cout<<endl;
+    //for (size_t i = 0; i < seg_level1_vec.size(); i++ ){
+        //cout<<seg_level1_vec[i]<<" " ;
+        //}
+    //cout<<endl;
+    
+    //for (size_t i = 0; i < seg_level2_vec.size(); i++ ){
+        //cout<<seg_level2_vec[i]<<" " ;
+        //}
+    //cout<<endl;
+
     vector <double> t_i;
     size_t index = 0;
     for ( size_t seg_i = 0; seg_i < seg_level1_vec.size(); seg_i++){
@@ -118,8 +133,8 @@ string convert_pattern (string pattern, double top_t){
     size_t num_seg = extract_NumberOfSegment ( expr, seg_level1_vec, seg_level2_vec);
     dout << "Number of time segments: " << num_seg <<endl;
     vector <double> t_i = extract_Segment( num_seg, top_t);
+    vector <double> new_ti = regroup_Segment (t_i, seg_level1_vec, seg_level2_vec);
     string Ne_array;    
-    vector <double> new_ti = regroup_Segment (t_i, seg_level2_vec, seg_level1_vec);
     for (size_t i = 0; i < new_ti.size(); i++ ){
         Ne_array += " -eN " + to_string( new_ti [i] / 2 ) + " 1";
         }

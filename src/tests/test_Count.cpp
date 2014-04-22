@@ -21,9 +21,9 @@ class TestCount : public CppUnit::TestCase {
 
  private:
     Model * model_null ;
-    Count *countNe_null;
+    CountModel * countNe_null;
     Model * model ;
-    Count *countNe;
+    CountModel * countNe;
 
     double default_pop_size;
     void init(){

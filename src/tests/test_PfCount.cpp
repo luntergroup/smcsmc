@@ -3,7 +3,7 @@
 #include <boost/lexical_cast.hpp> 
 
 #include "../src/pfparam.hpp"
-#include "../src/usage.hpp"
+//#include "../src/usage.hpp"
 #include "../src/vcf.hpp"
 
 #include "../src/scrm/param.h"

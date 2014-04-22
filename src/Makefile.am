@@ -42,12 +42,9 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
 
 
 arg_src = coalevent.hpp coalevent.cpp \
-        particle.hpp particle.cpp \
-        count.cpp count.hpp count-semi-debug.cpp
+          particle.hpp particle.cpp \
+          count.cpp count.hpp count-semi-debug.cpp
        
-
-#vcf_src = vcf.hpp vcf.cpp 
-
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
 #usage_src = usage.hpp usage.cpp 
@@ -64,13 +61,13 @@ unit_tests_SOURCES = tests/test_Vcf.cpp\
                      $(shared_SOURCES) \
                      tests/test_runner.cpp \
                      tests/test_param.cpp \
-                     tests/test_random_generator.cpp
-                     #test_Coalevent.cpp\
-                     #test_FroestState.cpp\
-                     #test_PfCount.cpp\
-                     #test_Vparticle.cpp\
-                     #test_Count.cpp\
-                     #test_Vcf.cpp\
+                     tests/test_pattern.cpp \
+                     tests/test_random_generator.cpp \
+                     tests/test_Coalevent.cpp \
+                     tests/test_FroestState.cpp\
+                     tests/test_PfCount.cpp\
+                     tests/test_Vparticle.cpp\
+                     #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)
 
 unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
@@ -84,7 +81,7 @@ include_HEADERS = vcf.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/random/constant_generator.h scrm/random/mersenne_twister.h \
                   scrm/random/random_generator.h scrm/event.h \
                   scrm/summary_statistics/newick_tree.h \
-		  scrm/summary_statistics/frequency_spectrum.h \
-		  scrm/summary_statistics/seg_sites.h \
-		  scrm/summary_statistics/tmrca.h
+                  scrm/summary_statistics/frequency_spectrum.h \
+                  scrm/summary_statistics/seg_sites.h \
+                  scrm/summary_statistics/tmrca.h
 				  

@@ -57,8 +57,8 @@ class TestVcf : public CppUnit::TestCase {
         }  
     
     void test_Constructors() {
-        vcf_file = new Vcf("test2sample.vcf");
-        CPPUNIT_ASSERT_EQUAL(string("test2sample.vcf"), vcf_file->file_name_);
+        vcf_file = new Vcf("tests/test2sample.vcf");
+        CPPUNIT_ASSERT_EQUAL(string("tests/test2sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 3227 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->nsam());
@@ -94,8 +94,8 @@ class TestVcf : public CppUnit::TestCase {
         delete vcf_file;
         
         
-        vcf_file = new Vcf("test4sample.vcf");
-        CPPUNIT_ASSERT_EQUAL(string("test4sample.vcf"), vcf_file->file_name_);
+        vcf_file = new Vcf("tests/test4sample.vcf");
+        CPPUNIT_ASSERT_EQUAL(string("tests/test4sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 6518 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->nsam());
@@ -134,8 +134,8 @@ class TestVcf : public CppUnit::TestCase {
         
         delete vcf_file;
 
-        vcf_file = new Vcf("test6sample.vcf");
-        CPPUNIT_ASSERT_EQUAL(string("test6sample.vcf"), vcf_file->file_name_);
+        vcf_file = new Vcf("tests/test6sample.vcf");
+        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 13813 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(3), vcf_file->nsam());
@@ -202,8 +202,8 @@ class TestVcf : public CppUnit::TestCase {
     
     void test_empty_block(){
         int buff_len = 10;
-        vcf_file = new Vcf("test6sample.vcf", buff_len);
-        CPPUNIT_ASSERT_EQUAL(string("test6sample.vcf"), vcf_file->file_name_);
+        vcf_file = new Vcf("tests/test6sample.vcf", buff_len);
+        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
         CPPUNIT_ASSERT_EQUAL(size_t(buff_len), vcf_file->buffer_lines.size());
         
@@ -218,9 +218,8 @@ class TestVcf : public CppUnit::TestCase {
     
     void test_new_block(){
         int buff_len = 3;
-        vcf_file = new Vcf("test6sample.vcf", buff_len);
-        CPPUNIT_ASSERT_EQUAL(string("test6sample.vcf"), vcf_file->file_name_);
-        
+        vcf_file = new Vcf("tests/test6sample.vcf", buff_len);
+        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
         CPPUNIT_ASSERT_EQUAL(double(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->current_block_line_);
@@ -259,8 +258,8 @@ class TestVcf : public CppUnit::TestCase {
 
     
     void test_reset_VCF_to_data(){
-        vcf_file = new Vcf("test6sample.vcf");
-        CPPUNIT_ASSERT_EQUAL(string("test6sample.vcf"), vcf_file->file_name_);
+        vcf_file = new Vcf("tests/test6sample.vcf");
+        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
          * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
