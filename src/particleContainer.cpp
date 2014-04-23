@@ -39,12 +39,15 @@ ParticleContainer::ParticleContainer(
     this->set_ESS(0);
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
-	for (size_t i=0; i<Num_of_states ;i++){
+	for ( size_t i=0; i < Num_of_states ; i++ ){
 		ForestState *  new_state = new ForestState(model,rg);  // create a new state, using scrm; scrm always starts at 0.
         new_state->setSiteWhereWeightWasUpdated( initial_position );
-		this->push(new_state, 1.0/Num_of_states );
+		new_state->setAncestor ( i );
+        this->push(new_state, 1.0/Num_of_states );
+        
 	    }	    
     }
+
 
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
@@ -333,7 +336,7 @@ void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valar
     //Update weight for seeing mutation at the position 
     this->update_state_weights_at_A_single_site(mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool); 
     
-    //Update the cumulated probabilities, as well as computing the effective sample size                    
+    //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
     //runningtime->stopwatch_end(2);
     }
@@ -344,10 +347,10 @@ void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valar
  */
 void ParticleContainer::clean_old_states(double xstart){
     dout << "remove states before " << xstart <<endl;    
-    for (size_t i = 0; i < this->particles.size(); i++){        
+    for (size_t i = 0; i < this->particles.size(); i++){
         ForestState* current_state = this->particles[i];
         dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
-        ForestState* prior_state = current_state->previous_state;        
+        ForestState* prior_state = current_state->previous_state;
         
         /*!
          * Check if the current state is pointing a previous state
@@ -360,7 +363,7 @@ void ParticleContainer::clean_old_states(double xstart){
             if ( prior_state->next_base() < xstart ){
                 prior_state->pointer_counter--;
                 current_state->previous_state = NULL;
-                delete prior_state;                
+                delete prior_state;
                 break;
                 }
             current_state = prior_state;
@@ -402,19 +405,19 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
         dout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization);
         /* invariants: */    
         assert( (cum_sum[interval_j] / cumsum_normalization) < u_j ); 
-        assert( sample_i < N );        
+        assert( sample_i < N );
         /* check whether u_j is in the interval [ cum_sum[interval_j], cum_sum[interval_j+1] ) */
         if ( (sample_i == N) || cum_sum[interval_j+1] / cumsum_normalization > u_j ) {
-            sample_count[interval_j] += 1;        
+            sample_count[interval_j] += 1;
             sample_i += 1;
             dout << "  yes, update sample count of particle " << interval_j<<" to " << sample_count[interval_j] <<std::endl;
             u_j += 1.0/double(N);    
             } 
         else {
-            dout << "   no, try next interval " << std::endl;        
+            dout << "   no, try next interval " << std::endl;
             //assert( sample_i < N-1 );
             interval_j += 1;
-            sample_count[ interval_j ] = 0;        
+            sample_count[ interval_j ] = 0;
             }    
         }
     interval_j=interval_j+1;
@@ -471,36 +474,48 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
         this->set_current_printing_base(x_end);
 
         if (this->current_printing_base() > 0){
-            ofstream TmrcaOfstream;
-            ofstream WeightOfstream;
-            ofstream BLOfstream;
-            TmrcaOfstream.open  ( pfparam.TMRCA_NAME.c_str() , ios::out | ios::app | ios::binary); 
-            WeightOfstream.open ( pfparam.WEIGHT_NAME.c_str(), ios::out | ios::app | ios::binary); 
-            BLOfstream.open     ( pfparam.BL_NAME.c_str()    , ios::out | ios::app | ios::binary);
+            //ofstream TmrcaOfstream;
+            //ofstream WeightOfstream;
+            //ofstream BLOfstream;
+            //ofstream SURVIVORstream;
+            
+            //TmrcaOfstream.open  ( pfparam.TMRCA_NAME.c_str() , ios::out | ios::app | ios::binary); 
+            //WeightOfstream.open ( pfparam.WEIGHT_NAME.c_str(), ios::out | ios::app | ios::binary); 
+            //BLOfstream.open     ( pfparam.BL_NAME.c_str()    , ios::out | ios::app | ios::binary);
+            //SURVIVORstream.open ( pfparam.SURVIVOR_NAME.c_str()  , ios::out | ios::app | ios::binary);
+            ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
+            ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
+            ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
+            ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
             
             TmrcaOfstream  << this->current_printing_base();
             WeightOfstream << this->current_printing_base();
             BLOfstream     << this->current_printing_base();
+            SURVIVORstream << this->current_printing_base();
             
             for ( size_t i = 0; i < this->particles.size(); i++){
                 ForestState * current_state_ptr = this->particles[i];
                 WeightOfstream <<"\t" << current_state_ptr->weight();
+                SURVIVORstream <<"\t" << current_state_ptr->ancestor();
                 
-                while (current_state_ptr->current_base() > this->current_printing_base() && current_state_ptr->previous_state) {           
-                    current_state_ptr=current_state_ptr->previous_state;            
+                while (current_state_ptr->current_base() > this->current_printing_base() && current_state_ptr->previous_state) {
+                    current_state_ptr=current_state_ptr->previous_state;
                     }
                 
                 TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;
                 }
-            TmrcaOfstream  << endl;            
+                
+            TmrcaOfstream  << endl;
             WeightOfstream << endl;
             BLOfstream     << endl;
+            SURVIVORstream << endl;
             
-            TmrcaOfstream.close();    
-            WeightOfstream.close();                
+            TmrcaOfstream.close();
+            WeightOfstream.close();
             BLOfstream.close();
+            SURVIVORstream.close();
             }
         this->set_current_printing_base(this->current_printing_base() + pfparam.window);
         } while ( this->current_printing_base() < x_end);

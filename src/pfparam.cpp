@@ -262,14 +262,16 @@ void PfParam::finalize(  ){
     this->Ne_NAME      = out_NAME_prefix + "Ne";
     this->log_NAME     = out_NAME_prefix + ".log";
     this->HIST_NAME    = out_NAME_prefix + "HIST";
-        
+    this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
+    
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
     remove( this->BL_NAME.c_str()    );
     remove( this->Ne_NAME.c_str()    );
     remove( this->log_NAME.c_str()   );
     remove( this->HIST_NAME.c_str()  );
-}
+    remove( this->SURVIVOR_NAME.c_str());
+    }
 
 
 //int PfParam::log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate){

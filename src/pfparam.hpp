@@ -88,7 +88,8 @@ class PfParam{
         string log_NAME;
         string TMRCA_NAME;
         string WEIGHT_NAME;
-        string BL_NAME;            
+        string BL_NAME;
+        string SURVIVOR_NAME;
         double window;
 
         Vcf * VCFfile;

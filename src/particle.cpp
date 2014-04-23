@@ -32,6 +32,7 @@ ForestState::ForestState( ForestState * copied_state )
 	this->init( copied_state->weight(), 
                 copied_state->site_where_weight_was_updated(), 
                 copied_state); // initialize members of ForestState
+    this->setAncestor ( copied_state->ancestor() );
 	dout << "current particle's weight is " << this->weight()<<endl;
 	copied_state->pointer_counter++;
     }
@@ -119,7 +120,7 @@ void ForestState::record_all_event(TimeInterval const &ti){
     if (coal_opportunity > 0) {
         //this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT );
         //// check: do we need to consider different cases? is it possible to coalesce in active_node(1)->population() ???? Joe: I dont think so ...
-        if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {      
+        if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
             this->record_Coalevent(active_node(0)->population(), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             } 
         else if (states_[0] == 1){
@@ -168,8 +169,8 @@ void ForestState::record_all_event(TimeInterval const &ti){
         }
     
     double opportunity_rate = (coal_opportunity / opportunity_y * act0coal_rate + recomb_opportunity / opportunity_y * recomb_rate + actmig_rate[0] + actmig_rate[1]);
-    if (abs(rates_[0] - opportunity_rate) > 0.00000000000001){        
-    //if (abs(rates_[0] - opportunity_rate) != 0){        
+    if (abs(rates_[0] - opportunity_rate) > 0.00000000000001){
+    //if (abs(rates_[0] - opportunity_rate) != 0){
         cout << "difference is "<<rates_[0]-opportunity_rate<<endl;
         cout<<"rates_[0]= "<<rates_[0]<<endl;
         cout << "opportunity_rate = " << opportunity_rate<<endl;

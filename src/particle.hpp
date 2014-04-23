@@ -68,8 +68,11 @@ class ForestState : public Forest{
         double site_where_weight_was_updated(){return site_where_weight_was_updated_;}
 
         void setParticleWeight(double weight){this->particle_weight_ = weight;};
-        double weight(){return particle_weight_;};        
-
+        double weight(){return this->particle_weight_;};        
+        
+        void setAncestor ( size_t ancestor ) { this->ancestor_ = ancestor; }
+        size_t ancestor(){ return this->ancestor_;}
+        
         /*!
          * Debugging tools
          */ 
@@ -131,6 +134,7 @@ class ForestState : public Forest{
          */ 
         double site_where_weight_was_updated_;
         double particle_weight_;
+        size_t ancestor_;
 };
 
 
