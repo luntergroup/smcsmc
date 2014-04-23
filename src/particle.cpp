@@ -23,7 +23,6 @@
 
 
 #include"particle.hpp"
-//#include"usage.hpp"
 
 /*! \brief Create a newly copied ForestState 
     @ingroup group_pf_resample 

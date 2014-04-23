@@ -47,7 +47,7 @@ class ParticleContainer{
                                   Model * model, 
                                   valarray<double> & weight_cum_sum);
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
-        bool appendingStuffToFile(double x_end, PfParam pfparam);
+        bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void clean_old_states(double xstart);
         void clear();
         //int count_total_number_of_nodes();                

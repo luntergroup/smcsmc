@@ -21,13 +21,11 @@
 */
 
 
-#include "particle.hpp"
 #include "particleContainer.hpp"
 
 
 #ifndef COUNT
 #define COUNT
-
         
 class CountModel: public Model{  
     public:
@@ -43,33 +41,42 @@ class CountModel: public Model{
          * Methods
          */ 
         void init();
-        void init_coal_and_recomb();
-        void init_migr();
-        
         void extract_and_update_count( ParticleContainer &Endparticles, double x_start, double x_end);
-        //void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-        size_t find_time_interval (double start_height, double end_height);
-        void compute_recomb_rate();
-        void compute_mig_rate();
         void reset_model_Ne( Model * model, bool online = true, bool print = true);
-        void check_model_updated_Ne(Model * model);
-        //void check_CountModel_Ne();
-        
         
         // DEBUG
         void print_recomb_counts();
         void print_pop_size();
         void print_change_time();
         void print_Time_count_pop();
+
+        /*!
+         * Members
+         */ 
         
+        double inferred_recomb_rate;
+        
+    private:
+
+        /*!
+         * Methods
+         */ 
+        void init_coal_and_recomb();
+        void init_migr();
+        void compute_recomb_rate();
+        void compute_mig_rate();
+        void check_model_updated_Ne(Model * model);
+        size_t find_time_interval (double start_height, double end_height);
+
+        //void check_CountModel_Ne();
+
         /*!
          * Members
          */ 
         /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity are number_of_time_interval * number_of_population
          */ 
         vector < vector<double> >   total_coal_count;
-        vector < vector<double> >   total_weighted_coal_opportunity;
-        
+        vector < vector<double> >   total_weighted_coal_opportunity;        
         vector < vector<double> >   total_recomb_count;
         vector < vector<double> >   total_weighted_recomb_opportunity;
 
@@ -77,12 +84,5 @@ class CountModel: public Model{
          */         
         vector < vector<double> >   total_mig_count;
         vector < vector<double> >   total_weighted_mig_opportunity;
-        
-        double inferred_recomb_rate;
-        
-    private:
-};    
-
-
-
+    };    
 #endif

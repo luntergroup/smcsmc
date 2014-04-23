@@ -684,6 +684,7 @@ src/pfparam.cpp \
 src/pfparam.hpp \
 src/vcf.cpp \
 src/vcf.hpp \
+src/scrm/param.cc src/scrm/param.h \
 src/scrm/copy_forest.cc \
 src/scrm/node.cc src/scrm/node.h \
 src/scrm/node_container.cc src/scrm/node_container.h \

@@ -22,7 +22,6 @@
 */
 
 #include "scrm/param.h"
-//#include "usage.hpp"
 #include "vcf.hpp"
 
 using namespace std;
@@ -44,12 +43,13 @@ class PfParam{
         /*!
          * Methods
          */ 
-        
-        //int  log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate);
-        int  log(Model *model, size_t random_seed, double inferred_recomb_rate);
-        void log_param(Model* model ,size_t random_seed, double inferred_recomb_rate);
-        //void log_end(pfTime * running_time);
+
+        int  log( double inferred_recomb_rate );
+        void log_param( double inferred_recomb_rate );
+        //int  log(Model *model, size_t random_seed, double inferred_recomb_rate);
+        //void log_param(Model* model ,size_t random_seed, double inferred_recomb_rate);
         void appending_Ne_file(Model *model, bool hist = false);
+        //void log_end(pfTime * running_time);
 
         void print_help();
         void print_option();
@@ -59,10 +59,6 @@ class PfParam{
          * Members
          */
         
-        int    default_nsam;
-        double default_mut_rate; 
-        double default_recomb_rate; 
-        double default_loci_length;
         // ------------------------------------------------------------------
         // PfParameters 
         // ------------------------------------------------------------------                         
@@ -75,11 +71,6 @@ class PfParam{
         string scrm_input;
         bool   EM_bool;
         int    EM_steps;
-        // ------------------------------------------------------------------
-        // Input 
-        // ------------------------------------------------------------------            
-        string vcf_NAME;
-        int buff_length;
         // ------------------------------------------------------------------
         // Action 
         // ------------------------------------------------------------------
@@ -101,11 +92,14 @@ class PfParam{
         double window;
 
         Vcf * VCFfile;
-        //char * const*scrm_argv_;
-        //char **scrm_argv_;
-        //int scrm_argc_;
+        Param *SCRMparam;
+        Model *model;
         
     private:
+
+        /*!
+         * Methods
+         */ 
         void nextArg(std::string option);
         void init();
         void insert_mutation_rate_in_scrm_input ( );
@@ -114,9 +108,23 @@ class PfParam{
         void finalize_scrm_input ( );
         void finalize ( );
         void convert_scrm_input();
+
+        /*!
+         * Members
+         */
         const int argc_;
         int argc_i;
         char * const* argv_;            
+        int    default_nsam;
+        double default_mut_rate; 
+        double default_recomb_rate; 
+        double default_loci_length;
+        // ------------------------------------------------------------------
+        // Input 
+        // ------------------------------------------------------------------            
+        string vcf_NAME;
+        int buff_length;
+
     };
 
 #endif

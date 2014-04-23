@@ -21,15 +21,7 @@
 
 */
 
-
-
-#include"particle.hpp"
-#include"vcf.hpp"
-//#include"usage.hpp"
-#include"count.hpp"
-#include"pfparam.hpp"
-//using namespace pfARG;
-
+#include"count.hpp" 
 
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
@@ -46,19 +38,10 @@ void pfARG_core(Model *model,
 
 int main(int argc, char *argv[]){
 
-    //
-    // Settings
-    //
-    //bool show_progress = false;
-    //INITIALIZE USAGE
-    //int who = RUSAGE_SELF;
-    //struct rusage usage;
-    //struct rusage *p=&usage;
     
     /*! 
      * Default values
      */ 
-
     bool print_update_count = false;
 
     /*! Extract pfARG parameters */
@@ -66,37 +49,17 @@ int main(int argc, char *argv[]){
     
     if ( argc==1 ){
         //pfARG_para.print_help();
-    } try {//else, proceed
+        } 
+    try {//else, proceed
         
         /*! 
          * INITIALIZE
          */
 
-        ///*! Initialize vcf file, and data up to the first data entry says "PASS"   */
-        //Vcf * VCFfile =  new Vcf(pfARG_para.vcf_NAME, pfARG_para.buff_length);
-        //pfARG_para.finalize ( VCFfile );
-
-        /*! \todo make the following in to pfparam*/
-        ///*! convert scrm_input string to argv */
-        enum { kMaxArgs = 264 };
-        int scrm_argc = 0;
-        char *scrm_argv[kMaxArgs];        
-        char * p2 = strtok((char *)pfARG_para.scrm_input.c_str(), " ");
-        while (p2 && scrm_argc < kMaxArgs) {
-            scrm_argv[scrm_argc++] = p2;
-            p2 = strtok(0, " ");
-            }
-        
-        ///*! Extract scrm parameters */        
-        Param  scrm_para (scrm_argc, scrm_argv, false);        
-        //Param * scrm_para = new Param(pfARG_para.scrm_argc_, pfARG_para.scrm_argv_, false);        
-
-        /*! Initialize scrm model */
-        Model * model = new Model();        
-        scrm_para.parse( *model );
+        Model * model = pfARG_para.model;
         /*! Initialize mersenneTwister seed */
-        MersenneTwister *rg = new MersenneTwister(scrm_para.random_seed);
-                                
+        MersenneTwister *rg = new MersenneTwister(pfARG_para.SCRMparam->random_seed);
+                                //cout<<pfARG_para.SCRMparam.random_seed<<endl;
         /*! Initialize updated weighted coalescent count and BL  */ 
         CountModel *countNe = new CountModel(*model);
         
@@ -113,25 +76,22 @@ int main(int argc, char *argv[]){
         //countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
         pfARG_para.appending_Ne_file(model);
         
-        //int main_return = pfARG_para.log(model, rg->seed(), runningtime, countNe->inferred_recomb_rate);
-        int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
+        //int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
+        int main_return = pfARG_para.log( countNe->inferred_recomb_rate );
         /*! Clean up */
-        //delete scrm_para;
-        //delete VCFfile;
-        delete model; // 
         delete rg;
         delete countNe;
-        delete pfARG_para.VCFfile;
         cout<<"Forest state was created " << new_forest_counter << " times" << endl;
         dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
         return main_return;
 
-    } catch (const exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
+        } 
+        catch (const exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+            }
     }
-}
 
 
 void pfARG_core(Model *model, 

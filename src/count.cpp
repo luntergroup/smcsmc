@@ -31,6 +31,7 @@ void CountModel::init(){
     return ;
     }
 
+
 void CountModel::init_coal_and_recomb(){
     this->total_coal_count.clear();
     this->total_weighted_coal_opportunity.clear();
