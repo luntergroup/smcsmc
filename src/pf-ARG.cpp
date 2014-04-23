@@ -88,14 +88,14 @@ int main(int argc, char *argv[]){
             }
         
         ///*! Extract scrm parameters */        
-        Param * scrm_para = new Param(scrm_argc, scrm_argv, false);        
+        Param  scrm_para (scrm_argc, scrm_argv, false);        
         //Param * scrm_para = new Param(pfARG_para.scrm_argc_, pfARG_para.scrm_argv_, false);        
 
         /*! Initialize scrm model */
         Model * model = new Model();        
-        scrm_para->parse( *model );
+        scrm_para.parse( *model );
         /*! Initialize mersenneTwister seed */
-        MersenneTwister *rg = new MersenneTwister(scrm_para->random_seed);
+        MersenneTwister *rg = new MersenneTwister(scrm_para.random_seed);
                                 
         /*! Initialize updated weighted coalescent count and BL  */ 
         CountModel *countNe = new CountModel(*model);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
         //int main_return = pfARG_para.log(model, rg->seed(), runningtime, countNe->inferred_recomb_rate);
         int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
         /*! Clean up */
-        delete scrm_para;
+        //delete scrm_para;
         //delete VCFfile;
         delete model; // 
         delete rg;

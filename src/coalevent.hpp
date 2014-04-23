@@ -22,7 +22,10 @@
 */
 
 
-#include "scrm/time_interval.h"
+#include "scrm/forest.h"
+//#include<cstdlib> //size_t 
+//enum eventCode { NOEVENT, EVENT, INIT_NULL};
+
 
 #ifndef STAREVENT
 #define STAREVENT
@@ -46,12 +49,6 @@ class Starevent{
                   eventCode event_code );
         ~Starevent(){};
 
-        /*!
-         * Methods
-         */ 
-        void init();
-        void clear();
-        
         /*! 
          * Getters and setters
          */ 
@@ -74,6 +71,12 @@ class Starevent{
         void set_event_state(eventCode state){ this->event_state_ = state; };
         
     private:
+        /*!
+         * Methods
+         */ 
+        void init();
+        void clear();
+
         /*!
          * Members
          */ 

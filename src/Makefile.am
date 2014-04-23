@@ -43,6 +43,7 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
 
 arg_src = coalevent.hpp coalevent.cpp \
           particle.hpp particle.cpp \
+          particleContainer.cpp \
           count.cpp count.hpp count-semi-debug.cpp
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 

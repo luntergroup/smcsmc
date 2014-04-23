@@ -28,8 +28,6 @@
 #include"scrm/param.h"
 #include"pattern.hpp"
 
-//using namespace pfARG;
-
 
 PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
     this->init(); // Initialize pfARG program parameters

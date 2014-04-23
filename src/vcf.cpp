@@ -111,9 +111,9 @@ void Vcf::init(string infile_name, int buffer_length){
     this->end_data_                  = false;
     this->buffer_max_number_of_lines = buffer_length;
     this->file_name_                 = infile_name;    
-    this->withdata_ = ( file_name_.size() > 0 ) ? true : false;
-    
-}
+    this->withdata_ = ( file_name_.size() > 0 ) ? true : false;    
+    }
+
 
 void Vcf::read_new_line(){
     /*! Read Vcf data, extract mutation site and haplotype
@@ -229,12 +229,14 @@ void Vcf::empty_block() { buffer_lines.clear(); }
 
 
 void Vcf::read_new_block(){
+    
     if (current_line_index_ == 0){
         cout << "Set data to the first entry, read a block of " <<  this->buffer_max_number_of_lines << " entries" <<endl;
         } 
     else {
         cout << "Read new block of " <<  this->buffer_max_number_of_lines << " entries, currently at line " << current_line_index_ << endl;
         }
+    
     buffer_lines.clear();
     current_block_line_ = 0;
 

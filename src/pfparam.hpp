@@ -117,6 +117,6 @@ class PfParam{
         const int argc_;
         int argc_i;
         char * const* argv_;            
-};
+    };
 
 #endif

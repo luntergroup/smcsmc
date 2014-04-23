@@ -675,6 +675,8 @@ src/count.cpp \
 src/count.hpp \
 src/particle.cpp \
 src/particle.hpp \
+src/particleContainer.hpp \
+src/particleContainer.cpp \
 src/pattern.cpp \
 src/pattern.hpp \
 src/pf-ARG.cpp \
