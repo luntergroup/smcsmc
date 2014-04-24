@@ -180,8 +180,6 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         // Start counting
         while ( counting_state -> current_base() >= x_start ) {  // Making sure there is coalescent events between the interval
         // while all time level have checked... move on to the next state ...    
-            //for ( size_t j = 0; j < counting_state->CoaleventContainer.size(); j++){
-                //Coalevent * current_Coalevent = counting_state->CoaleventContainer[j];
             while (!counting_state->CoaleventContainer.empty()){
                 Coalevent * current_Coalevent = counting_state->CoaleventContainer.back();
                 /*! Cumulate the coalescent events if the event is within the interval 
@@ -193,15 +191,15 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
                 counting_state->CoaleventContainer.pop_back();
                 } //  < counting_state->CoaleventContainer.size() 
 
-            for ( size_t j = 0; j < counting_state->RecombeventContainer.size(); j++){
-                Recombevent * current_Recombevent = counting_state->RecombeventContainer[j];
-
+            while (!counting_state->RecombeventContainer.empty()){
+                Recombevent * current_Recombevent = counting_state->RecombeventContainer.back();
                 /*! Cumulate the recombination events if the event is within the interval 
                  */
                 size_t time_i = this->find_time_interval (current_Recombevent->start_height(),  current_Recombevent->end_height());                 
                 this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
                 this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
-                    
+                delete current_Recombevent;
+                counting_state->RecombeventContainer.pop_back();
                 } //  < counting_state->RecombeventContainer.size() 
                 
             for ( size_t j = 0; j < counting_state->MigreventContainer.size(); j++){

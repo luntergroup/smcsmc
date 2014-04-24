@@ -143,15 +143,17 @@ void Vcf::read_new_line(){
     while(feild_end<line.size()){
         feild_end=min(line.find('\t',feild_start),line.find('\n',feild_start)); 
         tmp_str=line.substr(feild_start,feild_end-feild_start);
-        istringstream tmp_strm(tmp_str.c_str());
+        //istringstream tmp_strm(tmp_str.c_str());
         switch(counter){
             case 0: {
-                tmp_strm>>chrom_; 
+                //tmp_strm>>chrom_; 
+                chrom_ = strtod( tmp_str.c_str(), NULL);
             }
             break;
             
             case 1: {
-                tmp_strm>>site_; 
+                //tmp_strm>>site_; 
+                site_ = strtod( tmp_str.c_str(), NULL);
                 if (((site_ - previous_site_at_)<2) && (previous_site_at_ > 0) && (pervious_chrom_ == chrom_)){
                     cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to it's too close to the previous variant (at " << previous_site_at_ <<")." << endl;
                     previous_site_at_ = site_;

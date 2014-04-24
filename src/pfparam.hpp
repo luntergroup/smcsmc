@@ -31,6 +31,11 @@ using namespace std;
 
 
 class PfParam{
+    #ifdef UNITTEST
+    //friend class TestVcf;
+    friend class TestParam;
+    #endif
+
     public:
         
         /*!

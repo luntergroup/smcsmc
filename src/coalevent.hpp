@@ -23,9 +23,6 @@
 
 
 #include "scrm/forest.h"
-//#include<cstdlib> //size_t 
-//enum eventCode { NOEVENT, EVENT, INIT_NULL};
-
 
 #ifndef STAREVENT
 #define STAREVENT

@@ -23,12 +23,11 @@
 
 
 #include<string>
-#include<sstream>
 #include<fstream>
 #include<iostream>
 #include<boost/assign/std/vector.hpp>
 #include<cassert>
-#include<stdexcept>
+//#include<stdexcept>
 #include<stdlib.h>     /* strtol */
 using namespace std;
 
