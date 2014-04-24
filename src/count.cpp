@@ -69,6 +69,24 @@ void CountModel::init_migr(){
     }
 
 
+void CountModel::init_lags(){
+    this->previous_base.clear();
+    this->lags.clear();
+        
+    this->resetTime();    
+    for (size_t time_layer_i = 0 ; time_layer_i < change_times_.size(); time_layer_i++){
+        this->previous_base.push_back( (double)0 );
+        //double lag_i = exp(-change_times_[time_layer_i]/4/default_pop_size) * lagbase;
+        double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
+        double lag_i = double(4) / this->recombination_rate() / top_t;
+        cout<<"lag_i = " << lag_i<<endl;
+        this->lags.push_back( lag_i );
+        }
+    
+    this->resetTime();
+    }
+
+
 void CountModel::reset_model_Ne(Model * model, bool online, bool print){
     if ( !online ){ 
         if (print){
@@ -172,6 +190,8 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         ForestState* counting_state = Endparticles.particles[i];
         
         double weight = counting_state->weight();
+        
+        
         // Skip a few state between lagging until the most updated case
         while (counting_state -> current_base() >= x_end){
             counting_state = counting_state->previous_state;                

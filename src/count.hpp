@@ -53,6 +53,8 @@ class CountModel: public Model{
         /*!
          * Members
          */ 
+        vector < double > previous_base;
+        vector < double > lags;
         
         double inferred_recomb_rate;
         
@@ -63,6 +65,7 @@ class CountModel: public Model{
          */ 
         void init_coal_and_recomb();
         void init_migr();
+        void init_lags();
         void compute_recomb_rate();
         void compute_mig_rate();
         void check_model_updated_Ne(Model * model);
