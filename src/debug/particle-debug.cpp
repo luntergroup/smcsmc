@@ -22,7 +22,7 @@
 */
 
 
-#include"particle.hpp"
+#include "../particleContainer.hpp"
 
 bool ParticleContainer::check_state_orders(){
 	dout << "check particle orders, there are " << this->particles.size()<<" particles" <<endl;

@@ -108,7 +108,7 @@ void pfARG_core(Model *model,
     double initial_position = 0;
 
     ParticleContainer current_states(model, rg, pfARG_para.N, VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), initial_position );             
-
+    dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count(pfARG_para.N); // if sample_count is in the while loop, this is the initializing step...
 
     /*! Initialize prior Ne */
@@ -157,16 +157,19 @@ void pfARG_core(Model *model,
          */ 
          
         // backbase is the sequence position that the current mutation "VCFfile->site()" go back lag    
-        double backbase = max(0.0, VCFfile->site() - pfARG_para.lag);
+//changing        //double backbase = max(0.0, VCFfile->site() - pfARG_para.lag);
         
         // previous_backbase is the sequence position that the previous mutation "VCFfile->site()" go back lag
         // Therefore, anything before previous_backbase should not have been removed ...
-        double previous_backbase = max(0.0, previous_x - pfARG_para.lag); 
-
+//changing        //double previous_backbase = max(0.0, previous_x - pfARG_para.lag); 
+        double remove_particle_before_site = 0 ;
+        
+        
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-            countNe->extract_and_update_count( current_states, previous_backbase, backbase);
+//changing            //countNe->extract_and_update_count( current_states, previous_backbase, backbase);
+            remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
             continue;
         }
         
@@ -181,10 +184,14 @@ void pfARG_core(Model *model,
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
-        current_states.appendingStuffToFile( backbase, pfARG_para);    
-        
+         
+//changing        current_states.appendingStuffToFile( backbase, pfARG_para);    
+        current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
+
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
-        countNe->extract_and_update_count( current_states, previous_backbase, backbase);
+//changing        countNe->extract_and_update_count( current_states, previous_backbase, backbase);
+        remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
@@ -198,7 +205,9 @@ void pfARG_core(Model *model,
          *  As we have already updated the Ne counts, we could clean up any ForestState before backspace, 
          *  However, need to check this with the current_printing_space
          */
-        current_states.clean_old_states(previous_backbase); 
+//changing        current_states.clean_old_states(previous_backbase); 
+        current_states.clean_old_states( remove_particle_before_site ); 
+
         
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              

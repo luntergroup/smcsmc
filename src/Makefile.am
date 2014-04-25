@@ -1,4 +1,4 @@
-bin_PROGRAMS = pf-ARG 
+bin_PROGRAMS = pf-ARG pf-ARG_dbg 
 check_PROGRAMS = pf-ARG_dbg unit_tests
 TESTS = unit_tests 
 

@@ -120,14 +120,18 @@ class PfParam{
          */
         const int argc_;
         int argc_i;
-        char * const* argv_;            
+        char * const* argv_;
+        
+        // ------------------------------------------------------------------
+        // Default values 
+        // ------------------------------------------------------------------        
         int    default_nsam;
         double default_mut_rate; 
         double default_recomb_rate; 
         double default_loci_length;
         // ------------------------------------------------------------------
         // Input 
-        // ------------------------------------------------------------------            
+        // ------------------------------------------------------------------
         string vcf_NAME;
         int buff_length;
 

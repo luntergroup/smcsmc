@@ -27,8 +27,7 @@
 #include<iostream>
 #include<boost/assign/std/vector.hpp>
 #include<cassert>
-//#include<stdexcept>
-#include<stdlib.h>     /* strtol */
+#include<stdlib.h>     /* strtol, strtod */
 using namespace std;
 
 #ifndef NDEBUG

@@ -45,8 +45,8 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
 	this->init(); // initialize members of ForestState
 	this->buildInitialTree();
-    assert( this->print_Coalevent() );
-    assert( this->print_Migrevent() );
+    //assert( this->print_Coalevent() );
+    //assert( this->print_Migrevent() );
     }
 
 

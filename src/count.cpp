@@ -28,6 +28,7 @@
 void CountModel::init(){
     this->init_coal_and_recomb();
     this->init_migr();
+    this->init_lags();
     return ;
     }
 
@@ -78,8 +79,10 @@ void CountModel::init_lags(){
         this->previous_base.push_back( (double)0 );
         //double lag_i = exp(-change_times_[time_layer_i]/4/default_pop_size) * lagbase;
         double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
-        double lag_i = double(4) / this->recombination_rate() / top_t;
-        cout<<"lag_i = " << lag_i<<endl;
+        //double lag_i = 5000 ; // trying the same lagging for 5000 bases
+        double lag_i = 10 ; // trying the same lagging for 5000 bases
+        //double lag_i = double(4) / this->recombination_rate() / top_t /100; // dividing by 100 just for testing 
+        //cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
         }
     
@@ -156,8 +159,46 @@ size_t CountModel::find_time_interval (double start_height, double end_height){
 
 
 
-void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double x_start, double x_end){
+
+double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base){
+    //if (x_start == x_end){return;}
+    // collect the new event counts
+    //cout<<endl;
+    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
+        //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
+        double x_end =  (double)0 < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)0 ;
+        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+            //if (previous_base[time_i] == x_end ) continue;                
+            //cout << "at population " << pop_j << ", previous_base[time_i] = "<<previous_base[time_i]<< ", x_end = "<<x_end<<endl;
+            this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
+            }
+        double previous_base_tmp = current_base - lags[time_i] ;
+        previous_base[time_i] = previous_base_tmp > 0 ? previous_base_tmp : (double)0;
+        }  
+
+    
+    double remove_particle_before_site = previous_base[0];
+    for (size_t i = 0 ; i < previous_base.size() ; i++ ){
+        remove_particle_before_site = remove_particle_before_site < previous_base[i] ? remove_particle_before_site : previous_base[i];
+        }
+    dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
+    return remove_particle_before_site;
+    }
+
+
+void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
+
+//void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double x_start, double x_end){
     if ( x_start == x_end ){ return; }
+    
+    double pop_start_height = this->change_times_[time_i];
+    double pop_end_height;
+    if (time_i == this->change_times_.size()-1){
+        pop_end_height = FLT_MAX;
+    } else {
+        pop_end_height = this->change_times_[time_i+1];
+    }
+
     for (size_t i = 0; i < Endparticles.particles.size(); i++){
         
         /*! \verbatim 
@@ -199,27 +240,38 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         
         // Start counting
         while ( counting_state -> current_base() >= x_start ) {  // Making sure there is coalescent events between the interval
+            //cout<<"counting_state -> current_base() = "<<counting_state -> current_base()<<endl;
         // while all time level have checked... move on to the next state ...    
             while (!counting_state->CoaleventContainer.empty()){
                 Coalevent * current_Coalevent = counting_state->CoaleventContainer.back();
                 /*! Cumulate the coalescent events if the event is within the interval 
                  */
-                size_t time_i = this->find_time_interval (current_Coalevent->start_height(),  current_Coalevent->end_height());
-                this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
-                this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
-                delete current_Coalevent;
-                counting_state->CoaleventContainer.pop_back();
+                //size_t time_i = this->find_time_interval (current_Coalevent->start_height(),  current_Coalevent->end_height());
+                if ( pop_start_height <= current_Coalevent->start_height() && current_Coalevent->end_height() <= pop_end_height && pop_j == current_Coalevent->pop_i()){
+                    this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
+                    this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
+                    delete current_Coalevent;
+                    counting_state->CoaleventContainer.pop_back();
+                    }
+                else {
+                    break;
+                    }                    
                 } //  < counting_state->CoaleventContainer.size() 
 
             while (!counting_state->RecombeventContainer.empty()){
                 Recombevent * current_Recombevent = counting_state->RecombeventContainer.back();
                 /*! Cumulate the recombination events if the event is within the interval 
                  */
-                size_t time_i = this->find_time_interval (current_Recombevent->start_height(),  current_Recombevent->end_height());                 
-                this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
-                this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
-                delete current_Recombevent;
-                counting_state->RecombeventContainer.pop_back();
+                //size_t time_i = this->find_time_interval (current_Recombevent->start_height(),  current_Recombevent->end_height());                 
+                if ( pop_start_height <= current_Recombevent->start_height() && current_Recombevent->end_height() <= pop_end_height && pop_j == current_Recombevent->pop_i()){
+                    this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
+                    this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
+                    delete current_Recombevent;
+                    counting_state->RecombeventContainer.pop_back();
+                    }
+                else {
+                    break;
+                    }
                 } //  < counting_state->RecombeventContainer.size() 
                 
             for ( size_t j = 0; j < counting_state->MigreventContainer.size(); j++){
