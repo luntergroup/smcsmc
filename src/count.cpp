@@ -81,7 +81,7 @@ void CountModel::init_lags(){
         double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
         //double lag_i = 5000 ; // trying the same lagging for 5000 bases
         //double lag_i = 10 ; // trying the same lagging for 5000 bases
-        double lag_i = double(4) / this->recombination_rate() / top_t /100; // dividing by 100 just for testing 
+        double lag_i = double(4) / this->recombination_rate() / top_t ; // dividing by 100 just for testing 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
         }
