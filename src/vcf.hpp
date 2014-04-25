@@ -26,7 +26,8 @@
 #include<fstream>
 #include<iostream>
 #include<boost/assign/std/vector.hpp>
-#include<cassert>
+#include<cassert>       // assert
+#include<stdexcept>      // std::invalid_argument
 #include<stdlib.h>     /* strtol, strtod */
 using namespace std;
 
