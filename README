@@ -1,1 +1,17 @@
 build-dep libcppunit-dev
+
+
+## Installation
+On Debian/Ubuntu based systems:
+```bash
+apt-get install build-essential libboost-all-dev autoconf autoconf-archive doxygen libcppunit-dev
+CXXFLAGS="-O3" ./bootstrap
+make
+```
+
+On Mac OS:
+```bash
+port install boost autoconf autoconf-archive doxygen cppunit 
+./bootstrap
+make
+
