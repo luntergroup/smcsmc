@@ -42,7 +42,7 @@ class CountModel: public Model{
          */ 
         void init();
         //void extract_and_update_count( ParticleContainer &Endparticles, double x_start, double x_end);
-        double extract_and_update_count( ParticleContainer &Endparticles , double current_base);
+        double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
 
         void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 

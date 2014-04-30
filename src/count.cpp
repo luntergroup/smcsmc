@@ -160,16 +160,20 @@ size_t CountModel::find_time_interval (double start_height, double end_height){
 
 
 
-double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base){
+double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
     //if (x_start == x_end){return;}
     // collect the new event counts
     //cout<<endl;
+    //cout<< "current_base : "<<current_base<<endl;
     for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
         //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
-        double x_end =  (double)0 < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)0 ;
+        double x_end =  (double)this->previous_base[time_i] < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)this->previous_base[time_i] ;
+        if (end_data){
+            x_end = current_base;
+            }
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             //if (previous_base[time_i] == x_end ) continue;                
-            //cout << "at population " << pop_j << ", previous_base[time_i] = "<<previous_base[time_i]<< ", x_end = "<<x_end<<endl;
+            //cout << "at population " << pop_j <<"update between" << ", "<<previous_base[time_i]<< " and "<<x_end<<endl;
             this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
             }
         double previous_base_tmp = current_base - lags[time_i] ;

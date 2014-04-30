@@ -116,6 +116,8 @@ void pfARG_core(Model *model,
 
     /*! Go through vcf data */
     double previous_x = 0;
+    double remove_particle_before_site = 0 ;
+
     do{
         
         /*! A particle path, where x-----o is a ForestState. 
@@ -162,7 +164,6 @@ void pfARG_core(Model *model,
         // previous_backbase is the sequence position that the previous mutation "VCFfile->site()" go back lag
         // Therefore, anything before previous_backbase should not have been removed ...
 //changing        //double previous_backbase = max(0.0, previous_x - pfARG_para.lag); 
-        double remove_particle_before_site = 0 ;
         
         
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
@@ -214,6 +215,7 @@ void pfARG_core(Model *model,
         VCFfile->read_new_line(); // Read new line from the vcf file        
     
         }while(!VCFfile->end_data());
+    remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
     
     cout << "### PROGRESS: end of the sequence" << endl;
     
