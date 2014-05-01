@@ -366,6 +366,9 @@ void PfParam::log_param( double inferred_recomb_rate){
 void PfParam::appending_Ne_file(Model *model, bool hist){
     string file_name = hist ? HIST_NAME : Ne_NAME ;
     ofstream Ne_file( file_name.c_str(), ios::out | ios::app | ios::binary);   
+    if (hist){
+        Ne_file << "=========\n"; 
+        }
     model->resetTime();
     for (size_t i = 0; i < model->change_times_.size()-1; i++){
         Ne_file << model->getCurrentTime() / model->default_pop_size / 4 << "\t" << model->population_size() / model->default_pop_size << "\n" ;
