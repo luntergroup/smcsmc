@@ -67,7 +67,7 @@ ForestState::~ForestState(){
 		prior_state->pointer_counter--;
 		if ( prior_state->pointer_counter == 0 ){ delete prior_state; }
         } 	
-    delete_forest_counter++;
+    //delete_forest_counter++;
     //cout<<"Forest state destructor is called " << delete_forest_counter<<endl;    
 	dout << "A Foreststate is deleted" << endl;
     }
@@ -81,7 +81,7 @@ void ForestState::init(double weight, double site , ForestState* previous_state)
 	this->previous_state=previous_state;
 	this->pointer_counter=0;
 	this->CoaleventContainer.clear();
-    new_forest_counter++;
+    //new_forest_counter++;
     }
 
 //ForestState::ForestState(){

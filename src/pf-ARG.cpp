@@ -26,8 +26,8 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */ 
-int new_forest_counter = 0;
-int delete_forest_counter = 0;
+//int new_forest_counter = 0;
+//int delete_forest_counter = 0;
 
 void pfARG_core(Model *model, 
                 MersenneTwister *rg,
@@ -81,8 +81,8 @@ int main(int argc, char *argv[]){
         /*! Clean up */
         delete rg;
         delete countNe;
-        cout<<"Forest state was created " << new_forest_counter << " times" << endl;
-        dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
+        //cout<<"Forest state was created " << new_forest_counter << " times" << endl;
+        //dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
         return main_return;
 
