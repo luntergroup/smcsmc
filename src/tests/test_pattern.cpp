@@ -10,6 +10,8 @@ class TestPattern : public CppUnit::TestCase {
     CPPUNIT_TEST_SUITE( TestPattern );
     
     CPPUNIT_TEST( test_extract_NumberOfSegment ); 
+    
+    CPPUNIT_TEST( test_for_faulty_pattern );
 
     CPPUNIT_TEST_SUITE_END();
 
@@ -25,6 +27,13 @@ class TestPattern : public CppUnit::TestCase {
         const char * expr;
     
     public:
+        void test_for_faulty_pattern () {
+            
+            
+            }
+    
+    
+    
         void test_extract_NumberOfSegment( ){
             
             pattern = "3+2+2+2+2+2+3";
