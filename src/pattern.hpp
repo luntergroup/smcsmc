@@ -46,4 +46,4 @@ size_t extract_NumberOfSegment (const char*& expr, vector <size_t> & seg_level1_
 vector <double> extract_Segment (size_t num_seg, double top_t);
 vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec);
 string convert_pattern (string pattern, double top_t);
-char *convert(const std::string & s);
+//char *convert(const std::string & s);

@@ -1,11 +1,18 @@
 bin_PROGRAMS = pf-ARG pf-ARG_dbg 
+#particleCountainer particle param coalevent scrm_dummy
 check_PROGRAMS = pf-ARG_dbg unit_tests
 TESTS = unit_tests 
 
 PROG = PF-ARG 
 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#particleCountainer_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#particle_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#param_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#coalevent_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#scrm_dummy_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall 
 
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages
@@ -40,6 +47,7 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             debug/count-debug.cpp \
             debug/vcf-debug.cpp
 
+#scrm_dummy_SOURCES = $(scrm_param) $(scrm_src) scrm/scrm.cc
 
 arg_src = coalevent.cpp \
           particle.cpp \
@@ -47,6 +55,19 @@ arg_src = coalevent.cpp \
           count.cpp count-semi-debug.cpp
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
+
+#param_SOURCES = $(scrm_param) $(scrm_src)  $(param_src)  param_dummy.cpp
+
+#coalevent_SOURCES = $(scrm_param) $(scrm_src)  coalevent_dummy.cpp
+
+#particleCountainer_SOURCES = coalevent.cpp \
+          #particle.cpp \
+          #particleContainer.cpp $(scrm_param) $(scrm_src) $(param_src) \
+          #paritcle_Container_dummy.cpp
+
+#particle_SOURCES = coalevent.cpp \
+          #particle.cpp $(scrm_param) $(scrm_src)  \
+          #particle_dummy.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) 
 

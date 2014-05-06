@@ -82,6 +82,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				ForestState * new_copy_state= new ForestState(this->particles[old_state_index]);
 				this->push(new_copy_state);
                 }
+                // Remove old particle tree, this reduces memory usage.
+                this->particles[old_state_index]->nodes()->clear();
             } 
         else {
 			delete this->particles[old_state_index];			

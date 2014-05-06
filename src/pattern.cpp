@@ -115,11 +115,11 @@ vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_
     }
 
 
-char *convert(const std::string & s){
-    char *pc = new char[s.size()+1];
-    std::strcpy(pc, s.c_str());
-    return pc; 
-    }
+//char *convert(const std::string & s){
+    //char *pc = new char[s.size()+1];
+    //std::strcpy(pc, s.c_str());
+    //return pc; 
+    //}
 
 
 string convert_pattern (string pattern, double top_t){
