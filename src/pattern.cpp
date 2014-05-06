@@ -91,17 +91,6 @@ vector <double> extract_Segment (size_t num_seg, double top_t){
 
 
 vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
-    //cout<<endl;
-    //for (size_t i = 0; i < seg_level1_vec.size(); i++ ){
-        //cout<<seg_level1_vec[i]<<" " ;
-        //}
-    //cout<<endl;
-    
-    //for (size_t i = 0; i < seg_level2_vec.size(); i++ ){
-        //cout<<seg_level2_vec[i]<<" " ;
-        //}
-    //cout<<endl;
-
     vector <double> t_i;
     size_t index = 0;
     for ( size_t seg_i = 0; seg_i < seg_level1_vec.size(); seg_i++){
@@ -113,13 +102,6 @@ vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_
     dout<<"t_i size = " << t_i.size()<<endl;    
     return t_i;
     }
-
-
-//char *convert(const std::string & s){
-    //char *pc = new char[s.size()+1];
-    //std::strcpy(pc, s.c_str());
-    //return pc; 
-    //}
 
 
 string convert_pattern (string pattern, double top_t){

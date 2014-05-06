@@ -252,14 +252,16 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
             if (updated_to < mutation_at) {
-                ForestState * median_state = new ForestState(this->particles[particle_i]);
+                // median state is not neccessary, but if we keep the coalescent events for each change, we need to do this
+                ForestState * median_state = new ForestState(this->particles[particle_i]);                
+                this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
                 this->particles[particle_i] = median_state;
                 this->particles[particle_i]->sampleNextGenealogy();
                 }
 
-            //assert(this->particles[particle_i]->print_Recombevent());
-            //assert(this->particles[particle_i]->print_Coalevent());
-            //assert(this->particles[particle_i]->print_Migrevent());
+            assert(this->particles[particle_i]->print_Recombevent());
+            assert(this->particles[particle_i]->print_Coalevent());
+            assert(this->particles[particle_i]->print_Migrevent());
             }
         
         assert (updated_to == mutation_at);        

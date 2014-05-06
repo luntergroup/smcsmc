@@ -200,6 +200,7 @@ void ForestState::record_Coalevent(
                   double end_time, 
                   double opportunity, 
                   eventCode event_code) {
+    cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
     Coalevent* new_event = new Coalevent( pop_i,
                                           start_time,
                                           end_time, 

@@ -1,5 +1,13 @@
 //useless functions
 
+
+//char *convert(const std::string & s){
+    //char *pc = new char[s.size()+1];
+    //std::strcpy(pc, s.c_str());
+    //return pc; 
+    //}
+
+
 //double update_cum_sum_array_find_ESS(Vparticle * pointer_to_current_particles,std::valarray<double> & weight_cum_sum,size_t Num_of_particles){
     
     //double wi_sum=0;
