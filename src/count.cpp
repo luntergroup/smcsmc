@@ -142,20 +142,6 @@ void CountModel::compute_recomb_rate () {
     }
 
                 
-size_t CountModel::find_time_interval (double start_height, double end_height){
-    double pop_start_height = 0.0; 
-    //size_t time_i = 0;
-    auto time_i = 0;
-    for (; time_i < change_times_.size() ; time_i++){
-        double pop_end_height = (time_i == this->change_times_.size()-1) ? FLT_MAX : change_times_[time_i+1];
-        if ( log(pop_start_height) <= log(start_height) + std::numeric_limits<double>::epsilon()  && 
-             log(end_height) <= log(pop_end_height) + std::numeric_limits<double>::epsilon() ) {
-            break;
-            }
-        pop_start_height = pop_end_height;
-        } // End of for loop: < change_times.size()  
-        return time_i;
-    } // End of function: CountModel::find_time_interval( ... )
 
 
 
@@ -165,7 +151,8 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
     // collect the new event counts
     //cout<<endl;
     //cout<< "current_base : "<<current_base<<endl;
-    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
+    for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
+    //for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
         //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
         double x_end =  (double)this->previous_base[time_i] < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)this->previous_base[time_i] ;
         if (end_data){
@@ -192,17 +179,8 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
 
 void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
 
-//void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double x_start, double x_end){
     if ( x_start == x_end ){ return; }
     
-    double pop_start_height = this->change_times_[time_i];
-    double pop_end_height;
-    if (time_i == this->change_times_.size()-1){
-        pop_end_height = FLT_MAX;
-    } else {
-        pop_end_height = this->change_times_[time_i+1];
-    }
-
     for (size_t i = 0; i < Endparticles.particles.size(); i++){
         
         /*! \verbatim 
@@ -238,43 +216,31 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
         
         
         // Skip a few state between lagging until the most updated case
-        while (counting_state -> current_base() >= x_end){
+        while (counting_state -> current_base() >= x_end && counting_state->previous_state){
             counting_state = counting_state->previous_state;                
         }
         
         // Start counting
         while ( counting_state -> current_base() >= x_start ) {  // Making sure there is coalescent events between the interval
-            //cout<<"counting_state -> current_base() = "<<counting_state -> current_base()<<endl;
-        // while all time level have checked... move on to the next state ...    
-            while (!counting_state->CoaleventContainer.empty()){
-                Coalevent * current_Coalevent = counting_state->CoaleventContainer.back();
+            for ( size_t event_i = 0 ; event_i < counting_state->CoaleventContainer.size() ; event_i++ ){
+                Coalevent * current_Coalevent = counting_state->CoaleventContainer[event_i];
                 /*! Cumulate the coalescent events if the event is within the interval 
                  */
-                //size_t time_i = this->find_time_interval (current_Coalevent->start_height(),  current_Coalevent->end_height());
-                if ( pop_start_height <= current_Coalevent->start_height() && current_Coalevent->end_height() <= pop_end_height && pop_j == current_Coalevent->pop_i()){
+                if ( time_i == current_Coalevent->change_time_i() && pop_j == current_Coalevent->pop_i() && !current_Coalevent->counted() ){
                     this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
                     this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
-                    delete current_Coalevent;
-                    counting_state->CoaleventContainer.pop_back();
+                    current_Coalevent->set_counted(true);
                     }
-                else {
-                    break;
-                    }                    
                 } //  < counting_state->CoaleventContainer.size() 
 
-            while (!counting_state->RecombeventContainer.empty()){
-                Recombevent * current_Recombevent = counting_state->RecombeventContainer.back();
+            for ( size_t event_i = 0 ; event_i < counting_state->RecombeventContainer.size() ; event_i++ ){
+                Recombevent * current_Recombevent = counting_state->RecombeventContainer[event_i];
                 /*! Cumulate the recombination events if the event is within the interval 
                  */
-                //size_t time_i = this->find_time_interval (current_Recombevent->start_height(),  current_Recombevent->end_height());                 
-                if ( pop_start_height <= current_Recombevent->start_height() && current_Recombevent->end_height() <= pop_end_height && pop_j == current_Recombevent->pop_i()){
+                if ( time_i == current_Recombevent->change_time_i() && pop_j == current_Recombevent->pop_i() && !current_Recombevent->counted() ){
                     this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
                     this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
-                    delete current_Recombevent;
-                    counting_state->RecombeventContainer.pop_back();
-                    }
-                else {
-                    break;
+                    current_Recombevent->set_counted(true);
                     }
                 } //  < counting_state->RecombeventContainer.size() 
                 
@@ -289,7 +255,7 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                 for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[current_Migrevent->pop_i()].size(); potential_pop++){
                     this->total_weighted_mig_opportunity[current_Migrevent->pop_i()][potential_pop] += current_Migrevent->opportunity() * weight;    
                     }    
-                } //  < counting_state->RecombeventContainer.size() 
+                } //  < counting_state->MigreventContainer.size() 
                                 
                 counting_state = counting_state->previous_state;      
                 if (!counting_state) break;                      

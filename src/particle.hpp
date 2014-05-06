@@ -106,21 +106,21 @@ class ForestState : public Forest{
         // Record events
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);
         
         void record_Recombevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);
 
         void record_Migrevent(size_t pop_i,
                           size_t mig_pop,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);                          
 

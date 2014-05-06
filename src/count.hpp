@@ -73,7 +73,6 @@ class CountModel: public Model{
         void compute_recomb_rate();
         void compute_mig_rate();
         void check_model_updated_Ne(Model * model);
-        size_t find_time_interval (double start_height, double end_height);
 
         //void check_CountModel_Ne();
 
