@@ -1,4 +1,5 @@
-bin_PROGRAMS = pf-ARG pf-ARG_dbg 
+bin_PROGRAMS = pf-ARG 
+#pf-ARG_dbg 
 #particleCountainer particle param coalevent scrm_dummy
 check_PROGRAMS = pf-ARG_dbg unit_tests
 TESTS = unit_tests 
@@ -6,7 +7,9 @@ TESTS = unit_tests
 PROG = PF-ARG 
 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
+
 #particleCountainer_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 #particle_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 #param_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
@@ -16,7 +19,6 @@ pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #option
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall 
 
 #pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages
-pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 
 #vcf_CXXFLAGS= -std=c++0x -g -pg -O3 -Wall -DNDEBUG   #options for not showing debug messages
 #vcf_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages
@@ -47,7 +49,6 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             debug/count-debug.cpp \
             debug/vcf-debug.cpp
 
-#scrm_dummy_SOURCES = $(scrm_param) $(scrm_src) scrm/scrm.cc
 
 arg_src = coalevent.cpp \
           particle.cpp \
@@ -56,15 +57,13 @@ arg_src = coalevent.cpp \
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
+#scrm_dummy_SOURCES = $(scrm_param) $(scrm_src) scrm/scrm.cc
 #param_SOURCES = $(scrm_param) $(scrm_src)  $(param_src)  param_dummy.cpp
-
 #coalevent_SOURCES = $(scrm_param) $(scrm_src)  coalevent_dummy.cpp
-
 #particleCountainer_SOURCES = coalevent.cpp \
           #particle.cpp \
           #particleContainer.cpp $(scrm_param) $(scrm_src) $(param_src) \
           #paritcle_Container_dummy.cpp
-
 #particle_SOURCES = coalevent.cpp \
           #particle.cpp $(scrm_param) $(scrm_src)  \
           #particle_dummy.cpp

@@ -253,7 +253,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
              */
             if (updated_to < mutation_at) {
                  //median state is not neccessary, but if we keep the coalescent events for each change, we need to do this
-                 //remove the following three lines is problemetic ... but why?!!
+                 // the following line works when constant lagging or lagging is used. but we need to consider different lagging, and this will be problemtic
                 ForestState * median_state = new ForestState(this->particles[particle_i]);                
                 this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
                 this->particles[particle_i] = median_state;

@@ -151,8 +151,8 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
     // collect the new event counts
     //cout<<endl;
     //cout<< "current_base : "<<current_base<<endl;
-    for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
-    //for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
+    //for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
+    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
         //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
         double x_end =  (double)this->previous_base[time_i] < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)this->previous_base[time_i] ;
         if (end_data){
@@ -175,6 +175,8 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
     dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
     return remove_particle_before_site;
     }
+
+
 
 
 void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
@@ -242,6 +244,103 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                     this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
                     current_Recombevent->set_counted(true);
                     }
+                } //  < counting_state->RecombeventContainer.size() 
+                
+            for ( size_t j = 0; j < counting_state->MigreventContainer.size(); j++){
+                Migrevent * current_Migrevent = counting_state->MigreventContainer[j];
+
+                /*! Cumulate the recombination events if the event is within the interval 
+                 */
+                if (current_Migrevent->event_state() == EVENT){
+                    this->total_mig_count[current_Migrevent->pop_i()][current_Migrevent->mig_pop()] += current_Migrevent->num_event() * weight;
+                    } 
+                for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[current_Migrevent->pop_i()].size(); potential_pop++){
+                    this->total_weighted_mig_opportunity[current_Migrevent->pop_i()][potential_pop] += current_Migrevent->opportunity() * weight;    
+                    }    
+                } //  < counting_state->MigreventContainer.size() 
+                                
+                counting_state = counting_state->previous_state;      
+                if (!counting_state) break;                      
+                
+            }  // End of while loop: counting_state -> current_base() >= x_start
+        } //  End of for loop: < Endparticles.particles.size()
+        return;
+    } // 
+
+
+void CountModel::count_events_in_one_interval_alt(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
+
+    if ( x_start == x_end ){ return; }
+    
+    for (size_t i = 0; i < Endparticles.particles.size(); i++){
+        
+        /*! \verbatim 
+                xstart     
+                .                      xend                         VCFfile->site()
+                .                      .                            .
+                .                      .     3                      .
+                .                      .     x---o              6   .
+                .                  2   .     |   |              x-------o
+                .                  x---------o   |              |   .
+                .                  |   .         |              |   .
+             0  .                  |   .         x---o          |   .
+             x---------o           |   .         4   |          |   .
+                .      |           |   .             x----------o   .
+                .      |           |   .             5              .
+                .      x-----------o   .                            .
+                .      1               .-------------lag------------.
+                .                      .                            .
+         \endverbatim
+         * 
+         * Count the coalescent events between position xstart and xend.
+         * 
+         * At the beginning of this function, the tail ForestState is at 
+         * state 6, whose weight represents the weight for the entire particle
+         * As lagging is applied, we need to skip a few states before start counting. 
+         *  
+         * In this example, only count the coalescent events occured on states 1 and 2.
+         */ 
+        
+        ForestState* counting_state = Endparticles.particles[i];
+        
+        double weight = counting_state->weight();
+        
+        
+        // Skip a few state between lagging until the most updated case
+        while (counting_state -> current_base() >= x_end && counting_state->previous_state){
+            counting_state = counting_state->previous_state;                
+        }
+        
+        // Start counting
+        while ( counting_state -> current_base() >= x_start ) {  // Making sure there is coalescent events between the interval
+            while (!counting_state->CoaleventContainer.empty()){
+                Coalevent * current_Coalevent = counting_state->CoaleventContainer.back();
+                /*! Cumulate the coalescent events if the event is within the interval 
+                 */
+                if ( time_i == current_Coalevent->change_time_i() && pop_j == current_Coalevent->pop_i() ){
+                    this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
+                    this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
+                    delete current_Coalevent;
+                    counting_state->CoaleventContainer.pop_back();
+                    }
+                else {
+                    break;
+                    } 
+                } //  < counting_state->CoaleventContainer.size() 
+
+            while (!counting_state->RecombeventContainer.empty()){
+                Recombevent * current_Recombevent = counting_state->RecombeventContainer.back();
+                /*! Cumulate the recombination events if the event is within the interval 
+                 */
+                if ( time_i == current_Recombevent->change_time_i() && pop_j == current_Recombevent->pop_i() ){
+                    this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
+                    this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
+                    delete current_Recombevent;
+                    counting_state->RecombeventContainer.pop_back();
+                    }
+                else {
+                    break;
+                    } 
                 } //  < counting_state->RecombeventContainer.size() 
                 
             for ( size_t j = 0; j < counting_state->MigreventContainer.size(); j++){

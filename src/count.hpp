@@ -45,7 +45,7 @@ class CountModel: public Model{
         double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
 
         void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-
+        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         void reset_model_Ne( Model * model, bool online = true, bool print = true);
         
         // DEBUG
