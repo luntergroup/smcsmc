@@ -65,7 +65,9 @@ ForestState::~ForestState(){
 	ForestState* prior_state = this->previous_state;
 	if ( prior_state != NULL ) {
 		prior_state->pointer_counter--;
-		if ( prior_state->pointer_counter == 0 ){ delete prior_state; }
+		if ( prior_state->pointer_counter == (int)0 ){ 
+            delete prior_state; 
+            }
         } 	
     //delete_forest_counter++;
     //cout<<"Forest state destructor is called " << delete_forest_counter<<endl;    
@@ -79,7 +81,7 @@ void ForestState::init(double weight, double site , ForestState* previous_state)
 	this->setParticleWeight(weight);
 	this->setSiteWhereWeightWasUpdated(site);
 	this->previous_state=previous_state;
-	this->pointer_counter=0;
+	this->pointer_counter=(int)0;
 	this->CoaleventContainer.clear();
     //new_forest_counter++;
     }

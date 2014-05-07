@@ -253,9 +253,10 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
              */
             if (updated_to < mutation_at) {
                  //median state is not neccessary, but if we keep the coalescent events for each change, we need to do this
-                //ForestState * median_state = new ForestState(this->particles[particle_i]);                
-                //this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
-                //this->particles[particle_i] = median_state;
+                 //remove the following three lines is problemetic ... but why?!!
+                ForestState * median_state = new ForestState(this->particles[particle_i]);                
+                this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
+                this->particles[particle_i] = median_state;
 
                 this->particles[particle_i]->sampleNextGenealogy();
                 }
@@ -355,6 +356,10 @@ void ParticleContainer::clean_old_states(double xstart){
     for (size_t i = 0; i < this->particles.size(); i++){
         ForestState* current_state = this->particles[i];
         dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
+        if ( current_state->previous_state == NULL ){
+            continue;
+            }
+        
         ForestState* prior_state = current_state->previous_state;
         
         /*!
