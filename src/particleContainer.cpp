@@ -254,9 +254,9 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
             if (updated_to < mutation_at) {
                  //median state is not neccessary, but if we keep the coalescent events for each change, we need to do this
                  // the following line works when constant lagging or lagging is used. but we need to consider different lagging, and this will be problemtic
-                ForestState * median_state = new ForestState(this->particles[particle_i]);                
-                this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
-                this->particles[particle_i] = median_state;
+                //ForestState * median_state = new ForestState(this->particles[particle_i]);                
+                //this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
+                //this->particles[particle_i] = median_state;
 
                 this->particles[particle_i]->sampleNextGenealogy();
                 }
@@ -352,13 +352,14 @@ void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valar
  * Remove previous states that are no longer used
  */
 void ParticleContainer::clean_old_states(double xstart){
-    dout << "remove states before " << xstart <<endl;    
+    
     for (size_t i = 0; i < this->particles.size(); i++){
         ForestState* current_state = this->particles[i];
-        dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
         if ( current_state->previous_state == NULL ){
             continue;
             }
+        dout << "remove states before " << setw(10) << xstart ;        
+        dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
         
         ForestState* prior_state = current_state->previous_state;
         
@@ -370,10 +371,17 @@ void ParticleContainer::clean_old_states(double xstart){
          */ 
          
         while (prior_state!= NULL){
+
             if ( prior_state->next_base() < xstart ){
+                assert ( current_state->current_base() >= prior_state->next_base() );
+                // reduce the pointer counter before this point!
                 prior_state->pointer_counter--;
                 current_state->previous_state = NULL;
-                delete prior_state;
+                
+                // once the pointer counter is zero, remove the state
+                if ( prior_state->pointer_counter == (int)0 ){ 
+                    delete prior_state; 
+                    }
                 break;
                 }
             current_state = prior_state;
