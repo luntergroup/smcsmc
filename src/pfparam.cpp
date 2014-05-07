@@ -159,7 +159,7 @@ void PfParam::init(){
     this->out_NAME_prefix  = "pfARG";
     this->ESS              = 0.5;
     this->ESS_default_bool = true;
-    this->log_bool         = false;
+    this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
     this->hist_bool        = false;
     this->online_bool      = false;
@@ -352,15 +352,6 @@ void PfParam::log_param( double inferred_recomb_rate){
     
     log_file.close();
 }        
-
-//void PfParam::log_end(pfTime * running_time){
-    //ofstream log_file ( log_NAME.c_str(), ios::out | ios::app | ios::binary); 
-    //log_file << "Initial particles building took about " << running_time->timing_[0] << " second(s) \n";
-    ////log_file << "Simulation took about " << end_time - initial_state_end_time << " second(s) \n";
-    //log_file << "    Update weight took " << running_time->timing_[2]<<" second(s)\n";
-    //log_file << "    Resampling took " << running_time->timing_[1]<<" second(s)\n";
-    //log_file.close();
-    //}
 
 
 void PfParam::appending_Ne_file(Model *model, bool hist){

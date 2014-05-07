@@ -45,7 +45,8 @@ class ParticleContainer{
          */ 
         void update_state_to_data(Vcf * VCFfile, 
                                   Model * model, 
-                                  valarray<double> & weight_cum_sum);
+                                  valarray<double> & weight_cum_sum,
+                                  bool keep_median_state = false );
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void clean_old_states(double xstart);
@@ -65,14 +66,14 @@ class ParticleContainer{
         vector <ForestState*> particles;
         
     private:
-
         
         /*!
          * Methods
          */ 
         void extend_ARGs(double mutation_at,
                          double mutation_rate, 
-                         bool withdata);
+                         bool withdata,
+                         bool keep_median_state = false );
         void normalize_probability();    
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 

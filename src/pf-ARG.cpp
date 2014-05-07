@@ -66,6 +66,9 @@ int main(int argc, char *argv[]){
         /*!
          * PfARG CORE 
          */ 
+        
+        pfARG_para.appending_Ne_file(model, true); // Append initial values to History file
+        
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
             //pfARG_core(model, rg, pfARG_para, VCFfile, countNe, print_update_count);
@@ -73,11 +76,12 @@ int main(int argc, char *argv[]){
             cout << "End of EM_step " << I << endl;
         }
         
-        //countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
+        
         pfARG_para.appending_Ne_file(model);
         
         //int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
         int main_return = pfARG_para.log( countNe->inferred_recomb_rate );
+        
         /*! Clean up */
         delete rg;
         delete countNe;
@@ -181,7 +185,7 @@ void pfARG_core(Model *model,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
+        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.heat_bool);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
@@ -192,7 +196,6 @@ void pfARG_core(Model *model,
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
 //changing        countNe->extract_and_update_count( current_states, previous_backbase, backbase);
         remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
-
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
@@ -206,7 +209,7 @@ void pfARG_core(Model *model,
          *  As we have already updated the Ne counts, we could clean up any ForestState before backspace, 
          *  However, need to check this with the current_printing_space
          */
-//changing        current_states.clean_old_states(previous_backbase); 
+
         current_states.clean_old_states( remove_particle_before_site ); 
 
         
@@ -219,8 +222,8 @@ void pfARG_core(Model *model,
     
     cout << "### PROGRESS: end of the sequence" << endl;
     
-    countNe->reset_model_Ne( model, true, true);
-    
+    countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
+
     pfARG_para.appending_Ne_file(model, true);
     current_states.clear(); // This line is sufficient to clear the memory.
     VCFfile->reset_VCF_to_data();

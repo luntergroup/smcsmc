@@ -1,5 +1,18 @@
 //useless functions
 
+
+//void PfParam::log_end(pfTime * running_time){
+    //ofstream log_file ( log_NAME.c_str(), ios::out | ios::app | ios::binary); 
+    //log_file << "Initial particles building took about " << running_time->timing_[0] << " second(s) \n";
+    ////log_file << "Simulation took about " << end_time - initial_state_end_time << " second(s) \n";
+    //log_file << "    Update weight took " << running_time->timing_[2]<<" second(s)\n";
+    //log_file << "    Resampling took " << running_time->timing_[1]<<" second(s)\n";
+    //log_file.close();
+    //}
+
+
+
+
 //size_t CountModel::find_time_interval (double start_height, double end_height){
     //double pop_start_height = 0.0; 
     ////size_t time_i = 0;
