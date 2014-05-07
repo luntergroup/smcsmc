@@ -163,7 +163,7 @@ void PfParam::init(){
     this->heat_bool        = false;
     this->hist_bool        = false;
     this->online_bool      = false;
-    this->window           = 100; 
+    this->window           = 400; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
     
