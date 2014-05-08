@@ -48,18 +48,19 @@ void CountModel::print_Time_count_pop(){
 void CountModel::check_model_updated_Ne(Model * model){
     cout << " check_model_updated_Ne " << endl;
     model->resetTime();
-    
+    size_t time_i = 0;
     while (model->getNextTime() < FLT_MAX){
         cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
         for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-            cout << " | " << setw(12) << model->population_size(pop_j);
+            cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j] <<")" ;
         }  cout<<endl;
         model->increaseTime();
+        time_i++;
         }
     
     cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
     for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-        cout << " | " << setw(12) << model->population_size(pop_j);
+        cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j] <<")" ;
         } cout<<endl;
     
     return ;                

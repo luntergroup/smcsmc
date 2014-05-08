@@ -70,7 +70,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
  * \ingroup group_resample
  */ 
 void ParticleContainer::resample(valarray<int> & sample_count){	
-    cout<<"resampling is called"<<endl;
+    //cout<<"resampling is called"<<endl;
 	dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){

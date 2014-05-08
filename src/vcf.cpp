@@ -147,7 +147,7 @@ void Vcf::read_new_line(){
             case 0: {
                 //tmp_strm>>chrom_; 
                 chrom_ = strtod( tmp_str.c_str(), NULL);
-            }
+                }
             break;
             
             case 1: {
@@ -158,8 +158,8 @@ void Vcf::read_new_line(){
                     previous_site_at_ = site_;
                     current_block_line_++;
                     return; 
+                    }
                 }
-            }
             break;
 
             case 3: {
@@ -167,7 +167,7 @@ void Vcf::read_new_line(){
                 //if (ref.size()>1){
                 //cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
                 //return;}
-            }
+                }
             break;
             
             case 4: { 
@@ -180,8 +180,8 @@ void Vcf::read_new_line(){
                         //return;}
                     alt.push_back(alt_str);
                     alt_start=alt_end+1;
+                    }
                 }
-            }
             break;
             
             case 6: {
@@ -189,10 +189,10 @@ void Vcf::read_new_line(){
                     cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
                     current_block_line_++;
                     return;
+                    }
                 }
-            }
             break;
-        }
+            }
 
         if (counter > 8){
             size_t bar_index=tmp_str.find('|',0);        
@@ -275,7 +275,6 @@ string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     return alt_dummy;
     }
     
-
 
 void Vcf::check_feilds(string line){
     size_t feild_start=0;

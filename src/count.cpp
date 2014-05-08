@@ -78,7 +78,7 @@ void CountModel::init_lags(){
     for (size_t time_layer_i = 0 ; time_layer_i < change_times_.size(); time_layer_i++){
         this->previous_base.push_back( (double)0 );
         double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
-        double lag_i = double(4) / this->recombination_rate() / top_t ; // dividing by 100 just for testing 
+        double lag_i = change_times_.size() == 1 ? double(100000) : double(4) / this->recombination_rate() / top_t ; 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
         }
@@ -108,6 +108,8 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
          cout<<" MODEL IS RESET "<<endl;
                 
         this->compute_recomb_rate();
+        model->rec_rate_ = this->inferred_recomb_rate;
+        cout << " set recombination rate " << model->rec_rate_ << endl;
         this->compute_mig_rate();
         this->check_model_updated_Ne(model);
         }
@@ -122,8 +124,9 @@ void CountModel::compute_mig_rate(){
         }
     }
 
+
 /*! 
- * Compute the recombination rate once we have sweeped through all the data, and recorded the recomb_opportunity and recomb_counts
+ * \brief Compute the recombination rate once we have sweeped through all the data, and recorded the recomb_opportunity and recomb_counts
  */ 
 void CountModel::compute_recomb_rate () {
     this->resetTime();
@@ -147,10 +150,6 @@ void CountModel::compute_recomb_rate () {
 
 
 double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
-    //if (x_start == x_end){return;}
-    // collect the new event counts
-    //cout<<endl;
-    //cout<< "current_base : "<<current_base<<endl;
     //for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
     for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
         //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
@@ -166,7 +165,6 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
         double previous_base_tmp = current_base - lags[time_i] ;
         previous_base[time_i] = previous_base_tmp > 0 ? previous_base_tmp : (double)0;
         }  
-
     
     double remove_particle_before_site = previous_base[0];
     for (size_t i = 0 ; i < previous_base.size() ; i++ ){
