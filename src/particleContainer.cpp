@@ -493,12 +493,12 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
 
             ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
             ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
-            ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
+            //ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
             ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
             
             TmrcaOfstream  << this->current_printing_base();
             WeightOfstream << this->current_printing_base();
-            BLOfstream     << this->current_printing_base();
+            //BLOfstream     << this->current_printing_base();
             SURVIVORstream << this->current_printing_base();
             
             for ( size_t i = 0; i < this->particles.size(); i++){
@@ -511,18 +511,18 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                     }
                 
                 TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;
                 }
                 
             TmrcaOfstream  << endl;
             WeightOfstream << endl;
-            BLOfstream     << endl;
+            //BLOfstream     << endl;
             SURVIVORstream << endl;
             
             TmrcaOfstream.close();
             WeightOfstream.close();
-            BLOfstream.close();
+            //BLOfstream.close();
             SURVIVORstream.close();
             }
         this->set_current_printing_base(this->current_printing_base() + pfparam.window);

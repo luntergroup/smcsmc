@@ -46,24 +46,24 @@ extern int delete_forest_counter;
 class ForestState : public Forest{      
     public:
 
-        /*!
-         * Constructors and Destructors
-         */      
+        //
+        // Constructors and Destructors
+        //        
         //ForestState():Forest(){ }
         ForestState(Model* model, 
-                    RandomGenerator* random_generator);    /*!< ForestState constructer, used when initialize ForestState from absolutely the first time */    
+                    RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
         ForestState(ForestState *current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         ~ForestState();
     
-        /*!
-         * Methods
-         */         
-        void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< Update data to the particle */        
-        double calculate_likelihood(bool withdata); /*!< Calculate the likelihood of the genealogy */
+        //
+        // Methods
+        //           
+        void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
+        double calculate_likelihood(bool withdata); /*!< \brief Calculate the likelihood of the genealogy */
         
-        /*!
-         *  Setters and getters:
-         */ 
+        //
+        // Setters and getters:
+        //
         void setSiteWhereWeightWasUpdated(double site){this->site_where_weight_was_updated_=site;}        
         double site_where_weight_was_updated(){return site_where_weight_was_updated_;}
 
@@ -73,29 +73,29 @@ class ForestState : public Forest{
         void setAncestor ( size_t ancestor ) { this->ancestor_ = ancestor; }
         size_t ancestor(){ return this->ancestor_;}
         
-        /*!
-         * Debugging tools
-         */ 
+        //
+        // Debugging tools
+        //
         bool print_Coalevent();
         bool print_Recombevent();
         bool print_Migrevent();
         //bool print_Coalevent_out();
 
-        /*!
-         * Members
-         */ 
-        ForestState *previous_state; /*!< Pointer to the previous particle, i.e. the previous genealogy */
-        int pointer_counter; /*!< Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
+        //
+        // Members
+        //   
+        ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
+        int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
         
-        vector < Coalevent*  > CoaleventContainer;   /*!< Coalescent events recorder */
-        vector < Recombevent*> RecombeventContainer; /*!< Recombination events recorder */
-        vector < Migrevent*  > MigreventContainer;   /*!< Migration events recorder */
+        vector < Coalevent*  > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        vector < Recombevent*> RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < Migrevent*  > MigreventContainer;   /*!< \brief Migration events recorder */
         
     private:
 
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void init(double weight=1.0, 
                   double weight_updated_at_site=0.0, 
                   ForestState * previous_state = NULL); /*!< Initialize ForestState member particle_weight_ and site_where_weight_was_updated_ */
@@ -129,9 +129,9 @@ class ForestState : public Forest{
         void clear_MigreventContainer();
 
         
-        /*!
-         * Members
-         */ 
+        //
+        // Members
+        //   
         double site_where_weight_was_updated_;
         double particle_weight_;
         size_t ancestor_;

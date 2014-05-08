@@ -28,15 +28,13 @@
 #define STAREVENT
 
 /*!
- * \class Starevent is used for recording the number and the time intervals of the recombination and coalescent events between two ARGs 
+ * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
-
-
-class Starevent{
+class Starevent{ 
     public:
-        /*!
-         * Constructors and Destructors
-         */  
+        //
+        // Constructors and Destructors
+        //    
         Starevent();
         Starevent(Starevent* previous_Starevent);
         Starevent(size_t pop_i, 
@@ -46,9 +44,9 @@ class Starevent{
                   eventCode event_code );
         ~Starevent(){};
 
-        /*! 
-         * Getters and setters
-         */ 
+        //
+        // Getters and setters
+        //
         size_t pop_i() const {return this->pop_i_; } 
         void set_pop_i( size_t i ){ this->pop_i_ = i; }
                  
@@ -74,15 +72,15 @@ class Starevent{
         void set_counted (bool counted) { this->counted_ = counted; }
         
     private:
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void init();
         void clear();
 
-        /*!
-         * Members
-         */ 
+        //
+        // Members
+        //   
         size_t change_time_i_;
         size_t pop_i_;                
         //double start_height_;
@@ -94,7 +92,9 @@ class Starevent{
     };
 
 
-
+/*!
+ * \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
+ */
 class Coalevent : public Starevent{
     public:
         Coalevent(size_t pop_i, 
@@ -111,7 +111,9 @@ class Coalevent : public Starevent{
 
     };
     
-    
+/*!
+ * \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
+ */    
 class Recombevent : public Starevent{
     public:    
         Recombevent(size_t pop_i, 
@@ -127,7 +129,10 @@ class Recombevent : public Starevent{
         ~Recombevent(){};
     };
     
-    
+
+/*!
+ * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
+ */    
 class Migrevent : public Starevent{
     public:
         Migrevent(size_t pop_i, 

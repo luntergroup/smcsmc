@@ -29,10 +29,7 @@
 //int new_forest_counter = 0;
 //int delete_forest_counter = 0;
 
-void pfARG_core(Model *model, 
-                MersenneTwister *rg,
-                PfParam &pfARG_para,
-                //Vcf *VCFfile,
+void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count);
 
@@ -53,67 +50,56 @@ int main(int argc, char *argv[]){
     try {//else, proceed
         
         /*! 
-         * INITIALIZE
+         * INITIALIZE CountModel
          */
-
-        Model * model = pfARG_para.model;
-        /*! Initialize mersenneTwister seed */
-        MersenneTwister *rg = new MersenneTwister(pfARG_para.SCRMparam->random_seed);
-                                //cout<<pfARG_para.SCRMparam.random_seed<<endl;
-        /*! Initialize updated weighted coalescent count and BL  */ 
-        CountModel *countNe = new CountModel(*model);
+        CountModel *countNe = new CountModel( *pfARG_para.model );
+        pfARG_para.appending_Ne_file( pfARG_para.model, true ); // Append initial values to History file
         
         /*!
-         * PfARG CORE 
-         */ 
-        
-        pfARG_para.appending_Ne_file(model, true); // Append initial values to History file
-        
+         * EM step
+         */                 
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
-            //pfARG_core(model, rg, pfARG_para, VCFfile, countNe, print_update_count);
-            pfARG_core(model, rg, pfARG_para, countNe, print_update_count);
+            pfARG_core( pfARG_para, countNe, print_update_count);
             cout << "End of EM_step " << I << endl;
-        }
+            }
+
+        pfARG_para.appending_Ne_file( pfARG_para.model );
         
-        
-        pfARG_para.appending_Ne_file(model);
-        
-        //int main_return = pfARG_para.log(model, rg->seed(), countNe->inferred_recomb_rate);
-        int main_return = pfARG_para.log( countNe->inferred_recomb_rate );
+        int exit_success = pfARG_para.log( countNe->inferred_recomb_rate );
         
         /*! Clean up */
-        delete rg;
         delete countNe;
         //cout<<"Forest state was created " << new_forest_counter << " times" << endl;
         //dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
-        return main_return;
-
+        return exit_success;
         } 
-        catch (const exception &e) {
-            std::cerr << "Error: " << e.what() << std::endl;
-            return EXIT_FAILURE;
-            }
+    catch (const exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+        }
     }
 
 
-void pfARG_core(Model *model, 
-                MersenneTwister *rg,
-                PfParam &pfARG_para,
-                //Vcf *VCFfile,
+void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count){
+
+    Model *model = pfARG_para.model;
+    MersenneTwister *rg = pfARG_para.rg;
+    size_t Nparticles = pfARG_para.N ;
     Vcf *VCFfile = pfARG_para.VCFfile;
+    
     VCFfile->read_new_line();
     cout<< "############# starting vcf file at base " <<VCFfile->site()<<endl;
     /*! Initial particles */ 
 
     double initial_position = 0;
 
-    ParticleContainer current_states(model, rg, pfARG_para.N, VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), initial_position );             
+    ParticleContainer current_states(model, rg, Nparticles, VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), initial_position );             
     dout<<"######### finished initial particle building"<<endl;
-    valarray<int> sample_count(pfARG_para.N); // if sample_count is in the while loop, this is the initializing step...
+    valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 
     /*! Initialize prior Ne */
     countNe->init();
@@ -123,7 +109,6 @@ void pfARG_core(Model *model,
     double remove_particle_before_site = 0 ;
 
     do{
-        
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
          *  Even though the particle has extended to state 6, 
@@ -135,7 +120,12 @@ void pfARG_core(Model *model,
          * Update count step should include all the coalescent events of 
          * State 0, 1, and 2
          * 
+         * backbase is the sequence position that the current mutation "VCFfile->site()" go back lag    
+         * 
+         * previous_backbase is the sequence position that the previous mutation "VCFfile->site()" go back lag
+         * 
          *  \verbatim
+                      
            remove all the state prior to the minimum of
             current_printing_base and 
                 previous_backbase     
@@ -162,25 +152,15 @@ void pfARG_core(Model *model,
           \endverbatim
          */ 
          
-        // backbase is the sequence position that the current mutation "VCFfile->site()" go back lag    
-//changing        //double backbase = max(0.0, VCFfile->site() - pfARG_para.lag);
-        
-        // previous_backbase is the sequence position that the previous mutation "VCFfile->site()" go back lag
-        // Therefore, anything before previous_backbase should not have been removed ...
-//changing        //double previous_backbase = max(0.0, previous_x - pfARG_para.lag); 
-        
         
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-//changing            //countNe->extract_and_update_count( current_states, previous_backbase, backbase);
             remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
             continue;
-        }
+            }
         
-        //cout<<" previous_backbase = " << previous_backbase<<", backbase = "<<backbase<<", current mutation is at base "<< VCFfile->site()<<", previous_x = "<<previous_x<<endl;
-        
-        valarray<double> weight_cum_sum((pfARG_para.N+1)); //Initialize the weight cumulated sums
+        valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
             
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
@@ -190,11 +170,9 @@ void pfARG_core(Model *model,
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
          
-//changing        current_states.appendingStuffToFile( backbase, pfARG_para);    
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
-//changing        countNe->extract_and_update_count( current_states, previous_backbase, backbase);
         remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
         // This could return a value for which the earliest base position, things can be removed ...
         
@@ -202,7 +180,7 @@ void pfARG_core(Model *model,
         countNe->reset_model_Ne( model, pfARG_para.online_bool, false);
         
         /*! ESS resampling */        
-        current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, pfARG_para.N);
+        current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
         
         /*! Clean up states that are no longer can be traced back from the present particles 
          *  
@@ -211,20 +189,19 @@ void pfARG_core(Model *model,
          */
 
         current_states.clean_old_states( remove_particle_before_site ); 
-
         
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              
         VCFfile->read_new_line(); // Read new line from the vcf file        
     
         }while(!VCFfile->end_data());
-    remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
-    
-    cout << "### PROGRESS: end of the sequence" << endl;
-    
-    countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
 
+    cout << "### PROGRESS: end of the sequence" << endl;
+
+    remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
+    countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
     pfARG_para.appending_Ne_file(model, true);
+
     current_states.clear(); // This line is sufficient to clear the memory.
     VCFfile->reset_VCF_to_data();
     

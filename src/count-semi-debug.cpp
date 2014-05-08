@@ -67,11 +67,3 @@ void CountModel::check_model_updated_Ne(Model * model){
 
 
 
-void CountModel::compute_mig_rate(){
-    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            cout << setw(10)<< total_mig_count[pop_i][pop_j]/total_weighted_mig_opportunity[pop_i][pop_j] <<" ";
-            }
-        cout<<endl;
-        }
-    }

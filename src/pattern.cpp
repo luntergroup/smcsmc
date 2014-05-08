@@ -25,7 +25,7 @@
 
 
 /*! 
- * Extract number from expression
+ * \brief Extract number from expression
  */    
 size_t extract_Number(const char*& expr) {
     char* end_ptr;
@@ -37,7 +37,7 @@ size_t extract_Number(const char*& expr) {
     
 
 /*!
- * Extract segment factor from expression
+ * \brief Extract segment factor from expression
  */
 size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
     size_t seg_level1 = extract_Number(expr);
@@ -59,7 +59,7 @@ size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_ve
 
 
 /*!
- * Extract segments from expression
+ * \brief Extract segments from expression
  */
 size_t extract_NumberOfSegment (const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
     size_t num_seg = extract_SegmentFactors(expr, seg_level1_vec, seg_level2_vec);
@@ -77,7 +77,7 @@ size_t extract_NumberOfSegment (const char*& expr, vector <size_t> & seg_level1_
 
 
 /*!
- * PSMC time segment scheme. The time interval [0, top_t] is devided into num_seg number of segments
+ * \brief PSMC time segment scheme. The time interval [0, top_t] is devided into num_seg number of segments
  */
 vector <double> extract_Segment (size_t num_seg, double top_t){
     vector <double> t_i(num_seg);

@@ -42,10 +42,10 @@ using namespace std;
 #ifndef VCF
 #define VCF
 
-/*! @ingroup group_data */
+/*! \brief VCF file reader @ingroup group_data */
 class Vcf{
     friend class PfParam;
-    
+    friend class ParticleContainer;
     #ifdef UNITTEST
     friend class TestVcf;
     friend class TestParam;
@@ -53,16 +53,15 @@ class Vcf{
 
     public:
     
-        /*!
-         * Constructors and Destructors
-         */          
-        Vcf(){};
+        //
+        // Constructors and Destructors
+        //            
         Vcf(string file_name, int buffer_length = 100);
         ~Vcf(){};        
         
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void read_new_line();
         void reset_VCF_to_data();
         void force_to_end_data() { this->end_data_ = true; }
@@ -71,43 +70,30 @@ class Vcf{
         void print_vcf_line(vector<string> sample_names);
         void print();
         
-        /*!
-         *  Getters:
-         */ 
+        //
+        // Getters:
+        //
         double site() const { return this->site_; }
         bool withdata() const { return this->withdata_; }
         bool end_data() const { return this->end_data_; }
 
-        /*!
-         * Members
-         */       
-        size_t vcf_file_length;
-        vector <string> sample_names;
-        size_t header_end_line;        
-        int buffer_max_number_of_lines;
-
-        vector <string> buffer_lines;
-        
-        bool skip;
-        string ref;
-        vector <string> alt;
-        vector <string> vec_of_sample_alt;
+        //
+        // Members
+        //                 
         vector <bool> vec_of_sample_alt_bool;
-        vector < vector<string> > sample_alt;
-        vector <bool> phased; // True if it is phased, which has '|'
-            
+
     private:
 
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void empty_block();
         void read_new_block();
         void init(string infile_name, int buffer_length);
 
-        /*!
-         *  Setters and getters:
-         */ 
+        //
+        //  Setters and getters:
+        // 
         size_t nsam() const { return this->nsam_; }
  
         void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
@@ -121,9 +107,10 @@ class Vcf{
         void check_feilds(string line);
         string extract_alt_(string tmp_str, size_t start, size_t end);
         bool print_sample_name();
-        /*!
-         * Members
-         */ 
+        
+        //
+        // Members
+        //   
         bool eof_;
         string file_name_;
         size_t current_line_index_;
@@ -147,6 +134,22 @@ class Vcf{
         double previous_site_at_;
         int chrom_;
         int pervious_chrom_;
+        
+        
+        size_t vcf_file_length;
+        vector <string> sample_names;
+        size_t header_end_line;        
+        int buffer_max_number_of_lines;
+
+        vector <string> buffer_lines;
+        
+        bool skip;
+        string ref;
+        vector <string> alt;
+        vector < vector<string> > sample_alt;
+        vector <string> vec_of_sample_alt;
+        vector <bool> phased; // True if it is phased, which has '|'
+
     };
 
 #endif

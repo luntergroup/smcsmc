@@ -25,11 +25,10 @@
 #include"vcf.hpp"
 using namespace std;
 
-
+/*! Initialize vcf file, search for the end of the vcf header. 
+ *  Extract the first block of data ( "buffer_length" lines ) into buff
+ */
 Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf header file */
-    /*! Initialize vcf file, search for the end of the vcf header. 
-     *  Extract the first block of data ( "buffer_length" lines ) into buff
-     */
     this->init(file_name, buffer_length);
     
     ifstream in_file;

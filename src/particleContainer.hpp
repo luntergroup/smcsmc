@@ -24,14 +24,16 @@
 #include"particle.hpp"
 #include"pfparam.hpp"
 
-
+/*! \brief ForestState Container, particle filters*/
 class ParticleContainer{
+    friend class CountModel;
+
     public:
 
-        /*!
-         * Constructors and Destructors
-         */      
-        ParticleContainer();   
+        //
+        // Constructors and Destructors
+        //        
+        //ParticleContainer();   
         ParticleContainer(Model* model, 
                   RandomGenerator* rg, 
                   size_t Num_of_states, 
@@ -40,9 +42,9 @@ class ParticleContainer{
                   double initial_position);// this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
 
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void update_state_to_data(Vcf * VCFfile, 
                                   Model * model, 
                                   valarray<double> & weight_cum_sum,
@@ -53,23 +55,17 @@ class ParticleContainer{
         void clear();
         //int count_total_number_of_nodes();                
 
-        /*!
-         * Debugging tools
-         */ 
+        //
+        // Debugging tools
+        //
         void print();
         bool check_state_orders();
-
-        /*!
-         * Members
-         */ 
-        
-        vector <ForestState*> particles;
         
     private:
         
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void extend_ARGs(double mutation_at,
                          double mutation_rate, 
                          bool withdata,
@@ -89,9 +85,9 @@ class ParticleContainer{
         void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
         
         
-        /*!
-         *  Setters and getters:
-         */         
+        //
+        // Setters and getters:
+        //
         double ESS() const {return this->ESS_;};
         void set_ESS(double ess){this->ESS_ = ess;};
         
@@ -102,10 +98,10 @@ class ParticleContainer{
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 
-
-        /*!
-         * Members
-         */ 
+        //
+        // Members
+        //
+        vector <ForestState*> particles;
         double ESS_;
         RandomGenerator* random_generator_;
         double current_printing_base_;

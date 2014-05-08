@@ -29,83 +29,71 @@ using namespace std;
 #ifndef PFARGPfParam
 #define PFARGPfParam
 
-
+/*!
+ * \brief pf-ARG parameters 
+ */ 
 class PfParam{
     #ifdef UNITTEST
     //friend class TestVcf;
     friend class TestParam;
     #endif
-
+    friend class ParticleContainer;
     public:
         
-        /*!
-         * Constructors and Destructors
-         */              
-
+        //
+        // Constructors and Destructors
+        //              
         PfParam(int argc, char *argv[]);            
         ~PfParam();
         
-        /*!
-         * Methods
-         */ 
-
+        //
+        // Methods
+        //
         int  log( double inferred_recomb_rate );
-        void log_param( double inferred_recomb_rate );
-        //int  log(Model *model, size_t random_seed, double inferred_recomb_rate);
-        //void log_param(Model* model ,size_t random_seed, double inferred_recomb_rate);
         void appending_Ne_file(Model *model, bool hist = false);
-        //void log_end(pfTime * running_time);
 
         void print_help();
         void print_option();
         void print_example();
 
-        /*!
-         * Members
-         */
+        //
+        // Members
+        //
         
         // ------------------------------------------------------------------
         // PfParameters 
         // ------------------------------------------------------------------                         
-        size_t N; /*!< number of particles */
-        double ESS; 
-        double ESSthreshold; /*!< Effective sample size respect to the number of particles = ESS * N , 0 < ESS < 1 */
-        bool   ESS_default_bool;
-        string pattern;     /*! population segement pattern */
-        double top_t;
-        string scrm_input;
-        bool   EM_bool;
-        int    EM_steps;
+        size_t N;            /*!< \brief Number of particles */
+        int    EM_steps;     /*!< \brief Number of EM iterations */
+        double ESSthreshold; /*!< \brief Effective sample size respect to the number of particles = ESS * N , 0 < ESS < 1 */
+
         // ------------------------------------------------------------------
         // Action 
         // ------------------------------------------------------------------
         double lag;            
         bool online_bool;
-        // ------------------------------------------------------------------
-        // Output 
-        // ------------------------------------------------------------------
-        bool log_bool;            
+
         bool hist_bool;
         bool heat_bool;
-        string out_NAME_prefix;            
-        string HIST_NAME;
-        string Ne_NAME;
-        string log_NAME;
-        string TMRCA_NAME;
-        string WEIGHT_NAME;
-        string BL_NAME;
-        string SURVIVOR_NAME;
-        double window;
 
         Vcf * VCFfile;
         Param *SCRMparam;
         Model *model;
-        
+        MersenneTwister *rg ;
     private:
 
-        /*!
-         * Methods
-         */ 
+        // ------------------------------------------------------------------
+        // PfParameters 
+        // ------------------------------------------------------------------                         
+        double ESS; 
+        bool   ESS_default_bool;
+        double top_t;
+        string scrm_input;
+        bool   EM_bool;
+
+        //
+        // Methods
+        //   
         void nextArg(std::string option);
         void init();
         void insert_mutation_rate_in_scrm_input ( );
@@ -114,10 +102,11 @@ class PfParam{
         void finalize_scrm_input ( );
         void finalize ( );
         void convert_scrm_input();
+        void log_param( double inferred_recomb_rate );
 
-        /*!
-         * Members
-         */
+        //
+        // Members
+        //  
         const int argc_;
         int argc_i;
         char * const* argv_;
@@ -134,6 +123,21 @@ class PfParam{
         // ------------------------------------------------------------------
         string vcf_NAME;
         int buff_length;
+        string pattern;     /*! population segement pattern */
+
+        // ------------------------------------------------------------------
+        // Output 
+        // ------------------------------------------------------------------
+        bool log_bool;            
+        string out_NAME_prefix;            
+        string HIST_NAME;
+        string Ne_NAME;
+        string log_NAME;
+        string TMRCA_NAME;
+        string WEIGHT_NAME;
+        //string BL_NAME;
+        string SURVIVOR_NAME;
+        double window;
 
     };
 

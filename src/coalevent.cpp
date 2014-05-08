@@ -24,15 +24,17 @@
 
 #include"coalevent.hpp"
 /*!
- * another constructor for rec_point, to be called from sample the next genealogy
+ * \class Starevent
+ *  another constructor for rec_point, to be called from sample the next genealogy
  */ 
+
 
 Starevent::Starevent(){
     this->init();
     }
     
-    
-Starevent::Starevent(Starevent* previous_Starevent){ /*!< Copy the Starevent from the previous ForestState*/
+/*! \brief Copy the Starevent from the previous ForestState*/    
+Starevent::Starevent(Starevent* previous_Starevent){ 
     this->pop_i_        = previous_Starevent->pop_i();
     //this->start_height_ = previous_Starevent->start_height();
     //this->end_height_   = previous_Starevent->end_height(); 
@@ -45,6 +47,7 @@ Starevent::Starevent(Starevent* previous_Starevent){ /*!< Copy the Starevent fro
     }
     
 
+/*! \brief  Initialize Starevent */    
 Starevent::Starevent( 
            size_t pop_i,
            //double start_time,

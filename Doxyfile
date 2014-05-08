@@ -691,6 +691,7 @@ src/scrm/node_container.cc src/scrm/node_container.h \
 src/scrm/time_interval.cc src/scrm/time_interval.h \
 src/scrm/tree_point.cc src/scrm/tree_point.h \
 src/scrm/model.cc src/scrm/model.h \
+src/scrm/random/mersenne_twister.cc src/scrm/random/mersenne_twister.h \
 src/scrm/forest.cc src/scrm/forest.h src/scrm/forest-debug.cc \
 utility/doxygen_notation.txt \
 utility/ms2something.py \

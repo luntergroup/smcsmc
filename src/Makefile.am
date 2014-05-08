@@ -6,7 +6,6 @@ TESTS = unit_tests
 
 PROG = PF-ARG 
 
-
 pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 

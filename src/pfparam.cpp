@@ -128,6 +128,7 @@ PfParam::~PfParam(){
     delete this->VCFfile; 
     delete this->model;
     delete this->SCRMparam;
+    delete this->rg;
     }
     
     
@@ -143,6 +144,7 @@ void PfParam::nextArg(std::string option) {
         throw std::invalid_argument(std::string("Not enough parameters when parsing option ") + option);
         }
     }
+
 
 /*! 
  * Set default parameters
@@ -170,6 +172,7 @@ void PfParam::init(){
     this->VCFfile          = NULL;
     this->SCRMparam        = NULL;
     this->model = new Model();
+    this->rg               = NULL;  
     this->scrm_input       = "";
     this->top_t            = 2;
 }
@@ -245,20 +248,17 @@ void PfParam::convert_scrm_input (){
     ///*! Extract scrm parameters */ 
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
+    this->rg = new MersenneTwister(this->SCRMparam->random_seed);  /*! Initialize mersenneTwister seed */
     }
 
 
 void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
     this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
-
-    this->finalize_scrm_input ( );
-    //this->lag = this->default_loci_length / 20; // TESTING, just to try use full lagging...
-    this->ESSthreshold = this->N * this->ESS;        
- 
+    this->ESSthreshold = this->N * this->ESS;
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
-    this->BL_NAME      = out_NAME_prefix + "BL";
+    //this->BL_NAME      = out_NAME_prefix + "BL";
     this->Ne_NAME      = out_NAME_prefix + "Ne";
     this->log_NAME     = out_NAME_prefix + ".log";
     this->HIST_NAME    = out_NAME_prefix + "HIST";
@@ -266,26 +266,27 @@ void PfParam::finalize(  ){
     
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
-    remove( this->BL_NAME.c_str()    );
+    //remove( this->BL_NAME.c_str()    );
     remove( this->Ne_NAME.c_str()    );
     remove( this->log_NAME.c_str()   );
     remove( this->HIST_NAME.c_str()  );
-    remove( this->SURVIVOR_NAME.c_str());
+    remove( this->SURVIVOR_NAME.c_str()); 
+    
+    this->finalize_scrm_input ( );
     }
 
 
-//int PfParam::log(Model *model, size_t random_seed, pfTime * runningtime, double inferred_recomb_rate){
-//int PfParam::log(Model *model, size_t random_seed, double inferred_recomb_rate){
 int PfParam::log( double inferred_recomb_rate ){
     if (log_bool){  
         this->log_param(inferred_recomb_rate);
         //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());  
-    } else {
+        } 
+    else {
         return 0;    
+        }
     }
-}
 
 
 //void PfParam::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
@@ -297,14 +298,16 @@ void PfParam::log_param( double inferred_recomb_rate){
     log_file.open (log_NAME.c_str(), ios::out | ios::app | ios::binary); 
     
     log_file << "pf-ARG parameters: \n";
+    
     if (this->heat_bool){
-    log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
-    log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
-    log_file << "BL saved in file: "     << BL_NAME     << "\n";
-    }
+        log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
+        log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
+        //log_file << "BL saved in file: "     << BL_NAME     << "\n";
+        }
     if (this->hist_bool){
-    log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
-    }
+        log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
+        }
+    
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
     log_file << "VCF data file: "        << vcf_file    <<"\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
@@ -329,11 +332,11 @@ void PfParam::log_param( double inferred_recomb_rate){
         log_file<<setw(3)<<"(" << setw(8) << this->model->getCurrentTime() <<" )"; 
         for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
             log_file << " | " << setw(10)<<this->model->population_size(pop_j);
-        }
+            }
         
         log_file<< "\n";
         this->model->increaseTime();
-    }
+        }
     log_file<<setw(3)<<"(" << setw(8) << this->model->getCurrentTime() <<" )" ;
     for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
         log_file << " | " << setw(10)<<this->model->population_size(pop_j);
@@ -346,12 +349,12 @@ void PfParam::log_param( double inferred_recomb_rate){
         log_file << setw(15) << " ";
         for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
             log_file << setw(10) << this->model->migration_rate(pop_i, pop_j)  ;
-        }
+            }
         log_file << "\n";
-    }
+        }
     
     log_file.close();
-}        
+    }
 
 
 void PfParam::appending_Ne_file(Model *model, bool hist){
@@ -394,14 +397,15 @@ void PfParam::print_option(){
     cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segment [ \"3*1+2*3+4\" ]." <<endl;
     cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximal time, in unit of 4N0 [ 3 ]." <<endl;
     cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM steps [ 20 ]." << endl;
-    cout << setw(10)<<"-lag"    << setw(5) << "FLT" << "  --  " << "Lagging step [ 1000 ]." << endl;
+    //cout << setw(10)<<"-lag"    << setw(5) << "FLT" << "  --  " << "Lagging step [ 1000 ]." << endl;
     cout << setw(10)<<"-vcf"    << setw(5) << "STR" << "  --  " << "Data file in vcf format [ Chrom1.vcf ]." << endl;
     //cout << setw(20)<<"-buff BUFFSIZE" << "  --  " << "User define the size of buffer for the vcf file BUFFSIZE." << endl;
     cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
-    //cout << setw(20)<<"-TMRCA" << "  --  " << "User define the output file for the time to the most recent common ancester, if it is not speciefied, the file name is TMRCA by default." << endl;   
+    cout << " SCRM parameters " << endl;
+    print_options();
     }
 
 
@@ -409,10 +413,8 @@ void PfParam::print_example(){
     cout << "Example:" << endl;
     cout << "pf-ARG 10 -nsam 3" << endl;
     cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf -buff 4" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf -log -TMRCA myTMRCA" << endl;
     cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf" << endl;
     cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -vcf eg_vcf.vcf" << endl;
     cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -vcf eg_vcf.vcf " << endl;
-    cout << "./pf-ARG -Np 8 -t 0.002 -r 400 -log LOGFILE -vcf eg_vcf.vcf" << endl;
     }
 

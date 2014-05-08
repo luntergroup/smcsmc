@@ -72,15 +72,11 @@ void CountModel::init_migr(){
 
 void CountModel::init_lags(){
     this->previous_base.clear();
-    this->lags.clear();
-        
+    this->lags.clear();        
     this->resetTime();    
     for (size_t time_layer_i = 0 ; time_layer_i < change_times_.size(); time_layer_i++){
         this->previous_base.push_back( (double)0 );
-        //double lag_i = exp(-change_times_[time_layer_i]/4/default_pop_size) * lagbase;
         double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
-        //double lag_i = 5000 ; // trying the same lagging for 5000 bases
-        //double lag_i = 10 ; // trying the same lagging for 5000 bases
         double lag_i = double(4) / this->recombination_rate() / top_t ; // dividing by 100 just for testing 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
@@ -117,6 +113,14 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
     }
     
 
+void CountModel::compute_mig_rate(){
+    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+            cout << setw(10)<< total_mig_count[pop_i][pop_j]/total_weighted_mig_opportunity[pop_i][pop_j] <<" ";
+            }
+        cout<<endl;
+        }
+    }
 
 /*! 
  * Compute the recombination rate once we have sweeped through all the data, and recorded the recomb_opportunity and recomb_counts
@@ -140,10 +144,6 @@ void CountModel::compute_recomb_rate () {
     this->inferred_recomb_rate = recomb_count / recomb_opportunity;
     // reset the inferred recombination rate in the current Model and CountModel?
     }
-
-                
-
-
 
 
 double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){

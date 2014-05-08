@@ -26,27 +26,27 @@
 
 #ifndef COUNT
 #define COUNT
-        
-class CountModel: public Model{  
-    public:
-    
-        /*!
-         * Constructors and Destructors
-         */  
+
+
+/*! \brief Derived class of Model, used for inference.
+ */         
+class CountModel: public Model{
+
+    public:    
+        //
+        // Constructors and Destructors
+        //    
         CountModel():Model(){};     
         CountModel(const Model& model):Model( model ){};
         ~CountModel(){};
         
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void init();
-        //void extract_and_update_count( ParticleContainer &Endparticles, double x_start, double x_end);
         double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
-
-        void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         void reset_model_Ne( Model * model, bool online = true, bool print = true);
+        void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         
         // DEBUG
         void print_recomb_counts();
@@ -54,9 +54,9 @@ class CountModel: public Model{
         void print_change_time();
         void print_Time_count_pop();
 
-        /*!
-         * Members
-         */ 
+        //
+        // Members
+        //   
         vector < double > previous_base;
         vector < double > lags;
         
@@ -64,9 +64,9 @@ class CountModel: public Model{
         
     private:
 
-        /*!
-         * Methods
-         */ 
+        //
+        // Methods
+        //   
         void init_coal_and_recomb();
         void init_migr();
         void init_lags();
@@ -74,11 +74,13 @@ class CountModel: public Model{
         void compute_mig_rate();
         void check_model_updated_Ne(Model * model);
 
+        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
+
         //void check_CountModel_Ne();
 
-        /*!
-         * Members
-         */ 
+        //
+        // Members
+        //   
         /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity are number_of_time_interval * number_of_population
          */ 
         vector < vector<double> >   total_coal_count;
