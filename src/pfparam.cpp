@@ -276,9 +276,9 @@ void PfParam::finalize(  ){
     }
 
 
-int PfParam::log( double inferred_recomb_rate ){
+int PfParam::log( double inferred_recomb_rate, vector < vector<double> > migrate ){
     if (log_bool){  
-        this->log_param(inferred_recomb_rate);
+        this->log_param(inferred_recomb_rate, migrate);
         //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());  
@@ -290,7 +290,7 @@ int PfParam::log( double inferred_recomb_rate ){
 
 
 //void PfParam::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
-void PfParam::log_param( double inferred_recomb_rate){
+void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > migrate ){
     ofstream log_file;
     string emptyfile("EMPTY FILE");
     string vcf_file = ( vcf_NAME.size() > 0 ) ?  vcf_NAME : emptyfile;
@@ -318,16 +318,17 @@ void PfParam::log_param( double inferred_recomb_rate){
     log_file << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
     
     log_file<<"scrm model parameters: \n";
-    log_file << setw(15) <<   "Sample size =" << setw(10) << this->model->sample_size()        << "\n";
-    log_file << setw(15) << "mutation rate =" << setw(10) << this->model->mutation_rate()      << "\n";
-    log_file << setw(15) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
-    log_file << setw(15) <<"inferred recomb rate = " << setw(10) << inferred_recomb_rate       << "\n";
-    log_file << setw(15) <<    "Seq length =" << setw(10) << this->model->loci_length()        << "\n";
-    log_file << setw(15) <<"Extract window =" << setw(10) << this->model->exact_window_length()<< "\n";
-    log_file << setw(15) <<         "seed : " << setw(10) << this->SCRMparam->random_seed      << "\n";
+    log_file << setw(17) <<"Extract window =" << setw(10) << this->model->exact_window_length()<< "\n";
+    log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed      << "\n";
+
+    log_file << setw(17) <<   "Sample size =" << setw(10) << this->model->sample_size()        << "\n";
+    log_file << setw(17) <<    "Seq length =" << setw(10) << this->model->loci_length()        << "\n";
+    log_file << setw(17) << "mutation rate =" << setw(10) << this->model->mutation_rate()      << "\n";
+    log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
+    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << inferred_recomb_rate       << "\n";
 
     this->model->resetTime();
-    log_file<<setw(15)<<"Pop size (at Generation):\n";
+    log_file<<setw(17)<<"Pop size (at Generation):\n";
     for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
         log_file<<setw(3)<<"(" << setw(8) << this->model->getCurrentTime() <<" )"; 
         for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
@@ -344,15 +345,24 @@ void PfParam::log_param( double inferred_recomb_rate){
     log_file<< "\n";
     
     this->model->resetTime();
-    log_file << setw(15) << "Migration rate :" << "\n";
+    log_file << "Migration rate :" << "\n";
     for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
-        log_file << setw(15) << " ";
+        log_file << setw(3) << " ";
         for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            log_file << setw(10) << this->model->migration_rate(pop_i, pop_j)  ;
+            log_file << setw(14) << this->model->migration_rate(pop_i, pop_j)  ;
             }
         log_file << "\n";
         }
-    
+        
+    log_file << "Inferred Migration rate :" << "\n";
+    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+        log_file << setw(3) << " ";
+        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+            log_file << setw(14) << migrate[pop_i][pop_j]  ;
+            }
+        log_file << "\n";
+        }    
+        
     log_file.close();
     }
 
@@ -365,10 +375,18 @@ void PfParam::appending_Ne_file(Model *model, bool hist){
         }
     model->resetTime();
     for (size_t i = 0; i < model->change_times_.size()-1; i++){
-        Ne_file << model->getCurrentTime() / model->default_pop_size / 4 << "\t" << model->population_size() / model->default_pop_size << "\n" ;
+        Ne_file << model->getCurrentTime() / model->default_pop_size / 4  ; 
+        for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
+            Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
+            }
+        Ne_file << "\n" ;
         model->increaseTime();
         }
-    Ne_file << model->getCurrentTime() / model->default_pop_size / 4 << "\t" << model->population_size() / model->default_pop_size << "\n" ;
+        Ne_file << model->getCurrentTime() / model->default_pop_size / 4  ; 
+        for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
+            Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
+            }
+        Ne_file << "\n" ;
     Ne_file.close();
     return;
     }        

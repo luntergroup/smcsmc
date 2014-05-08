@@ -59,6 +59,7 @@ class CountModel: public Model{
         //   
         vector < double > previous_base;
         vector < double > lags;
+        vector < vector<double> > inferred_mig_rate; // This should be a 3-D vector 
         
         double inferred_recomb_rate;
         

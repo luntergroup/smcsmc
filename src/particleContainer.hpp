@@ -24,6 +24,10 @@
 #include"particle.hpp"
 #include"pfparam.hpp"
 
+
+#ifndef PARTICLECONTAINER
+#define PARTICLECONTAINER
+
 /*! \brief ForestState Container, particle filters*/
 class ParticleContainer{
     friend class CountModel;
@@ -106,3 +110,5 @@ class ParticleContainer{
         RandomGenerator* random_generator_;
         double current_printing_base_;
     };
+
+#endif

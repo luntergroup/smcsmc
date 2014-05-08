@@ -63,6 +63,7 @@ void CountModel::init_migr(){
     for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
         vector <double> tmp_count(this->population_number(), 0);
         this->total_mig_count.push_back(tmp_count);
+        this->inferred_mig_rate.push_back(tmp_count);
         
         vector <double> tmp_opportunity(this->population_number(), 1);
         this->total_weighted_mig_opportunity.push_back(tmp_opportunity);
@@ -116,9 +117,8 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
 void CountModel::compute_mig_rate(){
     for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            cout << setw(10)<< total_mig_count[pop_i][pop_j]/total_weighted_mig_opportunity[pop_i][pop_j] <<" ";
+            this->inferred_mig_rate[pop_i][pop_j] = this->total_mig_count[pop_i][pop_j] / this->total_weighted_mig_opportunity[pop_i][pop_j];
             }
-        cout<<endl;
         }
     }
 

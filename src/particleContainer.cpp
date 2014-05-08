@@ -54,7 +54,7 @@ ParticleContainer::ParticleContainer(
  */ 
 void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state){    
     dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state <<endl;
-    if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small
+    if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small, to check this step, turn the if statement off
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
         //this->trivial_resampling( pfARG_para.N,sample_count );
@@ -70,6 +70,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
  * \ingroup group_resample
  */ 
 void ParticleContainer::resample(valarray<int> & sample_count){	
+    cout<<"resampling is called"<<endl;
 	dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){

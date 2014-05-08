@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
 
         pfARG_para.appending_Ne_file( pfARG_para.model );
         
-        int exit_success = pfARG_para.log( countNe->inferred_recomb_rate );
+        int exit_success = pfARG_para.log( countNe->inferred_recomb_rate , countNe->inferred_mig_rate );
         
         /*! Clean up */
         delete countNe;
