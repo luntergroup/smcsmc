@@ -373,20 +373,21 @@ void PfParam::appending_Ne_file(Model *model, bool hist){
     if (hist){
         Ne_file << "=========\n"; 
         }
+    Ne_file << "RE\t" << model->recombination_rate() << "\n";
     model->resetTime();
     for (size_t i = 0; i < model->change_times_.size()-1; i++){
-        Ne_file << model->getCurrentTime() / model->default_pop_size / 4  ; 
+        Ne_file << "NE\t" << model->getCurrentTime() / model->default_pop_size / 4  ; 
         for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
             Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
             }
         Ne_file << "\n" ;
         model->increaseTime();
         }
-        Ne_file << model->getCurrentTime() / model->default_pop_size / 4  ; 
-        for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
-            Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
-            }
-        Ne_file << "\n" ;
+    Ne_file << "NE\t" << model->getCurrentTime() / model->default_pop_size / 4  ; 
+    for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
+        Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
+        }
+    Ne_file << "\n" ;
     Ne_file.close();
     return;
     }        
