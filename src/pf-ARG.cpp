@@ -165,7 +165,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.heat_bool);
+        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
@@ -179,7 +179,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*! Reset population sizes in the model */
         countNe->reset_model_Ne( model, pfARG_para.online_bool, false);
 
-        current_states.set_particles_with_random_weight();
+        //current_states.set_particles_with_random_weight();
         /*! ESS resampling */        
         current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
         

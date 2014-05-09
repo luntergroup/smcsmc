@@ -97,6 +97,9 @@ class ParticleContainer{
         void set_ESS(double ess){this->ESS_ = ess;};
         
         RandomGenerator* random_generator() const { return this->random_generator_; }
+
+        RandomGenerator* random_generator2() const { return this->random_generator2_; }
+
         void set_random_generator(RandomGenerator *rg) {
                 this->random_generator_ = rg; }
         
@@ -109,6 +112,7 @@ class ParticleContainer{
         vector <ForestState*> particles;
         double ESS_;
         RandomGenerator* random_generator_;
+        RandomGenerator* random_generator2_;
         double current_printing_base_;
     };
 

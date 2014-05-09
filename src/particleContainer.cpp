@@ -35,7 +35,8 @@ ParticleContainer::ParticleContainer(
                     vector <bool> data_for_init_states, 
                     bool withdata,
                     double initial_position ){
-
+    
+    this->random_generator2_ = new MersenneTwister(rg->seed());  /*! Initialize mersenneTwister seed */
     this->set_random_generator(rg);
     this->set_ESS(0);
     this->set_current_printing_base(0);    
@@ -145,6 +146,7 @@ void ParticleContainer::update_state_weights_at_A_single_site(
  * ParticleContatiner destructor
  */ 
 ParticleContainer::~ParticleContainer(){
+    delete random_generator2_;
     // The following message may show up very often if it is passed by reference ...
     //dout << "ParticleContainer destructor is called" << endl;
     }
@@ -395,10 +397,13 @@ void ParticleContainer::clean_old_states(double xstart){
  * \brief Use simple random sampling to resample
  */
 void ParticleContainer::trivial_resampling(size_t N, std::valarray<int> & sample_count){
+    sample_count=0;
     for (size_t i=0; i<N ;i++){
         size_t index = random_generator()->sampleInt(N); 
         sample_count[index]=sample_count[index]+1;
         }
+        //cout << sample_count.sum() <<endl;
+        //assert(sample_count.sum()==sample_size);
     }
     
 
@@ -533,7 +538,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
     
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        this->particles[i]->setParticleWeight( this->random_generator()->sample() );
+        this->particles[i]->setParticleWeight( this->random_generator2()->sample() );
         }
     }
 

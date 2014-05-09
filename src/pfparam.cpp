@@ -104,8 +104,9 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             }
         
         else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
-        else if ( argv_i == "-heat" ){ this->heat_bool = true; }        
-        else if ( argv_i == "-hist" ){ this->hist_bool = true; }
+        else if ( argv_i == "-heat" ){ this->heat_bool = true; this->mid_bool = true;}        
+        //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
+        else if ( argv_i == "-mid" ){ this->mid_bool = true; }
         
         else if (argv_i == "-h" || argv_i == "-help") {
             this->print_option();
@@ -153,8 +154,9 @@ void PfParam::init(){
     this->default_nsam        = 2;
     this->default_mut_rate    = 0.00000001;
     this->default_recomb_rate = 0.000000001;
-    this->default_loci_length = 5000000;    
-    
+    this->default_loci_length = 5000000;   
+     
+    this->original_recombination_rate_ = 0;
     this->N                = 100;
     this->buff_length      = 200;
     this->lag              = 0;
@@ -163,7 +165,8 @@ void PfParam::init(){
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
-    this->hist_bool        = false;
+    //this->hist_bool        = false;
+    this->mid_bool         = false;  
     this->online_bool      = false;
     this->window           = 400; 
     this->EM_steps         = 0;
@@ -249,6 +252,7 @@ void PfParam::convert_scrm_input (){
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
     this->rg = new MersenneTwister(this->SCRMparam->random_seed);  /*! Initialize mersenneTwister seed */
+    this->original_recombination_rate_ = model->recombination_rate();
     }
 
 
@@ -304,9 +308,9 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
         log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
         //log_file << "BL saved in file: "     << BL_NAME     << "\n";
         }
-    if (this->hist_bool){
+    //if (this->hist_bool){
         log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
-        }
+        //}
     
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
     log_file << "VCF data file: "        << vcf_file    <<"\n";
@@ -324,7 +328,8 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     log_file << setw(17) <<   "Sample size =" << setw(10) << this->model->sample_size()        << "\n";
     log_file << setw(17) <<    "Seq length =" << setw(10) << this->model->loci_length()        << "\n";
     log_file << setw(17) << "mutation rate =" << setw(10) << this->model->mutation_rate()      << "\n";
-    log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
+    log_file << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
+    //log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
     log_file << setw(17) <<"inferred recomb rate = " << setw(10) << inferred_recomb_rate       << "\n";
 
     this->model->resetTime();

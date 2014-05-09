@@ -73,7 +73,8 @@ class PfParam{
         double lag;            
         bool online_bool;
 
-        bool hist_bool;
+        //bool hist_bool;
+        bool mid_bool;
         bool heat_bool;
 
         Vcf * VCFfile;
@@ -90,7 +91,7 @@ class PfParam{
         double top_t;
         string scrm_input;
         bool   EM_bool;
-
+        double original_recombination_rate_;
         //
         // Methods
         //   
