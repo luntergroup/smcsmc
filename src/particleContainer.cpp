@@ -57,7 +57,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
     if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small, to check this step, turn the if statement off
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
-        //this->trivial_resampling( pfARG_para.N,sample_count );
+        //this->trivial_resampling( num_state, sample_count );
         this->resample(sample_count);  
         }    
     }
@@ -411,7 +411,7 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
     size_t sample_i = 0;
     size_t N = sample_size;
     //double u_j = rand() / double(RAND_MAX) / N;
-    double u_j = random_generator()->sample() / N;
+    double u_j = this->random_generator()->sample() / N;
     double cumsum_normalization = cum_sum[cum_sum.size()-1];
 
     dout << std::endl<<"systematic sampling procedue" << std::endl;
@@ -531,6 +531,10 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
     return true;
     }
     
-    
+void ParticleContainer::set_particles_with_random_weight(){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        this->particles[i]->setParticleWeight( this->random_generator()->sample() );
+        }
+    }
 
 

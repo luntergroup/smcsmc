@@ -53,6 +53,8 @@ class ParticleContainer{
                                   Model * model, 
                                   valarray<double> & weight_cum_sum,
                                   bool keep_median_state = false );
+
+        void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void clean_old_states(double xstart);
@@ -87,7 +89,6 @@ class ParticleContainer{
         void trivial_resampling(size_t N, std::valarray<int> & sample_count);
         void systemetic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
         void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
-        
         
         //
         // Setters and getters:
