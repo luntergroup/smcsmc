@@ -179,7 +179,12 @@ void pfARG_core(PfParam &pfARG_para,
         /*! Reset population sizes in the model */
         countNe->reset_model_Ne( model, pfARG_para.online_bool, false);
 
-        //current_states.set_particles_with_random_weight();
+        if ( pfARG_para.ESS() == 1 ){
+            cout << " random weights" <<endl;
+            current_states.set_particles_with_random_weight();    
+            }
+        
+        
         /*! ESS resampling */        
         current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
         

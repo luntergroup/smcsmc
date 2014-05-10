@@ -105,14 +105,15 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
                 model->addPopulationSize(this->change_times_[time_i], pop_j, this->total_weighted_coal_opportunity[time_i][pop_j] / this->total_coal_count[time_i][pop_j] /2 ,false, false);    
                 }
             }
-        //this->check_model_updated_Ne((this)); //For checking only
+
          cout<<" MODEL IS RESET "<<endl;
                 
         this->compute_recomb_rate();
         model->rec_rate_ = this->inferred_recomb_rate;
-        cout << " set recombination rate " << model->rec_rate_ << endl;
+        cout << " set recombination rate " << model->rec_rate_ << "("<<this->recomb_count_<<")" <<endl;
         this->compute_mig_rate();
-        this->check_model_updated_Ne(model);
+        
+        this->check_model_updated_Ne( model );
         }
     }
     
@@ -133,19 +134,20 @@ void CountModel::compute_recomb_rate () {
     this->resetTime();
     double scaling_pop_size_N0 = this->population_size();
     double recomb_opportunity = 0;
-    double recomb_count = 0;
+    //double recomb_count = 0;
+    this->recomb_count_ = 0;
     
     for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             double pop_ratio = this->population_size(pop_j) / scaling_pop_size_N0;          
             recomb_opportunity += this->total_weighted_recomb_opportunity[time_layer_i][pop_j] / pop_ratio ;
-            recomb_count += this->total_recomb_count[time_layer_i][pop_j] / pop_ratio ;
+            this->recomb_count_ += this->total_recomb_count[time_layer_i][pop_j] / pop_ratio ;
             }
         // Advance to the next interval level
         if ( current_time_idx_ == change_times_.size() - 1) break;  
         this->increaseTime(); 
         }
-    this->inferred_recomb_rate = recomb_count / recomb_opportunity;
+    this->inferred_recomb_rate = this->recomb_count_ / recomb_opportunity;
     // reset the inferred recombination rate in the current Model and CountModel?
     }
 

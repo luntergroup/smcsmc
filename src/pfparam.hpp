@@ -81,12 +81,14 @@ class PfParam{
         Param *SCRMparam;
         Model *model;
         MersenneTwister *rg ;
+
+        double ESS () const { return this-> ESS_;}
     private:
 
         // ------------------------------------------------------------------
         // PfParameters 
         // ------------------------------------------------------------------                         
-        double ESS; 
+        double ESS_; 
         bool   ESS_default_bool;
         double top_t;
         string scrm_input;

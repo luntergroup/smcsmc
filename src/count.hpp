@@ -93,5 +93,7 @@ class CountModel: public Model{
          */         
         vector < vector<double> >   total_mig_count;
         vector < vector<double> >   total_weighted_mig_opportunity;
+        
+        double recomb_count_;
     };    
 #endif

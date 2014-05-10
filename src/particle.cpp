@@ -183,8 +183,8 @@ void ForestState::record_all_event(TimeInterval const &ti){
   
     //// CHECKING OPPORTUNITIES
     //double act0coal_rate =  1 / ( 2.0 * this->model().population_size(active_node(0)->population()) );
-    //////  CHECK ACTIVE NODE 0 AND ACTIVE NODE 1 SHOUDL BE IN THE SAME POPULATION
-    ////assert(active_node(0)->population() == active_node(1)->population() );
+    ////  CHECK ACTIVE NODE 0 AND ACTIVE NODE 1 SHOUDL BE IN THE SAME POPULATION
+    //assert(active_node(0)->population() == active_node(1)->population() );
     
     //double recomb_rate = this->model().recombination_rate();
     

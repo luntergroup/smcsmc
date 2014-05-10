@@ -50,7 +50,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         
         else if (argv_i == "-ESS"){ 
             nextArg( argv_i );
-            ESS = readInput<double>(argv_[argc_i]);
+            this->ESS_ = readInput<double>(argv_[argc_i]);
             ESS_default_bool = false;
             }
                 
@@ -161,7 +161,7 @@ void PfParam::init(){
     this->buff_length      = 200;
     this->lag              = 0;
     this->out_NAME_prefix  = "pfARG";
-    this->ESS              = 0.5;
+    this->ESS_              = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
@@ -259,7 +259,7 @@ void PfParam::convert_scrm_input (){
 void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
     this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
-    this->ESSthreshold = this->N * this->ESS;
+    this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
     //this->BL_NAME      = out_NAME_prefix + "BL";
@@ -317,7 +317,7 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
     log_file << setw(15) <<          " lag =" << setw(10) << lag                         << "\n";
     log_file << setw(15) <<             "N =" << setw(10) << N                           << "\n";
-    log_file << setw(15) <<           "ESS =" << setw(10) << ESS; 
+    log_file << setw(15) <<           "ESS =" << setw(10) << ESS_; 
     if (ESS_default_bool){ log_file << " (by default)";}                        log_file << "\n";
     log_file << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
     
