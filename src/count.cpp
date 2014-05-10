@@ -101,7 +101,7 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
 
         for (size_t time_i = 0; time_i < change_times_.size(); time_i++){
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-                //this->count_events_in_one_interval(Endparticles, time_i, pop_j, x_start, x_end);
+                ////this->count_events_in_one_interval(Endparticles, time_i, pop_j, x_start, x_end);
                 model->addPopulationSize(this->change_times_[time_i], pop_j, this->total_weighted_coal_opportunity[time_i][pop_j] / this->total_coal_count[time_i][pop_j] /2 ,false, false);    
                 }
             }
