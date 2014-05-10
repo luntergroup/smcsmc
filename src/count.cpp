@@ -78,8 +78,8 @@ void CountModel::init_lags(){
     for (size_t time_layer_i = 0 ; time_layer_i < change_times_.size(); time_layer_i++){
         this->previous_base.push_back( (double)0 );
         double top_t = time_layer_i == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[time_layer_i+1];
-        double lag_i =  double(4) / this->recombination_rate() / top_t ; 
-        //double lag_i = change_times_.size() == 1 ? double(100000) : double(4) / this->recombination_rate() / top_t ; 
+        //double lag_i =  double(4) / this->recombination_rate() / top_t ; 
+        double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / this->recombination_rate() / top_t ; 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
         }

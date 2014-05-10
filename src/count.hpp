@@ -37,7 +37,7 @@ class CountModel: public Model{
         // Constructors and Destructors
         //    
         CountModel():Model(){};     
-        CountModel(const Model& model):Model( model ){};
+        CountModel(const Model& model, double lag = 0 ):Model( model ){ this->const_lag_ = lag; };
         ~CountModel(){};
         
         //
@@ -95,5 +95,6 @@ class CountModel: public Model{
         vector < vector<double> >   total_weighted_mig_opportunity;
         
         double recomb_count_;
+        double const_lag_;
     };    
 #endif

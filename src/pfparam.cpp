@@ -315,7 +315,9 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
     log_file << "VCF data file: "        << vcf_file    <<"\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
-    log_file << setw(15) <<          " lag =" << setw(10) << lag                         << "\n";
+    if (lag > 0){
+        log_file << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";
+        }
     log_file << setw(15) <<             "N =" << setw(10) << N                           << "\n";
     log_file << setw(15) <<           "ESS =" << setw(10) << ESS_; 
     if (ESS_default_bool){ log_file << " (by default)";}                        log_file << "\n";

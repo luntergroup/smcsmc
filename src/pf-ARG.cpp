@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
         /*! 
          * INITIALIZE CountModel
          */
-        CountModel *countNe = new CountModel( *pfARG_para.model );
+        CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( pfARG_para.model, true ); // Append initial values to History file
         
         /*!
