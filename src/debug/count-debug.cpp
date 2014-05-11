@@ -58,4 +58,14 @@ void CountModel::print_recomb_counts(){
              //<< std::setw(15) << this->total_recomb_count[j]
              //<< std::setw(15) << this->total_recomb_count[j]/this->total_weighted_recomb_opportunity[j] <<endl;
     //}    
-}
+    }
+
+
+bool CountModel::print_mig_rate ( vector <vector<double>*> & rates_list ){
+    for (size_t i = 0; i < rates_list.size(); i++ ){
+        for (size_t j = 0; j < rates_list[i]->size() ; j++){
+            cout <<"rates_list[" << i <<"]->at("<<j<<")" << rates_list[i]->at(j) <<endl;
+            }
+        }    
+    return true;
+    }

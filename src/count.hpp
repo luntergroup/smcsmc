@@ -55,6 +55,9 @@ class CountModel: public Model{
         void print_pop_size();
         void print_change_time();
         void print_Time_count_pop();
+        bool print_mig_rate ( vector <vector<double>*> & rates_list );
+        void check_model_updated_mig(Model * model);
+        void check_model_updated_Ne(Model * model);
 
         //
         // Members
@@ -75,13 +78,13 @@ class CountModel: public Model{
         void init_lags();
         void compute_recomb_rate();
         void compute_mig_rate();
-        void check_model_updated_Ne(Model * model);
 
         void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 
         void reset_recomb_rate ( Model *model );
         void reset_Ne ( Model *model );
         void reset_mig_rate ( Model *model );
+        void initialize_mig_rate ( vector <vector<double>*> & rates_list );
         //void check_CountModel_Ne();
 
         //

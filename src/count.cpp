@@ -82,8 +82,7 @@ void CountModel::init_lags(){
         double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / this->recombination_rate() / top_t ; 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
-        }
-    
+        }    
     this->resetTime();
     }
 
@@ -107,49 +106,29 @@ void CountModel::reset_recomb_rate ( Model *model ){
     }
 
 
+void CountModel::initialize_mig_rate ( vector <vector<double>*> & rates_list ){
+    for (size_t i = 0; i < rates_list.size(); i++ ){
+        for (size_t j = 0; j < rates_list[i]->size() ; j++){
+            rates_list[i]->at(j) = 0;
+            }
+        }    
+    }
+
+
 void CountModel::reset_mig_rate ( Model *model ) {
     if (this->has_migration() == false) return;
     this->compute_mig_rate();
     model->has_migration_ = false;
-//cout<<"model->has_migration_ "<< (model->has_migration_ )<<endl;        
-
-//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-
-        
-    for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
-        for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
-            model->mig_rates_list_[dummy_i]->at(dummy_j) = 0;
-            }
-        }
     
-    for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
-        for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
-            model->total_mig_rates_list_[dummy_i]->at(dummy_j) = 0;
-            }
-        }
+    assert( this->print_mig_rate (model->mig_rates_list_) );
+    assert( this->print_mig_rate (model->total_mig_rates_list_) );
+    
+    this->initialize_mig_rate ( model->mig_rates_list_ );
+    this->initialize_mig_rate ( model->total_mig_rates_list_ );
 
-//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-//cout<<"      $$$$$$$$$$$ "<<endl;
-
-//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-
+    assert( this->print_mig_rate (model->mig_rates_list_) );
+    assert( this->print_mig_rate (model->total_mig_rates_list_) );
+    
     model->resetTime();
     this ->resetTime();
 
@@ -161,29 +140,12 @@ void CountModel::reset_mig_rate ( Model *model ) {
                 }
             }
         }
-
-
         
-    for (size_t pop_i = 0 ; pop_i < model->population_number() ; pop_i++){
-        for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-            cout << "\t"<<model->migration_rate(pop_i, pop_j)  ;
-            }
-            cout<<endl;
-        }
+    this->check_model_updated_mig (model);
 
-      model->finalize();
-//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
-    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
-        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
-        //}
-    //}
-    
-//cout<<"model->has_migration_"<< (model->has_migration_ )<<endl;        
+    model->finalize();
+    assert( this->print_mig_rate (model->mig_rates_list_) );
+    assert( this->print_mig_rate (model->total_mig_rates_list_) );
     
     }
 
@@ -241,15 +203,13 @@ void CountModel::compute_recomb_rate () {
 
 double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
     //for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
-    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >=0 ; time_i --){
+    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >= 0 ; time_i --){
         //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
         double x_end =  (double)this->previous_base[time_i] < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)this->previous_base[time_i] ;
         if (end_data){
             x_end = current_base;
             }
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            //if (previous_base[time_i] == x_end ) continue;                
-            //cout << "at population " << pop_j <<"update between" << ", "<<previous_base[time_i]<< " and "<<x_end<<endl;
             this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
             }
         double previous_base_tmp = current_base - lags[time_i] ;
