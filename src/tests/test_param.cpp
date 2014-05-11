@@ -40,7 +40,7 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( 200, pfARG_para1.buff_length );  
     CPPUNIT_ASSERT_EQUAL( (double)0, pfARG_para1.lag );  
     CPPUNIT_ASSERT_EQUAL( string("pfARG"), pfARG_para1.out_NAME_prefix );  
-    CPPUNIT_ASSERT_EQUAL( 0.5, pfARG_para1.ESS );  
+    CPPUNIT_ASSERT_EQUAL( 0.5, pfARG_para1.ESS() );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para1.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.online_bool );  
     CPPUNIT_ASSERT_EQUAL( (double)400, pfARG_para1.window );  
@@ -64,7 +64,7 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( (double)10, pfARG_para2.lag );  
     CPPUNIT_ASSERT_EQUAL( (string)"pfARG", pfARG_para2.out_NAME_prefix );  
     
-    CPPUNIT_ASSERT( pfARG_para2.ESS == 0.75);  // DEBUG this line does not under valgrind ???
+    CPPUNIT_ASSERT( pfARG_para2.ESS() == 0.75);  // DEBUG this line does not under valgrind ???
     //cout<<" !!!!!!!! "<<pfARG_para2.ESS<<endl;
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para2.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.online_bool );  

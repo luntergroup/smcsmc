@@ -262,7 +262,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
                 this->particles[particle_i]->sampleNextGenealogy();
                 }
 
-            assert(this->particles[particle_i]->print_Recombevent());
+            //assert(this->particles[particle_i]->print_Recombevent());
             //assert(this->particles[particle_i]->print_Coalevent());
             //assert(this->particles[particle_i]->print_Migrevent());
             }

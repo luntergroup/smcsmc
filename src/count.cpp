@@ -88,7 +88,7 @@ void CountModel::init_lags(){
     }
 
 
-void CountModel::reset_model_Ne(Model * model, bool online, bool print){
+void CountModel::reset_model_parameters(Model * model, bool online, bool print){
     if ( !online ){ 
         if (print){
             this->print_Time_count_pop();            
@@ -96,22 +96,88 @@ void CountModel::reset_model_Ne(Model * model, bool online, bool print){
         return;
         } 
     else {
+        this->compute_recomb_rate();
+        this->compute_mig_rate();
+        model->has_migration_ = false;
+//cout<<"model->has_migration_ "<< (model->has_migration_ )<<endl;        
+
+//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+
+        cout<<" MODEL IS RESET "<<endl;
+for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
+    for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
+        model->mig_rates_list_[dummy_i]->at(dummy_j) = 0;
+        }
+    }
+
+for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
+    for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
+        model->total_mig_rates_list_[dummy_i]->at(dummy_j) = 0;
+        }
+    }
+
+//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+//cout<<"      $$$$$$$$$$$ "<<endl;
+
+//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+
         model->resetTime();
         this ->resetTime();
 
         for (size_t time_i = 0; time_i < change_times_.size(); time_i++){
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-                ////this->count_events_in_one_interval(Endparticles, time_i, pop_j, x_start, x_end);
                 model->addPopulationSize(this->change_times_[time_i], pop_j, this->total_weighted_coal_opportunity[time_i][pop_j] / this->total_coal_count[time_i][pop_j] /2 ,false, false);    
+                for (size_t pop_k = 0 ; pop_k < this->population_number(); pop_k++ ) {
+                    //model->mig_rates_list_.at(time_i)->at(getMigMatrixIndex(pop_j, pop_k)) = 0;
+                    if ( pop_j == pop_k) continue;
+                    model->addMigrationRate(this->change_times_[time_i], pop_j, pop_k, this->inferred_mig_rate[pop_j][pop_k], false, false);
+                  //model->addMigrationRate(this->change_times_[time_i], pop_j, pop_k, 0.00002478, false, false);
+                    //model->mig_rates_list_.at(time_i)->at(model->getMigMatrixIndex(pop_j, pop_k)) = this->inferred_mig_rate[pop_j][pop_k];  
+                    }
                 }
             }
 
-         cout<<" MODEL IS RESET "<<endl;
-                
-        this->compute_recomb_rate();
         model->rec_rate_ = this->inferred_recomb_rate;
         cout << " set recombination rate " << model->rec_rate_ << "("<<this->recomb_count_<<")" <<endl;
-        this->compute_mig_rate();
+
+        
+        for (size_t pop_i = 0 ; pop_i < model->population_number() ; pop_i++){
+            for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
+                cout << "\t"<<model->migration_rate(pop_i, pop_j)  ;
+                }
+                cout<<endl;
+            }
+
+          model->finalize();
+//for (size_t dummy_i =0; dummy_i<model->total_mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->total_mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->total_mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->total_mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+//for (size_t dummy_i =0; dummy_i<model->mig_rates_list_.size();dummy_i++){
+    //for (size_t dummy_j = 0; dummy_j<model->mig_rates_list_[dummy_i]->size();dummy_j++){
+        //cout <<"model->mig_rates_list_["<<dummy_i<<"]->at("<<dummy_j<<")"<< model->mig_rates_list_[dummy_i]->at(dummy_j) <<endl;
+        //}
+    //}
+    
+//cout<<"model->has_migration_"<< (model->has_migration_ )<<endl;        
         
         this->check_model_updated_Ne( model );
         }

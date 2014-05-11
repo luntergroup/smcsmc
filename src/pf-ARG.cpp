@@ -53,7 +53,7 @@ int main(int argc, char *argv[]){
          * INITIALIZE CountModel
          */
         CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
-        pfARG_para.appending_Ne_file( pfARG_para.model, true ); // Append initial values to History file
+        pfARG_para.appending_Ne_file( true ); // Append initial values to History file
         
         /*!
          * EM step
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
             cout << "End of EM_step " << I << endl;
             }
 
-        pfARG_para.appending_Ne_file( pfARG_para.model );
+        pfARG_para.appending_Ne_file( );
         
         int exit_success = pfARG_para.log( countNe->inferred_recomb_rate , countNe->inferred_mig_rate );
         
@@ -177,7 +177,7 @@ void pfARG_core(PfParam &pfARG_para,
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_Ne( model, pfARG_para.online_bool, false);
+        countNe->reset_model_parameters( model, pfARG_para.online_bool, false);
 
         if ( pfARG_para.ESS() == 1 ){
             cout << " random weights" <<endl;
@@ -205,8 +205,9 @@ void pfARG_core(PfParam &pfARG_para,
     cout << "### PROGRESS: end of the sequence" << endl;
 
     remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
-    countNe->reset_model_Ne( model, true, true); // This is mandatory for appending the correct value out ...
-    pfARG_para.appending_Ne_file(model, true);
+    countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
+    
+    pfARG_para.appending_Ne_file( true );
 
     current_states.clear(); // This line is sufficient to clear the memory.
     VCFfile->reset_VCF_to_data();

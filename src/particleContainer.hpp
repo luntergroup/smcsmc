@@ -112,7 +112,7 @@ class ParticleContainer{
         vector <ForestState*> particles;
         double ESS_;
         RandomGenerator* random_generator_;
-        RandomGenerator* random_generator2_;
+        RandomGenerator* random_generator2_; // This is for debugging purpose, 
         double current_printing_base_;
     };
 

@@ -1,5 +1,4 @@
-bin_PROGRAMS = pf-ARG 
-#pf-ARG_dbg 
+bin_PROGRAMS = pf-ARG pf-ARG_dbg 
 #particleCountainer particle param coalevent scrm_dummy
 check_PROGRAMS = pf-ARG_dbg unit_tests
 TESTS = unit_tests 

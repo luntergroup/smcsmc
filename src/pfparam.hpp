@@ -50,7 +50,8 @@ class PfParam{
         // Methods
         //
         int  log( double inferred_recomb_rate, vector < vector<double> > migrate );
-        void appending_Ne_file(Model *model, bool hist = false);
+        //void appending_Ne_file(Model *model, bool hist = false);
+        void appending_Ne_file( bool hist = false );
 
         void print_help();
         void print_option();

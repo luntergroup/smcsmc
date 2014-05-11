@@ -374,25 +374,38 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     }
 
 
-void PfParam::appending_Ne_file(Model *model, bool hist){
+void PfParam::appending_Ne_file( bool hist ){
+//void PfParam::appending_Ne_file(Model *model, bool hist){
     string file_name = hist ? HIST_NAME : Ne_NAME ;
     ofstream Ne_file( file_name.c_str(), ios::out | ios::app | ios::binary);   
     if (hist){
         Ne_file << "=========\n"; 
         }
-    Ne_file << "RE\t" << model->recombination_rate() << "\n";
-    model->resetTime();
-    for (size_t i = 0; i < model->change_times_.size()-1; i++){
-        Ne_file << "NE\t" << model->getCurrentTime() / model->default_pop_size / 4  ; 
+    Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
+    
+    Ne_file << "ME" ;
+    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+            Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+            }
+        if ( pop_i < (this->model->population_number()-1)){ 
+            Ne_file << "|";
+            }
+        }
+    Ne_file << "\n";
+    
+    this->model->resetTime();
+    for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
+        Ne_file << "NE\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
         for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
-            Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
+            Ne_file << "\t" << this->model->population_size(pop_j) / this->model->default_pop_size ;
             }
         Ne_file << "\n" ;
-        model->increaseTime();
+        this->model->increaseTime();
         }
-    Ne_file << "NE\t" << model->getCurrentTime() / model->default_pop_size / 4  ; 
+    Ne_file << "NE\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
     for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
-        Ne_file << "\t" << model->population_size(pop_j) / model->default_pop_size ;
+        Ne_file << "\t" << this->model->population_size(pop_j) / this->model->default_pop_size ;
         }
     Ne_file << "\n" ;
     Ne_file.close();
