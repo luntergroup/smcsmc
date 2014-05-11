@@ -536,10 +536,9 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
     return true;
     }
     
+    
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
         this->particles[i]->setParticleWeight( this->random_generator2()->sample() );
         }
     }
-
-

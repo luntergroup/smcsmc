@@ -46,6 +46,8 @@ class CountModel: public Model{
         void init();
         double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters( Model * model, bool online = true, bool print = true);
+        
+
         void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         
         // DEBUG
@@ -77,6 +79,9 @@ class CountModel: public Model{
 
         void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 
+        void reset_recomb_rate ( Model *model );
+        void reset_Ne ( Model *model );
+        void reset_mig_rate ( Model *model );
         //void check_CountModel_Ne();
 
         //

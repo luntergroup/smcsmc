@@ -351,24 +351,24 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     }
     log_file<< "\n";
     
-    this->model->resetTime();
-    log_file << "Migration rate :" << "\n";
-    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
-        log_file << setw(3) << " ";
-        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            log_file << setw(14) << this->model->migration_rate(pop_i, pop_j)  ;
-            }
-        log_file << "\n";
-        }
+    //this->model->resetTime();
+    //log_file << "Migration rate :" << "\n";
+    //for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+        //log_file << setw(3) << " ";
+        //for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+            //log_file << setw(14) << this->model->migration_rate(pop_i, pop_j)  ;
+            //}
+        //log_file << "\n";
+        //}
         
-    log_file << "Inferred Migration rate :" << "\n";
-    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
-        log_file << setw(3) << " ";
-        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            log_file << setw(14) << migrate[pop_i][pop_j]  ;
-            }
-        log_file << "\n";
-        }    
+    //log_file << "Inferred Migration rate :" << "\n";
+    //for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+        //log_file << setw(3) << " ";
+        //for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+            //log_file << setw(14) << migrate[pop_i][pop_j]  ;
+            //}
+        //log_file << "\n";
+        //}    
         
     log_file.close();
     }
