@@ -66,7 +66,8 @@ int main(int argc, char *argv[]){
 
         pfARG_para.appending_Ne_file( );
         
-        int exit_success = pfARG_para.log( countNe->inferred_recomb_rate , countNe->inferred_mig_rate );
+        //int exit_success = pfARG_para.log( countNe->inferred_recomb_rate , countNe->inferred_mig_rate );
+        int exit_success = pfARG_para.log( );
         
         /*! Clean up */
         delete countNe;
@@ -165,7 +166,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool);
+        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool, pfARG_para.finite_bool);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */

@@ -211,28 +211,7 @@ double CountModel::extract_and_update_count(ParticleContainer &Endparticles, dou
             }
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
-            }
-        double previous_base_tmp = current_base - lags[time_i] ;
-        previous_base[time_i] = previous_base_tmp > 0 ? previous_base_tmp : (double)0;
-        }  
-    
-    double remove_particle_before_site = previous_base[0];
-    for (size_t i = 0 ; i < previous_base.size() ; i++ ){
-        remove_particle_before_site = remove_particle_before_site < previous_base[i] ? remove_particle_before_site : previous_base[i];
-        }
-    dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
-    return remove_particle_before_site;
-    }
 
-
-
-
-void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
-
-    if ( x_start == x_end ){ return; }
-    
-    for (size_t i = 0; i < Endparticles.particles.size(); i++){
-        
         /*! \verbatim 
                 xstart     
                 .                      xend                         VCFfile->site()
@@ -259,12 +238,26 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
          *  
          * In this example, only count the coalescent events occured on states 1 and 2.
          */ 
-        
+
+            }
+        double previous_base_tmp = current_base - lags[time_i] ;
+        previous_base[time_i] = previous_base_tmp > 0 ? previous_base_tmp : (double)0;
+        }  
+    
+    double remove_particle_before_site = previous_base[0];
+    for (size_t i = 0 ; i < previous_base.size() ; i++ ){
+        remove_particle_before_site = remove_particle_before_site < previous_base[i] ? remove_particle_before_site : previous_base[i];
+        }
+    dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
+    return remove_particle_before_site;
+    }
+
+
+void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
+    if ( x_start == x_end ){ return; }    
+    for (size_t i = 0; i < Endparticles.particles.size(); i++){                
         ForestState* counting_state = Endparticles.particles[i];
-        
         double weight = counting_state->weight();
-        
-        
         // Skip a few state between lagging until the most updated case
         while (counting_state -> current_base() >= x_end && counting_state->previous_state){
             counting_state = counting_state->previous_state;                
@@ -317,43 +310,10 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
 
 
 void CountModel::count_events_in_one_interval_alt(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
-
     if ( x_start == x_end ){ return; }
-    
     for (size_t i = 0; i < Endparticles.particles.size(); i++){
-        
-        /*! \verbatim 
-                xstart     
-                .                      xend                         VCFfile->site()
-                .                      .                            .
-                .                      .     3                      .
-                .                      .     x---o              6   .
-                .                  2   .     |   |              x-------o
-                .                  x---------o   |              |   .
-                .                  |   .         |              |   .
-             0  .                  |   .         x---o          |   .
-             x---------o           |   .         4   |          |   .
-                .      |           |   .             x----------o   .
-                .      |           |   .             5              .
-                .      x-----------o   .                            .
-                .      1               .-------------lag------------.
-                .                      .                            .
-         \endverbatim
-         * 
-         * Count the coalescent events between position xstart and xend.
-         * 
-         * At the beginning of this function, the tail ForestState is at 
-         * state 6, whose weight represents the weight for the entire particle
-         * As lagging is applied, we need to skip a few states before start counting. 
-         *  
-         * In this example, only count the coalescent events occured on states 1 and 2.
-         */ 
-        
         ForestState* counting_state = Endparticles.particles[i];
-        
         double weight = counting_state->weight();
-        
-        
         // Skip a few state between lagging until the most updated case
         while (counting_state -> current_base() >= x_end && counting_state->previous_state){
             counting_state = counting_state->previous_state;                

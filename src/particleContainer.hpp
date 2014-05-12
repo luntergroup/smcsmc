@@ -52,7 +52,8 @@ class ParticleContainer{
         void update_state_to_data(Vcf * VCFfile, 
                                   Model * model, 
                                   valarray<double> & weight_cum_sum,
-                                  bool keep_median_state = false );
+                                  bool keep_median_state = false,
+                                  bool finite_bool = false);
 
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
@@ -80,7 +81,8 @@ class ParticleContainer{
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,
-                                                   vector <bool> haplotypes_at_tips);
+                                                   vector <bool> haplotypes_at_tips,
+                                                   bool finite_bool);
         void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */
 
         // Resampling
@@ -95,14 +97,9 @@ class ParticleContainer{
         //
         double ESS() const {return this->ESS_;};
         void set_ESS(double ess){this->ESS_ = ess;};
-        
         RandomGenerator* random_generator() const { return this->random_generator_; }
-
         RandomGenerator* random_generator2() const { return this->random_generator2_; }
-
-        void set_random_generator(RandomGenerator *rg) {
-                this->random_generator_ = rg; }
-        
+        void set_random_generator(RandomGenerator *rg) { this->random_generator_ = rg; }        
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 

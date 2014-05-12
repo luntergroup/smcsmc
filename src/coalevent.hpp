@@ -31,7 +31,13 @@
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
 class Starevent{ 
-    public:
+    friend class CountModel;
+    friend class ForestState;
+    friend class ParticleContainer;
+    friend class Coalevent;
+    friend class Migrevent;
+    friend class Recombevent;
+    private:
         //
         // Constructors and Destructors
         //    
@@ -43,6 +49,12 @@ class Starevent{
                   double opportunity,
                   eventCode event_code );
         ~Starevent(){};
+
+        //
+        // Methods
+        //   
+        void init();
+        void clear();
 
         //
         // Getters and setters
@@ -71,13 +83,6 @@ class Starevent{
         bool counted() const { return this->counted_ ; }
         void set_counted (bool counted) { this->counted_ = counted; }
         
-    private:
-        //
-        // Methods
-        //   
-        void init();
-        void clear();
-
         //
         // Members
         //   
@@ -96,7 +101,10 @@ class Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
  */
 class Coalevent : public Starevent{
-    public:
+    friend class CountModel;
+    friend class ForestState;
+    friend class ParticleContainer;
+    private:
         Coalevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
@@ -115,7 +123,10 @@ class Coalevent : public Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
  */    
 class Recombevent : public Starevent{
-    public:    
+    friend class CountModel;
+    friend class ForestState;
+    friend class ParticleContainer;
+    private:
         Recombevent(size_t pop_i, 
                     //double start_time,
                     //double end_time, 
@@ -134,7 +145,10 @@ class Recombevent : public Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
  */    
 class Migrevent : public Starevent{
-    public:
+    friend class CountModel;
+    friend class ForestState;
+    friend class ParticleContainer;
+    private:
         Migrevent(size_t pop_i, 
                   size_t mig_pop,
                   //double start_time,
@@ -151,7 +165,6 @@ class Migrevent : public Starevent{
         size_t mig_pop() const {return this->mig_pop_; } 
         void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }
     
-    private:
         size_t mig_pop_;
     };
 

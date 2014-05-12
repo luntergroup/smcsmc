@@ -123,13 +123,15 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     double mutation_at,
     double mutation_rate, 
     bool withdata,
-    vector <bool> haplotypes_at_tips){
+    vector <bool> haplotypes_at_tips,
+    bool finite_bool
+    ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
-		double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata);
+		double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata, finite_bool);
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
@@ -290,7 +292,12 @@ void ParticleContainer::normalize_probability(){
     }
 
 
-void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valarray<double> & weight_cum_sum, bool keep_median_state){
+void ParticleContainer::update_state_to_data(
+                        Vcf * VCFfile, 
+                        Model * model, 
+                        valarray<double> & weight_cum_sum, 
+                        bool keep_median_state, 
+                        bool finite_bool){
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
@@ -341,7 +348,7 @@ void ParticleContainer::update_state_to_data(Vcf * VCFfile, Model * model, valar
     this->extend_ARGs( mutation_at, mutation_rate, withdata, keep_median_state );
     
     //Update weight for seeing mutation at the position 
-    this->update_state_weights_at_A_single_site(mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool); 
+    this->update_state_weights_at_A_single_site(mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool, finite_bool); 
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 

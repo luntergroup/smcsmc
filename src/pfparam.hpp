@@ -49,7 +49,8 @@ class PfParam{
         //
         // Methods
         //
-        int  log( double inferred_recomb_rate, vector < vector<double> > migrate );
+        int  log( );
+        //int  log( double inferred_recomb_rate, vector < vector<double> > migrate );
         //void appending_Ne_file(Model *model, bool hist = false);
         void appending_Ne_file( bool hist = false );
 
@@ -77,6 +78,7 @@ class PfParam{
         //bool hist_bool;
         bool mid_bool;
         bool heat_bool;
+        bool finite_bool;
 
         Vcf * VCFfile;
         Param *SCRMparam;
@@ -106,7 +108,8 @@ class PfParam{
         void finalize_scrm_input ( );
         void finalize ( );
         void convert_scrm_input();
-        void log_param( double inferred_recomb_rate, vector < vector<double> > migrate );
+        //void log_param( double inferred_recomb_rate, vector < vector<double> > migrate );
+        void log_param( );
         
         //
         // Members

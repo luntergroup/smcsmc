@@ -104,6 +104,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             }
         
         else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
+        else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
         else if ( argv_i == "-heat" ){ this->heat_bool = true; this->mid_bool = true;}        
         //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
         else if ( argv_i == "-mid" ){ this->mid_bool = true; }
@@ -168,6 +169,7 @@ void PfParam::init(){
     //this->hist_bool        = false;
     this->mid_bool         = false;  
     this->online_bool      = false;
+    this->finite_bool      = false;
     this->window           = 400; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
@@ -279,10 +281,11 @@ void PfParam::finalize(  ){
     this->finalize_scrm_input ( );
     }
 
-
-int PfParam::log( double inferred_recomb_rate, vector < vector<double> > migrate ){
+int PfParam::log( ){
+//int PfParam::log( double inferred_recomb_rate, vector < vector<double> > migrate ){
     if (log_bool){  
-        this->log_param(inferred_recomb_rate, migrate);
+        //this->log_param(inferred_recomb_rate, migrate);
+        this->log_param( );
         //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());  
@@ -294,7 +297,8 @@ int PfParam::log( double inferred_recomb_rate, vector < vector<double> > migrate
 
 
 //void PfParam::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
-void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > migrate ){
+//void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > migrate ){
+void PfParam::log_param( ){
     ofstream log_file;
     string emptyfile("EMPTY FILE");
     string vcf_file = ( vcf_NAME.size() > 0 ) ?  vcf_NAME : emptyfile;
@@ -332,7 +336,7 @@ void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > 
     log_file << setw(17) << "mutation rate =" << setw(10) << this->model->mutation_rate()      << "\n";
     log_file << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
     //log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
-    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << inferred_recomb_rate       << "\n";
+    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << this->model->recombination_rate()   << "\n";
 
     this->model->resetTime();
     log_file<<setw(17)<<"Pop size (at Generation):\n";

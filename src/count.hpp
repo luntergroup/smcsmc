@@ -46,45 +46,29 @@ class CountModel: public Model{
         void init();
         double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters( Model * model, bool online = true, bool print = true);
-        
-
-        void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-        
-        // DEBUG
-        void print_recomb_counts();
-        void print_pop_size();
-        void print_change_time();
-        void print_Time_count_pop();
-        bool print_mig_rate ( vector <vector<double>*> & rates_list );
-        void check_model_updated_mig(Model * model);
-        void check_model_updated_Ne(Model * model);
-
-        //
-        // Members
-        //   
-        vector < double > previous_base;
-        vector < double > lags;
-        vector < vector<double> > inferred_mig_rate; // This should be a 3-D vector 
-        
-        double inferred_recomb_rate;
-        
+                
     private:
 
         //
         // Methods
         //   
+        // Initializeation
         void init_coal_and_recomb();
         void init_migr();
         void init_lags();
-        void compute_recomb_rate();
-        void compute_mig_rate();
-
-        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-
+        
+        // Reset parameters
         void reset_recomb_rate ( Model *model );
         void reset_Ne ( Model *model );
         void reset_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
+
+        void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
+        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
+
+        void compute_recomb_rate();
+        void compute_mig_rate();
+
         //void check_CountModel_Ne();
 
         //
@@ -101,8 +85,25 @@ class CountModel: public Model{
          */         
         vector < vector<double> >   total_mig_count;
         vector < vector<double> >   total_weighted_mig_opportunity;
+
+        // DEBUG
+        void print_recomb_counts();
+        void print_pop_size();
+        void print_change_time();
+        void print_Time_count_pop();
+        bool print_mig_rate ( vector <vector<double>*> & rates_list );
+        void check_model_updated_mig(Model * model);
+        void check_model_updated_Ne(Model * model);
+
+        //
+        // Members
+        //   
+        vector < double > previous_base;
+        vector < double > lags;
+        vector < vector<double> > inferred_mig_rate; // This should be a 3-D vector 
         
         double recomb_count_;
-        double const_lag_;
+        double const_lag_;                
+        double inferred_recomb_rate;
     };    
 #endif
