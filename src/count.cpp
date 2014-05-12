@@ -272,7 +272,7 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                 if ( time_i == current_Coalevent->change_time_i() && pop_j == current_Coalevent->pop_i() && !current_Coalevent->counted() ){
                     this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
                     this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
-                    current_Coalevent->set_counted(true);
+                    //current_Coalevent->set_counted(true);
                     }
                 } //  < counting_state->CoaleventContainer.size() 
 
@@ -283,7 +283,7 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                 if ( time_i == current_Recombevent->change_time_i() && pop_j == current_Recombevent->pop_i() && !current_Recombevent->counted() ){
                     this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
                     this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
-                    current_Recombevent->set_counted(true);
+                    //current_Recombevent->set_counted(true);
                     }
                 } //  < counting_state->RecombeventContainer.size() 
                 
