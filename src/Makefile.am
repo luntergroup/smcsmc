@@ -1,11 +1,12 @@
 bin_PROGRAMS = pf-ARG pf-ARG_dbg 
 #particleCountainer particle param coalevent scrm_dummy
-check_PROGRAMS = pf-ARG_dbg unit_tests
+check_PROGRAMS = pf-ARG_dbg pf-ARG_prof unit_tests
 TESTS = unit_tests 
 
 PROG = PF-ARG 
 
-pf_ARG_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 
 #particleCountainer_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
@@ -13,10 +14,6 @@ pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 #param_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 #coalevent_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 #scrm_dummy_CXXFLAGS = -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
-
-#pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall 
-
-#pf_ARG_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages
 
 #vcf_CXXFLAGS= -std=c++0x -g -pg -O3 -Wall -DNDEBUG   #options for not showing debug messages
 #vcf_CXXFLAGS= -std=c++0x -g -O0 -Wall -DNDEBUG   #options for not showing debug messages
@@ -69,6 +66,8 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) 
 
 pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
+
+pf_ARG_prof_CXXFLAGS = $(shared_SOURCES)  pf-ARG.cpp
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
