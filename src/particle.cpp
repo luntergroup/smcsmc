@@ -34,7 +34,7 @@ ForestState::ForestState( ForestState * copied_state )
                 copied_state); // initialize members of ForestState
     this->setAncestor ( copied_state->ancestor() );
 	dout << "current particle's weight is " << this->weight()<<endl;
-	copied_state->pointer_counter++;
+	//copied_state->pointer_counter++;
     }
 
 
@@ -45,9 +45,26 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
 	this->init(); // initialize members of ForestState
 	this->buildInitialTree();
+    this->init_EventContainers( model);
+    
     assert( this->print_Coalevent() );
     assert( this->print_Migrevent() );
     }
+
+
+void ForestState::init_EventContainers( Model * model ){
+    for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
+        vector < Coalevent   > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        CoaleventContainer.push_back( CoaleventContainer_i );
+        
+        vector < Recombevent > RecombeventContainer_i; /*!< \brief Recombination events recorder */
+        RecombeventContainer.push_back( RecombeventContainer_i );
+        
+        vector < Migrevent   > MigreventContainer_i;   /*!< \brief Migration events recorder */
+        MigreventContainer.push_back( MigreventContainer_i );                
+        }
+    }
+
 
 
 /*! \brief Destructor of ForestState
@@ -57,10 +74,10 @@ ForestState::~ForestState(){
 	dout << "State between " << this->current_base() << " and " 
                              << this->next_base() 
                              << " is about to be removed" << endl;	
-	assert( this->pointer_counter == 0 );
-	this->clear_CoaleventContainer();
-	this->clear_RecombeventContainer();
-    this->clear_MigreventContainer();
+	//assert( this->pointer_counter == 0 );
+	//this->clear_CoaleventContainer();
+	//this->clear_RecombeventContainer();
+    //this->clear_MigreventContainer();
 	
     //Remove any of the previous states, if the counter is equal to zero.
 	//ForestState* prior_state = this->previous_state;
@@ -82,9 +99,9 @@ ForestState::~ForestState(){
 void ForestState::init(double weight, double site , ForestState* previous_state){
 	this->setParticleWeight(weight);
 	this->setSiteWhereWeightWasUpdated(site);
-	this->previous_state=previous_state;
-	this->pointer_counter=(int)0;
-	this->CoaleventContainer.clear();
+	//this->previous_state=previous_state;
+	//this->pointer_counter=(int)0;
+	//this->CoaleventContainer.clear();
     //new_forest_counter++;
     }
 
@@ -233,13 +250,13 @@ void ForestState::record_Coalevent(
                   double opportunity, 
                   eventCode event_code) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
-    Coalevent* new_event = new Coalevent( pop_i,
-                                          //start_time,
-                                          //end_time, 
-                                          opportunity,
-			                              event_code);	
-	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-    this->CoaleventContainer.push_back(new_event);
+    Coalevent new_event ( pop_i,
+                          //start_time,
+                          //end_time, 
+                          opportunity,
+                          event_code);	
+	new_event.set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
 
 
@@ -251,13 +268,13 @@ void ForestState::record_Recombevent(size_t pop_i,
                           //double end_time, 
                           double opportunity, 
                           eventCode event_code){
-    Recombevent* new_event = new Recombevent( pop_i,
-                                          //start_time,
-                                          //end_time, 
-                                          opportunity,
-			                              event_code);	
-	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-    this->RecombeventContainer.push_back(new_event);
+    Recombevent new_event ( pop_i,
+                          //start_time,
+                          //end_time, 
+                          opportunity,
+                          event_code);	
+	new_event.set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
     
     
@@ -270,42 +287,42 @@ void ForestState::record_Migrevent(size_t pop_i,
                           //double end_time, 
                           double opportunity, 
                           eventCode event_code) {
-    Migrevent* new_event = new Migrevent( pop_i,
-                                          mig_pop,
-                                          //start_time,
-                                          //end_time, 
-                                          opportunity,
-			                              event_code);	                                          
-    new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-	this->MigreventContainer.push_back(new_event);
+    Migrevent new_event ( pop_i,
+                          mig_pop,
+                          //start_time,
+                          //end_time, 
+                          opportunity,
+                          event_code);	                                          
+    new_event.set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+	this->MigreventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }    
 
 
-/*! Clear coalescent and recombination events recorded between two states.*/
-void ForestState::clear_CoaleventContainer(){ 
-	for (size_t i=0; i < this->CoaleventContainer.size(); i++){
-		delete CoaleventContainer[i];
-    	}
-	this->CoaleventContainer.clear();
-    }
+///*! Clear coalescent and recombination events recorded between two states.*/
+//void ForestState::clear_CoaleventContainer(){ 
+	//for (size_t i=0; i < this->CoaleventContainer.size(); i++){
+		//delete CoaleventContainer[i];
+    	//}
+	//this->CoaleventContainer.clear();
+    //}
 
 
-/*! Clear recombination events recorded between two states.*/
-void ForestState::clear_RecombeventContainer(){ 
-	for (size_t i=0; i < this->RecombeventContainer.size(); i++){
-		delete RecombeventContainer[i];
-    	}
-	this->RecombeventContainer.clear();
-    }
+///*! Clear recombination events recorded between two states.*/
+//void ForestState::clear_RecombeventContainer(){ 
+	//for (size_t i=0; i < this->RecombeventContainer.size(); i++){
+		//delete RecombeventContainer[i];
+    	//}
+	//this->RecombeventContainer.clear();
+    //}
     
     
-/*! Clear migration events recorded between two states.*/
-void ForestState::clear_MigreventContainer(){ 
-	for (size_t i=0; i < this->MigreventContainer.size(); i++){
-		delete MigreventContainer[i];
-    	}
-	this->MigreventContainer.clear();
-    }
+///*! Clear migration events recorded between two states.*/
+//void ForestState::clear_MigreventContainer(){ 
+	//for (size_t i=0; i < this->MigreventContainer.size(); i++){
+		//delete MigreventContainer[i];
+    	//}
+	//this->MigreventContainer.clear();
+    //}
     
 
 void ForestState::include_haplotypes_at_tips(vector <bool> haplotypes_at_tips){
@@ -382,7 +399,7 @@ valarray<double> ForestState::cal_marginal_likelihood_finite(Node * node){// Gen
     }
 
 
-valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
+inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
 	double mutation_rate = this->model().mutation_rate();
 	valarray<double> marginal_likelihood(2);
 	dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;

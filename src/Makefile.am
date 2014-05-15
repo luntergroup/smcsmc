@@ -47,8 +47,9 @@ debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
 
 arg_src = coalevent.cpp \
           particle.cpp \
-          particleContainer.cpp \
-          count.cpp count-semi-debug.cpp
+          particleContainer.cpp 
+
+count_src = count.cpp count-semi-debug.cpp
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
@@ -64,6 +65,7 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
           #particle_dummy.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) 
+#$(count_src)
 
 pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
 

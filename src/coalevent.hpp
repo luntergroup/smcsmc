@@ -37,7 +37,7 @@ class Starevent{
     friend class Coalevent;
     friend class Migrevent;
     friend class Recombevent;
-    private:
+    public:
         //
         // Constructors and Destructors
         //    
@@ -49,7 +49,7 @@ class Starevent{
                   double opportunity,
                   eventCode event_code );
         ~Starevent(){};
-
+    private:
         //
         // Methods
         //   
@@ -105,10 +105,10 @@ class Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
  */
 class Coalevent : public Starevent{
-    friend class CountModel;
-    friend class ForestState;
-    friend class ParticleContainer;
-    private:
+    //friend class CountModel;
+    //friend class ForestState;
+    //friend class ParticleContainer;
+    public:
         Coalevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
@@ -127,10 +127,10 @@ class Coalevent : public Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
  */    
 class Recombevent : public Starevent{
-    friend class CountModel;
-    friend class ForestState;
-    friend class ParticleContainer;
-    private:
+    //friend class CountModel;
+    //friend class ForestState;
+    //friend class ParticleContainer;
+    public:
         Recombevent(size_t pop_i, 
                     //double start_time,
                     //double end_time, 
@@ -149,10 +149,10 @@ class Recombevent : public Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
  */    
 class Migrevent : public Starevent{
-    friend class CountModel;
-    friend class ForestState;
-    friend class ParticleContainer;
-    private:
+    //friend class CountModel;
+    //friend class ForestState;
+    //friend class ParticleContainer;
+    public:
         Migrevent(size_t pop_i, 
                   size_t mig_pop,
                   //double start_time,

@@ -30,7 +30,7 @@
 //int delete_forest_counter = 0;
 
 void pfARG_core(PfParam &pfARG_para,
-                CountModel *countNe,
+                //CountModel *countNe,
                 bool print_update_count);
 
 int main(int argc, char *argv[]){
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
         /*! 
          * INITIALIZE CountModel
          */
-        CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
+        //CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
         
         /*!
@@ -60,7 +60,9 @@ int main(int argc, char *argv[]){
          */                 
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
-            pfARG_core( pfARG_para, countNe, print_update_count);
+            pfARG_core( pfARG_para, 
+                        //countNe, 
+                        print_update_count);
             cout << "End of EM_step " << I << endl;
             }
 
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]){
         int exit_success = pfARG_para.log( );
         
         /*! Clean up */
-        delete countNe;
+        //delete countNe;
         //cout<<"Forest state was created " << new_forest_counter << " times" << endl;
         //dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
@@ -84,7 +86,7 @@ int main(int argc, char *argv[]){
 
 
 void pfARG_core(PfParam &pfARG_para,
-                CountModel *countNe,
+                //CountModel *countNe,
                 bool print_update_count){
 
     Model *model = pfARG_para.model;
@@ -103,7 +105,7 @@ void pfARG_core(PfParam &pfARG_para,
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 
     /*! Initialize prior Ne */
-    countNe->init();
+    //countNe->init();
 
     /*! Go through vcf data */
     double previous_x = 0;
@@ -157,7 +159,7 @@ void pfARG_core(PfParam &pfARG_para,
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-            remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+            //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
             continue;
             }
         
@@ -171,14 +173,14 @@ void pfARG_core(PfParam &pfARG_para,
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
          
-        current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
+        //current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
-        remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+        //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( model, pfARG_para.online_bool, false);
+        //countNe->reset_model_parameters( model, pfARG_para.online_bool, false);
 
         if ( pfARG_para.ESS() == 1 ){
             cout << " random weights" <<endl;
@@ -195,7 +197,7 @@ void pfARG_core(PfParam &pfARG_para,
          *  However, need to check this with the current_printing_space
          */
 
-        current_states.clean_old_states( remove_particle_before_site ); 
+        //current_states.clean_old_states( remove_particle_before_site ); 
         
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              
@@ -205,8 +207,8 @@ void pfARG_core(PfParam &pfARG_para,
 
     cout << "### PROGRESS: end of the sequence" << endl;
 
-    remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
-    countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
+    //remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
+    //countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
     
     pfARG_para.appending_Ne_file( true );
 

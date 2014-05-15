@@ -262,6 +262,10 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
                     this->particles[particle_i] = median_state;
                     }
                 this->particles[particle_i]->sampleNextGenealogy();
+                
+                TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
+                this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
+                
                 }
 
             //assert(this->particles[particle_i]->print_Recombevent());
@@ -356,47 +360,47 @@ void ParticleContainer::update_state_to_data(
     }
 
 
-/*! 
- * Remove previous states that are no longer used
- */
-void ParticleContainer::clean_old_states(double xstart){
+///*! 
+ //* Remove previous states that are no longer used
+ //*/
+//void ParticleContainer::clean_old_states(double xstart){
     
-    for (size_t i = 0; i < this->particles.size(); i++){
-        ForestState* current_state = this->particles[i];
-        if ( current_state->previous_state == NULL ){
-            continue;
-            }
-        dout << "remove states before " << setw(10) << xstart ;        
-        dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
+    //for (size_t i = 0; i < this->particles.size(); i++){
+        //ForestState* current_state = this->particles[i];
+        //if ( current_state->previous_state == NULL ){
+            //continue;
+            //}
+        //dout << "remove states before " << setw(10) << xstart ;        
+        //dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
         
-        ForestState* prior_state = current_state->previous_state;
+        //ForestState* prior_state = current_state->previous_state;
         
-        /*!
-         * Check if the current state is pointing a previous state
-         *      if yes, check if the previous state should be removed
-         *          if yes, remove all the previous state
-         *          if no, move on the previous state, and check again
-         */ 
+        ///*!
+         //* Check if the current state is pointing a previous state
+         //*      if yes, check if the previous state should be removed
+         //*          if yes, remove all the previous state
+         //*          if no, move on the previous state, and check again
+         //*/ 
          
-        while (prior_state!= NULL){
+        //while (prior_state!= NULL){
 
-            if ( prior_state->next_base() < xstart ){
-                assert ( current_state->current_base() >= prior_state->next_base() );
-                // reduce the pointer counter before this point!
-                prior_state->pointer_counter--;
-                current_state->previous_state = NULL;
+            //if ( prior_state->next_base() < xstart ){
+                //assert ( current_state->current_base() >= prior_state->next_base() );
+                //// reduce the pointer counter before this point!
+                //prior_state->pointer_counter--;
+                //current_state->previous_state = NULL;
                 
-                // once the pointer counter is zero, remove the state
-                if ( prior_state->pointer_counter == (int)0 ){ 
-                    delete prior_state; 
-                    }
-                break;
-                }
-            current_state = prior_state;
-            prior_state = prior_state->previous_state;
-            }      
-        }
-    }
+                //// once the pointer counter is zero, remove the state
+                //if ( prior_state->pointer_counter == (int)0 ){ 
+                    //delete prior_state; 
+                    //}
+                //break;
+                //}
+            //current_state = prior_state;
+            //prior_state = prior_state->previous_state;
+            //}      
+        //}
+    //}
 
 
 /*! 
@@ -460,88 +464,88 @@ void ParticleContainer::systemetic_resampling(std::valarray<double> cum_sum, std
     }
 
 
-bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
-    // Record the TMRCA and weight when a heatmap is generated
-    if (!pfparam.heat_bool){
-        return true;
-        }
-           /*!
-             *  \verbatim
-           remove all the state prior to the minimum of
-            current_printing_base and 
-                previous_backbase     
-                .                      backbase                     VCFfile->site()
-                .                      .                            .
-                .                      .     3                      .
-                .                      .     x---o              6   .
-                .                  2   .     |   |              x-------o
-                .                  x---------o   |              |   .
-                .                  |   .         |              |   .
-             0  .                  |   .         x---o          |   .
-             x---------o           |   .         4   |          |   .
-                .      |           |   .             x----------o   .
-                .      |           |   .             5              .
-                .      x-----------o   .                            .
-                .      1               .-------------lag------------.
-                .                      .                            .
-                Count::update_e_count( .                            ParticleContainer::update_state_to_data(
-           x_start = previous_backbase .                              mutation data comes in here
-           x_end = backbase            .
-                                       .
-                                       ParticleContainer::appendingStuffToFile(
-                                           x_end = backbase, 
-          \endverbatim
-         *
-         * Likelihood of the particle is updated up until state 6, but because of the lagging we are using
-         * report the TMRCA up until state 2
-         *           
-         */ 
-    if (x_end < this->current_printing_base()){
-        return true;    
-        }
-    do {
-        //this->set_current_printing_base(x_end);
+//bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
+    //// Record the TMRCA and weight when a heatmap is generated
+    //if (!pfparam.heat_bool){
+        //return true;
+        //}
+           ///*!
+             //*  \verbatim
+           //remove all the state prior to the minimum of
+            //current_printing_base and 
+                //previous_backbase     
+                //.                      backbase                     VCFfile->site()
+                //.                      .                            .
+                //.                      .     3                      .
+                //.                      .     x---o              6   .
+                //.                  2   .     |   |              x-------o
+                //.                  x---------o   |              |   .
+                //.                  |   .         |              |   .
+             //0  .                  |   .         x---o          |   .
+             //x---------o           |   .         4   |          |   .
+                //.      |           |   .             x----------o   .
+                //.      |           |   .             5              .
+                //.      x-----------o   .                            .
+                //.      1               .-------------lag------------.
+                //.                      .                            .
+                //Count::update_e_count( .                            ParticleContainer::update_state_to_data(
+           //x_start = previous_backbase .                              mutation data comes in here
+           //x_end = backbase            .
+                                       //.
+                                       //ParticleContainer::appendingStuffToFile(
+                                           //x_end = backbase, 
+          //\endverbatim
+         //*
+         //* Likelihood of the particle is updated up until state 6, but because of the lagging we are using
+         //* report the TMRCA up until state 2
+         //*           
+         //*/ 
+    //if (x_end < this->current_printing_base()){
+        //return true;    
+        //}
+    //do {
+        ////this->set_current_printing_base(x_end);
 
-        if (this->current_printing_base() > 0){
+        //if (this->current_printing_base() > 0){
 
-            ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
-            ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
-            //ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
-            ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
+            //ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
+            //ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
+            ////ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
+            //ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
             
-            TmrcaOfstream  << this->current_printing_base();
-            WeightOfstream << this->current_printing_base();
-            //BLOfstream     << this->current_printing_base();
-            SURVIVORstream << this->current_printing_base();
+            //TmrcaOfstream  << this->current_printing_base();
+            //WeightOfstream << this->current_printing_base();
+            ////BLOfstream     << this->current_printing_base();
+            //SURVIVORstream << this->current_printing_base();
             
-            for ( size_t i = 0; i < this->particles.size(); i++){
-                ForestState * current_state_ptr = this->particles[i];
-                WeightOfstream <<"\t" << current_state_ptr->weight();
-                SURVIVORstream <<"\t" << current_state_ptr->ancestor();
+            //for ( size_t i = 0; i < this->particles.size(); i++){
+                //ForestState * current_state_ptr = this->particles[i];
+                //WeightOfstream <<"\t" << current_state_ptr->weight();
+                //SURVIVORstream <<"\t" << current_state_ptr->ancestor();
                 
-                while (current_state_ptr->current_base() > this->current_printing_base() && current_state_ptr->previous_state) {
-                    current_state_ptr=current_state_ptr->previous_state;
-                    }
+                //while (current_state_ptr->current_base() > this->current_printing_base() && current_state_ptr->previous_state) {
+                    //current_state_ptr=current_state_ptr->previous_state;
+                    //}
                 
-                TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                current_state_ptr=NULL;
-                }
+                //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                ////BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                //current_state_ptr=NULL;
+                //}
                 
-            TmrcaOfstream  << endl;
-            WeightOfstream << endl;
-            //BLOfstream     << endl;
-            SURVIVORstream << endl;
+            //TmrcaOfstream  << endl;
+            //WeightOfstream << endl;
+            ////BLOfstream     << endl;
+            //SURVIVORstream << endl;
             
-            TmrcaOfstream.close();
-            WeightOfstream.close();
-            //BLOfstream.close();
-            SURVIVORstream.close();
-            }
-        this->set_current_printing_base(this->current_printing_base() + pfparam.window);
-        } while ( this->current_printing_base() < x_end);
-    return true;
-    }
+            //TmrcaOfstream.close();
+            //WeightOfstream.close();
+            ////BLOfstream.close();
+            //SURVIVORstream.close();
+            //}
+        //this->set_current_printing_base(this->current_printing_base() + pfparam.window);
+        //} while ( this->current_printing_base() < x_end);
+    //return true;
+    //}
     
     
 void ParticleContainer::set_particles_with_random_weight(){

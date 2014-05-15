@@ -39,6 +39,17 @@ extern int new_forest_counter;
 extern int delete_forest_counter;
 
 
+
+struct TmrcaState {
+    TmrcaState (double base, double tmrca) { 
+        this->base = base;
+        this->tmrca = tmrca;
+        }
+    double base;
+    double tmrca;    
+    };
+
+
 /*! 
  * \brief Derived class from Forest.
  * A particle is a special case of a Forest, with special members
@@ -95,9 +106,9 @@ class ForestState : public Forest{
                           double opportunity, 
                           eventCode event_code);                          
 
-        void clear_CoaleventContainer();
-        void clear_RecombeventContainer();
-        void clear_MigreventContainer();
+        //void clear_CoaleventContainer();
+        //void clear_RecombeventContainer();
+        //void clear_MigreventContainer();
         
         //
         // Setters and getters:
@@ -121,11 +132,14 @@ class ForestState : public Forest{
         //   
         //ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
         //int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
-        vector < Coalevent*  > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < Recombevent*> RecombeventContainer; /*!< \brief Recombination events recorder */
-        vector < Migrevent*  > MigreventContainer;   /*!< \brief Migration events recorder */
+        vector < vector < Coalevent   > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        vector < vector < Recombevent > > RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < vector < Migrevent   > > MigreventContainer;   /*!< \brief Migration events recorder */
+        
+        vector < TmrcaState > TmrcaHistory;
         double site_where_weight_was_updated_;
         double particle_weight_;
         size_t ancestor_;
+        void init_EventContainers( Model * model );
     };
 #endif
