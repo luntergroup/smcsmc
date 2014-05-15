@@ -101,8 +101,8 @@ void CountModel::reset_Ne ( Model *model ){
 
 void CountModel::reset_recomb_rate ( Model *model ){
     this->compute_recomb_rate();
-    model->rec_rate_ = this->inferred_recomb_rate;
-    cout << " set recombination rate " << model->rec_rate_ << "("<<this->recomb_count_<<")" <<endl;
+    model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
+    cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<")" <<endl;
     }
 
 
@@ -269,7 +269,7 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                 Coalevent * current_Coalevent = counting_state->CoaleventContainer[event_i];
                 /*! Cumulate the coalescent events if the event is within the interval 
                  */
-                if ( time_i == current_Coalevent->change_time_i() && pop_j == current_Coalevent->pop_i() && !current_Coalevent->counted() ){
+                if ( time_i == current_Coalevent->change_time_i() && pop_j == current_Coalevent->pop_i() ){
                     this->total_coal_count[time_i][current_Coalevent->pop_i()]                    += weight * current_Coalevent->num_event();
                     this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()]     += weight * current_Coalevent->opportunity();            
                     //current_Coalevent->set_counted(true);
@@ -280,7 +280,7 @@ void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, s
                 Recombevent * current_Recombevent = counting_state->RecombeventContainer[event_i];
                 /*! Cumulate the recombination events if the event is within the interval 
                  */
-                if ( time_i == current_Recombevent->change_time_i() && pop_j == current_Recombevent->pop_i() && !current_Recombevent->counted() ){
+                if ( time_i == current_Recombevent->change_time_i() && pop_j == current_Recombevent->pop_i() ){
                     this->total_recomb_count[time_i][current_Recombevent->pop_i()]                    += weight * current_Recombevent->num_event();
                     this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()]     += weight * current_Recombevent->opportunity();            
                     //current_Recombevent->set_counted(true);

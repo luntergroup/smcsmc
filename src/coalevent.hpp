@@ -80,8 +80,11 @@ class Starevent{
         size_t change_time_i() const { return this->change_time_i_; }
         void set_change_time_i( size_t i ){ this->change_time_i_ = i ; }
         
-        bool counted() const { return this->counted_ ; }
-        void set_counted (bool counted) { this->counted_ = counted; }
+        //bool counted() const { return this->counted_ ; }
+        //void set_counted (bool counted) { this->counted_ = counted; }
+        
+        double base() const { return this->base_; }
+        void set_base ( double base ) { this->base_ = base; }
         
         //
         // Members
@@ -93,7 +96,8 @@ class Starevent{
         double opportunity_;        
         size_t num_event_;        
         eventCode event_state_; 
-        bool counted_;
+        //bool counted_;
+        double base_;
     };
 
 

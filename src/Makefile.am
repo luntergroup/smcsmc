@@ -67,7 +67,7 @@ shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src)
 
 pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
 
-pf_ARG_prof_CXXFLAGS = $(shared_SOURCES)  pf-ARG.cpp
+pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 

@@ -43,7 +43,8 @@ Starevent::Starevent(Starevent* previous_Starevent){
     this->event_state_  = previous_Starevent->event_state();
     
     this->change_time_i_ = previous_Starevent->change_time_i();
-    this->counted_ = previous_Starevent->counted();
+    //this->counted_ = previous_Starevent->counted();
+    this->base_ = previous_Starevent->base();
     }
     
 
@@ -73,6 +74,7 @@ void Starevent::init(){
     this->set_event_state(INIT_NULL);
     
     this->set_change_time_i ( 0 );
-    this->set_counted ( false );
+    //this->set_counted ( false );
+    this->set_base ( 0 );
 
     }

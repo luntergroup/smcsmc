@@ -3,12 +3,6 @@
 #include <boost/lexical_cast.hpp> 
 
 #include "../src/particle.hpp"
-//#include "../src/usage.hpp"
-//#include "../src/vcf.hpp"
-
-//#include "../src/scrm/param.h"
-//#include "../src/scrm/model.h"
-//#include "../src/scrm/forest.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

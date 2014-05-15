@@ -45,8 +45,8 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
 	this->init(); // initialize members of ForestState
 	this->buildInitialTree();
-    //assert( this->print_Coalevent() );
-    //assert( this->print_Migrevent() );
+    assert( this->print_Coalevent() );
+    assert( this->print_Migrevent() );
     }
 
 
@@ -61,14 +61,16 @@ ForestState::~ForestState(){
 	this->clear_CoaleventContainer();
 	this->clear_RecombeventContainer();
     this->clear_MigreventContainer();
-	//Remove any of the previous states, if the counter is equal to zero.
-	ForestState* prior_state = this->previous_state;
-	if ( prior_state != NULL ) {
-		prior_state->pointer_counter--;
-		if ( prior_state->pointer_counter == (int)0 ){ 
-            delete prior_state; 
-            }
-        } 	
+	
+    //Remove any of the previous states, if the counter is equal to zero.
+	//ForestState* prior_state = this->previous_state;
+	//if ( prior_state != NULL ) {
+		//prior_state->pointer_counter--;
+		//if ( prior_state->pointer_counter == (int)0 ){ 
+            //delete prior_state; 
+            //}
+        //}
+        
     //delete_forest_counter++;
     //cout<<"Forest state destructor is called " << delete_forest_counter<<endl;    
 	dout << "A Foreststate is deleted" << endl;

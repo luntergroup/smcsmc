@@ -44,6 +44,9 @@ extern int delete_forest_counter;
  * A particle is a special case of a Forest, with special members
  */
 class ForestState : public Forest{      
+#ifdef UNITTEST
+   friend class TestForestState;
+#endif
     friend class ParticleContainer;
     friend class CountModel;
     
@@ -116,8 +119,8 @@ class ForestState : public Forest{
         //
         // Members
         //   
-        ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
-        int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
+        //ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
+        //int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
         vector < Coalevent*  > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < Recombevent*> RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < Migrevent*  > MigreventContainer;   /*!< \brief Migration events recorder */
