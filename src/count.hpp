@@ -64,7 +64,7 @@ class CountModel: public Model{
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
         void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
-        void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
+        //void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 
         void compute_recomb_rate();
         void compute_mig_rate();

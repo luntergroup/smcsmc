@@ -61,14 +61,13 @@ int main(int argc, char *argv[]){
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
             pfARG_core( pfARG_para, 
-                        //countNe, 
+                        countNe, 
                         print_update_count);
             cout << "End of EM_step " << I << endl;
             }
 
         pfARG_para.appending_Ne_file( );
         
-        int exit_success = pfARG_para.log( countNe->inferred_recomb_rate , countNe->inferred_mig_rate );
         int exit_success = pfARG_para.log( );
         
         /*! Clean up */
