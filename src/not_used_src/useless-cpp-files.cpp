@@ -1,4 +1,26 @@
 //useless functions
+double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
+    //for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){
+    for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >= 0 ; time_i --){
+        //cout << "at time level " << time_i << "current_base " << current_base << " this->lags[time_i] " << this->lags[time_i] <<endl;
+        double x_end =  (double)this->previous_base[time_i] < ( current_base - this->lags[time_i] ) ? ( current_base - this->lags[time_i] ) : (double)this->previous_base[time_i] ;
+        if (end_data){
+            x_end = current_base;
+            }
+        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+            this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
+            }
+        previous_base[time_i] = current_base - lags[time_i] > 0 ? current_base - lags[time_i] : (double)0;
+        }  
+    
+    double remove_particle_before_site = previous_base[0];
+    for (size_t i = 0 ; i < previous_base.size() ; i++ ){
+        remove_particle_before_site = remove_particle_before_site < previous_base[i] ? remove_particle_before_site : previous_base[i];
+        }
+    dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
+    return remove_particle_before_site;
+    }
+
 
 void CountModel::count_events_in_one_interval(ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
     if ( x_start == x_end ){ return; }    

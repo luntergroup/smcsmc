@@ -44,7 +44,7 @@ class CountModel: public Model{
         // Methods
         //   
         void init();
-        double extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
+        void extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters( Model * model, bool online = true, bool print = true);
                 
     private:
@@ -63,7 +63,7 @@ class CountModel: public Model{
         void reset_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
-        void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
+        //void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         //void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 
         void compute_recomb_rate();

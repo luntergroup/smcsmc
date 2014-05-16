@@ -158,7 +158,9 @@ void pfARG_core(PfParam &pfARG_para,
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-            remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+            //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+            countNe->extract_and_update_count( current_states , VCFfile->site() );
+
             continue;
             }
         
@@ -206,7 +208,8 @@ void pfARG_core(PfParam &pfARG_para,
 
     cout << "### PROGRESS: end of the sequence" << endl;
 
-    remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
+    //remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
+    countNe->extract_and_update_count( current_states , previous_x, true );
     countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
     
     pfARG_para.appending_Ne_file( true );
