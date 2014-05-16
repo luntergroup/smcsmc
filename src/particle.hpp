@@ -69,15 +69,16 @@ class ForestState : public Forest{
         //ForestState():Forest(){ }
         ForestState(Model* model, 
                     RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
-        ForestState(ForestState *current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
+        //ForestState(ForestState *current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
+        ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         ~ForestState();
     
         //
         // Methods
         //           
-        void init(double weight=1.0, 
-                  double weight_updated_at_site=0.0, 
-                  ForestState * previous_state = NULL); /*!< Initialize ForestState member particle_weight_ and site_where_weight_was_updated_ */
+        //void init(double weight=1.0, 
+                  //double weight_updated_at_site=0.0, 
+                  //ForestState * previous_state = NULL); /*!< Initialize ForestState member particle_weight_ and site_where_weight_was_updated_ */
 
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
@@ -113,12 +114,12 @@ class ForestState : public Forest{
         //
         // Setters and getters:
         //
-        void setSiteWhereWeightWasUpdated(double site){this->site_where_weight_was_updated_=site;}        
-        double site_where_weight_was_updated(){return site_where_weight_was_updated_;}
-        void setParticleWeight(double weight){this->particle_weight_ = weight;};
-        double weight(){return this->particle_weight_;};                
-        void setAncestor ( size_t ancestor ) { this->ancestor_ = ancestor; }
-        size_t ancestor(){ return this->ancestor_;}
+        void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
+        double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
+        void setParticleWeight(double weight) { this->particle_weight_ = weight; }
+        double weight() const { return this->particle_weight_; }
+        void setAncestor ( size_t ancestor ){ this->ancestor_ = ancestor; }
+        size_t ancestor() const { return this->ancestor_; }
         
         //
         // Debugging tools

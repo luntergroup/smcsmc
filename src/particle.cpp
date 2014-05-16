@@ -27,15 +27,57 @@
 /*! \brief Create a newly copied ForestState 
     @ingroup group_pf_resample 
 */
-ForestState::ForestState( ForestState * copied_state )
+//ForestState::ForestState( ForestState * copied_state )
+            //:Forest( copied_state ) {
+	//this->init( copied_state->weight(), 
+                //copied_state->site_where_weight_was_updated(), 
+                //copied_state); // initialize members of ForestState
+    //this->setAncestor ( copied_state->ancestor() );
+	//dout << "current particle's weight is " << this->weight()<<endl;
+	////copied_state->pointer_counter++;
+    //}
+
+
+ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ) {
-	this->init( copied_state->weight(), 
-                copied_state->site_where_weight_was_updated(), 
-                copied_state); // initialize members of ForestState
-    this->setAncestor ( copied_state->ancestor() );
+    this->setParticleWeight( copied_state.weight() );
+	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
+    this->setAncestor ( copied_state.ancestor() );
+    for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
+        vector < Coalevent > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
+            Coalevent new_coalevent (copied_state.CoaleventContainer[i][ii]);
+            CoaleventContainer_i.push_back ( new_coalevent ) ;
+            }
+        CoaleventContainer.push_back( CoaleventContainer_i );        
+        }
+    for (size_t i = 0 ; i < copied_state.RecombeventContainer.size() ; i++ ){ 
+        vector < Recombevent > RecombeventContainer_i;   /*!< \brief Coalescent events recorder */
+        for (size_t ii = 0 ; ii < copied_state.RecombeventContainer[i].size(); ii++){
+            Recombevent new_recombevent (copied_state.RecombeventContainer[i][ii]);
+            RecombeventContainer_i.push_back (new_recombevent) ;
+            }
+        RecombeventContainer.push_back( RecombeventContainer_i );        
+        }
+
+    for (size_t i = 0 ; i < copied_state.MigreventContainer.size() ; i++ ){ 
+        vector < Migrevent > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
+        for (size_t ii = 0 ; ii < copied_state.MigreventContainer[i].size(); ii++){
+            Migrevent new_migrevent (copied_state.MigreventContainer[i][ii]);
+            MigreventContainer_i.push_back (new_migrevent) ;
+            }
+        MigreventContainer.push_back( MigreventContainer_i );        
+        }
+    
+    for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
+        this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
+        }
+    //cout<<this->TmrcaHistory.size()<<endl;
 	dout << "current particle's weight is " << this->weight()<<endl;
 	//copied_state->pointer_counter++;
     }
+    
+    
 
 
 /*! \brief Initialize a new ForestState 
@@ -43,23 +85,22 @@ ForestState::ForestState( ForestState * copied_state )
  * */
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
-	this->init(); // initialize members of ForestState
-	this->buildInitialTree();
-    this->init_EventContainers( model);
+	//this->init(); // initialize members of ForestState
+  	this->setParticleWeight( 1.0 );
+	this->setSiteWhereWeightWasUpdated(0.0);
+
+    this->init_EventContainers( model );
     
-    assert( this->print_Coalevent() );
-    assert( this->print_Migrevent() );
+	this->buildInitialTree();    
     }
 
 
 void ForestState::init_EventContainers( Model * model ){
     for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
         vector < Coalevent   > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
-        CoaleventContainer.push_back( CoaleventContainer_i );
-        
+        CoaleventContainer.push_back( CoaleventContainer_i );        
         vector < Recombevent > RecombeventContainer_i; /*!< \brief Recombination events recorder */
         RecombeventContainer.push_back( RecombeventContainer_i );
-        
         vector < Migrevent   > MigreventContainer_i;   /*!< \brief Migration events recorder */
         MigreventContainer.push_back( MigreventContainer_i );                
         }
@@ -94,16 +135,21 @@ ForestState::~ForestState(){
     }
 
 
-/*! \brief Initialize members of an ForestState 
-*/
-void ForestState::init(double weight, double site , ForestState* previous_state){
-	this->setParticleWeight(weight);
-	this->setSiteWhereWeightWasUpdated(site);
-	//this->previous_state=previous_state;
-	//this->pointer_counter=(int)0;
-	//this->CoaleventContainer.clear();
-    //new_forest_counter++;
-    }
+///*! \brief Initialize members of an ForestState 
+//*/
+//void ForestState::init(double weight, double site ){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+    //}
+
+//void ForestState::init(double weight, double site , ForestState* previous_state){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+	////this->previous_state=previous_state;
+	////this->pointer_counter=(int)0;
+	////this->CoaleventContainer.clear();
+    ////new_forest_counter++;
+    //}
 
 //ForestState::ForestState(){
 	//init();
@@ -257,6 +303,7 @@ void ForestState::record_Coalevent(
                           event_code);	
 	new_event.set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
+    
     }
 
 

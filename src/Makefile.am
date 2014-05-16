@@ -64,8 +64,7 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
           #particle.cpp $(scrm_param) $(scrm_src)  \
           #particle_dummy.cpp
 
-shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) 
-#$(count_src)
+shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src)
 
 pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp
 

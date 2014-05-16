@@ -43,6 +43,7 @@ class Starevent{
         //    
         Starevent();
         Starevent(Starevent* previous_Starevent);
+        Starevent(const Starevent &previous_Starevent);
         Starevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
@@ -118,9 +119,12 @@ class Coalevent : public Starevent{
                     //start_time, 
                     //end_time, 
                     opportunity, 
-                    event_code ){ };  
+                    event_code ){ assert (this->print_event()); };  
+        Coalevent(const Coalevent & previous_Starevent) 
+                 : Starevent (previous_Starevent) { };
         ~Coalevent(){};
-
+    private:
+        bool print_event();
     };
     
 /*!
@@ -140,8 +144,12 @@ class Recombevent : public Starevent{
                       //start_time, 
                       //end_time, 
                       opportunity, 
-                      event_code ){ };
+                      event_code ){ assert( this->print_event()); };
+        Recombevent(const Recombevent & previous_Starevent) 
+                   : Starevent (previous_Starevent) { };
         ~Recombevent(){};
+    private:
+        bool print_event();
     };
     
 
@@ -163,12 +171,21 @@ class Migrevent : public Starevent{
                     //start_time, 
                     //end_time, 
                     opportunity, 
-                    event_code ){ this->set_mig_pop_i (mig_pop); };
+                    event_code ){ 
+                        this->set_mig_pop_i (mig_pop); 
+                        assert( this->print_event() );
+                        };
+        Migrevent(const Migrevent & previous_Starevent) 
+                   : Starevent (previous_Starevent) { 
+                       this->set_mig_pop_i ( previous_Starevent.mig_pop() ); 
+                       };
         ~Migrevent(){};
         
+    private:
+        bool print_event();
+            
         size_t mig_pop() const {return this->mig_pop_; } 
-        void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }
-    
+        void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }    
         size_t mig_pop_;
     };
 

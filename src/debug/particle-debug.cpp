@@ -44,55 +44,55 @@ void ParticleContainer::print(){
     }
 
 
-bool ForestState::print_Coalevent(){
-    cout << " ### Coalescent events:" << endl;
-	for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
-		cout 
-        //<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             << setw(13) << this->CoaleventContainer[i]->opportunity()   << " opportunity for " 
-             << setw(2)  << this->CoaleventContainer[i]->num_event()     << " coalescent, ";
-        if ( this->CoaleventContainer[i]->event_state() == NOEVENT ){
-            cout<< " potetial coalsecent";
-            }
-        cout << endl;
-        }
-	return true;
-    }
+//bool ForestState::print_Coalevent(){
+    //cout << " ### Coalescent events:" << endl;
+	//for (size_t i = 0 ; i < CoaleventContainer.size() ; i++ ){
+		//cout 
+        ////<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
+             ////<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
+             //<< setw(13) << this->CoaleventContainer[i]->opportunity()   << " opportunity for " 
+             //<< setw(2)  << this->CoaleventContainer[i]->num_event()     << " coalescent, ";
+        //if ( this->CoaleventContainer[i]->event_state() == NOEVENT ){
+            //cout<< " potetial coalsecent";
+            //}
+        //cout << endl;
+        //}
+	//return true;
+    //}
     
 
-bool ForestState::print_Recombevent(){
-    cout << " ### Recombination events:" << endl;
-	for (size_t i = 0 ; i < RecombeventContainer.size() ; i++ ){
-		cout 
-            //<< setw(10) << this->RecombeventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->RecombeventContainer[i]->end_height()    << ", " 
-             << setw(13) << this->RecombeventContainer[i]->opportunity()   << " opportunity for " 
-             << setw(2)  << this->RecombeventContainer[i]->num_event()     << " recombination, ";
-        if ( this->RecombeventContainer[i]->event_state() == NOEVENT ){
-            cout<< " potetial recombination";
-            }
-        cout << endl;
-        }
-	return true;
-    }
+//bool ForestState::print_Recombevent(){
+    //cout << " ### Recombination events:" << endl;
+	//for (size_t i = 0 ; i < RecombeventContainer.size() ; i++ ){
+		//cout 
+            ////<< setw(10) << this->RecombeventContainer[i]->start_height()  << " to " 
+             ////<< setw(10) << this->RecombeventContainer[i]->end_height()    << ", " 
+             //<< setw(13) << this->RecombeventContainer[i]->opportunity()   << " opportunity for " 
+             //<< setw(2)  << this->RecombeventContainer[i]->num_event()     << " recombination, ";
+        //if ( this->RecombeventContainer[i]->event_state() == NOEVENT ){
+            //cout<< " potetial recombination";
+            //}
+        //cout << endl;
+        //}
+	//return true;
+    //}
 
 
-bool ForestState::print_Migrevent(){
-    dout << " ### Migration events:" << endl;
-	for (size_t i = 0 ; i < MigreventContainer.size() ; i++ ){
-		dout 
-        //<< setw(10) << this->MigreventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->MigreventContainer[i]->end_height()    << ", " 
-             << setw(13) << this->MigreventContainer[i]->opportunity()   << " opportunity for " 
-             << setw(2)  << this->MigreventContainer[i]->num_event()     << " migration, ";
-        if ( this->MigreventContainer[i]->event_state() == NOEVENT ){
-            dout << "potetial migration, from pop " << this->MigreventContainer[i]->pop_i() << " to some other population "; 
-            }
-        else {
-            dout << "from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
-            }
-        dout << endl;
-        }
-	return true;
-    }
+//bool ForestState::print_Migrevent(){
+    //dout << " ### Migration events:" << endl;
+	//for (size_t i = 0 ; i < MigreventContainer.size() ; i++ ){
+		//dout 
+        ////<< setw(10) << this->MigreventContainer[i]->start_height()  << " to " 
+             ////<< setw(10) << this->MigreventContainer[i]->end_height()    << ", " 
+             //<< setw(13) << this->MigreventContainer[i]->opportunity()   << " opportunity for " 
+             //<< setw(2)  << this->MigreventContainer[i]->num_event()     << " migration, ";
+        //if ( this->MigreventContainer[i]->event_state() == NOEVENT ){
+            //dout << "potetial migration, from pop " << this->MigreventContainer[i]->pop_i() << " to some other population "; 
+            //}
+        //else {
+            //dout << "from pop " << this->MigreventContainer[i]->pop_i() << " to pop " << this->MigreventContainer[i]->mig_pop(); 
+            //}
+        //dout << endl;
+        //}
+	//return true;
+    //}
