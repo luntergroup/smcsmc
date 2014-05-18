@@ -160,7 +160,8 @@ void PfParam::init(){
     this->original_recombination_rate_ = 0;
     this->N                = 100;
     this->buff_length      = 200;
-    this->lag              = 0;
+    //this->lag              = 0;
+    this->lag              = 5000000;
     this->out_NAME_prefix  = "pfARG";
     this->ESS_              = 0.5;
     this->ESS_default_bool = true;

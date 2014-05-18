@@ -60,14 +60,21 @@ void CountModel::init_migr(){ /*! \todo This requires more work*/
     this->total_mig_count.clear();
     this->total_weighted_mig_opportunity.clear();    
 
-    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-        vector <double> tmp_count(this->population_number(), 0);
-        this->total_mig_count.push_back(tmp_count);
-        this->inferred_mig_rate.push_back(tmp_count);
-        
-        vector <double> tmp_opportunity(this->population_number(), 1);
-        this->total_weighted_mig_opportunity.push_back(tmp_opportunity);
-        }        
+    this->resetTime();    
+    for (size_t time_layer_i = 0 ; time_layer_i < change_times_.size(); time_layer_i++){
+        vector < vector < double > > tmp_count_Time_i;
+        vector < vector < double > > tmp_opp_Time_i;
+        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+            vector <double> tmp_count(this->population_number(), 0);
+            tmp_count_Time_i.push_back(tmp_count);
+                        
+            vector <double> tmp_opportunity(this->population_number(), 1);
+            tmp_opp_Time_i.push_back(tmp_opportunity);
+            }        
+        this->total_mig_count.push_back(tmp_count_Time_i);
+        this->inferred_mig_rate.push_back(tmp_count_Time_i);
+        this->total_weighted_mig_opportunity.push_back(tmp_opp_Time_i);
+        }
     }
 
 
@@ -136,7 +143,7 @@ void CountModel::reset_mig_rate ( Model *model ) {
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             for (size_t pop_k = 0 ; pop_k < this->population_number(); pop_k++ ) {
                 if ( pop_j == pop_k) continue;
-                model->addMigrationRate(this->change_times_[time_i], pop_j, pop_k, this->inferred_mig_rate[pop_j][pop_k], false, false);
+                model->addMigrationRate(this->change_times_[time_i], pop_j, pop_k, this->inferred_mig_rate[time_i][pop_j][pop_k], false, false);
                 }
             }
         }
@@ -168,9 +175,12 @@ void CountModel::reset_model_parameters(Model * model, bool online, bool print){
     
 
 void CountModel::compute_mig_rate(){
-    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            this->inferred_mig_rate[pop_i][pop_j] = this->total_mig_count[pop_i][pop_j] / this->total_weighted_mig_opportunity[pop_i][pop_j];
+    this->resetTime();
+    for (size_t time_i = 0; time_i<change_times_.size(); time_i++){
+        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+            for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+                this->inferred_mig_rate[time_i][pop_i][pop_j] = this->total_mig_count[time_i][pop_i][pop_j] / this->total_weighted_mig_opportunity[time_i][pop_i][pop_j];
+                }
             }
         }
     }
@@ -241,22 +251,11 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
             if (end_data){
                 x_end = current_base;
                 }            
-            int Coalevent_index = counting_state->CoaleventContainer[time_i].size()-1;
-            do {
-                Coalevent current_Coalevent = counting_state->CoaleventContainer[time_i][Coalevent_index];
-                if ( current_Coalevent.base() < x_start){
-                    break;
-                    }
-                this->total_coal_count[time_i][current_Coalevent.pop_i()]                += weight * current_Coalevent.num_event();
-                this->total_weighted_coal_opportunity[time_i][current_Coalevent.pop_i()] += weight * current_Coalevent.opportunity();            
-                Coalevent_index--;                
-                } while ( Coalevent_index > 0 ) ;
-                
-            //for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-                //this->count_events_in_one_interval(Endparticles, time_i, pop_j, previous_base[time_i], x_end );                
-                //}
-                
-                
+//cout<<"Paritcle " << i <<" "<< counting_state->ancestor() <<endl;
+            this->update_coal_count ( counting_state->CoaleventContainer[time_i] , time_i, weight); 
+            
+            this->update_recomb_count ( counting_state->RecombeventContainer[time_i] , time_i, weight); 
+            //this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);                 
             previous_base[time_i] = current_base - lags[time_i] > 0 ? current_base - lags[time_i] : (double)0;
             }  
         
@@ -268,13 +267,71 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         //return remove_particle_before_site;
         }
     }
+    
+    
+void CountModel::update_coal_count ( vector < Coalevent > & CoaleventContainer_i, size_t time_i, double weight ){
+    double x_start = (double)this->previous_base[time_i];
+    
+    int Coalevent_index = CoaleventContainer_i.size()-1;
+    while ( Coalevent_index > 0 ) {
+        Coalevent current_Coalevent = CoaleventContainer_i[Coalevent_index];
+        if ( current_Coalevent.base() < x_start){
+            break;
+            }
+        this->total_coal_count[time_i][current_Coalevent.pop_i()]                += weight * current_Coalevent.num_event();
+        this->total_weighted_coal_opportunity[time_i][current_Coalevent.pop_i()] += weight * current_Coalevent.opportunity();            
+        Coalevent_index--;                
+        } 
+    //return (size_t)Coalevent_index;
+    size_t remove_number = Coalevent_index < 0 ? 0 : Coalevent_index+1;
+    if (remove_number > 0){
+        CoaleventContainer_i.erase (CoaleventContainer_i.begin(), CoaleventContainer_i.begin()+Coalevent_index);
+        }
+    }    
 
-//void CountModel::count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end){
-    //if ( x_start == x_end ){ return; }    
-    //for (size_t i = 0; i < Endparticles.particles.size(); i++){                
-        //ForestState* counting_state = Endparticles.particles[i];
-        //double weight = counting_state->weight();
-    
-    
-        //}
-    //}
+
+void CountModel::update_recomb_count ( vector < Recombevent > & RecombeventContainer_i, size_t time_i, double weight ){
+    double x_start = (double)this->previous_base[time_i];    
+    int Recombevent_index = RecombeventContainer_i.size()-1;
+    while ( Recombevent_index > 0 ){
+        Recombevent current_Recombevent = RecombeventContainer_i[Recombevent_index];
+        if ( current_Recombevent.base() < x_start){
+            break;
+            }
+        this->total_recomb_count[time_i][current_Recombevent.pop_i()]                += weight * current_Recombevent.num_event();
+        this->total_weighted_recomb_opportunity[time_i][current_Recombevent.pop_i()] += weight * current_Recombevent.opportunity();            
+        Recombevent_index--;                
+        }  
+    //return (size_t)Recombevent_index;
+    size_t remove_number = Recombevent_index < 0 ? 0 : Recombevent_index+1;
+    //cout<<"Recombevent_index "<<remove_number<<endl;
+    if (remove_number > 0){
+        RecombeventContainer_i.erase( RecombeventContainer_i.begin(), RecombeventContainer_i.begin()+Recombevent_index);
+        }
+    }
+
+
+void CountModel::update_migr_count ( vector < Migrevent > & MigreventContainer_i, size_t time_i, double weight ){
+    double x_start = (double)this->previous_base[time_i];    
+    int Migrevent_index = MigreventContainer_i.size()-1;
+    while ( Migrevent_index > 0 ){
+        Migrevent current_Migrevent = MigreventContainer_i[Migrevent_index];
+        if ( current_Migrevent.base() < x_start){
+            break;
+            }
+        if (current_Migrevent.event_state() == EVENT){
+            this->total_mig_count[time_i][current_Migrevent.pop_i()][current_Migrevent.mig_pop()] += current_Migrevent.num_event() * weight;
+            } 
+        for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[time_i][current_Migrevent.pop_i()].size(); potential_pop++){
+            this->total_weighted_mig_opportunity[time_i][current_Migrevent.pop_i()][potential_pop] += current_Migrevent.opportunity() * weight;    
+            }    
+        Migrevent_index--;                
+        }  
+    //return (size_t)Migrevent_index;
+    size_t remove_number = Migrevent_index < 0 ? 0 : Migrevent_index+1;
+    if (remove_number > 0){
+        MigreventContainer_i.erase( MigreventContainer_i.begin(), MigreventContainer_i.begin()+Migrevent_index);
+        }
+    }
+
+

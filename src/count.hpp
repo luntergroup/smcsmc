@@ -63,6 +63,10 @@ class CountModel: public Model{
         void reset_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
+        void update_coal_count ( vector < Coalevent > & CoaleventContainer_i, size_t time_i, double weight );
+        void update_recomb_count ( vector < Recombevent > & RecombeventContainer_i, size_t time_i, double weight );
+        void update_migr_count ( vector < Migrevent > & MigreventContainer_i, size_t time_i, double weight );
+
         //void count_events_in_one_interval( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
         //void count_events_in_one_interval_alt( ParticleContainer &Endparticles, size_t time_i, size_t pop_j, double x_start, double x_end);
 
@@ -83,8 +87,8 @@ class CountModel: public Model{
 
         /*! The dimension of total_mig_count, total_weighted_mig_opportunity are number_of_population * number_of_population
          */         
-        vector < vector<double> >   total_mig_count;
-        vector < vector<double> >   total_weighted_mig_opportunity;
+        vector < vector < vector<double> > >  total_mig_count;
+        vector < vector < vector<double> > >  total_weighted_mig_opportunity;
 
         // DEBUG
         void print_recomb_counts();
@@ -100,7 +104,7 @@ class CountModel: public Model{
         //   
         vector < double > previous_base;
         vector < double > lags;
-        vector < vector<double> > inferred_mig_rate; // This should be a 3-D vector 
+        vector < vector < vector<double> > > inferred_mig_rate; // This should be a 3-D vector 
         
         double recomb_count_;
         double const_lag_;                

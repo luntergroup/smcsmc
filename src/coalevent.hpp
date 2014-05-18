@@ -157,7 +157,7 @@ class Recombevent : public Starevent{
  * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
  */    
 class Migrevent : public Starevent{
-    //friend class CountModel;
+    friend class CountModel;
     //friend class ForestState;
     //friend class ParticleContainer;
     public:
