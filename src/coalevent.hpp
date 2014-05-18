@@ -41,15 +41,15 @@ class Starevent{
         //
         // Constructors and Destructors
         //    
-        Starevent();
-        Starevent(Starevent* previous_Starevent);
-        Starevent(const Starevent &previous_Starevent);
+        //Starevent();
+        //Starevent(Starevent* previous_Starevent);
+        //Starevent(const Starevent &previous_Starevent);
         Starevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
                   double opportunity,
                   eventCode event_code );
-        ~Starevent(){};
+        ~Starevent(){ };
     private:
         //
         // Methods
@@ -99,6 +99,7 @@ class Starevent{
         eventCode event_state_; 
         //bool counted_;
         double base_;
+        int pointer_counter_; // Number of ForestStates are pointing at this event
     };
 
 

@@ -269,69 +269,69 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
     }
     
     
-void CountModel::update_coal_count ( vector < Coalevent > & CoaleventContainer_i, size_t time_i, double weight ){
+void CountModel::update_coal_count ( vector < Coalevent *> & CoaleventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];
     
     int Coalevent_index = CoaleventContainer_i.size()-1;
     while ( Coalevent_index > 0 ) {
-        Coalevent current_Coalevent = CoaleventContainer_i[Coalevent_index];
-        if ( current_Coalevent.base() < x_start){
+        Coalevent * current_Coalevent = CoaleventContainer_i[Coalevent_index];
+        if ( current_Coalevent->base() < x_start){
             break;
             }
-        this->total_coal_count[time_i][current_Coalevent.pop_i()]                += weight * current_Coalevent.num_event();
-        this->total_weighted_coal_opportunity[time_i][current_Coalevent.pop_i()] += weight * current_Coalevent.opportunity();            
+        this->total_coal_count[time_i][current_Coalevent->pop_i()]                += weight * current_Coalevent->num_event();
+        this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()] += weight * current_Coalevent->opportunity();            
         Coalevent_index--;                
         } 
     //return (size_t)Coalevent_index;
     size_t remove_number = Coalevent_index < 0 ? 0 : Coalevent_index+1;
-    if (remove_number > 0){
-        CoaleventContainer_i.erase (CoaleventContainer_i.begin(), CoaleventContainer_i.begin()+Coalevent_index);
-        }
+    //if (remove_number > 0){
+        //CoaleventContainer_i.erase (CoaleventContainer_i.begin(), CoaleventContainer_i.begin()+Coalevent_index);
+        //}
     }    
 
 
-void CountModel::update_recomb_count ( vector < Recombevent > & RecombeventContainer_i, size_t time_i, double weight ){
+void CountModel::update_recomb_count ( vector < Recombevent* > & RecombeventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];    
     int Recombevent_index = RecombeventContainer_i.size()-1;
     while ( Recombevent_index > 0 ){
-        Recombevent current_Recombevent = RecombeventContainer_i[Recombevent_index];
-        if ( current_Recombevent.base() < x_start){
+        Recombevent* current_Recombevent = RecombeventContainer_i[Recombevent_index];
+        if ( current_Recombevent->base() < x_start){
             break;
             }
-        this->total_recomb_count[time_i][current_Recombevent.pop_i()]                += weight * current_Recombevent.num_event();
-        this->total_weighted_recomb_opportunity[time_i][current_Recombevent.pop_i()] += weight * current_Recombevent.opportunity();            
+        this->total_recomb_count[time_i][current_Recombevent->pop_i()]                += weight * current_Recombevent->num_event();
+        this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity();            
         Recombevent_index--;                
         }  
     //return (size_t)Recombevent_index;
     size_t remove_number = Recombevent_index < 0 ? 0 : Recombevent_index+1;
     //cout<<"Recombevent_index "<<remove_number<<endl;
-    if (remove_number > 0){
-        RecombeventContainer_i.erase( RecombeventContainer_i.begin(), RecombeventContainer_i.begin()+Recombevent_index);
-        }
+    //if (remove_number > 0){
+        //RecombeventContainer_i.erase( RecombeventContainer_i.begin(), RecombeventContainer_i.begin()+Recombevent_index);
+        //}
     }
 
 
-void CountModel::update_migr_count ( vector < Migrevent > & MigreventContainer_i, size_t time_i, double weight ){
+void CountModel::update_migr_count ( vector < Migrevent * > & MigreventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];    
     int Migrevent_index = MigreventContainer_i.size()-1;
     while ( Migrevent_index > 0 ){
-        Migrevent current_Migrevent = MigreventContainer_i[Migrevent_index];
-        if ( current_Migrevent.base() < x_start){
+        Migrevent* current_Migrevent = MigreventContainer_i[Migrevent_index];
+        if ( current_Migrevent->base() < x_start){
             break;
             }
-        if (current_Migrevent.event_state() == EVENT){
-            this->total_mig_count[time_i][current_Migrevent.pop_i()][current_Migrevent.mig_pop()] += current_Migrevent.num_event() * weight;
+        if (current_Migrevent->event_state() == EVENT){
+            this->total_mig_count[time_i][current_Migrevent->pop_i()][current_Migrevent->mig_pop()] += current_Migrevent->num_event() * weight;
             } 
-        for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[time_i][current_Migrevent.pop_i()].size(); potential_pop++){
-            this->total_weighted_mig_opportunity[time_i][current_Migrevent.pop_i()][potential_pop] += current_Migrevent.opportunity() * weight;    
+        for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[time_i][current_Migrevent->pop_i()].size(); potential_pop++){
+            this->total_weighted_mig_opportunity[time_i][current_Migrevent->pop_i()][potential_pop] += current_Migrevent->opportunity() * weight;    
             }    
         Migrevent_index--;                
         }  
     //return (size_t)Migrevent_index;
     size_t remove_number = Migrevent_index < 0 ? 0 : Migrevent_index+1;
-    if (remove_number > 0){
-        MigreventContainer_i.erase( MigreventContainer_i.begin(), MigreventContainer_i.begin()+Migrevent_index);
-        }
+    //if (remove_number > 0){
+        //MigreventContainer_i.erase( MigreventContainer_i.begin(), MigreventContainer_i.begin()+Migrevent_index);
+        //}
     }
 
 

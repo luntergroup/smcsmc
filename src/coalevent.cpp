@@ -29,37 +29,37 @@
  */ 
 
 
-Starevent::Starevent(){
-    this->init();
-    }
+//Starevent::Starevent(){
+    //this->init();
+    //}
     
-/*! \brief Copy the Starevent from the previous ForestState*/    
-Starevent::Starevent(Starevent* previous_Starevent){ 
-    this->pop_i_        = previous_Starevent->pop_i();
-    //this->start_height_ = previous_Starevent->start_height();
-    //this->end_height_   = previous_Starevent->end_height(); 
-    this->num_event_    = previous_Starevent->num_event();
-    this->opportunity_  = previous_Starevent->opportunity();
-    this->event_state_  = previous_Starevent->event_state();
+///*! \brief Copy the Starevent from the previous ForestState*/    
+//Starevent::Starevent(Starevent* previous_Starevent){ 
+    //this->pop_i_        = previous_Starevent->pop_i();
+    ////this->start_height_ = previous_Starevent->start_height();
+    ////this->end_height_   = previous_Starevent->end_height(); 
+    //this->num_event_    = previous_Starevent->num_event();
+    //this->opportunity_  = previous_Starevent->opportunity();
+    //this->event_state_  = previous_Starevent->event_state();
     
-    this->change_time_i_ = previous_Starevent->change_time_i();
-    //this->counted_ = previous_Starevent->counted();
-    this->base_ = previous_Starevent->base();
-    }
+    //this->change_time_i_ = previous_Starevent->change_time_i();
+    ////this->counted_ = previous_Starevent->counted();
+    //this->base_ = previous_Starevent->base();
+    //}
     
-/*! \brief Copy the Starevent from the previous ForestState*/    
-Starevent::Starevent(const Starevent & previous_Starevent){ 
-    this->pop_i_        = previous_Starevent.pop_i();
-    //this->start_height_ = previous_Starevent.start_height();
-    //this->end_height_   = previous_Starevent.end_height(); 
-    this->num_event_    = previous_Starevent.num_event();
-    this->opportunity_  = previous_Starevent.opportunity();
-    this->event_state_  = previous_Starevent.event_state();
+///*! \brief Copy the Starevent from the previous ForestState*/    
+//Starevent::Starevent(const Starevent & previous_Starevent){ 
+    //this->pop_i_        = previous_Starevent.pop_i();
+    ////this->start_height_ = previous_Starevent.start_height();
+    ////this->end_height_   = previous_Starevent.end_height(); 
+    //this->num_event_    = previous_Starevent.num_event();
+    //this->opportunity_  = previous_Starevent.opportunity();
+    //this->event_state_  = previous_Starevent.event_state();
     
-    this->change_time_i_ = previous_Starevent.change_time_i();
-    //this->counted_ = previous_Starevent.counted();
-    this->base_ = previous_Starevent.base();
-    }
+    //this->change_time_i_ = previous_Starevent.change_time_i();
+    ////this->counted_ = previous_Starevent.counted();
+    //this->base_ = previous_Starevent.base();
+    //}
 
 
 /*! \brief  Initialize Starevent */    
@@ -90,7 +90,7 @@ void Starevent::init(){
     this->set_change_time_i ( 0 );
     //this->set_counted ( false );
     this->set_base ( 0 );
-
+    this->pointer_counter_ = 1;
     }
 
 
