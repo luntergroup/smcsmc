@@ -49,7 +49,7 @@ arg_src = coalevent.cpp \
           particle.cpp \
           particleContainer.cpp 
 
-count_src = count.cpp count-semi-debug.cpp
+count_src = count.cpp count-semi-debug.cpp 
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
