@@ -255,7 +255,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
             this->update_coal_count ( counting_state->CoaleventContainer[time_i] , time_i, weight); 
             
             this->update_recomb_count ( counting_state->RecombeventContainer[time_i] , time_i, weight); 
-            //this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);                 
+            this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);                 
             previous_base[time_i] = current_base - lags[time_i] > 0 ? current_base - lags[time_i] : (double)0;
             }  
         

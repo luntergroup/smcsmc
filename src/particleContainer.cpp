@@ -76,17 +76,22 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
         if ( (sample_count[old_state_index] > 0)){
-            for (int ii=1; ii <= sample_count[old_state_index]; ii++){ // create new copy of the resampled particle        
-			  	dout << "       Make a copy of the " << old_state_index<<"th particle" << endl;                
+            ForestState * current_state = this->particles[old_state_index] ;
+            this->push(current_state);
+            
+            for (int ii=2; ii <= sample_count[old_state_index]; ii++){ // create new copy of the resampled particle        
+			  	//cout << "       Make a copy of the " << old_state_index<<"th particle" << endl;                
 				ForestState * new_copy_state = new ForestState( *this->particles[old_state_index] );
 				this->push(new_copy_state);
                 }
-            this->particles[old_state_index]->nodes()->clear(); // Remove old particle tree, this reduces memory usage.
+            //delete this->particles[old_state_index];
+            //this->particles[old_state_index]->nodes()->clear(); // Remove old particle tree, this reduces memory usage.
             } 
         else {
 			delete this->particles[old_state_index];			
-			this->particles[old_state_index]=NULL;
+			
             }
+            this->particles[old_state_index]=NULL;
         }
     
     this->shifting(sample_count.sum());
@@ -159,6 +164,9 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
+    cout<<"Forest state was created " << new_forest_counter << " times" << endl;
+    cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
+    
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
 		if (this->particles[i]!=NULL){

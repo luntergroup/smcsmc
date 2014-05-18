@@ -79,6 +79,7 @@ ForestState::ForestState( const ForestState & copied_state )
     //cout<<this->TmrcaHistory.size()<<endl;
 	dout << "current particle's weight is " << this->weight()<<endl;
 	//copied_state->pointer_counter++;
+    new_forest_counter++;
     }
     
     
@@ -96,6 +97,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
     this->init_EventContainers( model );
     
 	this->buildInitialTree();    
+    new_forest_counter++;
     }
 
 
@@ -133,7 +135,7 @@ ForestState::~ForestState(){
             //}
         //}
         
-    //delete_forest_counter++;
+    delete_forest_counter++;
     //cout<<"Forest state destructor is called " << delete_forest_counter<<endl;    
 	dout << "A Foreststate is deleted" << endl;
     }

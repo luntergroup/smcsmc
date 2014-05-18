@@ -33,7 +33,7 @@ class TestForestState : public CppUnit::TestCase {
         CPPUNIT_ASSERT( new_state.random_generator() == rg );
         CPPUNIT_ASSERT_EQUAL(0.0, new_state.site_where_weight_was_updated() );
         CPPUNIT_ASSERT_EQUAL(1.0, new_state.weight());
-        CPPUNIT_ASSERT(new_state.previous_state == NULL);
+        //CPPUNIT_ASSERT(new_state.previous_state == NULL);
         cout<<endl;
         //CPPUNIT_ASSERT(new_state.printTree());
         

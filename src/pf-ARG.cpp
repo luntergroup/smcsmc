@@ -26,8 +26,8 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */ 
-//int new_forest_counter = 0;
-//int delete_forest_counter = 0;
+int new_forest_counter = 0;
+int delete_forest_counter = 0;
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
