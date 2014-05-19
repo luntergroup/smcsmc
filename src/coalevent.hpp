@@ -34,9 +34,9 @@ class Starevent{
     friend class CountModel;
     friend class ForestState;
     friend class ParticleContainer;
-    friend class Coalevent;
+    //friend class Coalevent;
     friend class Migrevent;
-    friend class Recombevent;
+    //friend class Recombevent;
     public:
         //
         // Constructors and Destructors
@@ -103,55 +103,55 @@ class Starevent{
     };
 
 
-/*!
- * \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
- */
-class Coalevent : public Starevent{
-    //friend class CountModel;
-    //friend class ForestState;
-    //friend class ParticleContainer;
-    public:
-        Coalevent(size_t pop_i, 
-                  //double start_time,
-                  //double end_time, 
-                  double opportunity,
-                  eventCode event_code ) 
-                 : Starevent ( pop_i, 
-                    //start_time, 
-                    //end_time, 
-                    opportunity, 
-                    event_code ){ assert (this->print_event()); };  
-        Coalevent(const Coalevent & previous_Starevent) 
-                 : Starevent (previous_Starevent) { };
-        ~Coalevent(){};
-    private:
-        bool print_event();
-    };
+///*!
+ //* \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
+ //*/
+//class Coalevent : public Starevent{
+    ////friend class CountModel;
+    ////friend class ForestState;
+    ////friend class ParticleContainer;
+    //public:
+        //Coalevent(size_t pop_i, 
+                  ////double start_time,
+                  ////double end_time, 
+                  //double opportunity,
+                  //eventCode event_code ) 
+                 //: Starevent ( pop_i, 
+                    ////start_time, 
+                    ////end_time, 
+                    //opportunity, 
+                    //event_code ){ assert (this->print_event()); };  
+        //Coalevent(const Coalevent & previous_Starevent) 
+                 //: Starevent (previous_Starevent) { };
+        //~Coalevent(){};
+    //private:
+        //bool print_event();
+    //};
     
-/*!
- * \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
- */    
-class Recombevent : public Starevent{
-    //friend class CountModel;
-    //friend class ForestState;
-    //friend class ParticleContainer;
-    public:
-        Recombevent(size_t pop_i, 
-                    //double start_time,
-                    //double end_time, 
-                    double opportunity,
-                    eventCode event_code ) 
-                   : Starevent ( pop_i, 
-                      //start_time, 
-                      //end_time, 
-                      opportunity, 
-                      event_code ){ assert( this->print_event()); };
-        Recombevent(const Recombevent & previous_Starevent) 
-                   : Starevent (previous_Starevent) { };
-        ~Recombevent(){};
-    private:
-        bool print_event();
-    };
+///*!
+ //* \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
+ //*/    
+//class Recombevent : public Starevent{
+    ////friend class CountModel;
+    ////friend class ForestState;
+    ////friend class ParticleContainer;
+    //public:
+        //Recombevent(size_t pop_i, 
+                    ////double start_time,
+                    ////double end_time, 
+                    //double opportunity,
+                    //eventCode event_code ) 
+                   //: Starevent ( pop_i, 
+                      ////start_time, 
+                      ////end_time, 
+                      //opportunity, 
+                      //event_code ){ assert( this->print_event()); };
+        //Recombevent(const Recombevent & previous_Starevent) 
+                   //: Starevent (previous_Starevent) { };
+        //~Recombevent(){};
+    //private:
+        //bool print_event();
+    //};
     
 
 /*!

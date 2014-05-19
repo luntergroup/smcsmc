@@ -44,18 +44,18 @@ ForestState::ForestState( const ForestState & copied_state )
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     this->setAncestor ( copied_state.ancestor() );
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
-        vector < Coalevent* > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Starevent* > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
-            Coalevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
+            Starevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
             new_coalevent->pointer_counter_++;
             CoaleventContainer_i.push_back ( new_coalevent ) ;
             }
         CoaleventContainer.push_back( CoaleventContainer_i );        
         }
     for (size_t i = 0 ; i < copied_state.RecombeventContainer.size() ; i++ ){ 
-        vector < Recombevent* > RecombeventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Starevent* > RecombeventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.RecombeventContainer[i].size(); ii++){
-            Recombevent* new_recombevent = copied_state.RecombeventContainer[i][ii];
+            Starevent* new_recombevent = copied_state.RecombeventContainer[i][ii];
             new_recombevent->pointer_counter_++;
             RecombeventContainer_i.push_back (new_recombevent) ;
             }
@@ -63,7 +63,7 @@ ForestState::ForestState( const ForestState & copied_state )
         }
 
     for (size_t i = 0 ; i < copied_state.MigreventContainer.size() ; i++ ){ 
-        vector < Migrevent* > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Migrevent* > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.MigreventContainer[i].size(); ii++){
             Migrevent* new_migrevent = copied_state.MigreventContainer[i][ii];
             new_migrevent->pointer_counter_++;
@@ -103,11 +103,11 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
 
 void ForestState::init_EventContainers( Model * model ){
     for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
-        vector < Coalevent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Starevent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
         CoaleventContainer.push_back( CoaleventContainer_i );        
-        vector < Recombevent* > RecombeventContainer_i; /*!< \brief Recombination events recorder */
+        deque < Starevent* > RecombeventContainer_i; /*!< \brief Recombination events recorder */
         RecombeventContainer.push_back( RecombeventContainer_i );
-        vector < Migrevent* > MigreventContainer_i;   /*!< \brief Migration events recorder */
+        deque < Migrevent* > MigreventContainer_i;   /*!< \brief Migration events recorder */
         MigreventContainer.push_back( MigreventContainer_i );                
         }
     }
@@ -302,12 +302,13 @@ void ForestState::record_Coalevent(
                   double opportunity, 
                   eventCode event_code) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
-    Coalevent * new_event = new Coalevent( pop_i,
+    Starevent * new_event = new Starevent( pop_i,
                           //start_time,
                           //end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    new_event->set_base ( this->current_base() );
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     
     }
@@ -321,12 +322,13 @@ void ForestState::record_Recombevent(size_t pop_i,
                           //double end_time, 
                           double opportunity, 
                           eventCode event_code){
-    Recombevent* new_event = new Recombevent( pop_i,
+    Starevent* new_event = new Starevent( pop_i,
                           //start_time,
                           //end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    new_event->set_base ( this->current_base() );
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
     
@@ -347,6 +349,7 @@ void ForestState::record_Migrevent(size_t pop_i,
                           opportunity,
                           event_code);	                                          
     new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    new_event->set_base ( this->current_base() );
 	this->MigreventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }    
 

@@ -108,7 +108,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Go through vcf data */
     double previous_x = 0;
-    double remove_particle_before_site = 0 ;
+    //double remove_particle_before_site = 0 ;
 
     do{
         /*! A particle path, where x-----o is a ForestState. 
@@ -178,6 +178,7 @@ void pfARG_core(PfParam &pfARG_para,
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
         //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
+        countNe->extract_and_update_count( current_states , VCFfile->site() );
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
@@ -197,7 +198,6 @@ void pfARG_core(PfParam &pfARG_para,
          *  As we have already updated the Ne counts, we could clean up any ForestState before backspace, 
          *  However, need to check this with the current_printing_space
          */
-
         //current_states.clean_old_states( remove_particle_before_site ); 
         
         /*! update previous_x before move on to the next line of the data */

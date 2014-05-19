@@ -24,6 +24,7 @@
 
 #include"scrm/forest.h"
 #include"coalevent.hpp"
+#include <deque>
 
 #ifndef NDEBUG
 #define dout std::cout
@@ -133,9 +134,11 @@ class ForestState : public Forest{
         //   
         //ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
         //int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
-        vector < vector < Coalevent*  > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < vector < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
-        vector < vector < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
+        //vector < vector < Coalevent*  > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        //vector < vector < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < deque < Starevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        vector < deque < Starevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
         
         vector < TmrcaState > TmrcaHistory;
         double site_where_weight_was_updated_;

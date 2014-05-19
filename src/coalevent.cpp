@@ -94,18 +94,18 @@ void Starevent::init(){
     }
 
 
-bool Coalevent::print_event(){
-    cout 
-        //<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             << setw(13) << this->opportunity()   << " opportunity for " 
-             << setw(2)  << this->num_event()     << " coalescent, ";
-        if ( this->event_state() == NOEVENT ){
-            cout<< " potetial coalsecent";
-            }
-        cout << endl;
-    return true;
-    }
+//bool Coalevent::print_event(){
+    //cout 
+        ////<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
+             ////<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
+             //<< setw(13) << this->opportunity()   << " opportunity for " 
+             //<< setw(2)  << this->num_event()     << " coalescent, ";
+        //if ( this->event_state() == NOEVENT ){
+            //cout<< " potetial coalsecent";
+            //}
+        //cout << endl;
+    //return true;
+    //}
 
 
 bool Migrevent::print_event(){
@@ -125,16 +125,16 @@ bool Migrevent::print_event(){
     }
 
 
-bool Recombevent::print_event(){
-    cout 
-        //<< setw(10) << this->start_height()  << " to " 
-         //<< setw(10) << this->end_height()    << ", " 
-         << setw(13) << this->opportunity()   << " opportunity for " 
-         << setw(2)  << this->num_event()     << " recombination, ";
-    if ( this->event_state() == NOEVENT ){
-        cout<< " potetial recombination";
-        }
-    cout << endl;
+//bool Recombevent::print_event(){
+    //cout 
+        ////<< setw(10) << this->start_height()  << " to " 
+         ////<< setw(10) << this->end_height()    << ", " 
+         //<< setw(13) << this->opportunity()   << " opportunity for " 
+         //<< setw(2)  << this->num_event()     << " recombination, ";
+    //if ( this->event_state() == NOEVENT ){
+        //cout<< " potetial recombination";
+        //}
+    //cout << endl;
 
-    return true;    
-    }
+    //return true;    
+    //}

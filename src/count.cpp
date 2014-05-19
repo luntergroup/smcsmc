@@ -239,79 +239,82 @@ void CountModel::compute_recomb_rate () {
          */ 
 
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
-
     for (size_t i = 0; i < Endparticles.particles.size(); i++){                
         ForestState* counting_state = Endparticles.particles[i];
         double weight = counting_state->weight();
-
         for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >= 0 ; time_i --){
-            double lag = this->lags[time_i] ;
-            double x_start = (double)this->previous_base[time_i];
-            double x_end =  x_start < ( current_base - lag ) ? ( current_base - lag ) : x_start ;
-            if (end_data){
-                x_end = current_base;
-                }            
-//cout<<"Paritcle " << i <<" "<< counting_state->ancestor() <<endl;
-            this->update_coal_count ( counting_state->CoaleventContainer[time_i] , time_i, weight); 
-            
+            this->update_coal_count ( counting_state->CoaleventContainer[time_i] , time_i, weight);             
             this->update_recomb_count ( counting_state->RecombeventContainer[time_i] , time_i, weight); 
-            this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);                 
+            this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);           
             previous_base[time_i] = current_base - lags[time_i] > 0 ? current_base - lags[time_i] : (double)0;
             }  
-        
-        //double remove_particle_before_site = previous_base[0];
-        //for (size_t i = 0 ; i < previous_base.size() ; i++ ){
-            //remove_particle_before_site = remove_particle_before_site < previous_base[i] ? remove_particle_before_site : previous_base[i];
-            //}
-        //dout<< "remove_particle_before_site = "<<remove_particle_before_site<<endl;
-        //return remove_particle_before_site;
         }
     }
     
     
-void CountModel::update_coal_count ( vector < Coalevent *> & CoaleventContainer_i, size_t time_i, double weight ){
+void CountModel::update_coal_count ( deque < Starevent *> & CoaleventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];
-    
     int Coalevent_index = CoaleventContainer_i.size()-1;
-    while ( Coalevent_index > 0 ) {
-        Coalevent * current_Coalevent = CoaleventContainer_i[Coalevent_index];
+    while ( Coalevent_index > 0 ) {        
+        Starevent * current_Coalevent = CoaleventContainer_i[Coalevent_index];
         if ( current_Coalevent->base() < x_start){
             break;
             }
         this->total_coal_count[time_i][current_Coalevent->pop_i()]                += weight * current_Coalevent->num_event();
         this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()] += weight * current_Coalevent->opportunity();            
-        Coalevent_index--;                
+        Coalevent_index--;
         } 
-    //return (size_t)Coalevent_index;
-    size_t remove_number = Coalevent_index < 0 ? 0 : Coalevent_index+1;
-    //if (remove_number > 0){
-        //CoaleventContainer_i.erase (CoaleventContainer_i.begin(), CoaleventContainer_i.begin()+Coalevent_index);
-        //}
+    
+    resize_Starevent(CoaleventContainer_i, Coalevent_index);        
+        
     }    
 
 
-void CountModel::update_recomb_count ( vector < Recombevent* > & RecombeventContainer_i, size_t time_i, double weight ){
+void CountModel::resize_Starevent ( deque < Starevent *> & StareventContainer_i , int index) {
+    //cout<<"size was "<<StareventContainer_i.size();
+    size_t i = 0;
+    while (i < index && StareventContainer_i.size()>0 ){
+        StareventContainer_i[0]->pointer_counter_ --;
+        if ( StareventContainer_i[0]->pointer_counter_ == 0){
+            delete  StareventContainer_i[0];
+            }
+        StareventContainer_i.pop_front();
+        i++;
+        }
+        //cout<<" now is "<<StareventContainer_i.size()<<endl;
+    }
+
+void CountModel::resize_Migrevent ( deque < Migrevent *> & StareventContainer_i , int index) {
+    //cout<<"size was "<<StareventContainer_i.size();
+    size_t i = 0;
+    while (i < index && StareventContainer_i.size()>0 ){
+        StareventContainer_i[0]->pointer_counter_ --;
+        if ( StareventContainer_i[0]->pointer_counter_ == 0){
+            delete  StareventContainer_i[0];
+            }
+        StareventContainer_i.pop_front();
+        i++;
+        }
+        //cout<<" now is "<<StareventContainer_i.size()<<endl;
+    }
+
+void CountModel::update_recomb_count ( deque < Starevent* > & RecombeventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];    
     int Recombevent_index = RecombeventContainer_i.size()-1;
     while ( Recombevent_index > 0 ){
-        Recombevent* current_Recombevent = RecombeventContainer_i[Recombevent_index];
+        Starevent* current_Recombevent = RecombeventContainer_i[Recombevent_index];
         if ( current_Recombevent->base() < x_start){
             break;
             }
         this->total_recomb_count[time_i][current_Recombevent->pop_i()]                += weight * current_Recombevent->num_event();
         this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity();            
         Recombevent_index--;                
-        }  
-    //return (size_t)Recombevent_index;
-    size_t remove_number = Recombevent_index < 0 ? 0 : Recombevent_index+1;
-    //cout<<"Recombevent_index "<<remove_number<<endl;
-    //if (remove_number > 0){
-        //RecombeventContainer_i.erase( RecombeventContainer_i.begin(), RecombeventContainer_i.begin()+Recombevent_index);
-        //}
+        }
+    resize_Starevent(RecombeventContainer_i, Recombevent_index); 
     }
 
 
-void CountModel::update_migr_count ( vector < Migrevent * > & MigreventContainer_i, size_t time_i, double weight ){
+void CountModel::update_migr_count ( deque < Migrevent * > & MigreventContainer_i, size_t time_i, double weight ){
     double x_start = (double)this->previous_base[time_i];    
     int Migrevent_index = MigreventContainer_i.size()-1;
     while ( Migrevent_index > 0 ){
@@ -327,11 +330,7 @@ void CountModel::update_migr_count ( vector < Migrevent * > & MigreventContainer
             }    
         Migrevent_index--;                
         }  
-    //return (size_t)Migrevent_index;
-    size_t remove_number = Migrevent_index < 0 ? 0 : Migrevent_index+1;
-    //if (remove_number > 0){
-        //MigreventContainer_i.erase( MigreventContainer_i.begin(), MigreventContainer_i.begin()+Migrevent_index);
-        //}
+    resize_Migrevent(MigreventContainer_i, Migrevent_index);
     }
 
 
