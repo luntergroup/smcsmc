@@ -1,18 +1,1 @@
-prefix=no_data_random_resample_Np${Np}_prune${pruning}_lag${lag}_ESS${ESS}
-mkdir ${prefix}
-file_prefix=${prefix}"/"${prefix}_
-
-for rep in $(seq 1 1 ${replicates})
-    do 
-    job=${file_prefix}${rep}
-    pf-ARG -l ${pruning} -Np ${Np} -o ${job} -seed ${rep} -lag ${lag} -EM ${EMsteps} -ESS ${ESS}
-    histfile=${job}HIST
-    REhist=${histfile}_RE
-    NEhist=${histfile}_NE
-    grep "RE" ${histfile} | cut -f 2 > ${REhist}
-    grep "NE" ${histfile} | cut -f 3 > ${NEhist}
-    done
-
-
-python plot_hist.py ${file_prefix} "RE" ${replicates}
-python plot_hist.py ${file_prefix} "NE" ${replicates}
+../experiment/nodata_pfARG_singlepop.src
