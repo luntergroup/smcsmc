@@ -24,9 +24,11 @@
 
 #include "usage.hpp"    
 
-void process(struct rusage *p, char *when)
+//void process(struct rusage *p, char *when)
+void process(struct rusage *p, double site)
 {
-    printf("%s", when);
+    printf("\n At site %f ,", site );
+    //printf("%s", when);
     //printf(" /* user time used */                   %8d  %8d\n",  p->ru_utime.tv_sec,p->ru_utime.tv_usec   );
     //printf(" /* system time used */                 %8d  %8d\n",  p->ru_stime.tv_sec,p->ru_stime.tv_usec   );
     //printf(" /* integral shared memory size */      %8zu\n",  p->ru_ixrss           );

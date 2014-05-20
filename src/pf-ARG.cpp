@@ -116,7 +116,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     do{
         ret=getrusage(who,p);
-        process(p, "\nCurrent Usage");
+        process(p, VCFfile->site());
 
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
@@ -211,7 +211,7 @@ void pfARG_core(PfParam &pfARG_para,
         }while(!VCFfile->end_data());
     
     ret=getrusage(who,p);
-    process(p, "\nCurrent Usage");
+    process(p, VCFfile->site());
 
     
     cout <<endl << "### PROGRESS: end of the sequence" << endl;

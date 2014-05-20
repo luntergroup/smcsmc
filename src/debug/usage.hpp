@@ -35,8 +35,8 @@ using namespace std;
 #define USAGE
 
 /*! @ingroup group_resource */
-void process(struct rusage *p, char *when);
-
+//void process(struct rusage *p, char *when);
+void process(struct rusage *p, double site);
 /*! @ingroup group_resource */
 void printCurrentUsage(int &who, struct rusage *p, double averageNumNode,int data_base_at);
 
