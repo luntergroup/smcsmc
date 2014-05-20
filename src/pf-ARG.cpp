@@ -22,6 +22,7 @@
 */
 
 #include"count.hpp" 
+#include"debug/usage.hpp"
 
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
@@ -33,8 +34,7 @@ void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count);
 
-int main(int argc, char *argv[]){
-
+int main(int argc, char *argv[]){   
     
     /*! 
      * Default values
@@ -87,6 +87,11 @@ int main(int argc, char *argv[]){
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count){
+                    
+    int who= RUSAGE_SELF;
+    struct rusage usage;
+    struct rusage *p=&usage;
+    int ret;
 
     Model *model = pfARG_para.model;
     MersenneTwister *rg = pfARG_para.rg;
@@ -108,9 +113,11 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Go through vcf data */
     double previous_x = 0;
-    //double remove_particle_before_site = 0 ;
 
     do{
+        ret=getrusage(who,p);
+        process(p, "\nCurrent Usage");
+
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
          *  Even though the particle has extended to state 6, 
@@ -158,7 +165,6 @@ void pfARG_core(PfParam &pfARG_para,
         if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-            //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
             countNe->extract_and_update_count( current_states , VCFfile->site() );
 
             continue;
@@ -177,7 +183,6 @@ void pfARG_core(PfParam &pfARG_para,
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
-        //remove_particle_before_site = countNe->extract_and_update_count( current_states , VCFfile->site() );
         countNe->extract_and_update_count( current_states , VCFfile->site() );
         // This could return a value for which the earliest base position, things can be removed ...
         
@@ -198,17 +203,19 @@ void pfARG_core(PfParam &pfARG_para,
          *  As we have already updated the Ne counts, we could clean up any ForestState before backspace, 
          *  However, need to check this with the current_printing_space
          */
-        //current_states.clean_old_states( remove_particle_before_site ); 
         
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              
         VCFfile->read_new_line(); // Read new line from the vcf file        
     
         }while(!VCFfile->end_data());
+    
+    ret=getrusage(who,p);
+    process(p, "\nCurrent Usage");
 
-    cout << "### PROGRESS: end of the sequence" << endl;
+    
+    cout <<endl << "### PROGRESS: end of the sequence" << endl;
 
-    //remove_particle_before_site = countNe->extract_and_update_count( current_states , previous_x, true );
     countNe->extract_and_update_count( current_states , previous_x, true );
     countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
     
