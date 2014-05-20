@@ -66,7 +66,8 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src)
 
-pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage_ghost.cpp
+pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp 
+#debug/usage_ghost.cpp
 
 pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp
 
