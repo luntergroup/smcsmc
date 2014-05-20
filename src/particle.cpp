@@ -38,11 +38,7 @@
     //}
 
 
-ForestState::ForestState( const ForestState & copied_state )
-            :Forest( copied_state ) {
-    this->setParticleWeight( copied_state.weight() );
-	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
-    this->setAncestor ( copied_state.ancestor() );
+void ForestState::copyEventContainers(const ForestState & copied_state ){
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
         deque < Starevent* > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
@@ -70,7 +66,15 @@ ForestState::ForestState( const ForestState & copied_state )
             MigreventContainer_i.push_back (new_migrevent) ;
             }
         MigreventContainer.push_back( MigreventContainer_i );        
-        }
+        }    
+    }
+
+ForestState::ForestState( const ForestState & copied_state )
+            :Forest( copied_state ) {
+    this->setParticleWeight( copied_state.weight() );
+	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
+    this->setAncestor ( copied_state.ancestor() );
+    this->copyEventContainers ( copied_state );
     
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
