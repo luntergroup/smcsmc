@@ -104,7 +104,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             }
         
         else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
-        else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
+        //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
         else if ( argv_i == "-heat" ){ this->heat_bool = true; this->mid_bool = true;}        
         //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
         else if ( argv_i == "-mid" ){ this->mid_bool = true; }
@@ -170,7 +170,7 @@ void PfParam::init(){
     //this->hist_bool        = false;
     this->mid_bool         = false;  
     this->online_bool      = false;
-    this->finite_bool      = false;
+    //this->finite_bool      = false;
     this->window           = 400; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
@@ -387,17 +387,23 @@ void PfParam::appending_Ne_file( bool hist ){
         Ne_file << "=========\n"; 
         }
     Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
-    
+
     Ne_file << "ME" ;
-    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
-        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+    //this->model->resetTime();
+    //for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
+        for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+            for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+                Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+                }
+            if ( pop_i < (this->model->population_number()-1)){ 
+                Ne_file << "|";
+                }
             }
-        if ( pop_i < (this->model->population_number()-1)){ 
-            Ne_file << "|";
-            }
-        }
-    Ne_file << "\n";
+            Ne_file << "\n";
+
+            //this->model->increaseTime();
+        //}
+    //Ne_file << "\n";
     
     this->model->resetTime();
     for (size_t i = 0; i < this->model->change_times_.size()-1; i++){

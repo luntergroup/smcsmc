@@ -75,3 +75,17 @@ void CountModel::check_model_updated_mig(Model * model){
             cout<<endl;
         }
     }
+
+bool CountModel::print_mig_rate ( vector <vector<double>*> & rates_list ){
+    cout<<"rates_list->size() "<<rates_list.size()<<endl;
+    for (size_t i = 0; i < rates_list.size(); i++ ){
+        if (rates_list[i]){
+            cout<<"i= "<<i <<"rates_list[i]->size() "<<rates_list[i]->size()<<endl;
+            for (size_t j = 0; j < rates_list[i]->size() ; j++){
+                cout <<"rates_list[" << i <<"]->at("<<j<<")" << rates_list[i]->at(j) <<endl;
+                }
+            } 
+        }
+        cout<<"done"<<endl;
+    return true;
+    }

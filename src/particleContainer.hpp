@@ -52,8 +52,8 @@ class ParticleContainer{
         void update_state_to_data(Vcf * VCFfile, 
                                   Model * model, 
                                   valarray<double> & weight_cum_sum,
-                                  bool keep_median_state = false,
-                                  bool finite_bool = false);
+                                  bool keep_median_state = false);
+                                  //bool finite_bool = false);
 
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
@@ -81,8 +81,8 @@ class ParticleContainer{
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,
-                                                   vector <bool> haplotypes_at_tips,
-                                                   bool finite_bool);
+                                                   vector <bool> haplotypes_at_tips);
+                                                   //bool finite_bool);
         void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */
 
         // Resampling

@@ -145,26 +145,6 @@ ForestState::~ForestState(){
     }
 
 
-///*! \brief Initialize members of an ForestState 
-//*/
-//void ForestState::init(double weight, double site ){
-	//this->setParticleWeight(weight);
-	//this->setSiteWhereWeightWasUpdated(site);
-    //}
-
-//void ForestState::init(double weight, double site , ForestState* previous_state){
-	//this->setParticleWeight(weight);
-	//this->setSiteWhereWeightWasUpdated(site);
-	////this->previous_state=previous_state;
-	////this->pointer_counter=(int)0;
-	////this->CoaleventContainer.clear();
-    ////new_forest_counter++;
-    //}
-
-//ForestState::ForestState(){
-	//init();
-//}
-
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
@@ -238,21 +218,34 @@ void ForestState::record_all_event(TimeInterval const &ti){
         }
     
     if (recomb_opportunity > 0) {
-        if (states_[0] == 2){
-            this->record_Recombevent(active_node(0)->population(), 
-                                        //ti.start_height(), 
-                                        //ti.start_height() + opportunity_y, 
-                                        recomb_opportunity, 
-                                        tmp_event_.isRecombination() ? EVENT : NOEVENT );
-            } 
-        else if (states_[1] == 2){
-            this->record_Recombevent(active_node(1)->population(), 
-                                        //ti.start_height(), 
-                                        //ti.start_height() + opportunity_y, 
-                                        recomb_opportunity, 
-                                        tmp_event_.isRecombination() ? EVENT : NOEVENT );
-            }
+        // do not store the population, as the recomb_opportunity is also calculated 
+        // over the full tree rather than per-population
+        if (tmp_event_.isRecombination()) {
+            this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
+                                     recomb_opportunity,
+                                     EVENT );
+        } else {
+            this->record_Recombevent( 0,
+                                      recomb_opportunity,
+                                      NOEVENT );
         }
+    }
+             
+        //if (states_[0] == 2){
+            //this->record_Recombevent(active_node(0)->population(), 
+                                        ////ti.start_height(), 
+                                        ////ti.start_height() + opportunity_y, 
+                                        //recomb_opportunity, 
+                                        //tmp_event_.isRecombination() ? EVENT : NOEVENT );
+            //} 
+        //else if (states_[1] == 2){
+            //this->record_Recombevent(active_node(1)->population(), 
+                                        ////ti.start_height(), 
+                                        ////ti.start_height() + opportunity_y, 
+                                        //recomb_opportunity, 
+                                        //tmp_event_.isRecombination() ? EVENT : NOEVENT );
+            //}
+        //}
     
     //assert(active_node(0)->population() == tmp_event_.node()->population());
   
@@ -439,40 +432,6 @@ void ForestState::include_haplotypes_at_tips(vector <bool> haplotypes_at_tips){
  * 
  * @ingroup group_resample
  * * */
-valarray<double> ForestState::cal_marginal_likelihood_finite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
-	double mutation_rate = this->model().mutation_rate();
-	valarray<double> marginal_likelihood(2);
-	dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
-	if ( node->first_child() == NULL && ((node->label())>0) ){
-        marginal_likelihood[1] = node->mutation_state() ? 1.0 : 0.0;
-        marginal_likelihood[0] = node->mutation_state() ? 0.0 : 1.0;	
-		dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		return marginal_likelihood;
-        }
-	else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
-		Node *left = trackLocalNode(node->first_child());
-		double t1=node->height()- left->height();
-		double ut1 = 0.5 + 0.5*exp(-t1*2*mutation_rate); // let ut1 be the probability that either end of the branch to the first child carries the same state
-		assert(ut1>=0 && ut1<=1);
-		valarray<double> y = cal_marginal_likelihood_finite(left);
-		Node *right = trackLocalNode(node->second_child());
-		double t2=node->height()- right->height();
-		double ut2 = 0.5 + 0.5*exp(-t2*2*mutation_rate); // let ut2 be the probability that either end of the branch to the second child carries the same state
-        assert(ut2>=0 && ut2<=1);
-		valarray<double> z = cal_marginal_likelihood_finite(right);		
-		marginal_likelihood[0] = (y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2)) ;
-		marginal_likelihood[1] = (y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2)) ;
-		dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		
-		//dout << "node is " << node<<", t1=" << t1<<", t2=" << t2<<endl;
-		//dout << "prob is " << ", ut1=" << ut1<<", ut2=" << ut2<<endl;
-		//dout << "prob is " << ", y[0]=" << y[0]<<", y[1]=" << y[1]<<endl;
-		//dout << "prob is " << ", z[0]=" << z[0]<<", z[1]=" << z[1]<<endl;
-		//dout << "marginal_likelihood[0] =(" << y[0]*ut1 <<"+" <<  y[1]*(1-ut1) <<")*(" <<  z[0]*ut2 <<"+" <<  z[1]*(1-ut2)<<")" << endl ;
-        //dout << ", marginal_likelihood  = " << marginal_likelihood[0]<<", " <<  marginal_likelihood[1]<<endl;
-		return marginal_likelihood;
-        }				
-    }
 
 
 inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
@@ -517,12 +476,11 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  *  If there is no data given at the site i, return likelihood as 1. Since all particles at this site are equally probable 
  * @ingroup group_pf_resample
  */
-double ForestState::calculate_likelihood(bool withdata, bool finite) {
+double ForestState::calculate_likelihood( bool withdata ) {
 	if (withdata){
 		//double mutation_rate = this->model().mutation_rate();
 		dout << "calculate_likelihood function, root is " <<  this->local_root()<<endl;
-		valarray<double> marginal_likelihood = finite ? cal_marginal_likelihood_finite(this->local_root()) :
-                                                        cal_marginal_likelihood_infinite(this->local_root());
+		valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
 		dout << "marginal likelihood is " << marginal_likelihood[0]<< "," << marginal_likelihood[1] <<endl;
 		double prior[2] = {0.5,0.5};
 		double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
@@ -532,3 +490,58 @@ double ForestState::calculate_likelihood(bool withdata, bool finite) {
 	else{ return 1;}
     }
 
+
+///*! \brief Initialize members of an ForestState 
+//*/
+//void ForestState::init(double weight, double site ){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+    //}
+
+//void ForestState::init(double weight, double site , ForestState* previous_state){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+	////this->previous_state=previous_state;
+	////this->pointer_counter=(int)0;
+	////this->CoaleventContainer.clear();
+    ////new_forest_counter++;
+    //}
+
+//ForestState::ForestState(){
+	//init();
+//}
+
+//valarray<double> ForestState::cal_marginal_likelihood_finite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
+	//double mutation_rate = this->model().mutation_rate();
+	//valarray<double> marginal_likelihood(2);
+	//dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
+	//if ( node->first_child() == NULL && ((node->label())>0) ){
+        //marginal_likelihood[1] = node->mutation_state() ? 1.0 : 0.0;
+        //marginal_likelihood[0] = node->mutation_state() ? 0.0 : 1.0;	
+		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
+		//return marginal_likelihood;
+        //}
+	//else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
+		//Node *left = trackLocalNode(node->first_child());
+		//double t1=node->height()- left->height();
+		//double ut1 = 0.5 + 0.5*exp(-t1*2*mutation_rate); // let ut1 be the probability that either end of the branch to the first child carries the same state
+		//assert(ut1>=0 && ut1<=1);
+		//valarray<double> y = cal_marginal_likelihood_finite(left);
+		//Node *right = trackLocalNode(node->second_child());
+		//double t2=node->height()- right->height();
+		//double ut2 = 0.5 + 0.5*exp(-t2*2*mutation_rate); // let ut2 be the probability that either end of the branch to the second child carries the same state
+        //assert(ut2>=0 && ut2<=1);
+		//valarray<double> z = cal_marginal_likelihood_finite(right);		
+		//marginal_likelihood[0] = (y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2)) ;
+		//marginal_likelihood[1] = (y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2)) ;
+		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
+		
+		////dout << "node is " << node<<", t1=" << t1<<", t2=" << t2<<endl;
+		////dout << "prob is " << ", ut1=" << ut1<<", ut2=" << ut2<<endl;
+		////dout << "prob is " << ", y[0]=" << y[0]<<", y[1]=" << y[1]<<endl;
+		////dout << "prob is " << ", z[0]=" << z[0]<<", z[1]=" << z[1]<<endl;
+		////dout << "marginal_likelihood[0] =(" << y[0]*ut1 <<"+" <<  y[1]*(1-ut1) <<")*(" <<  z[0]*ut2 <<"+" <<  z[1]*(1-ut2)<<")" << endl ;
+        ////dout << ", marginal_likelihood  = " << marginal_likelihood[0]<<", " <<  marginal_likelihood[1]<<endl;
+		//return marginal_likelihood;
+        //}				
+    //}

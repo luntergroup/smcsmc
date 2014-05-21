@@ -22,7 +22,7 @@
 */
 
 #include"count.hpp" 
-//#include"debug/usage.hpp"
+#include"debug/usage.hpp"
 
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
@@ -88,10 +88,10 @@ void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count){
                     
-    //int who= RUSAGE_SELF;
-    //struct rusage usage;
-    //struct rusage *p=&usage;
-    //int ret;
+    int who= RUSAGE_SELF;
+    struct rusage usage;
+    struct rusage *p=&usage;
+    int ret;
 
     Model *model = pfARG_para.model;
     MersenneTwister *rg = pfARG_para.rg;
@@ -115,8 +115,8 @@ void pfARG_core(PfParam &pfARG_para,
     double previous_x = 0;
 
     do{
-        //ret=getrusage(who,p);
-        //process(p, VCFfile->site());
+        ret=getrusage(who,p);
+        process(p, VCFfile->site());
 
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
@@ -175,7 +175,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool, pfARG_para.finite_bool);
+        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool );
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
          */
@@ -210,8 +210,8 @@ void pfARG_core(PfParam &pfARG_para,
     
         }while(!VCFfile->end_data());
     
-    //ret=getrusage(who,p);
-    //process(p, VCFfile->site());
+    ret=getrusage(who,p);
+    process(p, VCFfile->site());
 
     
     cout <<endl << "### PROGRESS: end of the sequence" << endl;

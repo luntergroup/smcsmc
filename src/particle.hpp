@@ -46,6 +46,7 @@ struct TmrcaState {
         this->base = base;
         this->tmrca = tmrca;
         }
+    ~TmrcaState(){};        
     double base;
     double tmrca;    
     };
@@ -86,8 +87,8 @@ class ForestState : public Forest{
 
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
-        double calculate_likelihood(bool withdata, bool finite = false); /*!< \brief Calculate the likelihood of the genealogy */
-        valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
+        double calculate_likelihood( bool withdata ); /*!< \brief Calculate the likelihood of the genealogy */
+        //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         
         // Record events
