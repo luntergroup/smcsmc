@@ -29,6 +29,9 @@ void CountModel::init(){
     this->init_coal_and_recomb();
     this->init_migr();
     this->init_lags();
+    
+    this->update_param_interval_ = 5e6;
+    this->update_param_threshold_ = 1e7;    
     return ;
     }
 
@@ -157,18 +160,25 @@ void CountModel::reset_mig_rate ( Model *model ) {
 
 
 
-void CountModel::reset_model_parameters(Model * model, bool online, bool print){
-    if ( !online ){ 
+void CountModel::reset_model_parameters(double current_base, Model * model, bool online, bool force_update, bool print){
+    
+    bool update = false;
+    if ( online && current_base > this->update_param_threshold_ ){
+        update = true;
+        this->update_param_threshold_ += this->update_param_interval_;
+        }
+                    
+    if ( update || force_update  ){ 
+        cout<<" MODEL IS RESET at base " << current_base <<endl;
+        this->reset_recomb_rate ( model );
+        this->reset_Ne ( model );
+        this->reset_mig_rate ( model );
+        } 
+    else {
         if (print){
             this->print_Time_count_pop();            
             }
         return;
-        } 
-    else {
-        cout<<" MODEL IS RESET "<<endl;
-        this->reset_recomb_rate ( model );
-        this->reset_Ne ( model );
-        this->reset_mig_rate ( model );
         }
     }
     

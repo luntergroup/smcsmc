@@ -323,6 +323,9 @@ void PfParam::log_param( ){
     if (lag > 0){
         log_file << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";
         }
+    if (online_bool){
+        log_file << setw(15) << "Online update = TRUE\n";
+    }
     log_file << setw(15) <<             "N =" << setw(10) << N                           << "\n";
     log_file << setw(15) <<           "ESS =" << setw(10) << ESS_; 
     if (ESS_default_bool){ log_file << " (by default)";}                        log_file << "\n";

@@ -113,7 +113,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Go through vcf data */
     double previous_x = 0;
-
+    bool force_update = false;
     do{
         ret=getrusage(who,p);
         process(p, VCFfile->site());
@@ -187,7 +187,7 @@ void pfARG_core(PfParam &pfARG_para,
         // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( model, pfARG_para.online_bool, false);
+        countNe->reset_model_parameters(VCFfile->site(), model, pfARG_para.online_bool, force_update = false, false);
 
         if ( pfARG_para.ESS() == 1 ){
             cout << " random weights" <<endl;
@@ -217,7 +217,7 @@ void pfARG_core(PfParam &pfARG_para,
     cout <<endl << "### PROGRESS: end of the sequence" << endl;
 
     countNe->extract_and_update_count( current_states , previous_x, true );
-    countNe->reset_model_parameters( model, true, true); // This is mandatory for appending the correct value out ...
+    countNe->reset_model_parameters(VCFfile->site(), model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
     
     pfARG_para.appending_Ne_file( true );
 
