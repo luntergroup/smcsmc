@@ -140,7 +140,7 @@ void CountModel::reset_mig_rate ( Model *model ) {
     this->initialize_mig_rate ( model->total_mig_rates_list_ );
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
-    
+
     model->resetTime();
     this ->resetTime();
     for (size_t time_i = 0; time_i < change_times_.size(); time_i++){
@@ -155,7 +155,6 @@ void CountModel::reset_mig_rate ( Model *model ) {
     model->finalize();
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
-    
     }
 
 
@@ -189,6 +188,7 @@ void CountModel::compute_mig_rate(){
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
                 this->inferred_mig_rate[epoch_idx][pop_i][pop_j] = this->total_mig_count[epoch_idx][pop_i][pop_j] / this->total_weighted_mig_opportunity[epoch_idx][pop_i];
+                //cout<<"this->inferred_mig_rate["<<epoch_idx<<"]["<<pop_i<<"]["<<pop_j<<"] = " << this->inferred_mig_rate[epoch_idx][pop_i][pop_j]<<endl;
                 }
             }
         }

@@ -391,21 +391,31 @@ void PfParam::appending_Ne_file( bool hist ){
         }
     Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
 
-    Ne_file << "ME" ;
-    //this->model->resetTime();
-    //for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
+    this->model->resetTime();
+    for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
+    Ne_file << "ME\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
         for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
             for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
                 Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
                 }
             if ( pop_i < (this->model->population_number()-1)){ 
-                Ne_file << "|";
+                Ne_file << "\t|";
                 }
             }
             Ne_file << "\n";
 
-            //this->model->increaseTime();
-        //}
+            this->model->increaseTime();
+        }
+    Ne_file << "ME\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
+    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){        
+        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+            Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+            }
+        if ( pop_i < (this->model->population_number()-1)){ 
+            Ne_file << "\t|";
+            }
+        }
+        Ne_file << "\n";
     //Ne_file << "\n";
     
     this->model->resetTime();

@@ -68,6 +68,17 @@ void CountModel::check_model_updated_Ne(Model * model){
 
 
 void CountModel::check_model_updated_mig(Model * model){
+    model->resetTime();
+    for (size_t time_i = 0; time_i < model->change_times_.size()-1; time_i++){
+        for (size_t pop_i = 0 ; pop_i < model->population_number() ; pop_i++){
+            for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
+                cout << "\t"<<model->migration_rate(pop_i, pop_j)  ;
+                }
+                cout<<endl;
+            }
+        model->increaseTime();
+        }
+    
     for (size_t pop_i = 0 ; pop_i < model->population_number() ; pop_i++){
         for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
             cout << "\t"<<model->migration_rate(pop_i, pop_j)  ;
