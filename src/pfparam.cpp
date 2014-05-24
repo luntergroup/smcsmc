@@ -155,7 +155,7 @@ void PfParam::init(){
     this->default_nsam        = 2;
     this->default_mut_rate    = 0.00000001;
     this->default_recomb_rate = 0.000000001;
-    this->default_loci_length = 5000000;   
+    this->default_loci_length = 2e7;   
      
     this->original_recombination_rate_ = 0;
     this->N                = 100;
