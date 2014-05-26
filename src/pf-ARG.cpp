@@ -114,7 +114,8 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through vcf data */
     double previous_x = 0;
     bool force_update = false;
-    do{
+    //do{
+    while(!VCFfile->end_data()){
         ret=getrusage(who,p);
         process(p, VCFfile->site());
 
@@ -207,8 +208,8 @@ void pfARG_core(PfParam &pfARG_para,
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              
         VCFfile->read_new_line(); // Read new line from the vcf file        
-    
-        }while(!VCFfile->end_data());
+        }
+        //}while(!VCFfile->end_data());
     
     ret=getrusage(who,p);
     process(p, VCFfile->site());

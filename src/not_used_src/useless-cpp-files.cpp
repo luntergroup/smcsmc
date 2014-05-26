@@ -1,3 +1,345 @@
+///*! 
+ //* Remove previous states that are no longer used
+ //*/
+//void ParticleContainer::clean_old_states(double xstart){
+    
+    //for (size_t i = 0; i < this->particles.size(); i++){
+        //ForestState* current_state = this->particles[i];
+        //if ( current_state->previous_state == NULL ){
+            //continue;
+            //}
+        //dout << "remove states before " << setw(10) << xstart ;        
+        //dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
+        
+        //ForestState* prior_state = current_state->previous_state;
+        
+        ///*!
+         //* Check if the current state is pointing a previous state
+         //*      if yes, check if the previous state should be removed
+         //*          if yes, remove all the previous state
+         //*          if no, move on the previous state, and check again
+         //*/ 
+         
+        //while (prior_state!= NULL){
+
+            //if ( prior_state->next_base() < xstart ){
+                //assert ( current_state->current_base() >= prior_state->next_base() );
+                //// reduce the pointer counter before this point!
+                //prior_state->pointer_counter--;
+                //current_state->previous_state = NULL;
+                
+                //// once the pointer counter is zero, remove the state
+                //if ( prior_state->pointer_counter == (int)0 ){ 
+                    //delete prior_state; 
+                    //}
+                //break;
+                //}
+            //current_state = prior_state;
+            //prior_state = prior_state->previous_state;
+            //}      
+        //}
+    //}
+
+//ForestState::ForestState( ForestState * copied_state )
+            //:Forest( copied_state ) {
+	//this->init( copied_state->weight(), 
+                //copied_state->site_where_weight_was_updated(), 
+                //copied_state); // initialize members of ForestState
+    //this->setAncestor ( copied_state->ancestor() );
+	//dout << "current particle's weight is " << this->weight()<<endl;
+	////copied_state->pointer_counter++;
+    //}
+
+///*! \brief Initialize members of an ForestState 
+//*/
+//void ForestState::init(double weight, double site ){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+    //}
+
+//void ForestState::init(double weight, double site , ForestState* previous_state){
+	//this->setParticleWeight(weight);
+	//this->setSiteWhereWeightWasUpdated(site);
+	////this->previous_state=previous_state;
+	////this->pointer_counter=(int)0;
+	////this->CoaleventContainer.clear();
+    ////new_forest_counter++;
+    //}
+
+//ForestState::ForestState(){
+	//init();
+//}
+
+//valarray<double> ForestState::cal_marginal_likelihood_finite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
+	//double mutation_rate = this->model().mutation_rate();
+	//valarray<double> marginal_likelihood(2);
+	//dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
+	//if ( node->first_child() == NULL && ((node->label())>0) ){
+        //marginal_likelihood[1] = node->mutation_state() ? 1.0 : 0.0;
+        //marginal_likelihood[0] = node->mutation_state() ? 0.0 : 1.0;	
+		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
+		//return marginal_likelihood;
+        //}
+	//else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
+		//Node *left = trackLocalNode(node->first_child());
+		//double t1=node->height()- left->height();
+		//double ut1 = 0.5 + 0.5*exp(-t1*2*mutation_rate); // let ut1 be the probability that either end of the branch to the first child carries the same state
+		//assert(ut1>=0 && ut1<=1);
+		//valarray<double> y = cal_marginal_likelihood_finite(left);
+		//Node *right = trackLocalNode(node->second_child());
+		//double t2=node->height()- right->height();
+		//double ut2 = 0.5 + 0.5*exp(-t2*2*mutation_rate); // let ut2 be the probability that either end of the branch to the second child carries the same state
+        //assert(ut2>=0 && ut2<=1);
+		//valarray<double> z = cal_marginal_likelihood_finite(right);		
+		//marginal_likelihood[0] = (y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2)) ;
+		//marginal_likelihood[1] = (y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2)) ;
+		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
+		
+		////dout << "node is " << node<<", t1=" << t1<<", t2=" << t2<<endl;
+		////dout << "prob is " << ", ut1=" << ut1<<", ut2=" << ut2<<endl;
+		////dout << "prob is " << ", y[0]=" << y[0]<<", y[1]=" << y[1]<<endl;
+		////dout << "prob is " << ", z[0]=" << z[0]<<", z[1]=" << z[1]<<endl;
+		////dout << "marginal_likelihood[0] =(" << y[0]*ut1 <<"+" <<  y[1]*(1-ut1) <<")*(" <<  z[0]*ut2 <<"+" <<  z[1]*(1-ut2)<<")" << endl ;
+        ////dout << ", marginal_likelihood  = " << marginal_likelihood[0]<<", " <<  marginal_likelihood[1]<<endl;
+		//return marginal_likelihood;
+        //}				
+    //}
+
+
+//Starevent::Starevent(){
+    //this->init();
+    //}
+    
+///*! \brief Copy the Starevent from the previous ForestState*/    
+//Starevent::Starevent(Starevent* previous_Starevent){ 
+    //this->pop_i_        = previous_Starevent->pop_i();
+    ////this->start_height_ = previous_Starevent->start_height();
+    ////this->end_height_   = previous_Starevent->end_height(); 
+    //this->num_event_    = previous_Starevent->num_event();
+    //this->opportunity_  = previous_Starevent->opportunity();
+    //this->event_state_  = previous_Starevent->event_state();
+    
+    //this->change_time_i_ = previous_Starevent->change_time_i();
+    ////this->counted_ = previous_Starevent->counted();
+    //this->base_ = previous_Starevent->base();
+    //}
+    
+///*! \brief Copy the Starevent from the previous ForestState*/    
+//Starevent::Starevent(const Starevent & previous_Starevent){ 
+    //this->pop_i_        = previous_Starevent.pop_i();
+    ////this->start_height_ = previous_Starevent.start_height();
+    ////this->end_height_   = previous_Starevent.end_height(); 
+    //this->num_event_    = previous_Starevent.num_event();
+    //this->opportunity_  = previous_Starevent.opportunity();
+    //this->event_state_  = previous_Starevent.event_state();
+    
+    //this->change_time_i_ = previous_Starevent.change_time_i();
+    ////this->counted_ = previous_Starevent.counted();
+    //this->base_ = previous_Starevent.base();
+    //}
+
+//bool Coalevent::print_event(){
+    //cout 
+        ////<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
+             ////<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
+             //<< setw(13) << this->opportunity()   << " opportunity for " 
+             //<< setw(2)  << this->num_event()     << " coalescent, ";
+        //if ( this->event_state() == NOEVENT ){
+            //cout<< " potetial coalsecent";
+            //}
+        //cout << endl;
+    //return true;
+    //}
+
+
+//bool Recombevent::print_event(){
+    //cout 
+        ////<< setw(10) << this->start_height()  << " to " 
+         ////<< setw(10) << this->end_height()    << ", " 
+         //<< setw(13) << this->opportunity()   << " opportunity for " 
+         //<< setw(2)  << this->num_event()     << " recombination, ";
+    //if ( this->event_state() == NOEVENT ){
+        //cout<< " potetial recombination";
+        //}
+    //cout << endl;
+
+    //return true;    
+    //}
+
+///*!
+ //* \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
+ //*/
+//class Coalevent : public Starevent{
+    ////friend class CountModel;
+    ////friend class ForestState;
+    ////friend class ParticleContainer;
+    //public:
+        //Coalevent(size_t pop_i, 
+                  ////double start_time,
+                  ////double end_time, 
+                  //double opportunity,
+                  //eventCode event_code ) 
+                 //: Starevent ( pop_i, 
+                    ////start_time, 
+                    ////end_time, 
+                    //opportunity, 
+                    //event_code ){ assert (this->print_event()); };  
+        //Coalevent(const Coalevent & previous_Starevent) 
+                 //: Starevent (previous_Starevent) { };
+        //~Coalevent(){};
+    //private:
+        //bool print_event();
+    //};
+    
+///*!
+ //* \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
+ //*/    
+//class Recombevent : public Starevent{
+    ////friend class CountModel;
+    ////friend class ForestState;
+    ////friend class ParticleContainer;
+    //public:
+        //Recombevent(size_t pop_i, 
+                    ////double start_time,
+                    ////double end_time, 
+                    //double opportunity,
+                    //eventCode event_code ) 
+                   //: Starevent ( pop_i, 
+                      ////start_time, 
+                      ////end_time, 
+                      //opportunity, 
+                      //event_code ){ assert( this->print_event()); };
+        //Recombevent(const Recombevent & previous_Starevent) 
+                   //: Starevent (previous_Starevent) { };
+        //~Recombevent(){};
+    //private:
+        //bool print_event();
+    //};
+    
+
+//void CountModel::compute_recomb_rate () {
+    //this->resetTime();
+    //double scaling_pop_size_N0 = this->population_size();
+    //double recomb_opportunity = 0;
+    ////double recomb_count = 0;
+    //this->recomb_count_ = 0;
+    
+    //for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
+        //for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+            //double pop_ratio = this->population_size(pop_j) / scaling_pop_size_N0;          
+            //recomb_opportunity += this->total_weighted_recomb_opportunity[time_layer_i][pop_j] / pop_ratio ;
+            //this->recomb_count_ += this->total_recomb_count[time_layer_i][pop_j] / pop_ratio ;
+            //}
+        //// Advance to the next interval level
+        //if ( current_time_idx_ == change_times_.size() - 1) break;  
+        //this->increaseTime(); 
+        //}
+    //this->inferred_recomb_rate = this->recomb_count_ / recomb_opportunity;
+    //// reset the inferred recombination rate in the current Model and CountModel?
+    //}
+
+
+
+//void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
+    //for (size_t i = 0; i < Endparticles.particles.size(); i++){                
+        //ForestState* counting_state = Endparticles.particles[i];
+        //double weight = counting_state->weight();
+        //for ( size_t time_i = this->change_times_.size() - 1 ; (int)time_i >= 0 ; time_i --){
+            //this->update_coal_count ( counting_state->CoaleventContainer[time_i] , time_i, weight);             
+            //this->update_recomb_count ( counting_state->RecombeventContainer[time_i] , time_i, weight); 
+            //this->update_migr_count ( counting_state->MigreventContainer[time_i] , time_i, weight);           
+            //previous_base[time_i] = current_base - lags[time_i] > 0 ? current_base - lags[time_i] : (double)0;
+            //}  
+        //}
+    //}
+
+
+
+//void CountModel::resize_Starevent ( deque < Starevent *> & StareventContainer_i , int index) {
+    ////cout<<"size was "<<StareventContainer_i.size();
+    //size_t i = 0;
+    //while (i < index && StareventContainer_i.size()>0 ){
+        //StareventContainer_i[0]->pointer_counter_ --;
+        //if ( StareventContainer_i[0]->pointer_counter_ == 0){
+            //delete  StareventContainer_i[0];
+            //}
+        //StareventContainer_i.pop_front();
+        //i++;
+        //}
+        ////cout<<" now is "<<StareventContainer_i.size()<<endl;
+    //}
+
+//void CountModel::resize_Migrevent ( deque < Migrevent *> & StareventContainer_i , int index) {
+    ////cout<<"size was "<<StareventContainer_i.size();
+    //size_t i = 0;
+    //while (i < index && StareventContainer_i.size()>0 ){
+        //StareventContainer_i[0]->pointer_counter_ --;
+        //if ( StareventContainer_i[0]->pointer_counter_ == 0){
+            //delete  StareventContainer_i[0];
+            //}
+        //StareventContainer_i.pop_front();
+        //i++;
+        //}
+        ////cout<<" now is "<<StareventContainer_i.size()<<endl;
+    //}
+
+
+
+//void CountModel::update_migr_count ( deque < Migrevent * > & MigreventContainer_i, size_t time_i, double weight ){
+    //double x_start = (double)this->previous_base[time_i];    
+    //int Migrevent_index = MigreventContainer_i.size()-1;
+    //while ( Migrevent_index > 0 ){
+        //Migrevent* current_Migrevent = MigreventContainer_i[Migrevent_index];
+        //if ( current_Migrevent->base() < x_start){
+            //break;
+            //}
+        //if (current_Migrevent->event_state() == EVENT){
+            //this->total_mig_count[time_i][current_Migrevent->pop_i()][current_Migrevent->mig_pop()] += current_Migrevent->num_event() * weight;
+            //} 
+        //for (size_t potential_pop = 0; potential_pop < this->total_weighted_mig_opportunity[time_i][current_Migrevent->pop_i()].size(); potential_pop++){
+            //this->total_weighted_mig_opportunity[time_i][current_Migrevent->pop_i()][potential_pop] += current_Migrevent->opportunity() * weight;    
+            //}    
+        //Migrevent_index--;                
+        //}  
+    //resize_Migrevent(MigreventContainer_i, Migrevent_index);
+    //}
+
+
+//void CountModel::update_coal_count ( deque < Starevent *> & CoaleventContainer_i, size_t time_i, double weight ){
+    //double x_start = (double)this->previous_base[time_i];
+    //int Coalevent_index = CoaleventContainer_i.size()-1;
+    //while ( Coalevent_index > 0 ) {        
+        //Starevent * current_Coalevent = CoaleventContainer_i[Coalevent_index];
+        //if ( current_Coalevent->base() < x_start){
+            //break;
+            //}
+        //this->total_coal_count[time_i][current_Coalevent->pop_i()]                += weight * current_Coalevent->num_event();
+        //this->total_weighted_coal_opportunity[time_i][current_Coalevent->pop_i()] += weight * current_Coalevent->opportunity();            
+        //Coalevent_index--;
+        //} 
+    
+    //resize_Starevent(CoaleventContainer_i, Coalevent_index);        
+        
+    //}    
+
+//void CountModel::update_recomb_count ( deque < Starevent* > & RecombeventContainer_i, size_t time_i, double weight ){
+    //double x_start = (double)this->previous_base[time_i];    
+    //int Recombevent_index = RecombeventContainer_i.size()-1;
+    //while ( Recombevent_index > 0 ){
+        //Starevent* current_Recombevent = RecombeventContainer_i[Recombevent_index];
+        //if ( current_Recombevent->base() < x_start){
+            //break;
+            //}
+        //this->total_recomb_count[time_i][current_Recombevent->pop_i()]                += weight * current_Recombevent->num_event();
+        //this->total_weighted_recomb_opportunity[time_i][current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity();            
+        //Recombevent_index--;                
+        //}
+    //resize_Starevent(RecombeventContainer_i, Recombevent_index); 
+    //}
+
+
+
+
 //useless functions
 double CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ){
     //for ( size_t time_i = 0 ; time_i < this->change_times_.size(); time_i ++){

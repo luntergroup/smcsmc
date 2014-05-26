@@ -27,16 +27,27 @@
 /*! \brief Create a newly copied ForestState 
     @ingroup group_pf_resample 
 */
-//ForestState::ForestState( ForestState * copied_state )
-            //:Forest( copied_state ) {
-	//this->init( copied_state->weight(), 
-                //copied_state->site_where_weight_was_updated(), 
-                //copied_state); // initialize members of ForestState
-    //this->setAncestor ( copied_state->ancestor() );
-	//dout << "current particle's weight is " << this->weight()<<endl;
-	////copied_state->pointer_counter++;
-    //}
 
+
+
+ForestState::ForestState( const ForestState & copied_state )
+            :Forest( copied_state ) {
+    this->setParticleWeight( copied_state.weight() );
+	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
+    this->setAncestor ( copied_state.ancestor() );
+    this->copyEventContainers ( copied_state );
+    
+    for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
+        this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
+        }
+        
+    //cout<<this->TmrcaHistory.size()<<endl;
+	dout << "current particle's weight is " << this->weight()<<endl;
+	//copied_state->pointer_counter++;
+    new_forest_counter++;
+    }
+    
+    
 
 void ForestState::copyEventContainers(const ForestState & copied_state ){
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
@@ -68,26 +79,6 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
         MigreventContainer.push_back( MigreventContainer_i );        
         }    
     }
-
-ForestState::ForestState( const ForestState & copied_state )
-            :Forest( copied_state ) {
-    this->setParticleWeight( copied_state.weight() );
-	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
-    this->setAncestor ( copied_state.ancestor() );
-    this->copyEventContainers ( copied_state );
-    
-    for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
-        this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
-        }
-        
-    //cout<<this->TmrcaHistory.size()<<endl;
-	dout << "current particle's weight is " << this->weight()<<endl;
-	//copied_state->pointer_counter++;
-    new_forest_counter++;
-    }
-    
-    
-
 
 /*! \brief Initialize a new ForestState 
  * @ingroup group_pf_init
@@ -157,15 +148,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
     //             otherwise, take the distance between the event and the bottom of this interval
     double opportunity_y = this->tmp_event_.isNoEvent() ? ti.length() : (this->tmp_event_.time() - ti.start_height());
 
+    dout << " Total rate is "<< this->rates_[0] <<endl;
     for (int i=0; i<2; i++) {
+        dout << "Active node["<<i<<"] has state: "<<states_[i]<<endl;
+        //dout << " calcRecombinationRate(active_node(0)) = "<< calcRecombinationRate(active_node(0)) <<" calcRecombinationRate(active_node(1)) = "<<calcRecombinationRate(active_node(1)) <<endl;
         if (states_[i] == 2) {
+            dout << "Active node["<<i<<"] last updated at " << active_node(i)->last_update() <<", current_base = "<< this->current_base()<<" differ "<< ( this->current_base() - active_node(i)->last_update() ) <<endl;
+            dout << "recomb_opportunity increase " << ( this->current_base() - active_node(i)->last_update() ) <<"*"<< opportunity_y <<"="<<( this->current_base() - active_node(i)->last_update() ) * opportunity_y<<endl;
             // node i is tracing a non-local branch; opportunities for recombination
-            //if (this->current_base() - active_node(i)->last_update() < 0){
-                //cout<<"this->current_base() - active_node(i)->last_update()"<<this->current_base() - active_node(i)->last_update()<<endl;
-            //}
-            //if (this->current_base() - active_node(i)->last_update() == 0){
-                //cout<<"this->current_base() - active_node(i)->last_update()"<<this->current_base() - active_node(i)->last_update()<<endl;
-            //}
             recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
             //recomb_opportunity += ( this->next_base() - active_node(i)->last_update() ) * opportunity_y;
             }
@@ -186,22 +176,22 @@ void ForestState::record_all_event(TimeInterval const &ti){
         //// check: do we need to consider different cases? is it possible to coalesce in active_node(1)->population() ???? Joe: I dont think so ...
         if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
             this->record_Coalevent(active_node(0)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
+                                    ti.start_height(), 
+                                    ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             } 
         else if (states_[0] == 1){
             this->record_Coalevent(active_node(0)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
+                                    ti.start_height(), 
+                                    ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT ); 
             } 
         else if (states_[1] == 1){
             this->record_Coalevent(active_node(1)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
+                                    ti.start_height(), 
+                                    ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             }
@@ -211,15 +201,15 @@ void ForestState::record_all_event(TimeInterval const &ti){
         if ( tmp_event_.isMigration() ){
             this->record_Migrevent(tmp_event_.node()->population(), 
                                     tmp_event_.mig_pop(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
+                                    ti.start_height(), 
+                                    ti.start_height() + opportunity_y, 
                                     migr_opportunity, EVENT );    
             } 
         else {
             this->record_Migrevent(active_node(0)->population(),    
                                     size_t(-1),           
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
+                                    ti.start_height(), 
+                                    ti.start_height() + opportunity_y, 
                                     migr_opportunity, NOEVENT );
             }
         }
@@ -229,10 +219,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
         // over the full tree rather than per-population
         if (tmp_event_.isRecombination()) {
             this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
+                                     ti.start_height(), 
+                                     ti.start_height() + opportunity_y, 
                                      recomb_opportunity,
                                      EVENT );
         } else {
             this->record_Recombevent( 0,
+                                      ti.start_height(), 
+                                      ti.start_height() + opportunity_y, 
                                       recomb_opportunity,
                                       NOEVENT );
         }
@@ -301,14 +295,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
 */
 void ForestState::record_Coalevent(
                   size_t pop_i,
-                  //double start_time, 
-                  //double end_time, 
+                  double start_time, 
+                  double end_time, 
                   double opportunity, 
                   eventCode event_code) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
     Starevent * new_event = new Starevent( pop_i,
-                          //start_time,
-                          //end_time, 
+                          start_time,
+                          end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
@@ -323,13 +317,13 @@ void ForestState::record_Coalevent(
 * @ingroup group_count_coal
 */
 void ForestState::record_Recombevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
+                          double start_time, 
+                          double end_time, 
                           double opportunity, 
                           eventCode event_code){
     Starevent* new_event = new Starevent( pop_i,
-                          //start_time,
-                          //end_time, 
+                          start_time,
+                          end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
@@ -346,14 +340,14 @@ void ForestState::record_Recombevent(size_t pop_i,
 */
 void ForestState::record_Migrevent(size_t pop_i,
                           size_t mig_pop,
-                          //double start_time, 
-                          //double end_time, 
+                          double start_time, 
+                          double end_time, 
                           double opportunity, 
                           eventCode event_code) {
     Migrevent* new_event = new Migrevent( pop_i,
                           mig_pop,
-                          //start_time,
-                          //end_time, 
+                          start_time,
+                          end_time, 
                           opportunity,
                           event_code);	                                          
     new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
@@ -501,58 +495,3 @@ double ForestState::calculate_likelihood( bool withdata ) {
 	else{ return 1;}
     }
 
-
-///*! \brief Initialize members of an ForestState 
-//*/
-//void ForestState::init(double weight, double site ){
-	//this->setParticleWeight(weight);
-	//this->setSiteWhereWeightWasUpdated(site);
-    //}
-
-//void ForestState::init(double weight, double site , ForestState* previous_state){
-	//this->setParticleWeight(weight);
-	//this->setSiteWhereWeightWasUpdated(site);
-	////this->previous_state=previous_state;
-	////this->pointer_counter=(int)0;
-	////this->CoaleventContainer.clear();
-    ////new_forest_counter++;
-    //}
-
-//ForestState::ForestState(){
-	//init();
-//}
-
-//valarray<double> ForestState::cal_marginal_likelihood_finite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
-	//double mutation_rate = this->model().mutation_rate();
-	//valarray<double> marginal_likelihood(2);
-	//dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
-	//if ( node->first_child() == NULL && ((node->label())>0) ){
-        //marginal_likelihood[1] = node->mutation_state() ? 1.0 : 0.0;
-        //marginal_likelihood[0] = node->mutation_state() ? 0.0 : 1.0;	
-		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		//return marginal_likelihood;
-        //}
-	//else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
-		//Node *left = trackLocalNode(node->first_child());
-		//double t1=node->height()- left->height();
-		//double ut1 = 0.5 + 0.5*exp(-t1*2*mutation_rate); // let ut1 be the probability that either end of the branch to the first child carries the same state
-		//assert(ut1>=0 && ut1<=1);
-		//valarray<double> y = cal_marginal_likelihood_finite(left);
-		//Node *right = trackLocalNode(node->second_child());
-		//double t2=node->height()- right->height();
-		//double ut2 = 0.5 + 0.5*exp(-t2*2*mutation_rate); // let ut2 be the probability that either end of the branch to the second child carries the same state
-        //assert(ut2>=0 && ut2<=1);
-		//valarray<double> z = cal_marginal_likelihood_finite(right);		
-		//marginal_likelihood[0] = (y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2)) ;
-		//marginal_likelihood[1] = (y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2)) ;
-		//dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		
-		////dout << "node is " << node<<", t1=" << t1<<", t2=" << t2<<endl;
-		////dout << "prob is " << ", ut1=" << ut1<<", ut2=" << ut2<<endl;
-		////dout << "prob is " << ", y[0]=" << y[0]<<", y[1]=" << y[1]<<endl;
-		////dout << "prob is " << ", z[0]=" << z[0]<<", z[1]=" << z[1]<<endl;
-		////dout << "marginal_likelihood[0] =(" << y[0]*ut1 <<"+" <<  y[1]*(1-ut1) <<")*(" <<  z[0]*ut2 <<"+" <<  z[1]*(1-ut2)<<")" << endl ;
-        ////dout << ", marginal_likelihood  = " << marginal_likelihood[0]<<", " <<  marginal_likelihood[1]<<endl;
-		//return marginal_likelihood;
-        //}				
-    //}

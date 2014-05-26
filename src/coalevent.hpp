@@ -33,20 +33,11 @@
 class Starevent{ 
     friend class CountModel;
     friend class ForestState;
-    friend class ParticleContainer;
-    //friend class Coalevent;
     friend class Migrevent;
-    //friend class Recombevent;
     public:
-        //
-        // Constructors and Destructors
-        //    
-        //Starevent();
-        //Starevent(Starevent* previous_Starevent);
-        //Starevent(const Starevent &previous_Starevent);
         Starevent(size_t pop_i, 
-                  //double start_time,
-                  //double end_time, 
+                  double start_time,
+                  double end_time, 
                   double opportunity,
                   eventCode event_code );
         ~Starevent(){ };
@@ -63,11 +54,11 @@ class Starevent{
         size_t pop_i() const {return this->pop_i_; } 
         void set_pop_i( size_t i ){ this->pop_i_ = i; }
                  
-        //double start_height() const { return this->start_height_; };
-        //void set_start_height(double start_height) { this->start_height_ = start_height; };
+        double start_height() const { return this->start_height_; };
+        void set_start_height(double start_height) { this->start_height_ = start_height; };
         
-        //double end_height() const { return this->end_height_; };
-        //void set_end_height(double end_height) { this->end_height_ = end_height; };
+        double end_height() const { return this->end_height_; };
+        void set_end_height(double end_height) { this->end_height_ = end_height; };
         
         size_t num_event () const { return this->num_event_;}
         void  set_num_event ( size_t num ){ this->num_event_ = num; }    
@@ -80,10 +71,7 @@ class Starevent{
         
         size_t change_time_i() const { return this->change_time_i_; }
         void set_change_time_i( size_t i ){ this->change_time_i_ = i ; }
-        
-        //bool counted() const { return this->counted_ ; }
-        //void set_counted (bool counted) { this->counted_ = counted; }
-        
+                
         double base() const { return this->base_; }
         void set_base ( double base ) { this->base_ = base; }
         bool print_event( string event);
@@ -92,67 +80,15 @@ class Starevent{
         //   
         size_t change_time_i_;
         size_t pop_i_;                
-        //double start_height_;
-        //double end_height_;                 
+        double start_height_;
+        double end_height_;                 
         double opportunity_;        
         size_t num_event_;        
         eventCode event_state_; 
-        //bool counted_;
         double base_;
         int pointer_counter_; // Number of ForestStates are pointing at this event
     };
 
-
-///*!
- //* \brief Derived class of Starevent, recording the number and the time intervals of Coalescent events between two ForestState 
- //*/
-//class Coalevent : public Starevent{
-    ////friend class CountModel;
-    ////friend class ForestState;
-    ////friend class ParticleContainer;
-    //public:
-        //Coalevent(size_t pop_i, 
-                  ////double start_time,
-                  ////double end_time, 
-                  //double opportunity,
-                  //eventCode event_code ) 
-                 //: Starevent ( pop_i, 
-                    ////start_time, 
-                    ////end_time, 
-                    //opportunity, 
-                    //event_code ){ assert (this->print_event()); };  
-        //Coalevent(const Coalevent & previous_Starevent) 
-                 //: Starevent (previous_Starevent) { };
-        //~Coalevent(){};
-    //private:
-        //bool print_event();
-    //};
-    
-///*!
- //* \brief Derived class of Starevent, recording the number and the time intervals of Recombination events between two ForestState 
- //*/    
-//class Recombevent : public Starevent{
-    ////friend class CountModel;
-    ////friend class ForestState;
-    ////friend class ParticleContainer;
-    //public:
-        //Recombevent(size_t pop_i, 
-                    ////double start_time,
-                    ////double end_time, 
-                    //double opportunity,
-                    //eventCode event_code ) 
-                   //: Starevent ( pop_i, 
-                      ////start_time, 
-                      ////end_time, 
-                      //opportunity, 
-                      //event_code ){ assert( this->print_event()); };
-        //Recombevent(const Recombevent & previous_Starevent) 
-                   //: Starevent (previous_Starevent) { };
-        //~Recombevent(){};
-    //private:
-        //bool print_event();
-    //};
-    
 
 /*!
  * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
@@ -160,17 +96,16 @@ class Starevent{
 class Migrevent : public Starevent{
     friend class CountModel;
     //friend class ForestState;
-    //friend class ParticleContainer;
     public:
         Migrevent(size_t pop_i, 
                   size_t mig_pop,
-                  //double start_time,
-                  //double end_time, 
+                  double start_time,
+                  double end_time, 
                   double opportunity,
                   eventCode event_code )
                  : Starevent ( pop_i, 
-                    //start_time, 
-                    //end_time, 
+                    start_time, 
+                    end_time, 
                     opportunity, 
                     event_code ){ 
                         this->set_mig_pop_i (mig_pop); 

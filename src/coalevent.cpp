@@ -29,50 +29,17 @@
  */ 
 
 
-//Starevent::Starevent(){
-    //this->init();
-    //}
-    
-///*! \brief Copy the Starevent from the previous ForestState*/    
-//Starevent::Starevent(Starevent* previous_Starevent){ 
-    //this->pop_i_        = previous_Starevent->pop_i();
-    ////this->start_height_ = previous_Starevent->start_height();
-    ////this->end_height_   = previous_Starevent->end_height(); 
-    //this->num_event_    = previous_Starevent->num_event();
-    //this->opportunity_  = previous_Starevent->opportunity();
-    //this->event_state_  = previous_Starevent->event_state();
-    
-    //this->change_time_i_ = previous_Starevent->change_time_i();
-    ////this->counted_ = previous_Starevent->counted();
-    //this->base_ = previous_Starevent->base();
-    //}
-    
-///*! \brief Copy the Starevent from the previous ForestState*/    
-//Starevent::Starevent(const Starevent & previous_Starevent){ 
-    //this->pop_i_        = previous_Starevent.pop_i();
-    ////this->start_height_ = previous_Starevent.start_height();
-    ////this->end_height_   = previous_Starevent.end_height(); 
-    //this->num_event_    = previous_Starevent.num_event();
-    //this->opportunity_  = previous_Starevent.opportunity();
-    //this->event_state_  = previous_Starevent.event_state();
-    
-    //this->change_time_i_ = previous_Starevent.change_time_i();
-    ////this->counted_ = previous_Starevent.counted();
-    //this->base_ = previous_Starevent.base();
-    //}
-
-
 /*! \brief  Initialize Starevent */    
 Starevent::Starevent( 
            size_t pop_i,
-           //double start_time,
-           //double end_time, 
+           double start_time,
+           double end_time, 
            double opportunity,
            eventCode event_code ) {
     this->init();    
     this->set_pop_i(pop_i);
-    //this->set_start_height( start_time );
-    //this->set_end_height ( end_time );
+    this->set_start_height( start_time );
+    this->set_end_height ( end_time );
     this->set_opportunity( opportunity );
     this->set_event_state(event_code);
     this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
@@ -81,51 +48,36 @@ Starevent::Starevent(
 
 void Starevent::init(){
     this->set_pop_i(0);
-    //this->set_start_height(0);
-    //this->set_end_height(0);    
+    this->set_start_height(0);
+    this->set_end_height(0);    
     this->set_num_event(0);
     this->set_opportunity(0);
     this->set_event_state(INIT_NULL);
     
     this->set_change_time_i ( 0 );
-    //this->set_counted ( false );
     this->set_base ( 0 );
     this->pointer_counter_ = 1;
     }
 
 
 bool Starevent::print_event(string event){
-    cout 
-        //<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             //<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
+    dout << "# # # "
+        << setw(10) << this->start_height()  << " to " 
+             << setw(10) << this->end_height()    << ", " 
              << setw(13) << this->opportunity()   << " opportunity for " 
              << setw(2)  << this->num_event()     << " " << event <<", ";
         if ( this->event_state() == NOEVENT ){
-            cout<< " potetial "<< event;
+            dout<< " potetial "<< event;
             }
-        cout << " at "<< this->base()<< endl;
+        dout << " at "<< this->base()<< endl;
     return true;
     }
 
 
-//bool Coalevent::print_event(){
-    //cout 
-        ////<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
-             ////<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
-             //<< setw(13) << this->opportunity()   << " opportunity for " 
-             //<< setw(2)  << this->num_event()     << " coalescent, ";
-        //if ( this->event_state() == NOEVENT ){
-            //cout<< " potetial coalsecent";
-            //}
-        //cout << endl;
-    //return true;
-    //}
-
-
 bool Migrevent::print_event(){
-	dout 
-        //<< setw(10) << this->start_height()  << " to " 
-             //<< setw(10) << this->end_height()    << ", " 
+	dout << "# # # "
+        << setw(10) << this->start_height()  << " to " 
+             << setw(10) << this->end_height()    << ", " 
              << setw(13) << this->opportunity()   << " opportunity for " 
              << setw(2)  << this->num_event()     << " migration, ";
         if ( this->event_state() == NOEVENT ){
@@ -138,17 +90,3 @@ bool Migrevent::print_event(){
     return true;
     }
 
-
-//bool Recombevent::print_event(){
-    //cout 
-        ////<< setw(10) << this->start_height()  << " to " 
-         ////<< setw(10) << this->end_height()    << ", " 
-         //<< setw(13) << this->opportunity()   << " opportunity for " 
-         //<< setw(2)  << this->num_event()     << " recombination, ";
-    //if ( this->event_state() == NOEVENT ){
-        //cout<< " potetial recombination";
-        //}
-    //cout << endl;
-
-    //return true;    
-    //}

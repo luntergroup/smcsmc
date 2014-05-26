@@ -238,9 +238,10 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         double updated_to = this->particles[particle_i]->site_where_weight_was_updated();
+        assert (updated_to >= this->particles[particle_i]->current_base());
         while (updated_to < mutation_at) {
             
-            dout << "  Now at " << updated_to << " and extending to " << mutation_at << endl;            
+            dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
             /*!
              * First, update the likelihood up to either mutation_at or the end of this state
              */
@@ -284,6 +285,7 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
         
         assert (updated_to == mutation_at);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
+        //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;
         }
     
     /*! normalize the probability upon until the mutation */
@@ -368,49 +370,6 @@ void ParticleContainer::update_state_to_data(
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
     //runningtime->stopwatch_end(2);
     }
-
-
-///*! 
- //* Remove previous states that are no longer used
- //*/
-//void ParticleContainer::clean_old_states(double xstart){
-    
-    //for (size_t i = 0; i < this->particles.size(); i++){
-        //ForestState* current_state = this->particles[i];
-        //if ( current_state->previous_state == NULL ){
-            //continue;
-            //}
-        //dout << "remove states before " << setw(10) << xstart ;        
-        //dout << " End particle [" << i << "] lasted from " << current_state->current_base() << " to base " << current_state->next_base() << endl;        
-        
-        //ForestState* prior_state = current_state->previous_state;
-        
-        ///*!
-         //* Check if the current state is pointing a previous state
-         //*      if yes, check if the previous state should be removed
-         //*          if yes, remove all the previous state
-         //*          if no, move on the previous state, and check again
-         //*/ 
-         
-        //while (prior_state!= NULL){
-
-            //if ( prior_state->next_base() < xstart ){
-                //assert ( current_state->current_base() >= prior_state->next_base() );
-                //// reduce the pointer counter before this point!
-                //prior_state->pointer_counter--;
-                //current_state->previous_state = NULL;
-                
-                //// once the pointer counter is zero, remove the state
-                //if ( prior_state->pointer_counter == (int)0 ){ 
-                    //delete prior_state; 
-                    //}
-                //break;
-                //}
-            //current_state = prior_state;
-            //prior_state = prior_state->previous_state;
-            //}      
-        //}
-    //}
 
 
 /*! 
