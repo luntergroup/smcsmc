@@ -252,12 +252,13 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
             this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
         }
     }
-}            
+}    
+        
 
 void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (StareventContainer_i.size() > 0 && StareventContainer_i[0]->base() < x_end) {
+    while (StareventContainer_i.size() > 0 && StareventContainer_i[0]->base() <= x_end) { // DEBUG changed "<" to "<=" ???
         Starevent * current_Starevent = StareventContainer_i[0];
         total_star_count[current_Starevent->pop_i()]       += weight * current_Starevent->num_event();
         total_star_opportunity[current_Starevent->pop_i()] += weight * current_Starevent->opportunity();            

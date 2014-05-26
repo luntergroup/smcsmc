@@ -359,6 +359,10 @@ void ForestState::record_Migrevent(size_t pop_i,
 /*! Clear coalescent and recombination events recorded between two states.*/
 void ForestState::clear_CoaleventContainer(){ 
     for (size_t time_i = 0; time_i < this->CoaleventContainer.size(); time_i++ ){
+        if ( this->CoaleventContainer[time_i].size() >0 ){
+            cout << " This should not happen!!!"<<endl;
+            cout<<"this->CoaleventContainer[time_i].size()"<<this->CoaleventContainer[time_i].size()<<endl;
+        }
         for (size_t i=0; i < this->CoaleventContainer[time_i].size(); i++){
             CoaleventContainer[time_i][i]->pointer_counter_ --;
             if (CoaleventContainer[time_i][i]->pointer_counter_ == 0){
@@ -374,6 +378,10 @@ void ForestState::clear_CoaleventContainer(){
 /*! Clear recombination events recorded between two states.*/
 void ForestState::clear_RecombeventContainer(){ 
     for (size_t time_i = 0; time_i < this->RecombeventContainer.size(); time_i++){
+        if ( this->RecombeventContainer[time_i].size() >0 ){
+            cout << " This should not happen!!!"<<endl;
+            cout<<"this->RecombeventContainer[time_i].size()"<<this->RecombeventContainer[time_i].size()<<endl;
+        }
         for (size_t i=0; i < this->RecombeventContainer[time_i].size(); i++){
             RecombeventContainer[time_i][i]->pointer_counter_ --;
             if (RecombeventContainer[time_i][i]->pointer_counter_ == 0){
