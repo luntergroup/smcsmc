@@ -114,7 +114,7 @@ void CountModel::reset_Ne ( Model *model ){
 void CountModel::reset_recomb_rate ( Model *model ){
     this->compute_recomb_rate();
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
-    cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<")" <<endl;
+    cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
 
 
@@ -199,25 +199,37 @@ void CountModel::compute_mig_rate(){
  * \brief Compute the recombination rate once we have sweeped through all the data, and recorded the recomb_opportunity and recomb_counts
  */ 
 void CountModel::compute_recomb_rate () {
-    this->resetTime();
-    double scaling_pop_size_N0 = this->population_size();
-    double recomb_opportunity = 0;
+    this->recomb_opportunity_ = 0;
     //double recomb_count = 0;
     this->recomb_count_ = 0;
-    
-    for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
-        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            double pop_ratio = this->population_size(pop_j) / scaling_pop_size_N0;          
-            recomb_opportunity += this->total_weighted_recomb_opportunity[time_layer_i][pop_j] / pop_ratio ;
-            this->recomb_count_ += this->total_recomb_count[time_layer_i][pop_j] / pop_ratio ;
-            }
-        // Advance to the next interval level
-        if ( current_time_idx_ == change_times_.size() - 1) break;  
-        this->increaseTime(); 
+    for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ){
+        this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0] ;
+        this->recomb_count_ += this->total_recomb_count[epoch_idx][0];
         }
-    this->inferred_recomb_rate = this->recomb_count_ / recomb_opportunity;
-    // reset the inferred recombination rate in the current Model and CountModel?
+    this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
     }
+
+//void CountModel::compute_recomb_rate () {
+    //this->resetTime();
+    //double scaling_pop_size_N0 = this->population_size();
+    //double recomb_opportunity = 0;
+    ////double recomb_count = 0;
+    //this->recomb_count_ = 0;
+    
+    //for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
+        //for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+            //double pop_ratio = this->population_size(pop_j) / scaling_pop_size_N0;          
+            //recomb_opportunity += this->total_weighted_recomb_opportunity[time_layer_i][pop_j] / pop_ratio ;
+            //this->recomb_count_ += this->total_recomb_count[time_layer_i][pop_j] / pop_ratio ;
+            //}
+        //// Advance to the next interval level
+        //if ( current_time_idx_ == change_times_.size() - 1) break;  
+        //this->increaseTime(); 
+        //}
+    //this->inferred_recomb_rate = this->recomb_count_ / recomb_opportunity;
+    //// reset the inferred recombination rate in the current Model and CountModel?
+    //}
+
 
 
         /*! \verbatim 

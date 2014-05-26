@@ -94,6 +94,20 @@ void Starevent::init(){
     }
 
 
+bool Starevent::print_event(string event){
+    cout 
+        //<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 
+             //<< setw(10) << this->CoaleventContainer[i]->end_height()    << ", " 
+             << setw(13) << this->opportunity()   << " opportunity for " 
+             << setw(2)  << this->num_event()     << " " << event <<", ";
+        if ( this->event_state() == NOEVENT ){
+            cout<< " potetial "<< event;
+            }
+        cout << " at "<< this->base()<< endl;
+    return true;
+    }
+
+
 //bool Coalevent::print_event(){
     //cout 
         ////<< setw(10) << this->CoaleventContainer[i]->start_height()  << " to " 

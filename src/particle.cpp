@@ -160,7 +160,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
     for (int i=0; i<2; i++) {
         if (states_[i] == 2) {
             // node i is tracing a non-local branch; opportunities for recombination
+            //if (this->current_base() - active_node(i)->last_update() < 0){
+                //cout<<"this->current_base() - active_node(i)->last_update()"<<this->current_base() - active_node(i)->last_update()<<endl;
+            //}
+            //if (this->current_base() - active_node(i)->last_update() == 0){
+                //cout<<"this->current_base() - active_node(i)->last_update()"<<this->current_base() - active_node(i)->last_update()<<endl;
+            //}
             recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
+            //recomb_opportunity += ( this->next_base() - active_node(i)->last_update() ) * opportunity_y;
             }
         if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -306,6 +313,7 @@ void ForestState::record_Coalevent(
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_base ( this->current_base() );
+    assert(new_event->print_event("Coalsecent"));
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     
     }
@@ -326,6 +334,9 @@ void ForestState::record_Recombevent(size_t pop_i,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_base ( this->current_base() );
+    //if (event_code==EVENT){cout << "recomb+1" <<endl;}
+    //cout<<"opportunity: "<<opportunity<<endl;
+    assert(new_event->print_event("Recombination"));
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
     

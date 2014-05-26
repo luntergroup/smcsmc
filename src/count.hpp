@@ -111,6 +111,7 @@ class CountModel: public Model{
         vector < vector < vector<double> > > inferred_mig_rate; // This should be a 3-D vector 
         
         double recomb_count_;
+        double recomb_opportunity_;
         double const_lag_;                
         double inferred_recomb_rate;
         double update_param_threshold_;

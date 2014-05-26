@@ -86,7 +86,7 @@ class Starevent{
         
         double base() const { return this->base_; }
         void set_base ( double base ) { this->base_ = base; }
-        
+        bool print_event( string event);
         //
         // Members
         //   
