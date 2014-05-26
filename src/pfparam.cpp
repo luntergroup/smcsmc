@@ -153,9 +153,10 @@ void PfParam::nextArg(std::string option) {
  */  
 void PfParam::init(){
     this->default_nsam        = 2;
-    this->default_mut_rate    = 0.00000001;
-    this->default_recomb_rate = 0.000000001;
-    this->default_loci_length = 2e7;   
+    this->default_mut_rate    = 1e-8;
+    this->default_recomb_rate = 1e-9;
+    this->default_loci_length = 2e7;
+    this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
      
     this->original_recombination_rate_ = 0;
     this->N                = 100;
@@ -187,7 +188,8 @@ void PfParam::init(){
 void PfParam::insert_mutation_rate_in_scrm_input ( ) {
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) { // if "-t" option is not find ... 
-        this->scrm_input = "-t " + to_string ( this->default_mut_rate * this->default_loci_length * 4 * 10000 ) + " " + this->scrm_input;
+        this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
+        this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
             //this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input; 
         }
     //else { // if "-t" is find ... 
@@ -214,7 +216,8 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         }
 
     if (!VCFfile->withdata()){
-            VCFfile->set_even_interval( this->default_loci_length / 10 );
+            VCFfile->ghost_num_mut = this->default_num_mut;
+            VCFfile->set_even_interval( this->default_loci_length / this->default_num_mut );
         }            
 
     }

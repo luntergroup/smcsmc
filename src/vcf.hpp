@@ -134,7 +134,7 @@ class Vcf{
         double previous_site_at_;
         int chrom_;
         int pervious_chrom_;
-        
+        size_t ghost_num_mut;
         
         size_t vcf_file_length;
         vector <string> sample_names;

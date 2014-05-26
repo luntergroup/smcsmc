@@ -32,8 +32,8 @@ ParticleContainer::ParticleContainer(
                     Model* model, 
                     RandomGenerator* rg, 
                     size_t Num_of_states, 
-                    vector <bool> data_for_init_states, 
-                    bool withdata,
+                    //vector <bool> data_for_init_states, 
+                    //bool withdata,
                     double initial_position ){
     
     this->random_generator2_ = new MersenneTwister(rg->seed());  /*! Initialize mersenneTwister seed */

@@ -41,8 +41,8 @@ class ParticleContainer{
         ParticleContainer(Model* model, 
                   RandomGenerator* rg, 
                   size_t Num_of_states, 
-                  vector <bool> data_for_init_states,  
-                  bool withdata,
+                  //vector <bool> data_for_init_states,  
+                  //bool withdata,
                   double initial_position);// this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
 

@@ -104,7 +104,9 @@ void pfARG_core(PfParam &pfARG_para,
 
     double initial_position = 0;
 
-    ParticleContainer current_states(model, rg, Nparticles, VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), initial_position );             
+    ParticleContainer current_states(model, rg, Nparticles, 
+                                    //VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), 
+                                    initial_position );             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 
@@ -185,7 +187,6 @@ void pfARG_core(PfParam &pfARG_para,
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
         countNe->extract_and_update_count( current_states , VCFfile->site() );
-        // This could return a value for which the earliest base position, things can be removed ...
         
         /*! Reset population sizes in the model */
         countNe->reset_model_parameters(VCFfile->site(), model, pfARG_para.online_bool, force_update = false, false);
@@ -215,8 +216,8 @@ void pfARG_core(PfParam &pfARG_para,
     process(p, VCFfile->site());
 
     
-    cout <<endl << "### PROGRESS: end of the sequence" << endl;
-
+    cout <<endl << "### PROGRESS: end of the sequence at "<< VCFfile->site() << endl;
+    
     countNe->extract_and_update_count( current_states , previous_x, true );
     countNe->reset_model_parameters(VCFfile->site(), model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
     

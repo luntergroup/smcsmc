@@ -366,6 +366,7 @@ void ForestState::clear_CoaleventContainer(){
         for (size_t i=0; i < this->CoaleventContainer[time_i].size(); i++){
             CoaleventContainer[time_i][i]->pointer_counter_ --;
             if (CoaleventContainer[time_i][i]->pointer_counter_ == 0){
+                cout<<"this should have been removed before"<<endl;
                 delete CoaleventContainer[time_i][i];
                 }
             }
@@ -385,6 +386,7 @@ void ForestState::clear_RecombeventContainer(){
         for (size_t i=0; i < this->RecombeventContainer[time_i].size(); i++){
             RecombeventContainer[time_i][i]->pointer_counter_ --;
             if (RecombeventContainer[time_i][i]->pointer_counter_ == 0){
+                cout<<"this should have been removed before"<<endl;
                 delete RecombeventContainer[time_i][i];
                 }
             }

@@ -106,6 +106,7 @@ void Vcf::init(string infile_name, int buffer_length){
     this->previous_site_at_          = 0;
     this->vcf_length_                = 0;
     this->even_interval_             = 0.0;
+    this->ghost_num_mut            = 0;
     this->eof_                       = false;
     this->end_data_                  = false;
     this->buffer_max_number_of_lines = buffer_length;
@@ -129,7 +130,7 @@ void Vcf::read_new_line(){
         empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        this->end_data_ = (this->empty_file_line_counter_ > 10);
+        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut + 1));
         return;    
     }
     
