@@ -1,9 +1,9 @@
 #!/bin/bash
-rm recomb_rate Ne
+rm recomb_rate_full_prune Ne_full_prune
 for rep in $(seq 1 1 10000)
 	do 
-	pf-ARG -l 0 -Np 1 -o trial${rep} -seed ${rep}
-	grep "inferred recomb rate = " trial${rep}.log | sed -e "s/inferred recomb rate =//" >> recomb_rate_pruned
-	tail -1 trial${rep}.log | sed -e "s/  (       0 ) |  //" >> Ne_pruned
-	rm trial${rep}*
+	pf-ARG -Np 1 -o trial${rep} -seed ${rep}
+	grep "inferred recomb rate = " trial_full_prune${rep}.log | sed -e "s/inferred recomb rate =//" >> recomb_rate_full_prune
+	tail -1 trial_full_prune${rep}.log | sed -e "s/  (       0 ) |  //" >> Ne_full_prune
+	rm trial_full_prune${rep}*
 	done
