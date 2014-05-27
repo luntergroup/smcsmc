@@ -218,7 +218,7 @@ void pfARG_core(PfParam &pfARG_para,
     current_states.cumulate_recomb_opportunity_at_seq_end(previous_x);
     cout <<endl << "### PROGRESS: end of the sequence at "<< previous_x << endl;
 
-    //current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
+    current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
 
     countNe->extract_and_update_count( current_states , previous_x, true );
     countNe->reset_model_parameters(previous_x, model, true, force_update = true, true); // This is mandatory for appending the correct value out ...

@@ -49,7 +49,7 @@ ForestState::ForestState( const ForestState & copied_state )
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
-this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Setting particles to independent random generaters when it is copied*/ //DEBUG    
+//this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Setting particles to independent random generaters when it is copied*/ //DEBUG    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
@@ -110,7 +110,7 @@ void ForestState::init_EventContainers( Model * model ){
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
-    delete this->random_generator_; //DEBUG, this is needed when setting each particle to independent random generator
+    //delete this->random_generator_; //DEBUG, this is needed when setting each particle to independent random generator
 	dout << "State between " << this->current_base() << " and " 
                              << this->next_base() 
                              << " is about to be removed" << endl;	

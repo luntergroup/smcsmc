@@ -43,7 +43,7 @@ ParticleContainer::ParticleContainer(
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
 		ForestState *  new_state = new ForestState(model,rg);  // create a new state, using scrm; scrm always starts at 0.
-new_state->random_generator_ = new MersenneTwister(rg->seed()+i);  /*! Setting each particle to independent random generator */ //DEBUG
+//new_state->random_generator_ = new MersenneTwister(rg->seed()+i);  /*! Setting each particle to independent random generator */ //DEBUG
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
         this->push(new_state, 1.0/Num_of_states );        
