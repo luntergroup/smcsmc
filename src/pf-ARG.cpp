@@ -183,8 +183,6 @@ void pfARG_core(PfParam &pfARG_para,
          
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
 
-        //current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
-
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
         countNe->extract_and_update_count( current_states , VCFfile->site() );
         
