@@ -58,6 +58,7 @@ class ParticleContainer{
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
+        void cumulate_recomb_opportunity_at_seq_end( double seqend );
         //void clean_old_states(double xstart);
         void clear();
         //int count_total_number_of_nodes();                
@@ -83,7 +84,7 @@ class ParticleContainer{
                                                    bool withdata,
                                                    vector <bool> haplotypes_at_tips);
                                                    //bool finite_bool);
-        void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */
+        void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */        
 
         // Resampling
         void resample(valarray<int> & sample_count);
@@ -108,7 +109,7 @@ class ParticleContainer{
         vector <ForestState*> particles;
         double ESS_;
         RandomGenerator* random_generator_; // This is for particle filter only, 
-        double current_printing_base_;
+        double current_printing_base_;        
     };
 
 #endif

@@ -36,14 +36,14 @@ ParticleContainer::ParticleContainer(
                     //bool withdata,
                     double initial_position ){
     
-    this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize mersenneTwister seed */
+    this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize random generator for particle filter */
     //this->set_random_generator(rg);
     this->set_ESS(0);
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
 		ForestState *  new_state = new ForestState(model,rg);  // create a new state, using scrm; scrm always starts at 0.
-        new_state->random_generator_ = new MersenneTwister(rg->seed()+i);  /*! Initialize mersenneTwister seed */ //DEBUG
+new_state->random_generator_ = new MersenneTwister(rg->seed()+i);  /*! Setting each particle to independent random generator */ //DEBUG
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
         this->push(new_state, 1.0/Num_of_states );        
@@ -165,8 +165,8 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-    cout<<"Forest state was created " << new_forest_counter << " times" << endl;
-    cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
+    cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+    cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
     
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
@@ -524,3 +524,15 @@ void ParticleContainer::set_particles_with_random_weight(){
         this->particles[i]->setParticleWeight( this->random_generator()->sample() );
         }
     }
+
+
+void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        //this->particles[i]->set_next_base(seqend);
+        double opportunity_x = seqend - this->particles[i]->current_base();
+        double opportunity_y = this->particles[i]->local_tree_length();
+        double recomb_opportunity = opportunity_x * opportunity_y;
+        this->particles[i]->record_Recombevent(0, 0, 0, recomb_opportunity, NOEVENT);        
+        }
+    }
+

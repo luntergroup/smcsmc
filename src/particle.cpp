@@ -36,7 +36,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
     this->init_EventContainers( model );
     
 	this->buildInitialTree();    
-    new_forest_counter++;
+    new_forest_counter++; // DEBUG
     }
 
 
@@ -49,15 +49,13 @@ ForestState::ForestState( const ForestState & copied_state )
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
-this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Initialize mersenneTwister seed */ //DEBUG    
+this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Setting particles to independent random generaters when it is copied*/ //DEBUG    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
         
-    //cout<<this->TmrcaHistory.size()<<endl;
 	dout << "current particle's weight is " << this->weight()<<endl;
-	//copied_state->pointer_counter++;
-    new_forest_counter++;
+    new_forest_counter++;  // DEBUG
     }
     
     
@@ -112,30 +110,17 @@ void ForestState::init_EventContainers( Model * model ){
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
-    delete this->random_generator_; //DEBUG
+    delete this->random_generator_; //DEBUG, this is needed when setting each particle to independent random generator
 	dout << "State between " << this->current_base() << " and " 
                              << this->next_base() 
                              << " is about to be removed" << endl;	
-	//assert( this->pointer_counter == 0 );
-	this->clear_CoaleventContainer();
-	this->clear_RecombeventContainer();
-    this->clear_MigreventContainer();
-	
-    //Remove any of the previous states, if the counter is equal to zero.
-	//ForestState* prior_state = this->previous_state;
-	//if ( prior_state != NULL ) {
-		//prior_state->pointer_counter--;
-		//if ( prior_state->pointer_counter == (int)0 ){ 
-            //delete prior_state; 
-            //}
-        //}
-        
+
+	this->clear_CoaleventContainer(); // This should be checking only, all events should have been removed in the counting process
+	this->clear_RecombeventContainer(); // This should be checking only, all events should have been removed in the counting process
+    this->clear_MigreventContainer(); // This should be checking only, all events should have been removed in the counting process	        
     delete_forest_counter++;
-    //cout<<"Forest state destructor is called " << delete_forest_counter<<endl;    
 	dout << "A Foreststate is deleted" << endl;
     }
-
-
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
@@ -149,15 +134,12 @@ void ForestState::record_all_event(TimeInterval const &ti){
     double opportunity_y = this->tmp_event_.isNoEvent() ? ti.length() : (this->tmp_event_.time() - ti.start_height());
 
     dout << " Total rate is "<< this->rates_[0] <<endl;
-    for (int i=0; i<2; i++) {
-        dout << "Active node["<<i<<"] has state: "<<states_[i]<<endl;
-        //dout << " calcRecombinationRate(active_node(0)) = "<< calcRecombinationRate(active_node(0)) <<" calcRecombinationRate(active_node(1)) = "<<calcRecombinationRate(active_node(1)) <<endl;
+    for (int i = 0; i < 2; i++) {
+        //if ( states_[i] == 0 ) continue; //NEW Only Nodes in state 1 or 2 can do something
         if (states_[i] == 2) {
-            dout << "Active node["<<i<<"] last updated at " << active_node(i)->last_update() <<", current_base = "<< this->current_base()<<" differ "<< ( this->current_base() - active_node(i)->last_update() ) <<endl;
-            dout << "recomb_opportunity increase " << ( this->current_base() - active_node(i)->last_update() ) <<"*"<< opportunity_y <<"="<<( this->current_base() - active_node(i)->last_update() ) * opportunity_y<<endl;
             // node i is tracing a non-local branch; opportunities for recombination
+            assert(active_node(i)->last_update() >= model().getCurrentSequencePosition());
             recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
-            //recomb_opportunity += ( this->next_base() - active_node(i)->last_update() ) * opportunity_y;
             }
         if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration

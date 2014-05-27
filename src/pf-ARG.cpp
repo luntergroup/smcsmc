@@ -74,9 +74,6 @@ int main(int argc, char *argv[]){
         
         /*! Clean up */
         delete countNe;
-        //cout<<"Forest state was created " << new_forest_counter << " times" << endl;
-        //dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
-        
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 
@@ -218,7 +215,7 @@ void pfARG_core(PfParam &pfARG_para,
     ret=getrusage(who,p);
     process(p, VCFfile->site());
 
-    
+    current_states.cumulate_recomb_opportunity_at_seq_end(previous_x);
     cout <<endl << "### PROGRESS: end of the sequence at "<< previous_x << endl;
 
     //current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
