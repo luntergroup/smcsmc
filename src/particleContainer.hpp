@@ -67,6 +67,7 @@ class ParticleContainer{
         //
         void print();
         bool check_state_orders();
+        void normalize_probability();    
         
     private:
         
@@ -77,7 +78,6 @@ class ParticleContainer{
                          double mutation_rate, 
                          bool withdata,
                          bool keep_median_state = false );
-        void normalize_probability();    
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,
@@ -98,7 +98,6 @@ class ParticleContainer{
         double ESS() const {return this->ESS_;};
         void set_ESS(double ess){this->ESS_ = ess;};
         RandomGenerator* random_generator() const { return this->random_generator_; }
-        RandomGenerator* random_generator2() const { return this->random_generator2_; }
         void set_random_generator(RandomGenerator *rg) { this->random_generator_ = rg; }        
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
@@ -108,8 +107,7 @@ class ParticleContainer{
         //
         vector <ForestState*> particles;
         double ESS_;
-        RandomGenerator* random_generator_;
-        RandomGenerator* random_generator2_; // This is for debugging purpose, 
+        RandomGenerator* random_generator_; // This is for particle filter only, 
         double current_printing_base_;
     };
 

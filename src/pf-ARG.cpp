@@ -30,6 +30,8 @@
 int new_forest_counter = 0;
 int delete_forest_counter = 0;
 
+int recombination_counter=0; // DEBUG
+
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count);
@@ -75,6 +77,7 @@ int main(int argc, char *argv[]){
         //cout<<"Forest state was created " << new_forest_counter << " times" << endl;
         //dout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl;
         
+        cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 
     catch (const exception &e) {
@@ -116,8 +119,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through vcf data */
     double previous_x = 0;
     bool force_update = false;
-    //do{
-    while(!VCFfile->end_data()){
+    do{
         ret=getrusage(who,p);
         process(p, VCFfile->site());
 
@@ -165,7 +167,7 @@ void pfARG_core(PfParam &pfARG_para,
          */ 
          
         
-        if (VCFfile->withdata() && VCFfile->site() > model->loci_length()){
+        if (VCFfile->withdata() && VCFfile->site() >= model->loci_length()){ 
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
             countNe->extract_and_update_count( current_states , VCFfile->site() );
@@ -184,6 +186,8 @@ void pfARG_core(PfParam &pfARG_para,
          */
          
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
+
+        //current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
 
         /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
         countNe->extract_and_update_count( current_states , VCFfile->site() );
@@ -209,17 +213,18 @@ void pfARG_core(PfParam &pfARG_para,
         /*! update previous_x before move on to the next line of the data */
         previous_x = VCFfile->site();                              
         VCFfile->read_new_line(); // Read new line from the vcf file        
-        }
-        //}while(!VCFfile->end_data());
+        }while(!VCFfile->end_data());
     
     ret=getrusage(who,p);
     process(p, VCFfile->site());
 
     
-    cout <<endl << "### PROGRESS: end of the sequence at "<< VCFfile->site() << endl;
-    
+    cout <<endl << "### PROGRESS: end of the sequence at "<< previous_x << endl;
+
+    //current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
+
     countNe->extract_and_update_count( current_states , previous_x, true );
-    countNe->reset_model_parameters(VCFfile->site(), model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
+    countNe->reset_model_parameters(previous_x, model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
     
     pfARG_para.appending_Ne_file( true );
 

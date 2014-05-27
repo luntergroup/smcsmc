@@ -38,6 +38,7 @@
 #define PARTICLE
 extern int new_forest_counter;
 extern int delete_forest_counter;
+extern int recombination_counter; //DEBUG
 
 
 

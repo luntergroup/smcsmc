@@ -24,19 +24,32 @@
 
 #include"particle.hpp"
 
+/*! \brief Initialize a new ForestState 
+ * @ingroup group_pf_init
+ * */
+ForestState::ForestState( Model* model, RandomGenerator* random_generator )
+            :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
+	//this->init(); // initialize members of ForestState
+  	this->setParticleWeight( 1.0 );
+	this->setSiteWhereWeightWasUpdated(0.0);
+
+    this->init_EventContainers( model );
+    
+	this->buildInitialTree();    
+    new_forest_counter++;
+    }
+
+
 /*! \brief Create a newly copied ForestState 
     @ingroup group_pf_resample 
 */
-
-
-
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ) {
     this->setParticleWeight( copied_state.weight() );
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
-    
+this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Initialize mersenneTwister seed */ //DEBUG    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
@@ -80,20 +93,6 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
         }    
     }
 
-/*! \brief Initialize a new ForestState 
- * @ingroup group_pf_init
- * */
-ForestState::ForestState( Model* model, RandomGenerator* random_generator )
-            :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
-	//this->init(); // initialize members of ForestState
-  	this->setParticleWeight( 1.0 );
-	this->setSiteWhereWeightWasUpdated(0.0);
-
-    this->init_EventContainers( model );
-    
-	this->buildInitialTree();    
-    new_forest_counter++;
-    }
 
 
 void ForestState::init_EventContainers( Model * model ){
@@ -113,6 +112,7 @@ void ForestState::init_EventContainers( Model * model ){
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
+    delete this->random_generator_; //DEBUG
 	dout << "State between " << this->current_base() << " and " 
                              << this->next_base() 
                              << " is about to be removed" << endl;	
@@ -328,7 +328,7 @@ void ForestState::record_Recombevent(size_t pop_i,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_base ( this->current_base() );
-    //if (event_code==EVENT){cout << "recomb+1" <<endl;}
+    if (event_code==EVENT){recombination_counter++;} // DEBUG
     //cout<<"opportunity: "<<opportunity<<endl;
     assert(new_event->print_event("Recombination"));
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);

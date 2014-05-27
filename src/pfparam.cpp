@@ -59,6 +59,11 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             nextArg( argv_i );
             EM_steps = readInput<int>(argv_[argc_i]);
             }        
+
+        else if (argv_i == "-ghost"){
+            nextArg( argv_i );
+            ghost = readInput<int>(argv_[argc_i]);
+            }  
         
         else if (argv_i == "-tmax"){
             nextArg( argv_i );
@@ -157,7 +162,9 @@ void PfParam::init(){
     this->default_recomb_rate = 1e-9;
     this->default_loci_length = 2e7;
     this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
-     
+    this->ghost = 10;
+    
+    
     this->original_recombination_rate_ = 0;
     this->N                = 100;
     this->buff_length      = 200;
@@ -216,8 +223,10 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         }
 
     if (!VCFfile->withdata()){
-            VCFfile->ghost_num_mut = this->default_num_mut;
-            VCFfile->set_even_interval( this->default_loci_length / this->default_num_mut );
+        //VCFfile->ghost_num_mut = 10;
+            //VCFfile->ghost_num_mut = this->default_num_mut*10;
+            VCFfile->ghost_num_mut = this->ghost;
+            VCFfile->set_even_interval( this->default_loci_length / VCFfile->ghost_num_mut );
         }            
 
     }

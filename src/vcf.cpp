@@ -127,10 +127,10 @@ void Vcf::read_new_line(){
     phased.clear(); // True if it is phased, which has '|'
     
     if (!withdata()){
-        empty_file_line_counter_ ++; 
+        this->empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut + 1));
+        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut +1));
         return;    
     }
     

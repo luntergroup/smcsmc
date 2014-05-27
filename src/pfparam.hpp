@@ -146,7 +146,7 @@ class PfParam{
         //string BL_NAME;
         string SURVIVOR_NAME;
         double window;
-
+        int ghost;
     };
 
 #endif
