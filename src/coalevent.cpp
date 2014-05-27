@@ -32,14 +32,14 @@
 /*! \brief  Initialize Starevent */    
 Starevent::Starevent( 
            size_t pop_i,
-           double start_time,
-           double end_time, 
+           //double start_time,
+           //double end_time, 
            double opportunity,
            eventCode event_code ) {
     this->init();    
     this->set_pop_i(pop_i);
-    this->set_start_height( start_time );
-    this->set_end_height ( end_time );
+    //this->set_start_height( start_time );
+    //this->set_end_height ( end_time );
     this->set_opportunity( opportunity );
     this->set_event_state(event_code);
     this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
@@ -48,8 +48,8 @@ Starevent::Starevent(
 
 void Starevent::init(){
     this->set_pop_i(0);
-    this->set_start_height(0);
-    this->set_end_height(0);    
+    //this->set_start_height(0);
+    //this->set_end_height(0);    
     this->set_num_event(0);
     this->set_opportunity(0);
     this->set_event_state(INIT_NULL);
@@ -62,8 +62,8 @@ void Starevent::init(){
 
 bool Starevent::print_event(string event){
     dout << "# # # "
-        << setw(10) << this->start_height()  << " to " 
-             << setw(10) << this->end_height()    << ", " 
+        //<< setw(10) << this->start_height()  << " to " 
+             //<< setw(10) << this->end_height()    << ", " 
              << setw(13) << this->opportunity()   << " opportunity for " 
              << setw(2)  << this->num_event()     << " " << event <<", ";
         if ( this->event_state() == NOEVENT ){
@@ -76,8 +76,8 @@ bool Starevent::print_event(string event){
 
 bool Migrevent::print_event(){
 	dout << "# # # "
-        << setw(10) << this->start_height()  << " to " 
-             << setw(10) << this->end_height()    << ", " 
+        //<< setw(10) << this->start_height()  << " to " 
+             //<< setw(10) << this->end_height()    << ", " 
              << setw(13) << this->opportunity()   << " opportunity for " 
              << setw(2)  << this->num_event()     << " migration, ";
         if ( this->event_state() == NOEVENT ){

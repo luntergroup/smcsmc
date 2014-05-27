@@ -36,7 +36,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
     this->init_EventContainers( model );
     
 	this->buildInitialTree();    
-    new_forest_counter++; // DEBUG
+    //new_forest_counter++; // DEBUG
     }
 
 
@@ -55,7 +55,7 @@ ForestState::ForestState( const ForestState & copied_state )
         }
         
 	dout << "current particle's weight is " << this->weight()<<endl;
-    new_forest_counter++;  // DEBUG
+    //new_forest_counter++;  // DEBUG
     }
     
     
@@ -110,15 +110,10 @@ void ForestState::init_EventContainers( Model * model ){
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
-    //delete this->random_generator_; //DEBUG, this is needed when setting each particle to independent random generator
-	dout << "State between " << this->current_base() << " and " 
-                             << this->next_base() 
-                             << " is about to be removed" << endl;	
-
 	this->clear_CoaleventContainer(); // This should be checking only, all events should have been removed in the counting process
 	this->clear_RecombeventContainer(); // This should be checking only, all events should have been removed in the counting process
     this->clear_MigreventContainer(); // This should be checking only, all events should have been removed in the counting process	        
-    delete_forest_counter++;
+    //delete_forest_counter++;
 	dout << "A Foreststate is deleted" << endl;
     }
 
@@ -133,7 +128,6 @@ void ForestState::record_all_event(TimeInterval const &ti){
     //             otherwise, take the distance between the event and the bottom of this interval
     double opportunity_y = this->tmp_event_.isNoEvent() ? ti.length() : (this->tmp_event_.time() - ti.start_height());
 
-    dout << " Total rate is "<< this->rates_[0] <<endl;
     for (int i = 0; i < 2; i++) {
         //if ( states_[i] == 0 ) continue; //NEW Only Nodes in state 1 or 2 can do something
         if (states_[i] == 2) {
@@ -158,22 +152,22 @@ void ForestState::record_all_event(TimeInterval const &ti){
         //// check: do we need to consider different cases? is it possible to coalesce in active_node(1)->population() ???? Joe: I dont think so ...
         if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
             this->record_Coalevent(active_node(0)->population(), 
-                                    ti.start_height(), 
-                                    ti.start_height() + opportunity_y, 
+                                    //ti.start_height(), 
+                                    //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             } 
         else if (states_[0] == 1){
             this->record_Coalevent(active_node(0)->population(), 
-                                    ti.start_height(), 
-                                    ti.start_height() + opportunity_y, 
+                                    //ti.start_height(), 
+                                    //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT ); 
             } 
         else if (states_[1] == 1){
             this->record_Coalevent(active_node(1)->population(), 
-                                    ti.start_height(), 
-                                    ti.start_height() + opportunity_y, 
+                                    //ti.start_height(), 
+                                    //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
                                     (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
             }
@@ -183,15 +177,15 @@ void ForestState::record_all_event(TimeInterval const &ti){
         if ( tmp_event_.isMigration() ){
             this->record_Migrevent(tmp_event_.node()->population(), 
                                     tmp_event_.mig_pop(), 
-                                    ti.start_height(), 
-                                    ti.start_height() + opportunity_y, 
+                                    //ti.start_height(), 
+                                    //ti.start_height() + opportunity_y, 
                                     migr_opportunity, EVENT );    
             } 
         else {
             this->record_Migrevent(active_node(0)->population(),    
                                     size_t(-1),           
-                                    ti.start_height(), 
-                                    ti.start_height() + opportunity_y, 
+                                    //ti.start_height(), 
+                                    //ti.start_height() + opportunity_y, 
                                     migr_opportunity, NOEVENT );
             }
         }
@@ -201,73 +195,18 @@ void ForestState::record_all_event(TimeInterval const &ti){
         // over the full tree rather than per-population
         if (tmp_event_.isRecombination()) {
             this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
-                                     ti.start_height(), 
-                                     ti.start_height() + opportunity_y, 
+                                     //ti.start_height(), 
+                                     //ti.start_height() + opportunity_y, 
                                      recomb_opportunity,
                                      EVENT );
         } else {
             this->record_Recombevent( 0,
-                                      ti.start_height(), 
-                                      ti.start_height() + opportunity_y, 
+                                      //ti.start_height(), 
+                                      //ti.start_height() + opportunity_y, 
                                       recomb_opportunity,
                                       NOEVENT );
         }
     }
-             
-        //if (states_[0] == 2){
-            //this->record_Recombevent(active_node(0)->population(), 
-                                        ////ti.start_height(), 
-                                        ////ti.start_height() + opportunity_y, 
-                                        //recomb_opportunity, 
-                                        //tmp_event_.isRecombination() ? EVENT : NOEVENT );
-            //} 
-        //else if (states_[1] == 2){
-            //this->record_Recombevent(active_node(1)->population(), 
-                                        ////ti.start_height(), 
-                                        ////ti.start_height() + opportunity_y, 
-                                        //recomb_opportunity, 
-                                        //tmp_event_.isRecombination() ? EVENT : NOEVENT );
-            //}
-        //}
-    
-    //assert(active_node(0)->population() == tmp_event_.node()->population());
-  
-    //// CHECKING OPPORTUNITIES
-    //double act0coal_rate =  1 / ( 2.0 * this->model().population_size(active_node(0)->population()) );
-    ////  CHECK ACTIVE NODE 0 AND ACTIVE NODE 1 SHOUDL BE IN THE SAME POPULATION
-    //assert(active_node(0)->population() == active_node(1)->population() );
-    
-    //double recomb_rate = this->model().recombination_rate();
-    
-    //double actmig_rate[2];
-    //actmig_rate[0] = 0.0;
-    //actmig_rate[1] = 0.0;
-    //for (int i=0; i<2; i++) {
-        //if (states_[i] == 1) {
-            //// node i is tracing out a new branch; opportunities for coalescences and migration
-            //actmig_rate[i] = model().total_migration_rate(active_node(i)->population());
-            //}
-        //}
-    
-    //double opportunity_rate = (coal_opportunity / opportunity_y * act0coal_rate + recomb_opportunity / opportunity_y * recomb_rate + actmig_rate[0] + actmig_rate[1]);
-    //if (abs(rates_[0] - opportunity_rate) > 0.00000000000001){
-    ////if (abs(rates_[0] - opportunity_rate) != 0){
-        //cout << "difference is "<<rates_[0]-opportunity_rate<<endl;
-        //cout<<"rates_[0]= "<<rates_[0]<<endl;
-        //cout << "opportunity_rate = " << opportunity_rate<<endl;
-        //cout<<"                         recomb_rate = " << recomb_opportunity * recomb_rate/ opportunity_y<<endl;
-        //cout<<"                         coal_rate = " << coal_opportunity * act0coal_rate / opportunity_y<<endl;
-        //cout<<"                         mig_rate0 = " << model().total_migration_rate(active_node(0)->population())<<endl;
-        //cout<<"                         mig_rate1 = " << model().total_migration_rate(active_node(1)->population())<<endl;
-        ////cout<<" calcCoalescenceRate(active_node(0)->population(), ti);  = "<<calcCoalescenceRate(active_node(0)->population(), ti) <<endl;
-        ////cout<<" calcCoalescenceRate(active_node(1)->population(), ti);  = "<<calcCoalescenceRate(active_node(1)->population(), ti) <<endl;
-        ////cout<<" calcPwCoalescenceRate(active_node(1)->population()) = "<<calcPwCoalescenceRate(active_node(1)->population())<<endl; 
-        //}
-        
-    //if (model().total_migration_rate(active_node(0)->population()) != model().total_migration_rate(active_node(0)->population())){
-        //cout<<"model().total_migration_rate(active_node(0)->population()) != model().total_migration_rate(active_node(0)->population())"<<endl;
-        //exit(1);
-        //}
     return;
     }
 
@@ -277,14 +216,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
 */
 void ForestState::record_Coalevent(
                   size_t pop_i,
-                  double start_time, 
-                  double end_time, 
+                  //double start_time, 
+                  //double end_time, 
                   double opportunity, 
                   eventCode event_code) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
     Starevent * new_event = new Starevent( pop_i,
-                          start_time,
-                          end_time, 
+                          //start_time,
+                          //end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
@@ -299,19 +238,18 @@ void ForestState::record_Coalevent(
 * @ingroup group_count_coal
 */
 void ForestState::record_Recombevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code){
     Starevent* new_event = new Starevent( pop_i,
-                          start_time,
-                          end_time, 
+                          //start_time,
+                          //end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_base ( this->current_base() );
-    if (event_code==EVENT){recombination_counter++;} // DEBUG
-    //cout<<"opportunity: "<<opportunity<<endl;
+    //if (event_code==EVENT){recombination_counter++;} // DEBUG
     assert(new_event->print_event("Recombination"));
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
@@ -322,14 +260,14 @@ void ForestState::record_Recombevent(size_t pop_i,
 */
 void ForestState::record_Migrevent(size_t pop_i,
                           size_t mig_pop,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code) {
     Migrevent* new_event = new Migrevent( pop_i,
                           mig_pop,
-                          start_time,
-                          end_time, 
+                          //start_time,
+                          //end_time, 
                           opportunity,
                           event_code);	                                          
     new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
@@ -341,38 +279,25 @@ void ForestState::record_Migrevent(size_t pop_i,
 /*! Clear coalescent and recombination events recorded between two states.*/
 void ForestState::clear_CoaleventContainer(){ 
     for (size_t time_i = 0; time_i < this->CoaleventContainer.size(); time_i++ ){
-        if ( this->CoaleventContainer[time_i].size() >0 ){
-            cout << " This should not happen!!!"<<endl;
-            cout<<"this->CoaleventContainer[time_i].size()"<<this->CoaleventContainer[time_i].size()<<endl;
-        }
         for (size_t i=0; i < this->CoaleventContainer[time_i].size(); i++){
             CoaleventContainer[time_i][i]->pointer_counter_ --;
             if (CoaleventContainer[time_i][i]->pointer_counter_ == 0){
-                cout<<"this should have been removed before"<<endl;
                 delete CoaleventContainer[time_i][i];
                 }
             }
-        //this->CoaleventContainer[time_i].clear(); 
         }
-	//this->CoaleventContainer.clear();
     }
 
 
 /*! Clear recombination events recorded between two states.*/
 void ForestState::clear_RecombeventContainer(){ 
     for (size_t time_i = 0; time_i < this->RecombeventContainer.size(); time_i++){
-        if ( this->RecombeventContainer[time_i].size() >0 ){
-            cout << " This should not happen!!!"<<endl;
-            cout<<"this->RecombeventContainer[time_i].size()"<<this->RecombeventContainer[time_i].size()<<endl;
-        }
         for (size_t i=0; i < this->RecombeventContainer[time_i].size(); i++){
             RecombeventContainer[time_i][i]->pointer_counter_ --;
             if (RecombeventContainer[time_i][i]->pointer_counter_ == 0){
-                cout<<"this should have been removed before"<<endl;
                 delete RecombeventContainer[time_i][i];
                 }
             }
-        //this->RecombeventContainer.clear();
         }
     }
     
@@ -386,7 +311,6 @@ void ForestState::clear_MigreventContainer(){
                 delete MigreventContainer[time_i][i];
                 }
             }
-        //this->MigreventContainer.clear();
         }
     }
     

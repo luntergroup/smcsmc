@@ -295,9 +295,7 @@ void PfParam::finalize(  ){
     }
 
 int PfParam::log( ){
-//int PfParam::log( double inferred_recomb_rate, vector < vector<double> > migrate ){
     if (log_bool){  
-        //this->log_param(inferred_recomb_rate, migrate);
         this->log_param( );
         //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
@@ -309,8 +307,6 @@ int PfParam::log( ){
     }
 
 
-//void PfParam::log_param(Model *model, size_t random_seed, double inferred_recomb_rate){
-//void PfParam::log_param( double inferred_recomb_rate, vector < vector<double> > migrate ){
 void PfParam::log_param( ){
     ofstream log_file;
     string emptyfile("EMPTY FILE");
@@ -395,7 +391,6 @@ void PfParam::log_param( ){
 
 
 void PfParam::appending_Ne_file( bool hist ){
-//void PfParam::appending_Ne_file(Model *model, bool hist){
     string file_name = hist ? HIST_NAME : Ne_NAME ;
     ofstream Ne_file( file_name.c_str(), ios::out | ios::app | ios::binary);   
     if (hist){

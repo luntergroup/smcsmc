@@ -36,9 +36,9 @@
 
 #ifndef PARTICLE
 #define PARTICLE
-extern int new_forest_counter;
-extern int delete_forest_counter;
-extern int recombination_counter; //DEBUG
+//extern int new_forest_counter;
+//extern int delete_forest_counter;
+//extern int recombination_counter; //DEBUG
 
 
 
@@ -69,10 +69,8 @@ class ForestState : public Forest{
         //
         // Constructors and Destructors
         //        
-        //ForestState():Forest(){ }
         ForestState(Model* model, 
                     RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
-        //ForestState(ForestState *current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         ~ForestState();
 
@@ -95,21 +93,21 @@ class ForestState : public Forest{
         // Record events
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);
         
         void record_Recombevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);
 
         void record_Migrevent(size_t pop_i,
                           size_t mig_pop,
-                          double start_time, 
-                          double end_time, 
+                          //double start_time, 
+                          //double end_time, 
                           double opportunity, 
                           eventCode event_code);                          
 
@@ -137,10 +135,6 @@ class ForestState : public Forest{
         //
         // Members
         //   
-        //ForestState *previous_state;                 /*!< \brief Pointer to the previous particle, i.e. the previous genealogy */
-        //int pointer_counter;                         /*!< \brief Pointer counter. Record the number of particles that are pointing towards to THIS PARTICLE. */   
-        //vector < vector < Coalevent*  > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        //vector < vector < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Starevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < deque < Starevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */

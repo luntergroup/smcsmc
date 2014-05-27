@@ -27,10 +27,10 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */ 
-int new_forest_counter = 0;
-int delete_forest_counter = 0;
+//int new_forest_counter = 0;
+//int delete_forest_counter = 0;
 
-int recombination_counter=0; // DEBUG
+//int recombination_counter=0; // DEBUG
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
         
         /*! Clean up */
         delete countNe;
-        cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+        //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 
     catch (const exception &e) {
@@ -114,7 +114,6 @@ void pfARG_core(PfParam &pfARG_para,
     countNe->init();
 
     /*! Go through vcf data */
-    double previous_x = 0;
     bool force_update = false;
     do{
         ret=getrusage(who,p);
@@ -207,21 +206,20 @@ void pfARG_core(PfParam &pfARG_para,
          *  However, need to check this with the current_printing_space
          */
         
-        /*! update previous_x before move on to the next line of the data */
-        previous_x = VCFfile->site();                              
         VCFfile->read_new_line(); // Read new line from the vcf file        
         }while(!VCFfile->end_data());
     
     ret=getrusage(who,p);
     process(p, VCFfile->site());
 
-    current_states.cumulate_recomb_opportunity_at_seq_end(previous_x);
-    cout <<endl << "### PROGRESS: end of the sequence at "<< previous_x << endl;
+    double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
+    current_states.cumulate_recomb_opportunity_at_seq_end(sequence_end); // This is to make up the recomb opportunities till the end of the sequence.
+    cout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
 
-    countNe->extract_and_update_count( current_states , previous_x, true );
-    countNe->reset_model_parameters(previous_x, model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
+    countNe->extract_and_update_count( current_states , sequence_end, true );
+    countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
     
     pfARG_para.appending_Ne_file( true );
 

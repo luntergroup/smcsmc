@@ -165,8 +165,8 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-    cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-    cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
+    //cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+    //cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
     
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
@@ -532,7 +532,9 @@ void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
         double opportunity_x = seqend - this->particles[i]->current_base();
         double opportunity_y = this->particles[i]->local_tree_length();
         double recomb_opportunity = opportunity_x * opportunity_y;
-        this->particles[i]->record_Recombevent(0, 0, 0, recomb_opportunity, NOEVENT);        
+        this->particles[i]->record_Recombevent(0, 
+                                               //0, 0, 
+                                               recomb_opportunity, NOEVENT);        
         }
     }
 

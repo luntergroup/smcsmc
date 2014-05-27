@@ -37,7 +37,6 @@ class ParticleContainer{
         //
         // Constructors and Destructors
         //        
-        //ParticleContainer();   
         ParticleContainer(Model* model, 
                   RandomGenerator* rg, 
                   size_t Num_of_states, 
@@ -59,7 +58,6 @@ class ParticleContainer{
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void cumulate_recomb_opportunity_at_seq_end( double seqend );
-        //void clean_old_states(double xstart);
         void clear();
         //int count_total_number_of_nodes();                
 

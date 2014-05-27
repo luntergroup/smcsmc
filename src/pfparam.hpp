@@ -85,6 +85,8 @@ class PfParam{
         Model *model;
         MersenneTwister *rg ;
 
+        double default_loci_length;
+
         double ESS () const { return this-> ESS_;}
     private:
 
@@ -124,7 +126,6 @@ class PfParam{
         int    default_nsam;
         double default_mut_rate; 
         double default_recomb_rate; 
-        double default_loci_length;
         size_t default_num_mut;
         // ------------------------------------------------------------------
         // Input 
