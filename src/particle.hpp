@@ -29,18 +29,16 @@
 #ifndef NDEBUG
 #define dout std::cout
 #else
-#pragma GCC diagnostic ignored "-Wunused-value"
 #define dout 0 && std::cout
 #endif
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE
 #define PARTICLE
+
 //extern int new_forest_counter;
 //extern int delete_forest_counter;
 //extern int recombination_counter; //DEBUG
-
-
 
 struct TmrcaState {
     TmrcaState (double base, double tmrca) { 
@@ -58,9 +56,9 @@ struct TmrcaState {
  * A particle is a special case of a Forest, with special members
  */
 class ForestState : public Forest{      
-#ifdef UNITTEST
-   friend class TestForestState;
-#endif
+    #ifdef UNITTEST
+    friend class TestForestState;
+    #endif
     friend class ParticleContainer;
     friend class CountModel;
     
@@ -79,10 +77,6 @@ class ForestState : public Forest{
         //           
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
-
-        //void init(double weight=1.0, 
-                  //double weight_updated_at_site=0.0, 
-                  //ForestState * previous_state = NULL); /*!< Initialize ForestState member particle_weight_ and site_where_weight_was_updated_ */
 
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
@@ -138,10 +132,10 @@ class ForestState : public Forest{
         vector < deque < Starevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < deque < Starevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
-        
-        vector < TmrcaState > TmrcaHistory;
+                
         double site_where_weight_was_updated_;
         double particle_weight_;
         size_t ancestor_;
+        vector < TmrcaState > TmrcaHistory;
     };
 #endif

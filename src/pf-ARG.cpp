@@ -27,10 +27,9 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */ 
-//int new_forest_counter = 0;
-//int delete_forest_counter = 0;
-
-//int recombination_counter=0; // DEBUG
+//int new_forest_counter    = 0; // DEBUG
+//int delete_forest_counter = 0; // DEBUG
+//int recombination_counter = 0; // DEBUG
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
@@ -38,10 +37,7 @@ void pfARG_core(PfParam &pfARG_para,
 
 int main(int argc, char *argv[]){   
     
-    /*! 
-     * Default values
-     */ 
-    bool print_update_count = false;
+    bool print_update_count = false; // DEBUG
 
     /*! Extract pfARG parameters */
     PfParam pfARG_para( argc, argv );
@@ -86,12 +82,11 @@ int main(int argc, char *argv[]){
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
-                bool print_update_count){
+                bool print_update_count ){
                     
-    int who= RUSAGE_SELF;
-    struct rusage usage;
-    struct rusage *p=&usage;
-    int ret;
+    int who = RUSAGE_SELF;     // PROFILING
+    struct rusage usage;       // PROFILING
+    struct rusage *p = &usage; // PROFILING
 
     Model *model = pfARG_para.model;
     MersenneTwister *rg = pfARG_para.rg;
@@ -100,13 +95,13 @@ void pfARG_core(PfParam &pfARG_para,
     
     VCFfile->read_new_line();
     cout<< "############# starting vcf file at base " <<VCFfile->site()<<endl;
+    
     /*! Initial particles */ 
-
     double initial_position = 0;
-
     ParticleContainer current_states(model, rg, Nparticles, 
                                     //VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), 
-                                    initial_position );             
+                                    initial_position,
+                                    pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 
@@ -116,8 +111,8 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through vcf data */
     bool force_update = false;
     do{
-        ret=getrusage(who,p);
-        process(p, VCFfile->site());
+        getrusage(who,p);            // PROFILING
+        process(p, VCFfile->site()); // PROFILING
 
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
@@ -176,14 +171,12 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum, pfARG_para.mid_bool );
+        current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
                 
-        /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap
-         */
-         
+        /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
 
-        /*!     UPDATE CUM COUNT FOR WEIGHT AND BRANCH LENGTH */ 
+        /*! UPDATE CUM COUNT AND OPPORTUNITIES ACCORDING TO THE PARTICLE WEIGHT */ 
         countNe->extract_and_update_count( current_states , VCFfile->site() );
         
         /*! Reset population sizes in the model */
@@ -193,33 +186,25 @@ void pfARG_core(PfParam &pfARG_para,
             cout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();    
             }
-        
-        
-        /*! ESS resampling */        
+                
+        /*! ESS resampling. Filtering step*/        
         current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
-        
-        /*! Clean up states that are no longer can be traced back from the present particles 
-         *  
-         *  As we have already updated the Ne counts, we could clean up any ForestState before backspace, 
-         *  However, need to check this with the current_printing_space
-         */
-        
+                
         VCFfile->read_new_line(); // Read new line from the vcf file        
-        }while(!VCFfile->end_data());
-    
-    ret=getrusage(who,p);
-    process(p, VCFfile->site());
+        } while( !VCFfile->end_data() );
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     current_states.cumulate_recomb_opportunity_at_seq_end(sequence_end); // This is to make up the recomb opportunities till the end of the sequence.
     cout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
-    current_states.normalize_probability(); // try this ... It seems to converge slower if it is not normalized ... DEBUG
+    // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
+    current_states.normalize_probability(); 
 
-    countNe->extract_and_update_count( current_states , sequence_end, true );
-    countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for appending the correct value out ...
+    countNe->extract_and_update_count( current_states , sequence_end, true ); // VCFfile->end_data()
+    countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
-    pfARG_para.appending_Ne_file( true );
+    bool append_to_history_file = true;
+    pfARG_para.appending_Ne_file( append_to_history_file );
 
     current_states.clear(); // This line is sufficient to clear the memory.
     VCFfile->reset_VCF_to_data();

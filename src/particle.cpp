@@ -29,12 +29,11 @@
  * */
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
-	//this->init(); // initialize members of ForestState
+
   	this->setParticleWeight( 1.0 );
 	this->setSiteWhereWeightWasUpdated(0.0);
 
-    this->init_EventContainers( model );
-    
+    this->init_EventContainers( model );    
 	this->buildInitialTree();    
     //new_forest_counter++; // DEBUG
     }
@@ -45,11 +44,14 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ) {
+                
     this->setParticleWeight( copied_state.weight() );
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
+    
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
 //this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Setting particles to independent random generaters when it is copied*/ //DEBUG    
+    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
@@ -61,8 +63,9 @@ ForestState::ForestState( const ForestState & copied_state )
     
 
 void ForestState::copyEventContainers(const ForestState & copied_state ){
+    // Copy Coalescent events
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
-        deque < Starevent* > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Starevent* > CoaleventContainer_i;   
         for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
             Starevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
             new_coalevent->pointer_counter_++;
@@ -70,8 +73,9 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
             }
         CoaleventContainer.push_back( CoaleventContainer_i );        
         }
+    // Copy Recombination events
     for (size_t i = 0 ; i < copied_state.RecombeventContainer.size() ; i++ ){ 
-        deque < Starevent* > RecombeventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Starevent* > RecombeventContainer_i;  
         for (size_t ii = 0 ; ii < copied_state.RecombeventContainer[i].size(); ii++){
             Starevent* new_recombevent = copied_state.RecombeventContainer[i][ii];
             new_recombevent->pointer_counter_++;
@@ -79,7 +83,7 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
             }
         RecombeventContainer.push_back( RecombeventContainer_i );        
         }
-
+    // Copy Migration events
     for (size_t i = 0 ; i < copied_state.MigreventContainer.size() ; i++ ){ 
         deque < Migrevent* > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.MigreventContainer[i].size(); ii++){

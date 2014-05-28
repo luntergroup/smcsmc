@@ -76,7 +76,6 @@ class PfParam{
         bool online_bool;
 
         //bool hist_bool;
-        bool mid_bool;
         bool heat_bool;
         //bool finite_bool;
 

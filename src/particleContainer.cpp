@@ -34,8 +34,9 @@ ParticleContainer::ParticleContainer(
                     size_t Num_of_states, 
                     //vector <bool> data_for_init_states, 
                     //bool withdata,
-                    double initial_position ){
-    
+                    double initial_position,
+                    bool heat_bool ){
+    this->heat_bool_ = heat_bool;
     this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize random generator for particle filter */
     //this->set_random_generator(rg);
     this->set_ESS(0);
@@ -59,7 +60,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
     if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small, to check this step, turn the if statement off
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
-        //this->trivial_resampling( num_state, sample_count );
+        //this->trivial_resampling ( sample_count, num_state );
         this->resample(sample_count);  
         }    
     }
@@ -67,32 +68,28 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
 
 /*! \brief Particle filtering Resampling step
  * 
- *  Update particles according to the sample counts
+ *  Update particles according to the sample counts, and set the particle probabilities to 1
  * 
  * \ingroup group_resample
  */ 
 void ParticleContainer::resample(valarray<int> & sample_count){	
-    //cout<<"resampling is called"<<endl;
-	dout << " ****************************** Start making list of new states ****************************** " << std::endl;
+    dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
         if ( (sample_count[old_state_index] > 0)){
             ForestState * current_state = this->particles[old_state_index] ;
-            this->push(current_state);
+            this->push(current_state); // As this pushed step, sets the particle weight to 1, by default value.
             
-            for (int ii=2; ii <= sample_count[old_state_index]; ii++){ // create new copy of the resampled particle        
-			  	//cout << "       Make a copy of the " << old_state_index<<"th particle" << endl;                
+            // create new copy of the resampled particle 
+            for (int ii=2; ii <= sample_count[old_state_index]; ii++){ 
+			  	//cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
 				ForestState * new_copy_state = new ForestState( *this->particles[old_state_index] );
-				this->push(new_copy_state);
+				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
-            //delete this->particles[old_state_index];
-            //this->particles[old_state_index]->nodes()->clear(); // Remove old particle tree, this reduces memory usage.
             } 
-        else {
-			delete this->particles[old_state_index];			
-			
-            }
-            this->particles[old_state_index]=NULL;
+        else { delete this->particles[old_state_index]; }
+        
+        this->particles[old_state_index]=NULL;
         }
     
     this->shifting(sample_count.sum());
@@ -149,14 +146,13 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     }
 
 
-
 /*!
  * ParticleContatiner destructor
  */ 
 ParticleContainer::~ParticleContainer(){
     delete random_generator_;
     // The following message may show up very often if it is passed by reference ...
-    //dout << "ParticleContainer destructor is called" << endl;
+    // dout << "ParticleContainer destructor is called" << endl;
     }
 
 
@@ -165,8 +161,8 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-    //cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-    //cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
+    // cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+    // cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
     
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
@@ -207,19 +203,18 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 		wi_sum = wi_sum + w_i;
 		//wi_sq_sum = wi_sq_sum + pow(this->particles[i]->weight,2);
 		wi_sq_sum = wi_sq_sum + w_i * w_i;
-	}
+        }
 
 	//check for the cum weight
 	dout << "### particle weights ";
     for (size_t i=0;i<Num_of_states;i++){
         dout << this->particles[i]->weight()<<"  ";
-    }
-    dout << std::endl<<std::endl;
+        } dout << std::endl<<std::endl;
 	
     dout << "### updated cum sum of particle weight ";
     for (size_t i=0;i<weight_cum_sum.size();i++){
         dout << weight_cum_sum[i]<<"  ";
-    }dout << std::endl;
+        } dout << std::endl;
 
 	this->set_ESS(wi_sum * wi_sum / wi_sq_sum);	
     }
@@ -230,7 +225,7 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bool withdata, bool keep_median_state){
+void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
     dout << endl<<" We are extending particles" << endl<<endl;
  	for (size_t particle_i=0;particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
@@ -265,23 +260,13 @@ void ParticleContainer::extend_ARGs(double mutation_at, double mutation_rate, bo
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
             if (updated_to < mutation_at) {
-                 //median state is not neccessary, but if we keep the coalescent events for each change, we need to do this
-                 // the following line works when constant lagging or lagging is used. but we need to consider different lagging, and this will be problemtic
-                //if ( keep_median_state ){
-                    //ForestState * median_state = new ForestState(this->particles[particle_i]);                
-                    //this->particles[particle_i]->nodes()->clear(); // clear previous nodes reduces the memory usage!!!                
-                    //this->particles[particle_i] = median_state;
-                    //}
                 this->particles[particle_i]->sampleNextGenealogy();
-                
-                TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
-                this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
-                
+                                
+                if ( this->heat_bool_ ){
+                    TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
+                    this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
+                    }
                 }
-
-            //assert(this->particles[particle_i]->print_Recombevent());
-            //assert(this->particles[particle_i]->print_Coalevent());
-            //assert(this->particles[particle_i]->print_Migrevent());
             }
         
         assert (updated_to == mutation_at);        
@@ -311,8 +296,7 @@ void ParticleContainer::normalize_probability(){
 void ParticleContainer::update_state_to_data(
                         Vcf * VCFfile, 
                         Model * model, 
-                        valarray<double> & weight_cum_sum, 
-                        bool keep_median_state
+                        valarray<double> & weight_cum_sum
                         //bool finite_bool
                         ){
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
@@ -362,14 +346,13 @@ void ParticleContainer::update_state_to_data(
      */
     
     //Extend ARGs and update weight for not seeing mutations along the equences
-    this->extend_ARGs( mutation_at, mutation_rate, withdata, keep_median_state );
+    this->extend_ARGs( mutation_at, mutation_rate, withdata );
     
     //Update weight for seeing mutation at the position 
     this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); 
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
-    //runningtime->stopwatch_end(2);
     }
 
 
@@ -377,14 +360,14 @@ void ParticleContainer::update_state_to_data(
  * @ingroup group_naive 
  * \brief Use simple random sampling to resample
  */
-void ParticleContainer::trivial_resampling(size_t N, std::valarray<int> & sample_count){
+void ParticleContainer::trivial_resampling( std::valarray<int> & sample_count, size_t num_state ){
     sample_count=0;
-    for (size_t i=0; i<N ;i++){
-        size_t index = random_generator()->sampleInt(N); 
+    for (size_t i=0; i < num_state ;i++){
+        size_t index = random_generator()->sampleInt(num_state); 
         sample_count[index]=sample_count[index]+1;
         }
         //cout << sample_count.sum() <<endl;
-        //assert(sample_count.sum()==sample_size);
+        assert( sample_count.sum() == num_state );
     }
     
 
@@ -492,11 +475,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                 ForestState * current_state_ptr = this->particles[i];
                 WeightOfstream <<"\t" << current_state_ptr->weight();
                 SURVIVORstream <<"\t" << current_state_ptr->ancestor();
-                
-                //while (current_state_ptr->current_base() > this->current_printing_base() && current_state_ptr->previous_state) {
-                    //current_state_ptr=current_state_ptr->previous_state;
-                    //}
-                
+                                
                 TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
@@ -528,7 +507,6 @@ void ParticleContainer::set_particles_with_random_weight(){
 
 void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
     for (size_t i = 0; i < this->particles.size(); i++){
-        //this->particles[i]->set_next_base(seqend);
         double opportunity_x = seqend - this->particles[i]->current_base();
         double opportunity_y = this->particles[i]->local_tree_length();
         double recomb_opportunity = opportunity_x * opportunity_y;

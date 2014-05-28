@@ -110,9 +110,8 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         
         else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
         //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
-        else if ( argv_i == "-heat" ){ this->heat_bool = true; this->mid_bool = true;}        
+        else if ( argv_i == "-heat" ){ this->heat_bool = true; }
         //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
-        else if ( argv_i == "-mid" ){ this->mid_bool = true; }
         
         else if (argv_i == "-h" || argv_i == "-help") {
             this->print_option();
@@ -176,7 +175,6 @@ void PfParam::init(){
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
     //this->hist_bool        = false;
-    this->mid_bool         = false;  
     this->online_bool      = false;
     //this->finite_bool      = false;
     this->window           = 400; 
@@ -297,7 +295,6 @@ void PfParam::finalize(  ){
 int PfParam::log( ){
     if (log_bool){  
         this->log_param( );
-        //log_end(runningtime);
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());  
         } 

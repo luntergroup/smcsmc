@@ -47,7 +47,7 @@ Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf
         getline (in_file,line);
         header_end_pos_ += line.size()+1;
         while (line.size()>0 ){   
-            dout << header_end_line<<"  " <<line.size() <<"  " << header_end_pos_<<"  " << line<<endl;
+            //dout << header_end_line<<"  " <<line.size() <<"  " << header_end_pos_<<"  " << line<<endl;
             if (line[0]=='#'){
                 if (line[1]=='#'){
                     // read to header buffer

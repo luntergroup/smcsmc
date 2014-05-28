@@ -42,7 +42,8 @@ class ParticleContainer{
                   size_t Num_of_states, 
                   //vector <bool> data_for_init_states,  
                   //bool withdata,
-                  double initial_position);// this is used to create the particle initial states
+                  double initial_position,
+                  bool heat_bool );// this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
 
         //
@@ -50,8 +51,7 @@ class ParticleContainer{
         //   
         void update_state_to_data(Vcf * VCFfile, 
                                   Model * model, 
-                                  valarray<double> & weight_cum_sum,
-                                  bool keep_median_state = false);
+                                  valarray<double> & weight_cum_sum);
                                   //bool finite_bool = false);
 
         void set_particles_with_random_weight();
@@ -59,7 +59,6 @@ class ParticleContainer{
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void cumulate_recomb_opportunity_at_seq_end( double seqend );
         void clear();
-        //int count_total_number_of_nodes();                
 
         //
         // Debugging tools
@@ -75,8 +74,7 @@ class ParticleContainer{
         //   
         void extend_ARGs(double mutation_at,
                          double mutation_rate, 
-                         bool withdata,
-                         bool keep_median_state = false );
+                         bool withdata);
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,
@@ -87,7 +85,8 @@ class ParticleContainer{
         // Resampling
         void resample(valarray<int> & sample_count);
         void shifting(int number_of_particles);
-        void trivial_resampling(size_t N, std::valarray<int> & sample_count);
+        void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
+
         void systemetic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
         void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
         
@@ -107,7 +106,8 @@ class ParticleContainer{
         vector <ForestState*> particles;
         double ESS_;
         RandomGenerator* random_generator_; // This is for particle filter only, 
-        double current_printing_base_;        
+        double current_printing_base_;
+        bool heat_bool_ ;
     };
 
 #endif

@@ -22,16 +22,14 @@
 */
 
 #include"count.hpp"
-//#include <limits>       // std::numeric_limits
-
 
 void CountModel::init(){
     this->init_coal_and_recomb();
     this->init_migr();
     this->init_lags();
-    
-    this->update_param_interval_ = 5e6;
-    this->update_param_threshold_ = 1e7;    
+        
+    this->update_param_interval_  = 5e6; // ONLINE EM
+    this->update_param_threshold_ = 1e7; // ONLINE EM
     return ;
     }
 
@@ -66,14 +64,10 @@ void CountModel::init_migr(){ /*! \todo This requires more work*/
     this->resetTime();    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
         vector < vector < double > > tmp_count_Time_i;
-        //vector < vector < double > > tmp_opp_Time_i;
         vector < double > tmp_opp_Time_i;
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
             vector <double> tmp_count(this->population_number(), 0);
             tmp_count_Time_i.push_back(tmp_count);
-                        
-            //vector <double> tmp_opportunity(this->population_number(), 1);
-            //tmp_opp_Time_i.push_back(tmp_opportunity);
             tmp_opp_Time_i.push_back( 1 );
             }        
         this->total_mig_count.push_back(tmp_count_Time_i);
@@ -99,6 +93,17 @@ void CountModel::init_lags(){
     }
 
 
+void CountModel::initialize_mig_rate ( vector <vector<double>*> & rates_list ){
+    for (size_t i = 0; i < rates_list.size(); i++ ){
+        if (rates_list[i]){
+            for (size_t j = 0; j < rates_list[i]->size() ; j++){
+                rates_list[i]->at(j) = 0;
+                }
+            }    
+        }
+    }
+    
+    
 void CountModel::reset_Ne ( Model *model ){
     model->resetTime();
     this ->resetTime();
@@ -116,18 +121,6 @@ void CountModel::reset_recomb_rate ( Model *model ){
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
-
-
-void CountModel::initialize_mig_rate ( vector <vector<double>*> & rates_list ){
-    for (size_t i = 0; i < rates_list.size(); i++ ){
-        if (rates_list[i]){
-            for (size_t j = 0; j < rates_list[i]->size() ; j++){
-                rates_list[i]->at(j) = 0;
-                }
-            }    
-        }
-    }
-
 
 void CountModel::reset_mig_rate ( Model *model ) {
     if (this->has_migration() == false) return;
@@ -200,7 +193,6 @@ void CountModel::compute_mig_rate(){
  */ 
 void CountModel::compute_recomb_rate () {
     this->recomb_opportunity_ = 0;
-    //double recomb_count = 0;
     this->recomb_count_ = 0;
     for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ){
         this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0] ;
@@ -209,50 +201,52 @@ void CountModel::compute_recomb_rate () {
     this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
     }
 
-        /*! \verbatim 
-                xstart     
-                .                      xend                         VCFfile->site()
-                .                      .                            .
-                .                      .     3                      .
-                .                      .     x---o              6   .
-                .                  2   .     |   |              x-------o
-                .                  x---------o   |              |   .
-                .                  |   .         |              |   .
-             0  .                  |   .         x---o          |   .
-             x---------o           |   .         4   |          |   .
-                .      |           |   .             x----------o   .
-                .      |           |   .             5              .
-                .      x-----------o   .                            .
-                .      1               .-------------lag------------.
-                .                      .                            .
-         \endverbatim
-         * 
-         * Count the coalescent events between position xstart and xend.
-         * 
-         * At the beginning of this function, the tail ForestState is at 
-         * state 6, whose weight represents the weight for the entire particle
-         * As lagging is applied, we need to skip a few states before start counting. 
-         *  
-         * In this example, only count the coalescent events occured on states 1 and 2.
-         */ 
-
+                
+                    /*! \verbatim 
+                            xstart     
+                            .                      xend                         VCFfile->site()
+                            .                      .                            .
+                            .                      .     3                      .
+                            .                      .     x---o              6   .
+                            .                  2   .     |   |              x-------o
+                            .                  x---------o   |              |   .
+                            .                  |   .         |              |   .
+                         0  .                  |   .         x---o          |   .
+                         x---------o           |   .         4   |          |   .
+                            .      |           |   .             x----------o   .
+                            .      |           |   .             5              .
+                            .      x-----------o   .                            .
+                            .      1               .-------------lag------------.
+                            .                      .                            .
+                     \endverbatim
+                     * 
+                     * Count the coalescent events between position xstart and xend.
+                     * 
+                     * At the beginning of this function, the tail ForestState is at 
+                     * state 6, whose weight represents the weight for the entire particle
+                     * As lagging is applied, we need to skip a few states before start counting. 
+                     *  
+                     * In this example, only count the coalescent events occured on states 1 and 2.
+                     */ 
+            
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
     // loop over all particles
     for (size_t i = 0; i < Endparticles.particles.size(); i++) {
         ForestState* thisState = Endparticles.particles[i];
         double weight = thisState->weight();
+        //cout<< " weight is "<<weight<<endl;
         // loop over all epochs
         for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
             // calculate the required lagging for this epoch; don't use lagging for the final interval
             double lagging = end_data ? 0 : lags[epoch_idx];
             double x_end = current_base - lagging;
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
-            this->update_star_count( thisState->CoaleventContainer[ epoch_idx ], weight, x_end, this->total_coal_count[ epoch_idx ], this->total_weighted_coal_opportunity[ epoch_idx ] );
+            this->update_star_count( thisState->CoaleventContainer[ epoch_idx ],   weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ] );
             this->update_star_count( thisState->RecombeventContainer[ epoch_idx ], weight, x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );
             this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
+            }
         }
     }
-}    
         
 
 void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) {
@@ -265,10 +259,10 @@ void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i,
         current_Starevent->pointer_counter_ --;
         if (current_Starevent->pointer_counter_ == 0) {
             delete current_Starevent;
-        }
+            }
         StareventContainer_i.pop_front();
+        }
     }
-}
 
 void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
@@ -282,8 +276,8 @@ void CountModel::update_migration_count( deque < Migrevent *> & MigreventContain
         current_Migrevent->pointer_counter_ --;
         if (current_Migrevent->pointer_counter_ == 0) {
             delete current_Migrevent;
-        }
+            }
         MigreventContainer_i.pop_front();
+        }
     }
-}
 
