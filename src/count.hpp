@@ -61,6 +61,7 @@ class CountModel: public Model{
         void reset_recomb_rate ( Model *model );
         void reset_Ne ( Model *model );
         void reset_mig_rate ( Model *model );
+        //void reset_single_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 

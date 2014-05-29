@@ -125,10 +125,10 @@ void CountModel::reset_recomb_rate ( Model *model ){
 void CountModel::reset_mig_rate ( Model *model ) {
     if (this->has_migration() == false) return;
     this->compute_mig_rate();
-    model->has_migration_ = false;
     
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
+
     this->initialize_mig_rate ( model->mig_rates_list_ );
     this->initialize_mig_rate ( model->total_mig_rates_list_ );
     assert( this->print_mig_rate (model->mig_rates_list_) );
@@ -145,12 +145,14 @@ void CountModel::reset_mig_rate ( Model *model ) {
             }
         }
     this->check_model_updated_mig (model);
-    model->finalize();
+    
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
     }
 
-
+//void CountModel::reset_single_mig_rate ( Model * model ){
+    //this->print_mig_rate (model->single_mig_probs_list_) ;// DEBUG
+    //}
 
 void CountModel::reset_model_parameters(double current_base, Model * model, bool online, bool force_update, bool print){
     
@@ -165,6 +167,8 @@ void CountModel::reset_model_parameters(double current_base, Model * model, bool
         this->reset_recomb_rate ( model );
         this->reset_Ne ( model );
         this->reset_mig_rate ( model );
+        //this->reset_single_mig_rate ( model );
+        model->finalize();
         } 
     else {
         if (print){
