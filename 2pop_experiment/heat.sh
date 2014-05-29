@@ -23,14 +23,16 @@ rm ${prefix}*
 theta=180
 rho=30
 seqlen=200001
+mig_param="-I 2 2 2 -ej 3.0 2 1"
+np=100000
 for rep in $(seq 1 1 5)
     do 
     fileprefix=${prefix}${rep}
     namefiles
-    mscmd=" 4 1 -t ${theta} -r ${rho} ${seqlen} -I 2 2 2 -ej 2.0 2 1 -seed ${rep} ${rep} ${rep} -p 10 -T "
+    mscmd=" 4 1 -t ${theta} -r ${rho} ${seqlen} ${mig_param} -seed ${rep} ${rep} ${rep} -p 10 -T "
     ms ${mscmd} > ${fileprefix}
     msprocess
-    pf-ARG  -Np 100000 -l 0 -t ${theta} -r ${rho} ${seqlen} -I 2 2 2 -ej 2.0 2 1 -seed ${rep} -vcf ${fileprefix}.vcf -o ${fileprefix} -heat
+    pf-ARG  -Np ${np} -l 0 -t ${theta} -r ${rho} ${seqlen} ${mig_param} -seed ${rep} -vcf ${fileprefix}.vcf -o ${fileprefix} -heat
     ./generate_heatmap.py ${fileprefix} ${seqlen}
     done
 
