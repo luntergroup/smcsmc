@@ -85,8 +85,9 @@ void Vcf::reset_VCF_to_data(){
     this->current_line_index_ = 0;    
     this->current_block_line_ = 0;
     this->site_               = 0;
-    this->chrom_              = 0;
     this->previous_site_at_   = 0;
+    this->chrom_              = 0;
+    this->pervious_chrom_     = 0;
     if ( !this->withdata() ){ this->empty_file_line_counter_ = 0;  }
     //this->empty_file_line_counter_ = 0;
     this->read_new_block();
@@ -95,15 +96,17 @@ void Vcf::reset_VCF_to_data(){
     
 void Vcf::init(string infile_name, int buffer_length){
     /*! Initialize the Vcf class members
-     */ 
+     */
+    this->filter_window_             = 1;
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
     this->nsam_                      = 0;
     this->nfield_                    = 0;    
     this->current_block_line_        = 0;
-    this->site_                      = 0;
-    this->chrom_                     = 0;
-    this->previous_site_at_          = 0;
+    this->site_               = 0;
+    this->previous_site_at_   = 0;
+    this->chrom_              = 0;
+    this->pervious_chrom_     = 0;
     this->vcf_length_                = 0;
     this->even_interval_             = 0.0;
     this->ghost_num_mut            = 0;
@@ -118,7 +121,7 @@ void Vcf::init(string infile_name, int buffer_length){
 void Vcf::read_new_line(){
     /*! Read Vcf data, extract mutation site and haplotype
      */ 
-    current_line_index_++;
+    this->current_line_index_++;
     
     alt.clear();
     vec_of_sample_alt.clear();
@@ -135,75 +138,70 @@ void Vcf::read_new_line(){
     }
     
     string line = this->buffer_lines[current_block_line_];
-    skip=true;
     size_t feild_start=0;
     size_t feild_end=0;
-    int counter=0;
+    int field_index=0;
     string tmp_str;
+    
+    //cout<<line<<endl;//DEBUG
+    
     while(feild_end<line.size()){
-        feild_end=min(line.find('\t',feild_start),line.find('\n',feild_start)); 
-        tmp_str=line.substr(feild_start,feild_end-feild_start);
-        //istringstream tmp_strm(tmp_str.c_str());
-        switch(counter){
-            case 0: {
-                //tmp_strm>>chrom_; 
-                chrom_ = strtod( tmp_str.c_str(), NULL);
+        skip = true;
+        feild_end = min( line.find('\t',feild_start), line.find('\n', feild_start) );
+        tmp_str = line.substr( feild_start, feild_end - feild_start );
+        
+        if ( field_index == 0 ){
+            chrom_ = strtod( tmp_str.c_str(), NULL);
+            }
+        
+        else if ( field_index == 1 ) {
+            site_ = strtod( tmp_str.c_str(), NULL);
+            //cout << " current site " << site_ << ", and previous site is at " << previous_site_at_<<endl; // DEBUG
+            //cout << "(site_ - previous_site_at_) = "<<(site_ - previous_site_at_)<<endl;
+            //cout << "pervious_chrom_ = "<<pervious_chrom_<< ", chrom_"<<chrom_<<endl;
+            if ( ((site_ - previous_site_at_) < this->filter_window_ ) && (previous_site_at_ >= (double)0) && ( pervious_chrom_ == chrom_ ) ) { // Making 100, as a filtering process, to screen mutations that are too close
+                cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to it's too close to the previous variant (at " << previous_site_at_ <<")." << endl;
+                break;
                 }
-            break;
-            
-            case 1: {
-                //tmp_strm>>site_; 
-                site_ = strtod( tmp_str.c_str(), NULL);
-                if (((site_ - previous_site_at_)<2) && (previous_site_at_ > 0) && (pervious_chrom_ == chrom_)){
-                    cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to it's too close to the previous variant (at " << previous_site_at_ <<")." << endl;
-                    previous_site_at_ = site_;
-                    current_block_line_++;
-                    return; 
-                    //continue;
-                    }
-                }
-            break;
-
-            case 3: {
-                ref=tmp_str; 
-                if (ref.size()>1){
-                    cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
-                    current_block_line_++;
-                    return;
-                    //continue;
-                    }
-                }
-            break;
-            
-            case 4: { 
-                size_t alt_start=0;size_t alt_end=0; string alt_str;
-                while (alt_end<tmp_str.size()){
-                    alt_end=min(tmp_str.find(',',alt_start),tmp_str.size());
-                    alt_str=tmp_str.substr(alt_start,alt_end);
-                    if (alt_str.size()>1){
-                        cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to insertion" << endl;
-                        current_block_line_++;
-                        //return;
-                        continue;
-                        }
-                    alt.push_back(alt_str);
-                    alt_start=alt_end+1;
-                    }
-                }
-            break;
-            
-            case 6: {
-                if (tmp_str!="PASS"){
-                    cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
-                    current_block_line_++;
-                    //return;
-                    continue;
-                    }
-                }
-            break;
             }
 
-        if (counter > 8){
+        else if ( field_index == 3 ){
+            ref = tmp_str; 
+            if ( ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
+                //cout << "skipping: "<< line << endl; // DEBUG
+                break;
+                }            
+            }
+
+        else if ( field_index == 4 ){
+            size_t alt_start=0;size_t alt_end=0; string alt_str;
+            bool alt_not_valid = false;
+            while (alt_end < tmp_str.size()){
+                alt_end=min(tmp_str.find(',', alt_start),tmp_str.size());
+                alt_str=tmp_str.substr(alt_start,alt_end);
+                if ( alt_str.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                    cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to insertion" << endl;
+                    alt_not_valid = true;
+                    break;
+                    }
+                alt.push_back(alt_str);
+                alt_start=alt_end+1;
+                }
+            if ( alt_not_valid ){
+                break;
+                }                
+            }
+        
+        else if ( field_index == 6 ){
+            if (tmp_str!="PASS"){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
+                //cout << "skipping: "<< line << endl; // DEBUG
+                break;
+                }                       
+            }            
+
+        else if (field_index > 8){
             size_t bar_index=tmp_str.find('|',0);        
             size_t slash_index=tmp_str.find('/',0);
             size_t colon_index=tmp_str.find(':',0);
@@ -217,22 +215,42 @@ void Vcf::read_new_line(){
             vec_of_sample_alt_bool.push_back( (alt_index_2 == (size_t)0) ? false : true);
             }
         feild_start=feild_end+1;        
-        counter++;
-        
+        field_index++;
+        skip = false;  // If all fields are good, do not skip
         }
-    //skip=false;
+    //
     // CHECK END of Vcf
+    this->current_block_line_++;
     
-    current_block_line_++;
-    if (current_block_line_ == buffer_lines.size() ){ // END of the buff block
-        if (!this->eof_){
+    if ( current_block_line_ == buffer_lines.size() ){ // END of the buff block
+        //cout << "####### have reached the end of the block" <<endl;// DEBUG
+    
+        if ( !this->eof_ ){
             this->empty_block();
             this->read_new_block();
             }
         else{
+            //cout<<"should be here "<<endl; // DEBUG
+            //cout << "site is at " << site_<<endl; // DEBUG
             this->end_data_=true;    
             }
         }
+        
+    if ( skip ){
+        if (!this->end_data_ ){ // If this line is bad, and hasn't reached to the end of the data. skip, then read again
+            //cout<<"should reread"<<endl; // DEBUG
+            this->read_new_line();
+        }
+        else {
+            site_ = previous_site_at_;
+            }
+        }
+    // If it is not skipped, overwrite the previous site and chrom
+    previous_site_at_ = site_; // If the current line is valid, update the previous site to the current site.
+    pervious_chrom_ = chrom_ ; // If the current line is valid, update the previous chrom_ to the current chrom_. to check if they are on the same chrom
+
+        
+        
     }
 
 
@@ -287,14 +305,14 @@ string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     
 
 void Vcf::check_feilds(string line){
-    size_t feild_start=0;
-    size_t feild_end=0;
-    int counter=0;
+    size_t feild_start = 0;
+    size_t feild_end = 0;
+    int field_index = 0;
     string tmp_str;
     while( feild_end < line.size() ) {
         feild_end = min( line.find('\t',feild_start), line.find('\n',feild_start) ); 
         tmp_str = line.substr( feild_start, feild_end-feild_start );
-        switch (counter){
+        switch (field_index){
             case 0: if ( tmp_str != "#CHROM" ){ throw std::invalid_argument( "First Header entry should be #CHROM: "   + tmp_str ); } break;
             case 1: if ( tmp_str != "POS"    ){ throw std::invalid_argument( "Second Header entry should be POS: "     + tmp_str ); } break;
             case 2: if ( tmp_str != "ID"     ){ throw std::invalid_argument( "Third Header entry should be ID: "       + tmp_str ); } break;
@@ -306,13 +324,13 @@ void Vcf::check_feilds(string line){
             case 8: if ( tmp_str != "FORMAT" ){ throw std::invalid_argument( "Ninth Header entry should be FORMAT: "   + tmp_str ); } break;
             }
         
-        if (counter > 8){  sample_names.push_back(tmp_str); }
+        if (field_index > 8){  sample_names.push_back(tmp_str); }
         
         feild_start = feild_end+1;
-        counter++;
+        field_index++;
         } // End of while loop: feild_end < line.size()
     
-    this->nfield_ = counter;
+    this->nfield_ = field_index;
     set_nsam( (int)sample_names.size() );
     assert( print_sample_name() );   
     

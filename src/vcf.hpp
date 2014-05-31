@@ -111,9 +111,10 @@ class Vcf{
         //
         // Members
         //   
+        double filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
         bool eof_;
         string file_name_;
-        size_t current_line_index_;
+        size_t current_line_index_; // line counter in the entire vcf file
         bool withdata_;
         size_t vcf_length_;
         bool end_data_;
@@ -126,7 +127,7 @@ class Vcf{
         size_t nfield_;
         
         //VCFBODY
-        size_t current_block_line_;
+        size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
         
         //VCFLINE    

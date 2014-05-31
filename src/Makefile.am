@@ -72,8 +72,8 @@ pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
-unit_tests_SOURCES = tests/test_Vcf.cpp\
-                     $(shared_SOURCES) \
+unit_tests_SOURCES = $(shared_SOURCES) \
+                     $(debug_src) \
                      tests/test_runner.cpp \
                      tests/test_param.cpp \
                      tests/test_pattern.cpp \
@@ -82,6 +82,7 @@ unit_tests_SOURCES = tests/test_Vcf.cpp\
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_Vparticle.cpp\
+                     tests/test_Vcf.cpp \
                      #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)
 
