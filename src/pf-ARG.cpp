@@ -182,6 +182,14 @@ void pfARG_core(PfParam &pfARG_para,
         /*! Reset population sizes in the model */
         countNe->reset_model_parameters(VCFfile->site(), model, pfARG_para.online_bool, force_update = false, false);
 
+// DEBUG, update to nan after 120012036 ... not sure why...
+        if (VCFfile->site()){
+            
+            
+            }
+
+
+
         if ( pfARG_para.ESS() == 1 ){
             cout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();    

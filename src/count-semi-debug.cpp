@@ -27,7 +27,7 @@
 void CountModel::print_Time_count_pop(){
     cout << " ### " ;
     for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-        cout << " | " << std::setw(15) << "time" << std::setw(15) << "count" << std::setw(15) << "popsize" ;
+        cout << " | " << std::setw(15) << "opportunity" << std::setw(15) << "coalsecent " << std::setw(15) << "popsize" ;
         } cout<<endl;
     this->resetTime();
     for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){

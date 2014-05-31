@@ -234,6 +234,13 @@ void CountModel::compute_recomb_rate () {
                      */ 
             
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
+    if (current_base > 120012036){
+        cout << " At position ";
+        //printf(" %d", current_base);
+        cout <<(int)current_base<< endl;
+        print_Time_count_pop();
+    
+    }
     // loop over all particles
     for (size_t i = 0; i < Endparticles.particles.size(); i++) {
         ForestState* thisState = Endparticles.particles[i];
