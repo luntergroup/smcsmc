@@ -96,6 +96,11 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             lag = readInput<double>(argv_[argc_i]);
             }
 
+        else if (argv_i == "-filter"){ 
+            nextArg( argv_i );
+            filter_window_ = readInput<double>(argv_[argc_i]);
+            }
+
         else if (argv_i == "-online"){
             this->online_bool = true;
             }
@@ -187,6 +192,7 @@ void PfParam::init(){
     this->rg               = NULL;  
     this->scrm_input       = "";
     this->top_t            = 2;
+    this->filter_window_   = 2;
 }
 
 
@@ -272,6 +278,7 @@ void PfParam::convert_scrm_input (){
 void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
     this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
+    this->VCFfile->filter_window_ = this->filter_window_;
     this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";

@@ -428,7 +428,7 @@ class TestVcf : public CppUnit::TestCase {
 
             CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
             //cout<<"Valid site "<<vcf_file->site()<<endl;
-            if (vcf_file->site() > 1000000){
+            if (vcf_file->site() > 121426494){
                 break;}
         }while(!vcf_file->end_data());
         

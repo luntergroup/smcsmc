@@ -24,7 +24,7 @@
 #include"count.hpp"
 
 
-void CountModel::print_Time_count_pop(){
+void CountModel::print_coal_count(){
     cout << " ### " ;
     for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
         cout << " | " << std::setw(15) << "opportunity" << std::setw(15) << "coalsecent " << std::setw(15) << "popsize" ;
@@ -43,6 +43,25 @@ void CountModel::print_Time_count_pop(){
         }   cout<<endl;
     }
 
+
+void CountModel::print_recomb_count(){
+    cout << " ### " ;
+    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+        cout << " | " << std::setw(15) << "opportunity" << std::setw(15) << "Recombination " << std::setw(15) << "popsize" ;
+        } cout<<endl;
+    this->resetTime();
+    for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
+        cout << " ### " ;
+        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+             cout << " | " << std::setw(15) << this->total_weighted_recomb_opportunity[time_layer_i][pop_i]
+                           << std::setw(15) << this->total_recomb_count[time_layer_i][pop_i];
+                           //<< std::setw(15) << this->population_size(pop_i);
+            }  cout<<endl;
+        // move the time_interval temp variable to the next level 
+        if ( current_time_idx_ == change_times_.size() - 1) break;  
+        this->increaseTime(); 
+        }   cout<<endl;
+    }
 
 
 void CountModel::check_model_updated_Ne(Model * model){

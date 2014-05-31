@@ -58,14 +58,17 @@ class ParticleContainer{
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void cumulate_recomb_opportunity_at_seq_end( double seqend );
+        void normalize_probability();    
+
         void clear();
+
+        void print_particle_probabilities();
 
         //
         // Debugging tools
         //
         void print();
         bool check_state_orders();
-        void normalize_probability();    
         
     private:
         

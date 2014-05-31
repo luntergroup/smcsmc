@@ -516,3 +516,9 @@ void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
         }
     }
 
+
+void ParticleContainer::print_particle_probabilities(){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        cout<<"weight = "<<this->particles[i]->weight()<<endl;
+        }
+    }

@@ -102,10 +102,10 @@ class CountModel: public Model{
         double update_param_interval_;
 
         // DEBUG
-        void print_recomb_counts();
+        void print_recomb_count();
         void print_pop_size();
         void print_change_time();
-        void print_Time_count_pop();
+        void print_coal_count();
         bool print_mig_rate ( vector <vector<double>*> & rates_list );
         void check_model_updated_mig(Model * model);
         void check_model_updated_Ne(Model * model);    

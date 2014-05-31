@@ -147,6 +147,8 @@ class PfParam{
         string SURVIVOR_NAME;
         double window;
         int ghost;
+        double filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
+
     };
 
 #endif

@@ -51,14 +51,7 @@ void CountModel::print_pop_size(){
 
 
 
-void CountModel::print_recomb_counts(){
-    cout << std::setw(15)<<"time" << std::setw(15)<<"count" << std::setw(15)<<"recomb rate" << endl;
-    //for (size_t j=0; j < this->change_times_.size();j++){
-        //cout << std::setw(15) << this->total_weighted_recomb_opportunity[j]
-             //<< std::setw(15) << this->total_recomb_count[j]
-             //<< std::setw(15) << this->total_recomb_count[j]/this->total_weighted_recomb_opportunity[j] <<endl;
-    //}    
-    }
+
 
 
 

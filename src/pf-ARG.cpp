@@ -171,7 +171,22 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
+        
+        if (VCFfile->site() > 121392808){
+            cout << "Before update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
+            current_states.print_particle_probabilities();            
+            
+            }
+ 
         current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
+
+// DEBUG, update to nan after 120012036 ... not sure why...
+        if (VCFfile->site() > 121392808){
+            cout << " After update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
+            current_states.print_particle_probabilities();            
+            
+            }
+
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
@@ -181,13 +196,6 @@ void pfARG_core(PfParam &pfARG_para,
         
         /*! Reset population sizes in the model */
         countNe->reset_model_parameters(VCFfile->site(), model, pfARG_para.online_bool, force_update = false, false);
-
-// DEBUG, update to nan after 120012036 ... not sure why...
-        if (VCFfile->site()){
-            
-            
-            }
-
 
 
         if ( pfARG_para.ESS() == 1 ){
