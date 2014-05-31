@@ -159,15 +159,19 @@ void Vcf::read_new_line(){
                     previous_site_at_ = site_;
                     current_block_line_++;
                     return; 
+                    //continue;
                     }
                 }
             break;
 
             case 3: {
                 ref=tmp_str; 
-                //if (ref.size()>1){
-                //cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
-                //return;}
+                if (ref.size()>1){
+                    cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
+                    current_block_line_++;
+                    return;
+                    //continue;
+                    }
                 }
             break;
             
@@ -176,9 +180,12 @@ void Vcf::read_new_line(){
                 while (alt_end<tmp_str.size()){
                     alt_end=min(tmp_str.find(',',alt_start),tmp_str.size());
                     alt_str=tmp_str.substr(alt_start,alt_end);
-                    //if (alt_str.size()>1){
-                        //cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to insertion" << endl;
-                        //return;}
+                    if (alt_str.size()>1){
+                        cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to insertion" << endl;
+                        current_block_line_++;
+                        //return;
+                        continue;
+                        }
                     alt.push_back(alt_str);
                     alt_start=alt_end+1;
                     }
@@ -189,7 +196,8 @@ void Vcf::read_new_line(){
                 if (tmp_str!="PASS"){
                     cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
                     current_block_line_++;
-                    return;
+                    //return;
+                    continue;
                     }
                 }
             break;
@@ -210,8 +218,9 @@ void Vcf::read_new_line(){
             }
         feild_start=feild_end+1;        
         counter++;
+        
         }
-    skip=false;
+    //skip=false;
     // CHECK END of Vcf
     
     current_block_line_++;
