@@ -125,7 +125,8 @@ void ParticleContainer::shifting(int number_of_particles){
 void ParticleContainer::update_state_weights_at_A_single_site(
     double mutation_at,
     double mutation_rate, 
-    bool withdata,
+    //bool withdata,
+    bool empty_file,
     vector <bool> haplotypes_at_tips
     //bool finite_bool
     ){
@@ -134,7 +135,8 @@ void ParticleContainer::update_state_weights_at_A_single_site(
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
-		double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata);
+		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
+        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
@@ -302,7 +304,7 @@ void ParticleContainer::update_state_to_data(
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
-    bool withdata = VCFfile->withdata();
+    bool withdata = !VCFfile->missing_data();
     double mutation_rate = model->mutation_rate();
     
     /*!
@@ -349,7 +351,8 @@ void ParticleContainer::update_state_to_data(
     this->extend_ARGs( mutation_at, mutation_rate, withdata );
     
     //Update weight for seeing mutation at the position 
-    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); 
+    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
+    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
@@ -492,7 +495,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
             //BLOfstream.close();
             SURVIVORstream.close();
             }
-        this->set_current_printing_base(this->current_printing_base() + pfparam.window);
+        this->set_current_printing_base(this->current_printing_base() + pfparam.heat_seq_window);
         } while ( this->current_printing_base() < x_end);
     return true;
     }

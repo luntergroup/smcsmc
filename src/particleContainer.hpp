@@ -53,7 +53,9 @@ class ParticleContainer{
                                   Model * model, 
                                   valarray<double> & weight_cum_sum);
                                   //bool finite_bool = false);
-
+        void extend_ARGs(double mutation_at,
+                             double mutation_rate, 
+                             bool withdata);
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
@@ -75,9 +77,7 @@ class ParticleContainer{
         //
         // Methods
         //   
-        void extend_ARGs(double mutation_at,
-                         double mutation_rate, 
-                         bool withdata);
+       
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,

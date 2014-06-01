@@ -73,8 +73,12 @@ class Vcf{
         //
         // Getters:
         //
-        double site() const { return this->site_; }
-        bool withdata() const { return this->withdata_; }
+        int site() const { return this->site_; } 
+        //bool withdata() const { return this->withdata_; }
+        void set_missding_data ( bool TRUEorFALSE ) { this->missing_data_ = TRUEorFALSE ; }
+        bool missing_data() const { return this->missing_data_; }
+        bool empty_file() const { return this->empty_file_; }
+
         bool end_data() const { return this->end_data_; }
 
         //
@@ -101,8 +105,8 @@ class Vcf{
         int chrom() const { return this ->chrom_; }
 
         bool eof() const { return this->eof_; }
-        double even_interval() const { return this-> even_interval_; }
-        void set_even_interval( double interval ) { this->even_interval_ = interval; }
+        int even_interval() const { return this-> even_interval_; }
+        void set_even_interval( int interval ) { this->even_interval_ = interval; }
                  
         void check_feilds(string line);
         string extract_alt_(string tmp_str, size_t start, size_t end);
@@ -111,15 +115,19 @@ class Vcf{
         //
         // Members
         //   
-        double filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
+        
+        
+        
         bool eof_;
         string file_name_;
         size_t current_line_index_; // line counter in the entire vcf file
-        bool withdata_;
+        //bool withdata_;
+        bool missing_data_;
+        bool empty_file_;
         size_t vcf_length_;
         bool end_data_;
         size_t end_pos_;
-        double even_interval_; 
+        
         
         //HEADER
         size_t header_end_pos_;
@@ -130,12 +138,19 @@ class Vcf{
         size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
         
-        //VCFLINE    
-        double site_;
-        double previous_site_at_;
+        //VCFLINE
+        
+        //all these numbers can not be negative
+        int site_;
+        int previous_site_at_;
+        int ghost_num_mut;
+        int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.
+        int missing_data_threshold_; // if two snps are too far away apart, treat as missing data
+        int even_interval_; 
+        
         int chrom_;
         int pervious_chrom_;
-        size_t ghost_num_mut;
+        
         
         size_t vcf_file_length;
         vector <string> sample_names;

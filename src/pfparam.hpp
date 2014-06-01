@@ -50,8 +50,6 @@ class PfParam{
         // Methods
         //
         int  log( );
-        //int  log( double inferred_recomb_rate, vector < vector<double> > migrate );
-        //void appending_Ne_file(Model *model, bool hist = false);
         void appending_Ne_file( bool hist = false );
 
         void print_help();
@@ -67,7 +65,7 @@ class PfParam{
         // ------------------------------------------------------------------                         
         size_t N;            /*!< \brief Number of particles */
         int    EM_steps;     /*!< \brief Number of EM iterations */
-        double ESSthreshold; /*!< \brief Effective sample size respect to the number of particles = ESS * N , 0 < ESS < 1 */
+        double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
 
         // ------------------------------------------------------------------
         // Action 
@@ -86,18 +84,9 @@ class PfParam{
 
         double default_loci_length;
 
-        double ESS () const { return this-> ESS_;}
+        double ESS () const { return this-> ESS_;} // scaled between zero and one
     private:
 
-        // ------------------------------------------------------------------
-        // PfParameters 
-        // ------------------------------------------------------------------                         
-        double ESS_; 
-        bool   ESS_default_bool;
-        double top_t;
-        string scrm_input;
-        bool   EM_bool;
-        double original_recombination_rate_;
         //
         // Methods
         //   
@@ -111,6 +100,8 @@ class PfParam{
         void convert_scrm_input();
         //void log_param( double inferred_recomb_rate, vector < vector<double> > migrate );
         void log_param( );
+
+
         
         //
         // Members
@@ -118,6 +109,14 @@ class PfParam{
         const int argc_;
         int argc_i;
         char * const* argv_;
+
+        // ------------------------------------------------------------------
+        // PfParameters 
+        // ------------------------------------------------------------------                         
+        bool   ESS_default_bool;
+        string scrm_input;
+        bool   EM_bool;
+        double original_recombination_rate_;
         
         // ------------------------------------------------------------------
         // Default values 
@@ -126,12 +125,20 @@ class PfParam{
         double default_mut_rate; 
         double default_recomb_rate; 
         size_t default_num_mut;
+
         // ------------------------------------------------------------------
         // Input 
         // ------------------------------------------------------------------
-        string vcf_NAME;
-        int buff_length;
         string pattern;     /*! population segement pattern */
+        double top_t;
+        double ESS_;   // scaled between zero and one
+
+        // VCF related
+        string vcf_NAME; // vcf file name
+        int buff_length; // number of lines vcf file read at once
+        int ghost; // ghost snp, when no data is used, this is used for debugging
+        int filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
+        int missing_data_threshold_;
 
         // ------------------------------------------------------------------
         // Output 
@@ -145,9 +152,8 @@ class PfParam{
         string WEIGHT_NAME;
         //string BL_NAME;
         string SURVIVOR_NAME;
-        double window;
-        int ghost;
-        double filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
+        int heat_seq_window;
+        
 
     };
 

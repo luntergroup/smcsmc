@@ -81,7 +81,7 @@ unit_tests_SOURCES = $(shared_SOURCES) \
                      tests/test_Coalevent.cpp \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
-                     tests/test_Vparticle.cpp\
+                     tests/test_ParticleContainer.cpp\
                      tests/test_Vcf.cpp \
                      #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)

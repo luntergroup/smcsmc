@@ -43,7 +43,7 @@ class TestParam : public CppUnit::TestCase {
     CPPUNIT_ASSERT_EQUAL( 0.5, pfARG_para1.ESS() );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para1.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.online_bool );  
-    CPPUNIT_ASSERT_EQUAL( (double)400, pfARG_para1.window );  
+    CPPUNIT_ASSERT_EQUAL( (int)400, pfARG_para1.heat_seq_window );  
     CPPUNIT_ASSERT_EQUAL( 0, pfARG_para1.EM_steps );  
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para1.EM_bool );  
 
@@ -68,7 +68,7 @@ class TestParam : public CppUnit::TestCase {
     //cout<<" !!!!!!!! "<<pfARG_para2.ESS<<endl;
     CPPUNIT_ASSERT_EQUAL( false, pfARG_para2.ESS_default_bool );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.online_bool );  
-    CPPUNIT_ASSERT_EQUAL( double(400), pfARG_para2.window );  
+    CPPUNIT_ASSERT_EQUAL( int(400), pfARG_para2.heat_seq_window );  
     CPPUNIT_ASSERT_EQUAL( 5, pfARG_para2.EM_steps );  
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.EM_bool );  
 

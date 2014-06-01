@@ -98,7 +98,12 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
 
         else if (argv_i == "-filter"){ 
             nextArg( argv_i );
-            filter_window_ = readInput<double>(argv_[argc_i]);
+            filter_window_ = readInput<int>(argv_[argc_i]);
+            }
+
+        else if (argv_i == "-missing"){ 
+            nextArg( argv_i );
+            missing_data_threshold_ = readInput<int>(argv_[argc_i]);
             }
 
         else if (argv_i == "-online"){
@@ -182,7 +187,7 @@ void PfParam::init(){
     //this->hist_bool        = false;
     this->online_bool      = false;
     //this->finite_bool      = false;
-    this->window           = 400; 
+    this->heat_seq_window  = 400; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
     
@@ -193,7 +198,8 @@ void PfParam::init(){
     this->scrm_input       = "";
     this->top_t            = 2;
     this->filter_window_   = 2;
-}
+    this->missing_data_threshold_ = 0;
+    }
 
 
 void PfParam::insert_mutation_rate_in_scrm_input ( ) {
@@ -226,7 +232,8 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
         }
 
-    if (!VCFfile->withdata()){
+    //if (!VCFfile->withdata()){
+    if ( VCFfile->empty_file() ){
         //VCFfile->ghost_num_mut = 10;
             //VCFfile->ghost_num_mut = this->default_num_mut*10;
             VCFfile->ghost_num_mut = this->ghost;
@@ -238,7 +245,8 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     
 void PfParam::insert_sample_size_in_scrm_input (  ){
     size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
-    if (!VCFfile->withdata()){
+    //if (!VCFfile->withdata()){
+    if ( VCFfile->empty_file() ){    
         nsam = this->default_nsam;
         }    
     this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input; 
@@ -279,6 +287,8 @@ void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
     this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
     this->VCFfile->filter_window_ = this->filter_window_;
+    this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
+    
     this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";

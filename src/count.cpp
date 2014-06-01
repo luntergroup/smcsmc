@@ -235,21 +235,21 @@ void CountModel::compute_recomb_rate () {
             
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
     
-    double problem_base = 121480741;
-    if (current_base > problem_base){
-        cout << " At position ";
-        //printf(" %d", current_base);
-        cout <<(int)current_base<< endl;
-        print_coal_count();
-        print_recomb_count();
-    }
+    //double problem_base = 121480741;
+    //if (current_base > problem_base){
+        //cout << " At position ";
+        ////printf(" %d", current_base);
+        //cout <<(int)current_base<< endl;
+        //print_coal_count();
+        //print_recomb_count();
+    //}
     // loop over all particles
     for (size_t i = 0; i < Endparticles.particles.size(); i++) {
         ForestState* thisState = Endparticles.particles[i];
         double weight = thisState->weight();
-        if (current_base > problem_base){
-            cout<< " weight is "<<weight<<endl;
-            }
+        //if (current_base > problem_base){
+            //cout<< " weight is "<<weight<<endl;
+            //}
         // loop over all epochs
         for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
             // calculate the required lagging for this epoch; don't use lagging for the final interval

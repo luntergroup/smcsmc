@@ -52,23 +52,22 @@ Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf
                 if (line[1]=='#'){
                     // read to header buffer
                     // TO COME ...
-                } else {
+                    } 
+                else {
                     check_feilds(line);
                     //break; //end of the header
+                    }
                 }
-            }
     
             getline (in_file,line);
             
-            if (line.find("PASS")!= std::string::npos){
-                break;
-            } // This will skip to the first line of the useable data
+            if ( line.find("PASS")!= std::string::npos ){ break; } // This will skip to the first line of the useable data
             
             header_end_pos_ += line.size()+1;
             header_end_line++;
-        }    
+            }    
     
-    }
+        }
     this->end_pos_ = this->header_end_pos_;
     in_file.close();
     this->read_new_block(); // END by start reading a block
@@ -88,7 +87,7 @@ void Vcf::reset_VCF_to_data(){
     this->previous_site_at_   = 0;
     this->chrom_              = 0;
     this->pervious_chrom_     = 0;
-    if ( !this->withdata() ){ this->empty_file_line_counter_ = 0;  }
+    if ( this->empty_file() ){ this->empty_file_line_counter_ = 0;  }
     //this->empty_file_line_counter_ = 0;
     this->read_new_block();
     }
@@ -107,6 +106,7 @@ void Vcf::init(string infile_name, int buffer_length){
     this->previous_site_at_   = 0;
     this->chrom_              = 0;
     this->pervious_chrom_     = 0;
+    this->missing_data_threshold_ = INT_MAX;
     this->vcf_length_                = 0;
     this->even_interval_             = 0.0;
     this->ghost_num_mut            = 0;
@@ -114,7 +114,7 @@ void Vcf::init(string infile_name, int buffer_length){
     this->end_data_                  = false;
     this->buffer_max_number_of_lines = buffer_length;
     this->file_name_                 = infile_name;    
-    this->withdata_ = ( file_name_.size() > 0 ) ? true : false;    
+    this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
     }
 
 
@@ -129,14 +129,18 @@ void Vcf::read_new_line(){
     sample_alt.clear();
     phased.clear(); // True if it is phased, which has '|'
     
-    if (!withdata()){
+    
+    if ( this->empty_file() ){
+        this->set_missding_data ( true );
         this->empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut +1));
+        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut +1)); // DEBUG 
+        //this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut )); // DEBUG, END GHOST DATA IS NOT THE END OF THE SEQUENCE .
         return;    
     }
     
+    this->set_missding_data ( false ); // Inialize missing data to false, assume that the current line is ok
     string line = this->buffer_lines[current_block_line_];
     size_t feild_start=0;
     size_t feild_end=0;
@@ -151,15 +155,15 @@ void Vcf::read_new_line(){
         tmp_str = line.substr( feild_start, feild_end - feild_start );
         
         if ( field_index == 0 ){
-            chrom_ = strtod( tmp_str.c_str(), NULL);
+            chrom_ = strtol( tmp_str.c_str(), NULL, 0);
             }
         
         else if ( field_index == 1 ) {
-            site_ = strtod( tmp_str.c_str(), NULL);
+            site_ = strtol( tmp_str.c_str(), NULL, 0);
             //cout << " current site " << site_ << ", and previous site is at " << previous_site_at_<<endl; // DEBUG
             //cout << "(site_ - previous_site_at_) = "<<(site_ - previous_site_at_)<<endl;
             //cout << "pervious_chrom_ = "<<pervious_chrom_<< ", chrom_"<<chrom_<<endl;
-            if ( ((site_ - previous_site_at_) < this->filter_window_ ) && (previous_site_at_ >= (double)0) && ( pervious_chrom_ == chrom_ ) ) { // Making 100, as a filtering process, to screen mutations that are too close
+            if ( ((site_ - previous_site_at_) < this->filter_window_ ) && (previous_site_at_ >= 0) && ( pervious_chrom_ == chrom_ ) ) { // Making 100, as a filtering process, to screen mutations that are too close
                 cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to it's too close to the previous variant (at " << previous_site_at_ <<")." << endl;
                 break;
                 }
@@ -222,7 +226,7 @@ void Vcf::read_new_line(){
     // CHECK END of Vcf
     this->current_block_line_++;
     
-    if ( current_block_line_ == buffer_lines.size() ){ // END of the buff block
+    if ( (current_block_line_) == buffer_lines.size() ){ // END of the buff block
         //cout << "####### have reached the end of the block" <<endl;// DEBUG
     
         if ( !this->eof_ ){
@@ -245,12 +249,32 @@ void Vcf::read_new_line(){
             site_ = previous_site_at_;
             }
         }
+        
+    // If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line.        
+    if ( (site_ - previous_site_at_) > missing_data_threshold_ ){
+        //cout << " Next data ( "<< next_site <<" ) is too far away, treat as missing data" << endl;
+        this->set_missding_data ( true );
+        }            
     // If it is not skipped, overwrite the previous site and chrom
     previous_site_at_ = site_; // If the current line is valid, update the previous site to the current site.
     pervious_chrom_ = chrom_ ; // If the current line is valid, update the previous chrom_ to the current chrom_. to check if they are on the same chrom
 
-        
-        
+
+// REMOVE THE FOLLOWING ...
+
+    //// If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line.            
+    //line = this->buffer_lines[current_block_line_];
+    //feild_start = 0 ;
+    //feild_end = min( line.find('\t',feild_start), line.find('\n', feild_start) );
+    //feild_start = feild_end+1;
+    //feild_end = min( line.find('\t',feild_start), line.find('\n', feild_start) );
+    //tmp_str = line.substr( feild_start, feild_end - feild_start );
+    //int next_site = strtol( tmp_str.c_str(), NULL, 0);
+    //if ( (next_site - site_) > missing_data_threshold_ ){
+        //cout << " Next data ( "<< next_site <<" ) is too far away, treat as missing data" << endl;
+        //this->set_missding_data ( true );
+        //}
+    
     }
 
 
@@ -269,7 +293,7 @@ void Vcf::read_new_block(){
     buffer_lines.clear();
     current_block_line_ = 0;
 
-    if (!this->withdata_){
+    if ( this->empty_file() ){
         this->site_ = 0;
         this->eof_=true;
         return;
@@ -282,7 +306,7 @@ void Vcf::read_new_block(){
     
     getline(infile, tmp_str);
     
-    while (infile.good() && tmp_str.size()>0 && count < buffer_max_number_of_lines){
+    while (infile.good() && tmp_str.size()>0 && (count) < buffer_max_number_of_lines){ 
         buffer_lines.push_back(tmp_str);
         this->end_pos_ += tmp_str.size()+1;
         count++;

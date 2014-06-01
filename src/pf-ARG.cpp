@@ -158,10 +158,10 @@ void pfARG_core(PfParam &pfARG_para,
          */ 
          
         
-        if (VCFfile->withdata() && VCFfile->site() >= model->loci_length()){ 
+        if ( !VCFfile->empty_file() && VCFfile->site() >= model->loci_length() ){ 
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
-            countNe->extract_and_update_count( current_states , VCFfile->site() );
+            //countNe->extract_and_update_count( current_states , VCFfile->site() ); // I think this is not necessary here, as we will do it anyway ...
 
             continue;
             }
@@ -172,20 +172,21 @@ void pfARG_core(PfParam &pfARG_para,
          *      In this case, we will be update till VCFfile->site() 
          */
         
-        if (VCFfile->site() > 121392808){
-            cout << "Before update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
-            current_states.print_particle_probabilities();            
+        //if (VCFfile->site() > 121392808){
+            //cout << "Before update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
+            //if (VCFfile->missing_data()) {cout << "OK missing data " <<endl;}
+            //current_states.print_particle_probabilities();            
             
-            }
+            //}
  
         current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
 
 // DEBUG, update to nan after 120012036 ... not sure why...
-        if (VCFfile->site() > 121392808){
-            cout << " After update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
-            current_states.print_particle_probabilities();            
+        //if (VCFfile->site() > 121392808){
+            //cout << " After update to current VCFfile->site() is "<<(int)VCFfile->site() <<endl;
+            //current_states.print_particle_probabilities();            
             
-            }
+            //}
 
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
@@ -205,12 +206,16 @@ void pfARG_core(PfParam &pfARG_para,
                 
         /*! ESS resampling. Filtering step*/        
         current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
-                
+                //cout<< VCFfile->site() << endl;
         VCFfile->read_new_line(); // Read new line from the vcf file        
         } while( !VCFfile->end_data() );
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
-    current_states.cumulate_recomb_opportunity_at_seq_end(sequence_end); // This is to make up the recomb opportunities till the end of the sequence.
+    // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
+    bool with_data_to_the_end = true;
+    current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
+      
+    current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
     cout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
