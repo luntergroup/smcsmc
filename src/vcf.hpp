@@ -29,6 +29,7 @@
 #include<cassert>       // assert
 #include<stdexcept>      // std::invalid_argument
 #include<stdlib.h>     /* strtol, strtod */
+#include<climits> // INT_MAX
 using namespace std;
 
 #ifndef NDEBUG
