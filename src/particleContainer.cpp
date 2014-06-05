@@ -479,7 +479,15 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                 WeightOfstream <<"\t" << current_state_ptr->weight();
                 SURVIVORstream <<"\t" << current_state_ptr->ancestor();
                                 
-                TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                double current_tmrca ;
+                for (size_t tmrca_i = current_state_ptr->TmrcaHistory.size(); tmrca_i > 0; tmrca_i--){
+                    current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
+                    if (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base()){
+                        break;
+                        }
+                    }
+                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;
