@@ -197,7 +197,8 @@ void PfParam::init(){
     this->rg               = NULL;  
     this->scrm_input       = "";
     this->top_t            = 2;
-    this->filter_window_   = 2;
+    this->filter_window_   = 0;
+    //this->filter_window_   = 2;
     this->missing_data_threshold_ = 0;
     }
 
