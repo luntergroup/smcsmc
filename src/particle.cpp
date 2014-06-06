@@ -35,6 +35,9 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
 
     this->init_EventContainers( model );    
 	this->buildInitialTree();    
+    TmrcaState tmrca( 0, this->local_root()->height() );
+    this->TmrcaHistory.push_back ( tmrca );
+
     //new_forest_counter++; // DEBUG
     }
 

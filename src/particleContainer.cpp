@@ -262,13 +262,12 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
             if (updated_to < mutation_at) {
-                this->particles[particle_i]->sampleNextGenealogy();
-                                
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
                     }
                 }
+                this->particles[particle_i]->sampleNextGenealogy();
             }
         
         assert (updated_to == mutation_at);        
@@ -480,15 +479,19 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                 SURVIVORstream <<"\t" << current_state_ptr->ancestor();
                                 
                 //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                double current_tmrca ;
+                double current_tmrca = current_state_ptr->local_root()->height();
+                //size_t tmrca_i = 0 ;
+                //while (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base() && tmrca_i<current_state_ptr->TmrcaHistory.size()){
+                    //tmrca_i++;
+                    //}
                 for (size_t tmrca_i = current_state_ptr->TmrcaHistory.size(); tmrca_i > 0; tmrca_i--){
-                    current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
                     if (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base()){
                         break;
                         }
+                    current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
                     }
+                //TmrcaOfstream  << "\t" << current_state_ptr->TmrcaHistory[tmrca_i].tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;
                 }
