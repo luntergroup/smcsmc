@@ -125,8 +125,8 @@ void ParticleContainer::shifting(int number_of_particles){
 void ParticleContainer::update_state_weights_at_A_single_site(
     double mutation_at,
     double mutation_rate, 
-    //bool withdata,
-    bool empty_file,
+    bool withdata,
+    //bool empty_file,
     vector <bool> haplotypes_at_tips
     //bool finite_bool
     ){
@@ -135,8 +135,8 @@ void ParticleContainer::update_state_weights_at_A_single_site(
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
-		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
-        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
+		double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
+        //double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
@@ -264,14 +264,13 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
              */
             if (updated_to < mutation_at) {
                 //dout<<"calling here"<<endl;
+                this->particles[particle_i]->sampleNextGenealogy();
                 
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
                     }
                 
-                this->particles[particle_i]->sampleNextGenealogy();
-
                 }
             
             }
@@ -356,8 +355,8 @@ void ParticleContainer::update_state_to_data(
     this->extend_ARGs( mutation_at, mutation_rate, withdata );
     
     //Update weight for seeing mutation at the position 
-    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
-    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
+    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
+    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
@@ -484,20 +483,20 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                 WeightOfstream <<"\t" << current_state_ptr->weight();
                 SURVIVORstream <<"\t" << current_state_ptr->ancestor();
                                 
-                //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                double current_tmrca = current_state_ptr->local_root()->height();
-                //size_t tmrca_i = 0 ;
-                //while (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base() && tmrca_i<current_state_ptr->TmrcaHistory.size()){
-                    //tmrca_i++;
+                TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                //double current_tmrca = current_state_ptr->local_root()->height();
+                ////size_t tmrca_i = 0 ;
+                ////while (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base() && tmrca_i<current_state_ptr->TmrcaHistory.size()){
+                    ////tmrca_i++;
+                    ////}
+                //for (size_t tmrca_i = current_state_ptr->TmrcaHistory.size(); tmrca_i > 0; tmrca_i--){
+                    //if (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base()){
+                        //break;
+                        //}
+                    //current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
                     //}
-                for (size_t tmrca_i = current_state_ptr->TmrcaHistory.size(); tmrca_i > 0; tmrca_i--){
-                    if (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base()){
-                        break;
-                        }
-                    current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
-                    }
-                //TmrcaOfstream  << "\t" << current_state_ptr->TmrcaHistory[tmrca_i].tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                ////TmrcaOfstream  << "\t" << current_state_ptr->TmrcaHistory[tmrca_i].tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                //TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;
                 }

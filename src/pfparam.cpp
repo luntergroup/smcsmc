@@ -187,7 +187,8 @@ void PfParam::init(){
     //this->hist_bool        = false;
     this->online_bool      = false;
     //this->finite_bool      = false;
-    this->heat_seq_window  = 400; 
+    //this->heat_seq_window  = 400; 
+    this->heat_seq_window  = 100; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
     
