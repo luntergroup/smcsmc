@@ -187,8 +187,8 @@ void PfParam::init(){
     //this->hist_bool        = false;
     this->online_bool      = false;
     //this->finite_bool      = false;
-    //this->heat_seq_window  = 400; 
-    this->heat_seq_window  = 100; 
+    this->heat_seq_window  = 400; 
+    //this->heat_seq_window  = 100; 
     this->EM_steps         = 0;
     this->EM_bool          = false;
     
@@ -200,7 +200,7 @@ void PfParam::init(){
     this->top_t            = 2;
     this->filter_window_   = 0;
     //this->filter_window_   = 2;
-    this->missing_data_threshold_ = 0;
+    this->missing_data_threshold_ = INT_MAX;
     }
 
 

@@ -250,9 +250,10 @@ void Vcf::read_new_line(){
             }
         }
         
-    // If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line.        
+    // If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line. 
+    cout << " missing_data_threshold_ = " <<missing_data_threshold_<<endl;
     if ( (site_ - previous_site_at_) > missing_data_threshold_ ){
-        //cout << " Next data ( "<< next_site <<" ) is too far away, treat as missing data" << endl;
+        cout << " New data ( "<< site_ <<" ) is too far away from previous (" << previous_site_at_ << "), treat as missing data" << endl;
         this->set_missding_data ( true );
         }            
     // If it is not skipped, overwrite the previous site and chrom

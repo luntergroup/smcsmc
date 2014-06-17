@@ -309,6 +309,8 @@ void ParticleContainer::update_state_to_data(
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
     bool withdata = !VCFfile->missing_data();
+    cout << "VCFfile->missing_data() = "<<VCFfile->missing_data()<<endl;
+    cout<< " withdata = " << withdata<<endl;
     double mutation_rate = model->mutation_rate();
     
     /*!

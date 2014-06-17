@@ -77,7 +77,7 @@ unit_tests_SOURCES = $(shared_SOURCES) \
                      tests/test_runner.cpp \
                      tests/test_param.cpp \
                      tests/test_pattern.cpp \
-                     tests/test_random_generator.cpp \
+                     #tests/test_random_generator.cpp \
                      tests/test_Coalevent.cpp \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
