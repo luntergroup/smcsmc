@@ -279,6 +279,7 @@ void PfParam::convert_scrm_input (){
     ///*! Extract scrm parameters */ 
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
+    //this->rg = new MersenneTwister(this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
     this->rg = new MersenneTwister(this->SCRMparam->random_seed);  /*! Initialize mersenneTwister seed */
     this->original_recombination_rate_ = model->recombination_rate();
     }
@@ -356,6 +357,7 @@ void PfParam::log_param( ){
     
     log_file<<"scrm model parameters: \n";
     log_file << setw(17) <<"Extract window =" << setw(10) << this->model->exact_window_length()<< "\n";
+    //log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
     log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed      << "\n";
 
     log_file << setw(17) <<   "Sample size =" << setw(10) << this->model->sample_size()        << "\n";
@@ -490,7 +492,9 @@ void PfParam::print_option(){
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
     cout << " SCRM parameters " << endl;
-    print_options();
+    //std::ostream *output = &std::cout;
+    //this->SCRMparam->printHelp(*output); 
+    //this->SCRMparam->printHelp(std::cout); // set help parameters for calling help in scrm...
     }
 
 

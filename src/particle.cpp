@@ -206,14 +206,16 @@ void ForestState::record_all_event(TimeInterval const &ti){
                                      //ti.start_height() + opportunity_y, 
                                      recomb_opportunity,
                                      EVENT );
-        } else {
+            } 
+        else {
             this->record_Recombevent( 0,
                                       //ti.start_height(), 
                                       //ti.start_height() + opportunity_y, 
                                       recomb_opportunity,
                                       NOEVENT );
+            }
         }
-    }
+    //cout <<"here"<<endl;        
     return;
     }
 

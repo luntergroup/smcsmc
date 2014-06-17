@@ -229,15 +229,16 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
  */
 void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
     dout << endl<<" We are extending particles" << endl<<endl;
- 	for (size_t particle_i=0;particle_i < this->particles.size(); particle_i++){
+ 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*! 
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         double updated_to = this->particles[particle_i]->site_where_weight_was_updated();
+        dout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
         assert (updated_to >= this->particles[particle_i]->current_base());
-        while (updated_to < mutation_at) {
+        while ( updated_to < mutation_at ) {
             
             dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
             /*!
@@ -262,12 +263,17 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
             if (updated_to < mutation_at) {
+                //dout<<"calling here"<<endl;
+                
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
                     }
-                }
+                
                 this->particles[particle_i]->sampleNextGenealogy();
+
+                }
+            
             }
         
         assert (updated_to == mutation_at);        
