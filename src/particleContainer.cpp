@@ -87,7 +87,9 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
             } 
-        else { delete this->particles[old_state_index]; }
+        else {
+            delete this->particles[old_state_index]; 
+            }
         
         this->particles[old_state_index]=NULL;
         }
@@ -125,18 +127,17 @@ void ParticleContainer::shifting(int number_of_particles){
 void ParticleContainer::update_state_weights_at_A_single_site(
     double mutation_at,
     double mutation_rate, 
-    bool withdata,
-    //bool empty_file,
+    //bool withdata,
+    bool empty_file,
     vector <bool> haplotypes_at_tips
-    //bool finite_bool
     ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
-		double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
-        //double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
+		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
+        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
@@ -309,8 +310,6 @@ void ParticleContainer::update_state_to_data(
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
     bool withdata = !VCFfile->missing_data();
-    //cout << "VCFfile->missing_data() = "<<VCFfile->missing_data()<<endl;
-    //cout<< " withdata = " << withdata<<endl;
     double mutation_rate = model->mutation_rate();
     
     /*!
@@ -357,8 +356,8 @@ void ParticleContainer::update_state_to_data(
     this->extend_ARGs( mutation_at, mutation_rate, withdata );
     
     //Update weight for seeing mutation at the position 
-    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
-    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
+    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
+    ////this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS(weight_cum_sum); 
