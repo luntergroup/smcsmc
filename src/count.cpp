@@ -235,18 +235,19 @@ void CountModel::compute_recomb_rate () {
             
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
     
-    // loop over all particles
-    for (size_t i = 0; i < Endparticles.particles.size(); i++) {
-        ForestState* thisState = Endparticles.particles[i];
-        double weight = thisState->weight();
-        //if (current_base > problem_base){
-            //cout<< " weight is "<<weight<<endl;
-            //}
-        // loop over all epochs
-        for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
-            // calculate the required lagging for this epoch; don't use lagging for the final interval
-            double lagging = end_data ? 0 : lags[epoch_idx];
-            double x_end = current_base - lagging;
+    // loop over all epochs
+    for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
+
+        // calculate the required lagging for this epoch; don't use lagging for the final interval
+        double lagging = end_data ? 0 : lags[epoch_idx];
+        double x_end = current_base - lagging;
+
+		// loop over all particles
+		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
+
+			ForestState* thisState = Endparticles.particles[i];
+			double weight = thisState->weight();
+
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
             this->update_star_count( thisState->CoaleventContainer[ epoch_idx ],   weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ] );
             this->update_star_count( thisState->RecombeventContainer[ epoch_idx ], weight, x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );

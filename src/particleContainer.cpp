@@ -44,8 +44,8 @@ ParticleContainer::ParticleContainer(
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
-		ForestState *  new_state = new ForestState(model, this->random_generator_ );  // create a new state, using scrm; scrm always starts at 0.
-        new_state->random_generator_ = new MersenneTwister( random_seed +i);  /*! Setting each particle to independent random generator */ //MULTITRHREADING
+		RandomGenerator* new_rg = new MersenneTwister( random_seed + i );
+		ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator per particle for multithreading
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
         this->push(new_state, 1.0/Num_of_states );        
@@ -77,22 +77,24 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
-        if ( (sample_count[old_state_index] > 0)){
-            ForestState * current_state = this->particles[old_state_index] ;
-            this->push(current_state); // As this pushed step, sets the particle weight to 1, by default value.
-            
+        if ( sample_count[old_state_index] > 0 ) {
+            ForestState * current_state = this->particles[old_state_index];
+			// we need at least one copy of this particle; it keeps its own random generator
+            this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle 
-            for (int ii=2; ii <= sample_count[old_state_index]; ii++){ 
+            for (int ii = 2; ii <= sample_count[old_state_index]; ii++) { 
 			  	//cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
-				ForestState * new_copy_state = new ForestState( *this->particles[old_state_index] );
-                new_copy_state->random_generator_ = new MersenneTwister( this->particles[old_state_index]->random_generator_->seed() + this->particles.size() ); /*! Set independent random generator for each particle */ //MULTITRHREADING
+				ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
+				// Give the new particle its own random generator (for multithreading)
+				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
+                new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
                 //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
             } 
         else {
             delete this->particles[old_state_index]; 
-            }
+        }
         
         this->particles[old_state_index]=NULL;
         }

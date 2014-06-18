@@ -28,8 +28,10 @@
 #include<boost/assign/std/vector.hpp>
 #include<cassert>       // assert
 #include<stdexcept>      // std::invalid_argument
+#include<stdexcept>
 #include<stdlib.h>     /* strtol, strtod */
 #include<climits> // INT_MAX
+
 using namespace std;
 
 #ifndef NDEBUG
