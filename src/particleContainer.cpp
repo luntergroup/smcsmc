@@ -57,8 +57,10 @@ ParticleContainer::ParticleContainer(
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */ 
 void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state){    
-    dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state <<endl;
+    //dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state <<endl;
+    cout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
     if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small, to check this step, turn the if statement off
+        cout<< "ESSthreshold - this->ESS() = " <<ESSthreshold - this->ESS()<<endl;
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
         //this->trivial_resampling ( sample_count, num_state );
@@ -76,6 +78,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
 void ParticleContainer::resample(valarray<int> & sample_count){	
     dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
+    cout<<"resampling is called"<<endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
@@ -83,7 +86,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle 
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) { 
-			  	//cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
+			  	cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
 				ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
@@ -206,6 +209,8 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 	double wi_sq_sum=0;
 	double Num_of_states = this->particles.size();
 	weight_cum_sum=0; //Reinitialize the cum sum array 
+
+    //this->normalize_probability();
 	
 	for (size_t i=0; i<Num_of_states ;i++){
 		//update the cum sum array
@@ -461,7 +466,8 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
     
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        this->particles[i]->setParticleWeight( this->random_generator()->sample() );
+        //this->particles[i]->setParticleWeight( this->random_generator()->sample() );
+        this->particles[i]->setParticleWeight( this->particles[i]->random_generator()->sample() );
         }
     }
 

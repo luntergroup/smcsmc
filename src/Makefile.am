@@ -51,7 +51,7 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
 
 series_src = extendARG.cpp updateCount.cpp
 
-omp_src = extendARG.cpp updateCount_omp.cpp
+omp_src = extendARG_omp.cpp updateCount_omp.cpp
 #omp_src = extendARG.cpp updateCount.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
