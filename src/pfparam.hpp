@@ -81,7 +81,7 @@ class PfParam{
         Vcf * VCFfile;
         Param *SCRMparam;
         Model *model;
-        MersenneTwister *rg ;
+        //MersenneTwister *rg ;
 
         double default_loci_length;
 

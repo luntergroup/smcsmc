@@ -120,6 +120,7 @@ ForestState::~ForestState(){
 	this->clear_CoaleventContainer(); // This should be checking only, all events should have been removed in the counting process
 	this->clear_RecombeventContainer(); // This should be checking only, all events should have been removed in the counting process
     this->clear_MigreventContainer(); // This should be checking only, all events should have been removed in the counting process	        
+    delete this->random_generator_;  //MULTITRHREADING
     //delete_forest_counter++;
 	dout << "A Foreststate is deleted" << endl;
     }
@@ -215,7 +216,6 @@ void ForestState::record_all_event(TimeInterval const &ti){
                                       NOEVENT );
             }
         }
-    //cout <<"here"<<endl;        
     return;
     }
 
@@ -408,7 +408,6 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  */
 double ForestState::calculate_likelihood( bool withdata ) {
 	if (withdata){
-		//double mutation_rate = this->model().mutation_rate();
 		dout << "calculate_likelihood function, root is " <<  this->local_root()<<endl;
 		valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
 		dout << "marginal likelihood is " << marginal_likelihood[0]<< "," << marginal_likelihood[1] <<endl;

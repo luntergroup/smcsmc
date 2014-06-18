@@ -22,6 +22,8 @@
 */
 
 #include "particleContainer.hpp"
+#include <omp.h> 
+
 
 /*! \brief Particle filtering Initialization 
  * Create particle initial states in the simulation
@@ -30,21 +32,22 @@
  */ 
 ParticleContainer::ParticleContainer(
                     Model* model, 
-                    RandomGenerator* rg, 
+                    size_t random_seed,
                     size_t Num_of_states, 
                     //vector <bool> data_for_init_states, 
                     //bool withdata,
                     double initial_position,
                     bool heat_bool ){
     this->heat_bool_ = heat_bool;
-    this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize random generator for particle filter */
+    //this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize random generator for particle filter */
+    this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
     //this->set_random_generator(rg);
     this->set_ESS(0);
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
-		ForestState *  new_state = new ForestState(model,rg);  // create a new state, using scrm; scrm always starts at 0.
-//new_state->random_generator_ = new MersenneTwister(rg->seed()+i);  /*! Setting each particle to independent random generator */ //DEBUG
+		ForestState *  new_state = new ForestState(model, this->random_generator_ );  // create a new state, using scrm; scrm always starts at 0.
+        new_state->random_generator_ = new MersenneTwister( random_seed +i);  /*! Setting each particle to independent random generator */ //MULTITRHREADING
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
         this->push(new_state, 1.0/Num_of_states );        
@@ -84,6 +87,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             for (int ii=2; ii <= sample_count[old_state_index]; ii++){ 
 			  	//cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
 				ForestState * new_copy_state = new ForestState( *this->particles[old_state_index] );
+                new_copy_state->random_generator_ = new MersenneTwister( this->particles[old_state_index]->random_generator_->seed() + this->particles.size() ); /*! Set independent random generator for each particle */ //MULTITRHREADING
+                //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
             } 
@@ -170,6 +175,8 @@ void ParticleContainer::clear(){
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
 		if (this->particles[i]!=NULL){
+            //delete this->particles[i]->random_generator_; //MULTITRHREADING
+            //this->particles[i]->random_generator_ = NULL;
 			delete this->particles[i];
 			this->particles[i]=NULL;
             }
@@ -230,6 +237,10 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
  */
 void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
     dout << endl<<" We are extending particles" << endl<<endl;
+    
+    // USE MULTITHREADING ...
+    
+    
  	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*! 
@@ -279,10 +290,13 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
         assert (updated_to == mutation_at);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
         //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;
+        
         }
+    
     
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
+    
     }
 
 

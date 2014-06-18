@@ -38,10 +38,8 @@ class ParticleContainer{
         // Constructors and Destructors
         //        
         ParticleContainer(Model* model, 
-                  RandomGenerator* rg, 
+                  size_t random_seed,
                   size_t Num_of_states, 
-                  //vector <bool> data_for_init_states,  
-                  //bool withdata,
                   double initial_position,
                   bool heat_bool );// this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
@@ -99,7 +97,7 @@ class ParticleContainer{
         double ESS() const {return this->ESS_;};
         void set_ESS(double ess){this->ESS_ = ess;};
         RandomGenerator* random_generator() const { return this->random_generator_; }
-        void set_random_generator(RandomGenerator *rg) { this->random_generator_ = rg; }        
+        //void set_random_generator(RandomGenerator *rg) { this->random_generator_ = rg; }        
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 
