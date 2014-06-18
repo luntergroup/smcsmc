@@ -49,9 +49,9 @@ count_src = count.cpp count-semi-debug.cpp
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
-series_src = extendARG.cpp 
+series_src = extendARG.cpp updateCount.cpp
 
-omp_src = extendARG_omp.cpp
+omp_src = extendARG_omp.cpp updateCount_omp.cpp
 
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
