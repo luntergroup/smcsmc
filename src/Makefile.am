@@ -51,19 +51,21 @@ param_src = pattern.cpp pfparam.cpp vcf.cpp
 
 series_src = extendARG.cpp updateCount.cpp
 
-omp_src = extendARG_omp.cpp updateCount_omp.cpp
-
+#omp_src = extendARG_omp.cpp updateCount_omp.cpp
+omp_src = extendARG.cpp updateCount.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
 
 pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+
+pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
+
 
 #pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp 
 pf_ARG_prof_SOURCES = $(pf_ARG_SOURCES)  
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src) 
 
-pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 
 unit_tests_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) $(series_src)  \
                      $(debug_src) \

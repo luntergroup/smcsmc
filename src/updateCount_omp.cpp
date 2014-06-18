@@ -29,7 +29,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
     // USE MULTITHREADING ...
     
     // loop over all epochs
-    //#pragma omp parallel for schedule(dynamic) 
+    #pragma omp parallel for schedule(dynamic) 
     for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
 
         // calculate the required lagging for this epoch; don't use lagging for the final interval
