@@ -37,15 +37,15 @@ ParticleContainer::ParticleContainer(
                     double initial_position,
                     bool heat_bool ){
     this->heat_bool_ = heat_bool;
-    //this->random_generator_ = new MersenneTwister(rg->seed());  /*! Initialize random generator for particle filter */
     this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
-    //this->set_random_generator(rg);
     this->set_ESS(0);
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
 		RandomGenerator* new_rg = new MersenneTwister( random_seed + i );
-		ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator per particle for multithreading
+        Model * new_model =  new Model(*model);
+		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
+        //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
         this->push(new_state, 1.0/Num_of_states );        
@@ -88,6 +88,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
                 new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
+                new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
                 //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
