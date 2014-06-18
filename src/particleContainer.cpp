@@ -179,7 +179,7 @@ void ParticleContainer::clear(){
 			this->particles[i]=NULL;
             }
         }
-	particles.clear();
+	this->particles.clear();
 	dout << "Particles are deleted" << endl;
     }
  

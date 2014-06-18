@@ -1,4 +1,4 @@
-bin_PROGRAMS = pf-ARG pf-ARG_dbg pf-ARG_multi
+bin_PROGRAMS = pf-ARG pf-ARG_dbg pf-ARG_omp
 #particleCountainer particle param coalevent scrm_dummy
 check_PROGRAMS = pf-ARG_dbg pf-ARG_prof unit_tests
 TESTS = unit_tests 
@@ -9,7 +9,7 @@ pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #option
 pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas  -DNDEBUG   #options for not showing debug messages
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 
-pf_ARG_multi_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
+pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
 #pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
 #pf_ARG_dbg_CXXFLAGS= -std=c++0x -fopenmp #options for showing debug messages
 
@@ -49,28 +49,23 @@ count_src = count.cpp count-semi-debug.cpp
        
 param_src = pattern.cpp pfparam.cpp vcf.cpp 
 
-#scrm_dummy_SOURCES = $(scrm_param) $(scrm_src) scrm/scrm.cc
-#param_SOURCES = $(scrm_param) $(scrm_src)  $(param_src)  param_dummy.cpp
-#coalevent_SOURCES = $(scrm_param) $(scrm_src)  coalevent_dummy.cpp
-#particleCountainer_SOURCES = coalevent.cpp \
-          #particle.cpp \
-          #particleContainer.cpp $(scrm_param) $(scrm_src) $(param_src) \
-          #paritcle_Container_dummy.cpp
-#particle_SOURCES = coalevent.cpp \
-          #particle.cpp $(scrm_param) $(scrm_src)  \
-          #particle_dummy.cpp
+series_src = extendARG.cpp 
 
-shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src)
+omp_src = extendARG_omp.cpp
 
-pf_ARG_SOURCES = $(shared_SOURCES)  pf-ARG.cpp  debug/usage_ghost.cpp extendARG.cpp
 
-pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp 
+shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
+
+pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+
+#pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp 
+pf_ARG_prof_SOURCES = $(pf_ARG_SOURCES)  
 
 pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src) 
 
-pf_ARG_multi_SOURCES = $(shared_SOURCES)  pf-ARG.cpp  debug/usage_ghost.cpp extendARG_multi.cpp
+pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 
-unit_tests_SOURCES = $(shared_SOURCES) \
+unit_tests_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) $(series_src)  \
                      $(debug_src) \
                      tests/test_runner.cpp \
                      tests/test_param.cpp \
