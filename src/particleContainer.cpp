@@ -42,7 +42,8 @@ ParticleContainer::ParticleContainer(
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
-		RandomGenerator* new_rg = new MersenneTwister( random_seed + i );
+        size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
+		RandomGenerator* new_rg = new MersenneTwister( new_seed ); 
         Model * new_model =  new Model(*model);
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
