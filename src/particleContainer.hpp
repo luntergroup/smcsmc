@@ -38,7 +38,8 @@ class ParticleContainer{
         // Constructors and Destructors
         //        
         ParticleContainer(Model* model, 
-                  size_t random_seed,
+                  //size_t random_seed,
+                  MersenneTwister *rg,
                   size_t Num_of_states, 
                   double initial_position,
                   bool heat_bool );// this is used to create the particle initial states

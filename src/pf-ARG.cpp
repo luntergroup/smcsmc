@@ -89,7 +89,7 @@ void pfARG_core(PfParam &pfARG_para,
     struct rusage *p = &usage; // PROFILING
 
     Model *model = pfARG_para.model;
-    //MersenneTwister *rg = pfARG_para.rg;
+    MersenneTwister *rg = pfARG_para.rg;
     size_t Nparticles = pfARG_para.N ;
     Vcf *VCFfile = pfARG_para.VCFfile;
     
@@ -98,7 +98,7 @@ void pfARG_core(PfParam &pfARG_para,
     
     /*! Initial particles */ 
     double initial_position = 0;
-    ParticleContainer current_states(model, pfARG_para.SCRMparam->random_seed, Nparticles, 
+    ParticleContainer current_states(model, rg, Nparticles, 
                                     //VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), 
                                     initial_position,
                                     pfARG_para.heat_bool);             

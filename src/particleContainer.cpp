@@ -30,14 +30,16 @@
  */ 
 ParticleContainer::ParticleContainer(
                     Model* model, 
-                    size_t random_seed,
+                    //size_t random_seed,
+                    MersenneTwister *rg,
                     size_t Num_of_states, 
                     //vector <bool> data_for_init_states, 
                     //bool withdata,
                     double initial_position,
                     bool heat_bool ){
     this->heat_bool_ = heat_bool;
-    this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
+    //this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
+    this->random_generator_ = rg;
     this->set_ESS(0);
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
@@ -137,7 +139,7 @@ void ParticleContainer::shifting(int number_of_particles){
  * ParticleContatiner destructor
  */ 
 ParticleContainer::~ParticleContainer(){
-    delete random_generator_;
+    //delete random_generator_;
     // The following message may show up very often if it is passed by reference ...
     // dout << "ParticleContainer destructor is called" << endl;
     }

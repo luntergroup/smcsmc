@@ -144,7 +144,7 @@ PfParam::~PfParam(){
     delete this->VCFfile; 
     delete this->model;
     delete this->SCRMparam;
-    //delete this->rg;
+    delete this->rg;
     }
     
     
@@ -195,7 +195,7 @@ void PfParam::init(){
     this->VCFfile          = NULL;
     this->SCRMparam        = NULL;
     this->model = new Model();
-    //this->rg               = NULL;  
+    this->rg               = NULL;  
     this->scrm_input       = "";
     this->top_t            = 2;
     this->filter_window_   = 0;
@@ -281,7 +281,7 @@ void PfParam::convert_scrm_input (){
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
     //this->rg = new MersenneTwister(this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
-    //this->rg = new MersenneTwister(this->SCRMparam->random_seed);  /*! Initialize mersenneTwister seed */
+    this->rg = new MersenneTwister(this->SCRMparam->random_seed);  /*! Initialize mersenneTwister seed */
     this->original_recombination_rate_ = model->recombination_rate();
     }
 
