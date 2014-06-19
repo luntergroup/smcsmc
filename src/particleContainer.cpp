@@ -58,9 +58,10 @@ ParticleContainer::ParticleContainer(
  */ 
 void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state){    
     //dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state <<endl;
-    cout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
-    if (this->ESS() < ESSthreshold){ // resample if the effective sample size is small, to check this step, turn the if statement off
-        cout<< "ESSthreshold - this->ESS() = " <<ESSthreshold - this->ESS()<<endl;
+    dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
+    double ESS_diff = ESSthreshold - this->ESS();
+    if ( ESS_diff > 1e-6 ){ // resample if the effective sample size is small, to check this step, turn the if statement off
+        dout<<"ESS_diff = " << ESS_diff<<endl;
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
         //this->trivial_resampling ( sample_count, num_state );
@@ -78,7 +79,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
 void ParticleContainer::resample(valarray<int> & sample_count){	
     dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
-    cout<<"resampling is called"<<endl;
+    dout<<"resampling is called"<<endl;
 	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
@@ -86,7 +87,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle 
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) { 
-			  	cout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
+			  	dout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
 				ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
@@ -129,33 +130,6 @@ void ParticleContainer::shifting(int number_of_particles){
     // SHIFTING AND RESIZING THE PARTICLE ARRAY FINISHED    
     }
 
-
-/*! \brief Update particle weight according to the haplotype data
- *	@ingroup group_pf_update
- */
-void ParticleContainer::update_state_weights_at_A_single_site(
-    double mutation_at,
-    double mutation_rate, 
-    //bool withdata,
-    bool empty_file,
-    vector <bool> haplotypes_at_tips
-    ){
-			
-	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
-	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
-		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
-
-		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
-        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
-        dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
-
-        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
-		dout << "particle " <<  particle_i<<" done" << endl;
-        }
-    
-    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
-	dout << endl;
-    }
 
 
 /*!
@@ -210,9 +184,7 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 	double Num_of_states = this->particles.size();
 	weight_cum_sum=0; //Reinitialize the cum sum array 
 
-    //this->normalize_probability();
-	
-	for (size_t i=0; i<Num_of_states ;i++){
+	for (size_t i=0; i < Num_of_states ;i++){
 		//update the cum sum array
 		double w_i=this->particles[i]->weight();
 		weight_cum_sum[i+1]=weight_cum_sum[i]+w_i;

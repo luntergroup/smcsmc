@@ -22,14 +22,9 @@
 */
 
 #include"count.hpp"
-#include <omp.h> 
-
-
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
-    // USE MULTITHREADING ...
     
     // loop over all epochs
-    #pragma omp parallel for schedule(dynamic) 
     for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
 
         // calculate the required lagging for this epoch; don't use lagging for the final interval
@@ -37,7 +32,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         double x_end = current_base - lagging;
 
 		// loop over all particles
-    	for (size_t i = 0; i < Endparticles.particles.size(); i++) {
+		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
 
 			ForestState* thisState = Endparticles.particles[i];
 			double weight = thisState->weight();
@@ -45,7 +40,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
             this->update_star_count( thisState->CoaleventContainer[ epoch_idx ],   weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ] );
             this->update_star_count( thisState->RecombeventContainer[ epoch_idx ], weight, x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );
-            this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
+            if (this->population_number() > 1){
+                this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
+                }
             }
         }
     }

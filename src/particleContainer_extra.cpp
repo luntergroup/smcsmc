@@ -88,3 +88,32 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
     
     }
+
+
+
+/*! \brief Update particle weight according to the haplotype data
+ *	@ingroup group_pf_update
+ */
+void ParticleContainer::update_state_weights_at_A_single_site(
+    double mutation_at,
+    double mutation_rate, 
+    //bool withdata,
+    bool empty_file,
+    vector <bool> haplotypes_at_tips
+    ){
+			
+	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
+	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
+		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
+
+		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
+        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
+        dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
+
+        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
+		dout << "particle " <<  particle_i<<" done" << endl;
+        }
+    
+    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
+	dout << endl;
+    }

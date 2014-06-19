@@ -88,6 +88,7 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
         }
     // Copy Migration events
     for (size_t i = 0 ; i < copied_state.MigreventContainer.size() ; i++ ){ 
+        //cout<<"hea"<<endl;
         deque < Migrevent* > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.MigreventContainer[i].size(); ii++){
             Migrevent* new_migrevent = copied_state.MigreventContainer[i][ii];
