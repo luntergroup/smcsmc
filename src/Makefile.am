@@ -5,7 +5,9 @@ TESTS = unit_tests
 
 PROG = PF-ARG 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+#pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
+
 pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas  -DNDEBUG   #options for not showing debug messages
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 
@@ -56,7 +58,8 @@ omp_src = particleContainer_extra_omp.cpp count_extra_omp.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
 
-pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+#pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
 
 pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 
