@@ -23,7 +23,7 @@
 
 #include "scrm/param.h"
 #include "vcf.hpp"
-//#include <boost/lexical_cast.hpp> 
+#include <boost/lexical_cast.hpp> 
 
 using namespace std;
 
@@ -158,10 +158,10 @@ class PfParam{
 
     };
     
-//template<class T>
- //T readInput(char input[])
- //{
-   //return boost::lexical_cast<T>(input);
- //}
+template<class T>
+ T readInput(char input[])
+ {
+   return boost::lexical_cast<T>(input);
+ }
 
 #endif
