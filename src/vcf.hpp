@@ -25,7 +25,8 @@
 #include<string>
 #include<fstream>
 #include<iostream>
-#include<boost/assign/std/vector.hpp>
+//#include<boost/assign/std/vector.hpp>
+#include<vector>
 #include<cassert>       // assert
 #include<stdexcept>      // std::invalid_argument
 #include<stdexcept>

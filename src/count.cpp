@@ -136,11 +136,11 @@ void CountModel::reset_mig_rate ( Model *model ) {
 
     model->resetTime();
     this ->resetTime();
-    for (size_t time_i = 0; time_i < change_times_.size(); time_i++){
+    for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             for (size_t pop_k = 0 ; pop_k < this->population_number(); pop_k++ ) {
                 if ( pop_j == pop_k) continue;
-                model->addMigrationRate(this->change_times_[time_i], pop_j, pop_k, this->inferred_mig_rate[time_i][pop_j][pop_k], false, false);
+                model->addMigrationRate(this->change_times_[epoch_idx], pop_j, pop_k, this->inferred_mig_rate[epoch_idx][pop_j][pop_k], false, false);
                 }
             }
         }

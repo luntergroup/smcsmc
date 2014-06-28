@@ -45,7 +45,7 @@ ParticleContainer::ParticleContainer(
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
-		RandomGenerator* new_rg = new MersenneTwister( new_seed ); 
+		RandomGenerator* new_rg = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
         Model * new_model =  new Model(*model);
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
@@ -94,7 +94,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
-                new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
+                new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
                 new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
                 //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.

@@ -144,6 +144,7 @@ PfParam::~PfParam(){
     delete this->VCFfile; 
     delete this->model;
     delete this->SCRMparam;
+    this->rg->clearFastFunc();
     delete this->rg;
     }
     
