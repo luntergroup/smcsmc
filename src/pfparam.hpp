@@ -23,7 +23,6 @@
 
 #include "scrm/param.h"
 #include "vcf.hpp"
-//#include <boost/lexical_cast.hpp> 
 
 using namespace std;
 
@@ -174,14 +173,6 @@ class PfParam{
         //string BL_NAME;
         string SURVIVOR_NAME;
         int heat_seq_window;
-        
-
     };
     
-//template<class T>
- //T readInput(char input[])
- //{
-   //return boost::lexical_cast<T>(input);
- //}
-
 #endif
