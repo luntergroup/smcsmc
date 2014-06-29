@@ -41,13 +41,13 @@ case $host_os in
     AC_PROG_CXX([clang])
     export CXX=clang++
     export CXXFLAGS=-I/opt/local/include -stdlib=libc++ 
-    AC_CHECK_HEADERS([/opt/local/include/boost/assign/std/vector.hpp /opt/local/include/boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Install from the port: sudo port install boost])])
+    #AC_CHECK_HEADERS([/opt/local/include/boost/assign/std/vector.hpp /opt/local/include/boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Install from the port: sudo port install boost])])
         ;;
   linux*)
 #Check whether the environment variable CXX or CCC (in that order) is set; if so, then set output variable CXX to its value.
     AC_PROG_CXX
 #    export CXX=g++
-    AC_CHECK_HEADERS([boost/assign/std/vector.hpp boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Try downloading from :http://www.boost.org. Or: sudo apt-get install libboost-all-dev])])        
+    #AC_CHECK_HEADERS([boost/assign/std/vector.hpp boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Try downloading from :http://www.boost.org. Or: sudo apt-get install libboost-all-dev])])        
     ;;
     #compile on cluster 3, ./configure CXXFLAGS=-I/usr/local/boost
    *BSD*)
