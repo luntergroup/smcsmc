@@ -78,11 +78,11 @@ void CountModel::init_migr(){ /*! \todo This requires more work*/
 
 
 void CountModel::init_lags(){
-    this->previous_base.clear();
+    this->counted_to.clear();
     this->lags.clear();        
     this->resetTime();    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
-        this->previous_base.push_back( (double)0 );
+        this->counted_to.push_back( (double)0 );
         double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
         //double lag_i =  double(4) / this->recombination_rate() / top_t ; 
         double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / this->recombination_rate() / top_t ; 

@@ -90,7 +90,7 @@ class CountModel: public Model{
         vector < vector < vector<double> > >  total_mig_count;
         vector < vector<double> >             total_weighted_mig_opportunity;
 
-        vector < double > previous_base;
+        vector < double > counted_to;
         vector < double > lags;
         vector < vector < vector<double> > > inferred_mig_rate; // This should be a 3-D vector 
         

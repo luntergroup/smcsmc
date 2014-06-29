@@ -23,7 +23,6 @@
 
 #include"count.hpp"
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
-    
     // loop over all epochs
     for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
 
@@ -31,6 +30,10 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         double lagging = end_data ? 0 : lags[epoch_idx];
         double x_end = current_base - lagging;
 
+//cout << "["<<epoch_idx<< "] " << this->change_times_[epoch_idx] << " x_end = " << x_end<<endl;
+        if ( x_end < this->counted_to[epoch_idx] ) {
+            continue;
+            }
 		// loop over all particles
 		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
 
@@ -44,5 +47,6 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
                 this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
                 }
             }
+        this->counted_to[epoch_idx] = x_end;
         }
     }
