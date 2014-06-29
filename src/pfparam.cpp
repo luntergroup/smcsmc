@@ -25,7 +25,6 @@
 #include"pfparam.hpp"
 #include"pattern.hpp"
 
-
 PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
     this->init(); // Initialize pfARG program parameters
     argc_i=1; // Skipping argv[0], which is pf-ARG calling
@@ -37,104 +36,41 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // ------------------------------------------------------------------
         // Parameters 
         // ------------------------------------------------------------------        
-        if ( argv_i == "-Np" ){ 
-            //nextArg( argv_i );
-            //N = readInput<size_t>(argv_[argc_i]);
-            this->N = readNextInput<size_t>();
-            }
-
-        else if ( argv_i == "-nsam" ){ 
-            //nextArg( argv_i );
-            //default_nsam = readInput<size_t>(argv_[argc_i]);
-            this->default_nsam = readNextInput<size_t>();
-            }
-                        
-        
-        else if (argv_i == "-ESS"){ 
-            //nextArg( argv_i );
-            //this->ESS_ = readInput<double>(argv_[argc_i]);
-            this->ESS_ = readNextInput<double>();
-            ESS_default_bool = false;
-            }
-                
-        else if (argv_i == "-EM"){            
-            //nextArg( argv_i );
-            //EM_steps = readInput<int>(argv_[argc_i]);
-            this->EM_steps = readNextInput<int>();
-            this->EM_bool = true;
-            }        
-
-        else if (argv_i == "-ghost"){
-            //nextArg( argv_i );
-            //ghost = readInput<int>(argv_[argc_i]);
-            this->ghost = readNextInput<int>();
-            }  
-        
-        else if (argv_i == "-tmax"){
-            //nextArg( argv_i );
-            //top_t = readInput<double>(argv_[argc_i]);
-            this->top_t = readNextInput<double>();
-            }
-        
-        else if (argv_i == "-p"){ 
-            //nextArg( argv_i );
-            this->nextArg();
-            pattern = argv_[argc_i];
-            }
+        if      ( argv_i == "-Np"   ){ this->N = readNextInput<size_t>(); }
+        else if ( argv_i == "-nsam" ){ this->default_nsam = readNextInput<size_t>(); }
+        else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
+                                       this->ESS_default_bool = false; }
+        else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
+                                       this->EM_bool = true; }        
+        else if ( argv_i == "-tmax" ){ this->top_t = readNextInput<double>(); }        
+        else if ( argv_i == "-p"    ){ this->nextArg();
+                                       this->pattern = argv_[argc_i]; }
             
         // ------------------------------------------------------------------
-        // Input 
+        // Input files
         // ------------------------------------------------------------------
-        else if (argv_i == "-vcf"){ 
-            //nextArg( argv_i );
-            this->nextArg();
-            vcf_NAME = argv_[argc_i];
-            }
-        
-        else if (argv_i == "-buff"){ 
-            //nextArg( argv_i );
-            //buff_length = readInput<int>(argv_[argc_i]);
-            this->buff_length = this->readNextInput<int>();
-            }    
+        else if ( argv_i == "-vcf"  ){ this->nextArg(); 
+                                       this->vcf_NAME = argv_[argc_i]; }        
+        else if ( argv_i == "-buff" ){ this->buff_length = this->readNextInput<int>(); }    
+        else if ( argv_i == "-ghost"){ this->ghost = readNextInput<int>(); }          
         
         // ------------------------------------------------------------------
         // Action 
         // ------------------------------------------------------------------
-        else if (argv_i == "-lag"){ 
-            //nextArg( argv_i );
-            //lag = readInput<double>(argv_[argc_i]);
-            this->lag = this->readNextInput<double>();
-            }
-
-        else if (argv_i == "-filter"){ 
-            //nextArg( argv_i );
-            //filter_window_ = readInput<int>(argv_[argc_i]);
-            this->filter_window_ = this->readNextInput<int>();
-            }
-
-        else if (argv_i == "-missing"){ 
-            //nextArg( argv_i );
-            //missing_data_threshold_ = readInput<int>(argv_[argc_i]);
-            this->missing_data_threshold_ = this->readNextInput<int>();
-            }
-
-        else if (argv_i == "-online"){
-            this->online_bool = true;
-            }
+        else if ( argv_i == "-lag"    ){ this->lag = this->readNextInput<double>(); }
+        else if ( argv_i == "-filter" ){ this->filter_window_ = this->readNextInput<int>(); }
+        else if ( argv_i == "-missing"){ this->missing_data_threshold_ = this->readNextInput<int>(); }
+        else if ( argv_i == "-online" ){ this->online_bool = true; }
             
         // ------------------------------------------------------------------
         // Output 
         // ------------------------------------------------------------------
-        else if (argv_i == "-o"){ 
-            //nextArg( argv_i );
-            this->nextArg();
-            out_NAME_prefix = argv_[argc_i];
-            }
-        
-        else if ( argv_i == "-log"  ){ this->log_bool  = true; }        
-        //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
-        else if ( argv_i == "-heat" ){ this->heat_bool = true; }
+        else if ( argv_i == "-o"     ){ this->nextArg();
+                                        this->out_NAME_prefix = argv_[argc_i]; }        
+        else if ( argv_i == "-log"   ){ this->log_bool  = true; }
+        else if ( argv_i == "-heat"  ){ this->heat_bool = true; }
         //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
+        //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
         
         else if (argv_i == "-h" || argv_i == "-help") {
             this->print_option();
@@ -143,11 +79,9 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
             
         else {
             scrm_input += argv_i + " ";
-            }
-        
+            }        
         argc_i++;
-        }
-        
+        }        
         this->finalize( );
     }
 
@@ -160,13 +94,7 @@ PfParam::~PfParam(){
     this->rg->clearFastFunc();
     delete this->rg;
     }
-    
-    
-//void PfParam::get_scrm_argv(){
-    //scrm_input += convert_pattern(pattern, top_t);
-    //cout << scrm_input << endl;
-    //}
-    
+
 
 /*! 
  * Set default parameters
@@ -240,12 +168,9 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
         }
 
-    //if (!VCFfile->withdata()){
     if ( VCFfile->empty_file() ){
-        //VCFfile->ghost_num_mut = 10;
-            //VCFfile->ghost_num_mut = this->default_num_mut*10;
-            VCFfile->ghost_num_mut = this->ghost;
-            VCFfile->set_even_interval( this->default_loci_length / VCFfile->ghost_num_mut );
+        VCFfile->ghost_num_mut = this->ghost;
+        VCFfile->set_even_interval( this->default_loci_length / VCFfile->ghost_num_mut );
         }            
 
     }
@@ -253,7 +178,6 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     
 void PfParam::insert_sample_size_in_scrm_input (  ){
     size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
-    //if (!VCFfile->withdata()){
     if ( VCFfile->empty_file() ){    
         nsam = this->default_nsam;
         }    
@@ -281,8 +205,7 @@ void PfParam::convert_scrm_input (){
     while (p2 && scrm_argc < kMaxArgs) {
         scrm_argv[scrm_argc++] = p2;
         p2 = strtok(0, " ");
-        }
-    
+        }    
     ///*! Extract scrm parameters */ 
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
@@ -512,3 +435,8 @@ void PfParam::print_example(){
     cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -vcf eg_vcf.vcf " << endl;
     }
 
+
+//void PfParam::get_scrm_argv(){
+    //scrm_input += convert_pattern(pattern, top_t);
+    //cout << scrm_input << endl;
+    //}
