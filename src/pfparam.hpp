@@ -23,7 +23,7 @@
 
 #include "scrm/param.h"
 #include "vcf.hpp"
-#include <boost/lexical_cast.hpp> 
+//#include <boost/lexical_cast.hpp> 
 
 using namespace std;
 
@@ -86,12 +86,13 @@ class PfParam{
         double default_loci_length;
 
         double ESS () const { return this-> ESS_;} // scaled between zero and one
+        
     private:
 
         //
         // Methods
         //   
-        void nextArg(std::string option);
+        
         void init();
         void insert_mutation_rate_in_scrm_input ( );
         void insert_recomb_rate_and_seqlen_in_scrm_input ( );
@@ -103,7 +104,26 @@ class PfParam{
         void log_param( );
 
 
-        
+        void nextArg(){
+            ++argc_i;            
+            if (argc_i >= argc_) {
+                throw std::invalid_argument(std::string("Not enough parameters when parsing options: ") + argv_[argc_i-1]);
+                }
+            }
+
+        template<class T> T readNextInput() {
+            this->nextArg();
+            
+            char c;
+            T input;
+            std::stringstream ss(argv_[argc_i]);
+            ss >> input;
+            if (ss.fail() || ss.get(c)) {
+                throw std::invalid_argument(std::string("Failed to parse option: ") + argv_[argc_i-1]);
+                }
+            return input;
+            }
+            
         //
         // Members
         //  
@@ -158,10 +178,10 @@ class PfParam{
 
     };
     
-template<class T>
- T readInput(char input[])
- {
-   return boost::lexical_cast<T>(input);
- }
+//template<class T>
+ //T readInput(char input[])
+ //{
+   //return boost::lexical_cast<T>(input);
+ //}
 
 #endif

@@ -38,40 +38,47 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Parameters 
         // ------------------------------------------------------------------        
         if ( argv_i == "-Np" ){ 
-            nextArg( argv_i );
-            N = readInput<size_t>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //N = readInput<size_t>(argv_[argc_i]);
+            this->N = readNextInput<size_t>();
             }
 
         else if ( argv_i == "-nsam" ){ 
-            nextArg( argv_i );
-            default_nsam = readInput<size_t>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //default_nsam = readInput<size_t>(argv_[argc_i]);
+            this->default_nsam = readNextInput<size_t>();
             }
                         
         
         else if (argv_i == "-ESS"){ 
-            nextArg( argv_i );
-            this->ESS_ = readInput<double>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //this->ESS_ = readInput<double>(argv_[argc_i]);
+            this->ESS_ = readNextInput<double>();
             ESS_default_bool = false;
             }
                 
-        else if (argv_i == "-EM"){
+        else if (argv_i == "-EM"){            
+            //nextArg( argv_i );
+            //EM_steps = readInput<int>(argv_[argc_i]);
+            this->EM_steps = readNextInput<int>();
             this->EM_bool = true;
-            nextArg( argv_i );
-            EM_steps = readInput<int>(argv_[argc_i]);
             }        
 
         else if (argv_i == "-ghost"){
-            nextArg( argv_i );
-            ghost = readInput<int>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //ghost = readInput<int>(argv_[argc_i]);
+            this->ghost = readNextInput<int>();
             }  
         
         else if (argv_i == "-tmax"){
-            nextArg( argv_i );
-            top_t = readInput<double>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //top_t = readInput<double>(argv_[argc_i]);
+            this->top_t = readNextInput<double>();
             }
         
         else if (argv_i == "-p"){ 
-            nextArg( argv_i );
+            //nextArg( argv_i );
+            this->nextArg();
             pattern = argv_[argc_i];
             }
             
@@ -79,31 +86,36 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Input 
         // ------------------------------------------------------------------
         else if (argv_i == "-vcf"){ 
-            nextArg( argv_i );
+            //nextArg( argv_i );
+            this->nextArg();
             vcf_NAME = argv_[argc_i];
             }
         
         else if (argv_i == "-buff"){ 
-            nextArg( argv_i );
-            buff_length = readInput<int>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //buff_length = readInput<int>(argv_[argc_i]);
+            this->buff_length = this->readNextInput<int>();
             }    
         
         // ------------------------------------------------------------------
         // Action 
         // ------------------------------------------------------------------
         else if (argv_i == "-lag"){ 
-            nextArg( argv_i );
-            lag = readInput<double>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //lag = readInput<double>(argv_[argc_i]);
+            this->lag = this->readNextInput<double>();
             }
 
         else if (argv_i == "-filter"){ 
-            nextArg( argv_i );
-            filter_window_ = readInput<int>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //filter_window_ = readInput<int>(argv_[argc_i]);
+            this->filter_window_ = this->readNextInput<int>();
             }
 
         else if (argv_i == "-missing"){ 
-            nextArg( argv_i );
-            missing_data_threshold_ = readInput<int>(argv_[argc_i]);
+            //nextArg( argv_i );
+            //missing_data_threshold_ = readInput<int>(argv_[argc_i]);
+            this->missing_data_threshold_ = this->readNextInput<int>();
             }
 
         else if (argv_i == "-online"){
@@ -114,7 +126,8 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Output 
         // ------------------------------------------------------------------
         else if (argv_i == "-o"){ 
-            nextArg( argv_i );
+            //nextArg( argv_i );
+            this->nextArg();
             out_NAME_prefix = argv_[argc_i];
             }
         
@@ -154,14 +167,6 @@ PfParam::~PfParam(){
     //cout << scrm_input << endl;
     //}
     
-
-void PfParam::nextArg(std::string option) {
-    ++argc_i;
-    if (argc_i >= argc_) {
-        throw std::invalid_argument(std::string("Not enough parameters when parsing option ") + option);
-        }
-    }
-
 
 /*! 
  * Set default parameters
