@@ -78,6 +78,8 @@ class ForestState : public Forest{
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
 
+        void making_copies( size_t number_of_copies );
+
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
         double calculate_likelihood( bool withdata ); /*!< \brief Calculate the likelihood of the genealogy */
@@ -121,6 +123,8 @@ class ForestState : public Forest{
         double particle_weight_;
         size_t ancestor_;
         vector < TmrcaState > TmrcaHistory;
+        
+        vector < ForestState* > ForestState_copies; // NEW        
 
         // Debugging tools //
         bool print_Coalevent();
