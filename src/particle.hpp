@@ -64,24 +64,23 @@ class ForestState : public Forest{
     
     // All members and methods are private
     private:
-        //
-        // Constructors and Destructors
-        //        
-        ForestState(Model* model, 
-                    RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
+        // Constructor, called at initial stage //
+        ForestState(Model* model, RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
+        // Constructor, called when resampling, making new copy of a particle
         ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
+        // Destructors //
         ~ForestState();
+        void clear_CoaleventContainer();
+        void clear_RecombeventContainer();
+        void clear_MigreventContainer();
 
-        //
-        // Methods
-        //           
+        // Resampling //
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
 
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
         double calculate_likelihood( bool withdata ); /*!< \brief Calculate the likelihood of the genealogy */
-        //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         
         // Record events
@@ -104,31 +103,16 @@ class ForestState : public Forest{
                           //double end_time, 
                           double opportunity, 
                           eventCode event_code);                          
-
-        void clear_CoaleventContainer();
-        void clear_RecombeventContainer();
-        void clear_MigreventContainer();
         
-        //
-        // Setters and getters:
-        //
+        // Setters and getters: //
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
         void setParticleWeight(double weight) { this->particle_weight_ = weight; }
         double weight() const { return this->particle_weight_; }
         void setAncestor ( size_t ancestor ){ this->ancestor_ = ancestor; }
         size_t ancestor() const { return this->ancestor_; }
-        
-        //
-        // Debugging tools
-        //
-        bool print_Coalevent();
-        bool print_Recombevent();
-        bool print_Migrevent();
 
-        //
-        // Members
-        //   
+        // Members //
         vector < deque < Starevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < deque < Starevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
@@ -137,5 +121,13 @@ class ForestState : public Forest{
         double particle_weight_;
         size_t ancestor_;
         vector < TmrcaState > TmrcaHistory;
+
+        // Debugging tools //
+        bool print_Coalevent();
+        bool print_Recombevent();
+        bool print_Migrevent();
+        
+        
+        //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
     };
 #endif

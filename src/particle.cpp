@@ -28,16 +28,14 @@
  * @ingroup group_pf_init
  * */
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
-            :Forest( model,random_generator ) {/*! Initialize base of a new ForestState */
-
-  	this->setParticleWeight( 1.0 );
-	this->setSiteWhereWeightWasUpdated(0.0);
-
-    this->init_EventContainers( model );    
-	this->buildInitialTree();    
-    TmrcaState tmrca( 0, this->local_root()->height() );
-    this->TmrcaHistory.push_back ( tmrca );
-
+            :Forest( model,random_generator ) {
+    /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
+    //this->init_EventContainers( model );    
+	//this->buildInitialTree();    
+    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
+    // Initialize the initial particles at base 0, with equal weights
+  	//this->setParticleWeight( 1.0 );
+	//this->setSiteWhereWeightWasUpdated(0.0);
     //new_forest_counter++; // DEBUG
     }
 
@@ -49,15 +47,13 @@ ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ) {
                 
     this->setParticleWeight( copied_state.weight() );
-	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
-    
+	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
-//this->random_generator_ = new MersenneTwister(copied_state.random_generator()->seed());  /*! Setting particles to independent random generaters when it is copied*/ //DEBUG    
-    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
+    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
         
 	dout << "current particle's weight is " << this->weight()<<endl;
     //new_forest_counter++;  // DEBUG

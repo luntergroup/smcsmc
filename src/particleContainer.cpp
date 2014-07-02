@@ -49,8 +49,16 @@ ParticleContainer::ParticleContainer(
         Model * new_model =  new Model(*model);
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
+        
+        // Initialize members of FroestState (derived class members)
+        new_state->init_EventContainers( model );    
+        new_state->buildInitialTree();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
 		new_state->setAncestor ( i );
+        if ( this->heat_bool_ ){
+            TmrcaState tmrca( 0, new_state->local_root()->height() );
+            new_state->TmrcaHistory.push_back ( tmrca );
+            }
         this->push(new_state, 1.0/Num_of_states );        
 	    }	    
     }
