@@ -9,8 +9,8 @@
 #$ -j y
 
 
-#rep=1
-rep=$(expr $SGE_TASK_ID )
+rep=6
+#rep=$(expr $SGE_TASK_ID )
 
 #nsam=2
 Np=10000

@@ -9,7 +9,7 @@ class TestPattern : public CppUnit::TestCase {
   
     CPPUNIT_TEST_SUITE( TestPattern );
     
-    CPPUNIT_TEST( test_extract_NumberOfSegment ); 
+//    CPPUNIT_TEST( test_extract_NumberOfSegment ); 
     
     CPPUNIT_TEST( test_for_faulty_pattern );
 
@@ -18,7 +18,7 @@ class TestPattern : public CppUnit::TestCase {
     private:
         //Vcf *vcf_file;
         string pattern;
-        double top_t = 2.0;    
+        double top_t ;
         vector <size_t> seg_level1_vec;
         vector <size_t> seg_level2_vec;
         vector <double> t_i;
@@ -35,12 +35,12 @@ class TestPattern : public CppUnit::TestCase {
     
     
         void test_extract_NumberOfSegment( ){
-            
+            top_t = 2.0; 
             pattern = "3+2+2+2+2+2+3";
             expr = pattern.c_str();
             num_seg = extract_NumberOfSegment( expr , seg_level1_vec, seg_level2_vec) ; 
             CPPUNIT_ASSERT_EQUAL((size_t)16, num_seg);
-            t_i = extract_Segment( num_seg, top_t);
+	    t_i = extract_Segment( num_seg, this->top_t);
             CPPUNIT_ASSERT_EQUAL(top_t, t_i.back());
             CPPUNIT_ASSERT_EQUAL(t_i.size(), num_seg);            
             new_ti = regroup_Segment (t_i, seg_level1_vec, seg_level2_vec);

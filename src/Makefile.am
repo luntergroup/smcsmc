@@ -5,8 +5,8 @@ TESTS = unit_tests
 
 PROG = PF-ARG 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
-#pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
+#pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
 
 pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas  -DNDEBUG   #options for not showing debug messages
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
@@ -60,8 +60,8 @@ omp_src = particleContainer_extra_omp.cpp count_extra_omp.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
 
-pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
-#pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
+#pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
 
 pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 
@@ -80,18 +80,19 @@ unit_tests_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_s
                      tests/test_runner.cpp \
                      tests/test_param.cpp \
                      tests/test_pattern.cpp \
-                     #tests/test_random_generator.cpp \
                      tests/test_Coalevent.cpp \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
                      tests/test_Vcf.cpp \
-                     #tests/test_Count.cpp\
+                     #tests/test_random_generator.cpp \
+		     #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)
 
 unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
 
-unit_tests_LDADD= -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
+unit_tests_LDADD= -L/home/joezhu/cppunit/cppunit-1.12.1/lib -lcppunit -ldl
+# -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
 #unit_tests_LDADD= -L/usr/include 
 
 include_HEADERS = vcf.hpp pfparam.hpp particle.hpp pattern.hpp\
