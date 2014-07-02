@@ -38,6 +38,7 @@ void ForestState::making_copies( int number_of_copies ){
         // Give the new particle its own random generator (for multithreading)
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
         new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
+        //new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
         new_copy_state->model_ = new Model( *this->model_);
         //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
         //this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.

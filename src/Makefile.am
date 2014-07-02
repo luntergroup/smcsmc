@@ -12,6 +12,8 @@ pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas  -DNDEBUG   
 pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
 
 pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
+#pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+
 pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
 
 #pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
@@ -64,7 +66,7 @@ pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src)
 #pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
 
 pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
-
+#pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
 
 #pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp 
 pf_ARG_prof_SOURCES = $(pf_ARG_SOURCES)  

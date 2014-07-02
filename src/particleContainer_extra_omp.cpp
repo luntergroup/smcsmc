@@ -29,13 +29,13 @@
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
 void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
-    dout << endl<<" We are extending particles" << endl<<endl;
-    
+    dout << endl<<" We are extending particles" << endl<<endl;    
     // USE MULTITHREADING ...
 
     //#pragma omp for schedule(dynamic,100) nowait    
     #pragma omp parallel for schedule(dynamic) 
  	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
+        
         //cout << "Hello World from thread " << omp_get_thread_num() << '\n';
         dout << "We are updating particle " << particle_i << endl;
         /*! 
