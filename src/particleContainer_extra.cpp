@@ -117,3 +117,10 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
     }
+
+
+void ParticleContainer::duplicate_particles ( valarray<int> & sample_count ){
+    for ( size_t i = 0 ;  i < this->particles.size(); i++ ){
+        this->particles[i]->making_copies( sample_count[i] ); 
+        }
+    }

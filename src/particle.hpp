@@ -26,6 +26,7 @@
 #include"coalevent.hpp"
 #include <deque>
 
+
 #ifndef NDEBUG
 #define dout std::cout
 #else
@@ -78,7 +79,7 @@ class ForestState : public Forest{
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
 
-        void making_copies( size_t number_of_copies );
+        void making_copies( int number_of_copies );
 
         // Update weight
         void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        

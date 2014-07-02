@@ -375,7 +375,7 @@ class TestVcf : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
         CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
-        
+
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
         //1	55164	rs3091274	C	A	100	PASS	.	GT	1|0

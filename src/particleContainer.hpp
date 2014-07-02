@@ -86,11 +86,21 @@ class ParticleContainer{
 
         // Resampling
         void resample(valarray<int> & sample_count);
+        void duplicate_particles ( valarray<int> & sample_count );
+        
+        void resample_for_check(valarray<int> & sample_count);
+        
         void shifting(int number_of_particles);
         void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
 
         void systemetic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
         void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
+        
+        
+        
+        
+        
+        
         
         //
         // Setters and getters:

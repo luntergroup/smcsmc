@@ -124,3 +124,9 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     }
 
 
+void ParticleContainer::duplicate_particles ( valarray<int> & sample_count ){
+    #pragma omp parallel for schedule(dynamic) 
+    for ( size_t i = 0 ;  i < this->particles.size(); i++ ){
+        this->particles[i]->making_copies( sample_count[i] ); 
+        }
+    }
