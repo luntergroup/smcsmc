@@ -83,19 +83,20 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
     }
 
 
-void ParticleContainer::resample(valarray<int> & sample_count){	
+void ParticleContainer::resample_for_check(valarray<int> & sample_count){	
     this->duplicate_particles ( sample_count );
     size_t Num_of_states = this->particles.size();
     
     for ( size_t i = 0 ;  i < Num_of_states; i++ ){
         if ( this->particles[i]->ForestState_copies.size() == 0 ){
             delete this->particles[i];
+            this->particles[i]=NULL;
             continue;
             }
         for ( size_t j = 0; j < this->particles[i]->ForestState_copies.size(); j++){
             this->push( this->particles[i]->ForestState_copies[j] );
             }
-
+        this->particles[i]=NULL;
         }
             
     this->shifting(sample_count.sum());
@@ -109,7 +110,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
  * 
  * \ingroup group_resample
  */ 
-void ParticleContainer::resample_for_check(valarray<int> & sample_count){	
+void ParticleContainer::resample(valarray<int> & sample_count){	
     dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
     dout<<"resampling is called"<<endl;

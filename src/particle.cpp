@@ -25,6 +25,9 @@
 #include <climits> // INT_MAX
 
 void ForestState::making_copies( int number_of_copies ){
+    for ( size_t i = 0; i < this->ForestState_copies.size(); i++){
+        this->ForestState_copies[i] = NULL;
+    }
     this->ForestState_copies.clear(); // clear previous pointers to the new copies
     
     if ( number_of_copies == 0 ) return;
@@ -41,7 +44,6 @@ void ForestState::making_copies( int number_of_copies ){
         //new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
         new_copy_state->model_ = new Model( *this->model_);
         //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
-        //this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
         this->ForestState_copies.push_back(new_copy_state);
         }
     assert( this->ForestState_copies.size() == (size_t)number_of_copies ); 
@@ -76,6 +78,7 @@ ForestState::ForestState( const ForestState & copied_state )
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
     this->segment_count_ = copied_state.segment_count_;
+    
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
         }
