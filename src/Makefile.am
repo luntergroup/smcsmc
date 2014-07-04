@@ -1,6 +1,6 @@
 bin_PROGRAMS = pf-ARG pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
-check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests
+check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests scrm_omp scrm_linear
 TESTS = unit_tests 
 
 PROG = PF-ARG 
@@ -15,6 +15,10 @@ pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fope
 #pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
 
 pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
+
+scrm_linear_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG  
+scrm_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp 
+
 
 #pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
 #pf_ARG_dbg_CXXFLAGS= -std=c++0x -fopenmp #options for showing debug messages
@@ -39,6 +43,9 @@ scrm_src = scrm/node.cc scrm/node.h \
         scrm/random/random_generator.cc \
         scrm/random/mersenne_twister.cc   scrm/random/random_generator.h \
         scrm/random/fastfunc.cc           scrm/random/fastfunc.h 
+        
+scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_main.cpp
+scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_main.cpp
 
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             scrm/forest-debug.cc \
