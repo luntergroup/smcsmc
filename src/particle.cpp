@@ -143,10 +143,10 @@ void ForestState::init_EventContainers( Model * model ){
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
-	this->clear_CoaleventContainer(); // This should be checking only, all events should have been removed in the counting process
-	this->clear_RecombeventContainer(); // This should be checking only, all events should have been removed in the counting process
-    this->clear_MigreventContainer(); // This should be checking only, all events should have been removed in the counting process	        
-    delete this->random_generator_;  //MULTITRHREADING
+	this->clear_CoaleventContainer();   
+	this->clear_RecombeventContainer(); 
+    this->clear_MigreventContainer();    
+    delete this->random_generator_;     //MULTITRHREADING
     delete this->model_;
     //delete_forest_counter++;
 	dout << "A Foreststate is deleted" << endl;

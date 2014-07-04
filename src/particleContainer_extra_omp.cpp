@@ -24,6 +24,8 @@
 #include "particleContainer.hpp"
 #include <omp.h>
 
+#define PARTICLES_PER_BLOCK 100
+
 //#ifdef _OPENMP
     //#include <omp.h>
     //#define TIMESCALE 1
@@ -42,10 +44,12 @@
 void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
     dout << endl<<" We are extending particles" << endl<<endl;    
     // USE MULTITHREADING ...
-
     //#pragma omp for schedule(dynamic,100) nowait    
-    #pragma omp parallel for schedule(dynamic) 
- 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
+    //#pragma omp parallel for schedule(dynamic) 
+    for (size_t particle_block=0; particle_block < (this->particles.size() + PARTICLES_PER_BLOCK - 1) / PARTICLES_PER_BLOCK; particle_block++) {
+ 	  for (size_t particle_i=PARTICLES_PER_BLOCK*particle_block; 
+		   particle_i < min(PARTICLES_PER_BLOCK * (particle_block+1), this->particles.size()); 
+		   particle_i++) {
         
         //cout << "Hello World from thread " << omp_get_thread_num() << '\n';
         dout << "We are updating particle " << particle_i << endl;
@@ -91,13 +95,14 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
                 
                 }
             
-            }
+		    }
         
         assert (updated_to == mutation_at);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
         //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;
         
         }
+      }
     
     
     /*! normalize the probability upon until the mutation */
@@ -118,8 +123,12 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
-    #pragma omp parallel for schedule(dynamic) 
-	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
+    //#pragma omp parallel for schedule(dynamic) 
+    for (size_t particle_block=0; particle_block < (this->particles.size() + PARTICLES_PER_BLOCK - 1) / PARTICLES_PER_BLOCK; particle_block++) {
+ 	  for (size_t particle_i=PARTICLES_PER_BLOCK*particle_block; 
+		   particle_i < min(PARTICLES_PER_BLOCK * (particle_block+1), this->particles.size()); 
+		   particle_i++) {
+			   
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
 		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
@@ -129,15 +138,19 @@ void ParticleContainer::update_state_weights_at_A_single_site(
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
 		dout << "particle " <<  particle_i<<" done" << endl;
         }
-    
+    }
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
     }
 
 
 void ParticleContainer::duplicate_particles ( valarray<int> & sample_count ){
-    #pragma omp parallel for schedule(dynamic) 
-    for ( size_t i = 0 ;  i < this->particles.size(); i++ ){
+    //#pragma omp parallel for schedule(dynamic) 
+    for (size_t particle_block=0; particle_block < (this->particles.size() + PARTICLES_PER_BLOCK - 1) / PARTICLES_PER_BLOCK; particle_block++) {
+ 	  for (size_t i=PARTICLES_PER_BLOCK*particle_block; 
+		   i < min(PARTICLES_PER_BLOCK * (particle_block+1), this->particles.size()); 
+		   i++) {
         this->particles[i]->making_copies( sample_count[i] ); 
         }
     }
+}

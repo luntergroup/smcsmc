@@ -37,7 +37,10 @@ class CountModel: public Model{
         // Constructors and Destructors
         //    
         //CountModel():Model(){};     
-        CountModel(const Model& model, double lag = 0 ):Model( model ){ this->const_lag_ = lag; };
+        CountModel(const Model& model, double lag = 0, double minimal_lag_update_ratio = 0.10 ) : Model( model ){ 
+			this->const_lag_ = lag;
+			this->const_minimal_lag_update_ratio_ = minimal_lag_update_ratio; 
+		};
         ~CountModel(){};
         
         //
@@ -96,7 +99,8 @@ class CountModel: public Model{
         
         double recomb_count_;
         double recomb_opportunity_;
-        double const_lag_;                
+        double const_lag_;               
+        double const_minimal_lag_update_ratio_; 
         double inferred_recomb_rate;
         double update_param_threshold_;
         double update_param_interval_;
