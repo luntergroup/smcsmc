@@ -22,8 +22,19 @@
 */
 
 #include "particleContainer.hpp"
-#include <omp.h> 
+#include <omp.h>
 
+//#ifdef _OPENMP
+    //#include <omp.h>
+    //#define TIMESCALE 1
+//#else
+    //#define omp_get_thread_num() 0
+    //#define omp_get_num_procs() 0
+    //#define omp_get_num_threads() 1
+    //#define omp_set_num_threads(bob) 0
+    //#define omp_get_wtime() clock()
+    //#define TIMESCALE CLOCKS_PER_SEC
+//#endif
 /*! 
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
@@ -107,7 +118,7 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
-    //#pragma omp parallel for schedule(dynamic) 
+    #pragma omp parallel for schedule(dynamic) 
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
@@ -125,7 +136,7 @@ void ParticleContainer::update_state_weights_at_A_single_site(
 
 
 void ParticleContainer::duplicate_particles ( valarray<int> & sample_count ){
-    //#pragma omp parallel for schedule(dynamic) 
+    #pragma omp parallel for schedule(dynamic) 
     for ( size_t i = 0 ;  i < this->particles.size(); i++ ){
         this->particles[i]->making_copies( sample_count[i] ); 
         }

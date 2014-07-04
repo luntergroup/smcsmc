@@ -37,8 +37,8 @@ class TestForestState : public CppUnit::TestCase {
         cout<<endl;
         //CPPUNIT_ASSERT(new_state.printTree());
         
-        delete rg;
-        delete new_state.writable_model();
+        //delete rg;
+        //delete new_state.writable_model();
     }
      
     
