@@ -7,7 +7,7 @@
 #include "scrm/random/random_generator.h"
 #include "scrm/random/mersenne_twister.h"
 #include <omp.h>
-
+#include <climits> // INT_MAX
 
 #ifndef UNITTEST
 int main(int argc, char *argv[]){
@@ -39,6 +39,8 @@ int main(int argc, char *argv[]){
     // Loop over the independent samples
     #pragma omp parallel for schedule(dynamic) 
     for (size_t rep_i=0; rep_i < top_model.loci_number(); ++rep_i) {
+      size_t new_seed = (size_t) rg.sampleInt( INT_MAX );
+      RandomGenerator* new_rg = new MersenneTwister( new_seed , rg.ff() ); 
 
       Model* tmp_model = new Model(top_model);
       cout <<" doing " <<rep_i<<"th rep"<<endl;
@@ -46,7 +48,7 @@ int main(int argc, char *argv[]){
       //*output << std::endl << "//" << std::endl;
 
       // Now set up the ARG, and sample the initial tree
-      Forest forest = Forest(tmp_model, &rg);
+      Forest forest = Forest(tmp_model, new_rg);
       forest.buildInitialTree();
       //forest.printSegmentSumStats(*output);
 
