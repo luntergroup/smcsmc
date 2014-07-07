@@ -228,6 +228,6 @@ void pfARG_core(PfParam &pfARG_para,
     pfARG_para.appending_Ne_file( append_to_history_file );
 
     current_states.clear(); // This line is sufficient to clear the memory.
-    VCFfile->reset_VCF_to_data();
+    VCFfile->reset_data_to_first_entry();
     
     } // End of void pfARG_core( ... )

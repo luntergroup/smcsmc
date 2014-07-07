@@ -50,7 +50,14 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Input files
         // ------------------------------------------------------------------
         else if ( argv_i == "-vcf"  ){ this->nextArg(); 
-                                       this->vcf_NAME = argv_[argc_i]; }        
+                                       this->input_variantFileName = argv_[argc_i]; 
+                                       this->FileType = VCF; /* need to check suffix */ }
+        else if ( argv_i == "-gvcf"  ){ this->nextArg(); 
+                                       this->input_variantFileName = argv_[argc_i]; 
+                                       this->FileType = GVCF; /* need to check suffix */ }
+        else if ( argv_i == "-rgvcf"  ){ this->nextArg(); 
+                                       this->input_variantFileName = argv_[argc_i]; 
+                                       this->FileType = RGVCF; /* need to check suffix */ }                                                                              
         else if ( argv_i == "-buff" ){ this->buff_length = this->readNextInput<int>(); }    
         else if ( argv_i == "-ghost"){ this->ghost = readNextInput<int>(); }          
         
@@ -126,6 +133,7 @@ void PfParam::init(){
     this->EM_steps         = 0;
     this->EM_bool          = false;
     
+    this->FileType         = EMPTY;
     this->VCFfile          = NULL;
     this->SCRMparam        = NULL;
     this->model = new Model();
@@ -168,7 +176,8 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
         }
 
-    if ( VCFfile->empty_file() ){
+    if ( this->FileType == EMPTY ){
+    //if ( VCFfile->empty_file() ){
         VCFfile->ghost_num_mut = this->ghost;
         VCFfile->set_even_interval( this->default_loci_length / VCFfile->ghost_num_mut );
         }            
@@ -177,10 +186,11 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
 
     
 void PfParam::insert_sample_size_in_scrm_input (  ){
-    size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
-    if ( VCFfile->empty_file() ){    
-        nsam = this->default_nsam;
-        }    
+    size_t nsam = ( this->FileType == EMPTY ) ? this->default_nsam: 2*VCFfile->nsam(); // Extract number of samples from VCF file
+    //size_t nsam = 2*VCFfile->nsam(); // Extract number of samples from VCF file
+    //if ( VCFfile->empty_file() ){    
+        //nsam = this->default_nsam;
+        //}    
     this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input; 
     }
 
@@ -216,7 +226,7 @@ void PfParam::convert_scrm_input (){
 
 void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
-    this->VCFfile =  new VariantReader(this->vcf_NAME, this->buff_length);
+    this->VCFfile =  new VariantReader(this->input_variantFileName, this->FileType, this->buff_length);
     this->VCFfile->filter_window_ = this->filter_window_;
     this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
     
@@ -254,9 +264,7 @@ int PfParam::log( ){
 
 void PfParam::log_param( ){
     ofstream log_file;
-    string emptyfile("EMPTY FILE");
-    string vcf_file = ( vcf_NAME.size() > 0 ) ?  vcf_NAME : emptyfile;
-    
+
     log_file.open (log_NAME.c_str(), ios::out | ios::app | ios::binary); 
     
     log_file << "pf-ARG parameters: \n";
@@ -271,7 +279,8 @@ void PfParam::log_param( ){
         //}
     
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
-    log_file << "VCF data file: "        << vcf_file    <<"\n";
+    log_file << (( FileType == VCF ) ? "vcf" : "") << ( ( FileType == GVCF )? "gvcf" : "" ) << ( ( FileType == RGVCF )? "rgvcf":"" ) << " Data file: " ;
+    log_file << (( FileType == EMPTY )? "empty" : input_variantFileName.c_str() ) << "\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
     if (lag > 0){
         log_file << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";

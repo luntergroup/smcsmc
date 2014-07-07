@@ -1,6 +1,6 @@
 bin_PROGRAMS = pf-ARG pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
-check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests scrm_omp scrm_linear
+check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests 
 TESTS = unit_tests 
 
 PROG = PF-ARG 
@@ -16,9 +16,6 @@ pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fope
 
 pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
 
-scrm_linear_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG  
-scrm_linear_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -DNDEBUG  
-scrm_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp 
 
 
 #pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
@@ -45,15 +42,15 @@ scrm_src = scrm/node.cc scrm/node.h \
         scrm/random/mersenne_twister.cc   scrm/random/random_generator.h \
         scrm/random/fastfunc.cc           scrm/random/fastfunc.h 
         
-scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
-scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
-scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
+#scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
+#scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
+#scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             scrm/forest-debug.cc \
             debug/particle-debug.cpp \
             debug/count-debug.cpp \
-            debug/vcf-debug.cpp
+            debug/variantReader-debug.cpp
 
 
 arg_src = coalevent.cpp \
@@ -62,7 +59,7 @@ arg_src = coalevent.cpp \
 
 count_src = count.cpp count-semi-debug.cpp 
        
-param_src = pattern.cpp pfparam.cpp vcf.cpp 
+param_src = pattern.cpp pfparam.cpp variantReader.cpp 
 
 series_src = particleContainer_extra.cpp count_extra.cpp
 
@@ -95,7 +92,7 @@ unit_tests_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_s
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
-                     tests/test_Vcf.cpp \
+                     tests/test_variantReader.cpp \
                      #tests/test_random_generator.cpp \
 		     #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)
@@ -106,7 +103,7 @@ unit_tests_LDADD= -L/home/joezhu/cppunit/cppunit-1.12.1/lib -lcppunit -ldl
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
 #unit_tests_LDADD= -L/usr/include 
 
-include_HEADERS = vcf.hpp pfparam.hpp particle.hpp pattern.hpp\
+include_HEADERS = variantReader.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/forest.h scrm/model.h scrm/node.h scrm/node_container.h \
                   scrm/time_interval.h scrm/tree_point.h \
                   scrm/random/constant_generator.h scrm/random/mersenne_twister.h \

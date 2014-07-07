@@ -41,11 +41,47 @@ using namespace std;
 #define dout 0 && std::cout
 #endif
 
-#ifndef VCF
-#define VCF
+#ifndef VARIANTREADER
+#define VARIANTREADER
+
+
+
+class Variant{
+    friend class VariantReader;
+
+    public:
+        int chrom() const { return this ->chrom_; }
+        int site() const { return this->site_; } 
+        vector <bool> vec_of_sample_alt_bool;
+        size_t nsam() const { return this->nsam_; } 
+        bool invariant() const { return this->invariant_; }
+
+    private:
+
+        Variant(){};
+
+        void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
+
+        size_t nsam_;
+
+        int site_;
+        int chrom_;
+
+        string ref;
+        vector <string> alt;
+        vector < vector<string> > sample_alt;
+        vector <string> sample_names;
+
+        vector <string> vec_of_sample_alt;
+        vector <bool> phased; // True if it is phased, which has '|'
+        
+        bool invariant_;
+    };
+
+enum INPUT_FILETYPE {EMPTY, VCF, GVCF, RGVCF};
 
 /*! \brief VCF file reader @ingroup group_data */
-class VariantReader{
+class VariantReader: public Variant{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
@@ -54,39 +90,28 @@ class VariantReader{
     #endif
 
     public:
-    
-        //
         // Constructors and Destructors
-        //            
-        VariantReader(string file_name, int buffer_length = 100);
+        VariantReader(string file_name, INPUT_FILETYPE FileType_in = EMPTY, int buffer_length = 100);
         ~VariantReader(){};        
         
-        //
         // Methods
-        //   
         void read_new_line();
-        void reset_VCF_to_data();
+        void reset_data_to_first_entry();
         void force_to_end_data() { this->end_data_ = true; }
         
         // DEBUG
-        void print_vcf_line(vector<string> sample_names);
+        void print_vcf_line();
         void print();
         
         //
         // Getters:
         //
-        int site() const { return this->site_; } 
         //bool withdata() const { return this->withdata_; }
         void set_missding_data ( bool TRUEorFALSE ) { this->missing_data_ = TRUEorFALSE ; }
         bool missing_data() const { return this->missing_data_; }
-        bool empty_file() const { return this->empty_file_; }
+        //bool empty_file() const { return this->empty_file_; }
 
         bool end_data() const { return this->end_data_; }
-
-        //
-        // Members
-        //                 
-        vector <bool> vec_of_sample_alt_bool;
 
     private:
 
@@ -95,16 +120,10 @@ class VariantReader{
         //   
         void empty_block();
         void read_new_block();
-        void init(string infile_name, int buffer_length);
+        void init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in);
 
-        //
         //  Setters and getters:
-        // 
-        size_t nsam() const { return this->nsam_; }
- 
-        void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
         size_t nfield() const { return this->nfield_; }    
-        int chrom() const { return this ->chrom_; }
 
         bool eof() const { return this->eof_; }
         int even_interval() const { return this-> even_interval_; }
@@ -118,6 +137,7 @@ class VariantReader{
         // Members
         //   
         
+        INPUT_FILETYPE FileType;
         
         
         bool eof_;
@@ -125,7 +145,7 @@ class VariantReader{
         size_t current_line_index_; // line counter in the entire vcf file
         //bool withdata_;
         bool missing_data_;
-        bool empty_file_;
+        //bool empty_file_;
         size_t vcf_length_;
         bool end_data_;
         size_t end_pos_;
@@ -133,40 +153,28 @@ class VariantReader{
         
         //HEADER
         size_t header_end_pos_;
-        size_t nsam_;
         size_t nfield_;
         
         //VCFBODY
         size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
         
-        //VCFLINE
         
         //all these numbers can not be negative
-        int site_;
+        int pervious_chrom_;
         int previous_site_at_;
         int ghost_num_mut;
         int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.
         int missing_data_threshold_; // if two snps are too far away apart, treat as missing data
         int even_interval_; 
         
-        int chrom_;
-        int pervious_chrom_;
-        
-        
-        size_t vcf_file_length;
-        vector <string> sample_names;
+        //size_t vcf_file_length;
         size_t header_end_line;        
         int buffer_max_number_of_lines;
 
         vector <string> buffer_lines;
         
         bool skip;
-        string ref;
-        vector <string> alt;
-        vector < vector<string> > sample_alt;
-        vector <string> vec_of_sample_alt;
-        vector <bool> phased; // True if it is phased, which has '|'
 
     };
 

@@ -4,8 +4,7 @@
 
 #include "../src/pfparam.hpp"
 //#include "../src/usage.hpp"
-#include "../src/vcf.hpp"
-
+#include "../src/variantReader.hpp"
 #include "../src/scrm/param.h"
 #include "../src/scrm/model.h"
 #include "../src/scrm/forest.h"
@@ -27,7 +26,7 @@ class TestParam : public CppUnit::TestCase {
 
  private:
     Model model;
-    Vcf* vcf_file;
+    VariantReader* vcf_file;
     
  public:
   void testParse() {
@@ -198,7 +197,7 @@ class TestParam : public CppUnit::TestCase {
     
         char *argv1[] = { "pf-ARG"};
         PfParam pfARG_para1(1, argv1);
-        vcf_file =  new Vcf(pfARG_para1.vcf_NAME, pfARG_para1.buff_length);
+        vcf_file =  new VariantReader(pfARG_para1.vcf_NAME, pfARG_para1.buff_length);
         
         Param * scrm_para = new Param(1, argv1, false);    
         CPPUNIT_ASSERT_NO_THROW( scrm_para->parse(model) );
@@ -216,7 +215,7 @@ class TestParam : public CppUnit::TestCase {
         
         char *argv2[] = { "pf-ARG", "-vcf", "test6sample.vcf"};
         PfParam pfARG_para2(3, argv2);
-        vcf_file =  new Vcf(pfARG_para2.vcf_NAME, pfARG_para2.buff_length);
+        vcf_file =  new VariantReader(pfARG_para2.vcf_NAME, pfARG_para2.buff_length);
         CPPUNIT_ASSERT_EQUAL( (size_t)3, vcf_file->nsam());
         
         Param * scrm_para2 = new Param(3, argv2, false);    

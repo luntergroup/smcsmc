@@ -22,7 +22,7 @@
 */
 
 #include "scrm/param.h"
-#include "vcf.hpp"
+#include "variantReader.hpp"
 
 using namespace std;
 
@@ -154,7 +154,7 @@ class PfParam{
         double ESS_;   // scaled between zero and one
 
         // VCF related
-        string vcf_NAME; // vcf file name
+        string input_variantFileName; // vcf file name
         int buff_length; // number of lines vcf file read at once
         int ghost; // ghost snp, when no data is used, this is used for debugging
         int filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
@@ -173,6 +173,9 @@ class PfParam{
         //string BL_NAME;
         string SURVIVOR_NAME;
         int heat_seq_window;
+        
+        INPUT_FILETYPE FileType;
+        
     };
     
 #endif

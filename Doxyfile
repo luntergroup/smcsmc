@@ -682,8 +682,8 @@ src/pattern.hpp \
 src/pf-ARG.cpp \
 src/pfparam.cpp \
 src/pfparam.hpp \
-src/vcf.cpp \
-src/vcf.hpp \
+src/variantReader.cpp \
+src/variantReader.hpp \
 src/scrm/param.cc src/scrm/param.h \
 src/scrm/copy_forest.cc \
 src/scrm/node.cc src/scrm/node.h \

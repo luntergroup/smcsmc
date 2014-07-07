@@ -313,7 +313,9 @@ void ParticleContainer::update_state_to_data(
     this->extend_ARGs( mutation_at, mutation_rate, withdata );
     
     //Update weight for seeing mutation at the position 
-    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
+    
+    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->invariant(), VCFfile->vec_of_sample_alt_bool ); 
+    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
     ////this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
     
     //Update the cumulated probabilities, as well as computing the effective sample size

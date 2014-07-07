@@ -1,30 +1,30 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <boost/lexical_cast.hpp> 
+//#include <boost/lexical_cast.hpp> 
 
-#include "../src/vcf.hpp"
-
+#include "../src/variantReader.hpp"
+//#include "variantReader.hpp"
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
-class TestVcf : public CppUnit::TestCase {
+class TestVariantReader : public CppUnit::TestCase {
   
-    CPPUNIT_TEST_SUITE( TestVcf );
+    CPPUNIT_TEST_SUITE( TestVariantReader );
     
     CPPUNIT_TEST( test_Constructors ); 
     CPPUNIT_TEST( test_empty_file ); 
     CPPUNIT_TEST( test_new_block ); 
     CPPUNIT_TEST( test_empty_block );
-    CPPUNIT_TEST( test_reset_VCF_to_data );
+    CPPUNIT_TEST( test_reset_data_to_first_entry );
     CPPUNIT_TEST( test_read_NA18501 );    
     CPPUNIT_TEST_SUITE_END();
 
  private:
-    Vcf *vcf_file;
+    VariantReader *vcf_file;
     
  public:
     
     void test_empty_file(){
-        vcf_file = new Vcf( "" );
+        vcf_file = new VariantReader( "" );
         int testing_even_interval = 1000 ;
         CPPUNIT_ASSERT_NO_THROW( vcf_file->even_interval_ = testing_even_interval );
         CPPUNIT_ASSERT_EQUAL( string(""), vcf_file->file_name_ );
@@ -57,7 +57,7 @@ class TestVcf : public CppUnit::TestCase {
         }  
     
     void test_Constructors() {
-        vcf_file = new Vcf("tests/test2sample.vcf");
+        vcf_file = new VariantReader("tests/test2sample.vcf");
         CPPUNIT_ASSERT_EQUAL(string("tests/test2sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 3227 characters
 
@@ -94,7 +94,7 @@ class TestVcf : public CppUnit::TestCase {
         delete vcf_file;
         
         
-        vcf_file = new Vcf("tests/test4sample.vcf");
+        vcf_file = new VariantReader("tests/test4sample.vcf");
         CPPUNIT_ASSERT_EQUAL(string("tests/test4sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 6518 characters
 
@@ -135,7 +135,7 @@ class TestVcf : public CppUnit::TestCase {
         
         delete vcf_file;
 
-        vcf_file = new Vcf("tests/test6sample.vcf");
+        vcf_file = new VariantReader("tests/test6sample.vcf");
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 13813 characters
 
@@ -205,7 +205,7 @@ class TestVcf : public CppUnit::TestCase {
     
     void test_empty_block(){
         int buff_len = 10;
-        vcf_file = new Vcf("tests/test6sample.vcf", buff_len);
+        vcf_file = new VariantReader("tests/test6sample.vcf", buff_len);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
         CPPUNIT_ASSERT_EQUAL(size_t(buff_len), vcf_file->buffer_lines.size());
@@ -221,7 +221,7 @@ class TestVcf : public CppUnit::TestCase {
     
     void test_new_block(){
         int buff_len = 3;
-        vcf_file = new Vcf("tests/test6sample.vcf", buff_len);
+        vcf_file = new VariantReader("tests/test6sample.vcf", buff_len);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
 //1       0       rs0     A       T       67      PASS    NS=2;   GT      0|0     1|0     0|0
@@ -311,8 +311,8 @@ class TestVcf : public CppUnit::TestCase {
     
 
     
-    void test_reset_VCF_to_data(){
-        vcf_file = new Vcf("tests/test6sample.vcf");
+    void test_reset_data_to_first_entry(){
+        vcf_file = new VariantReader("tests/test6sample.vcf");
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
@@ -336,7 +336,7 @@ class TestVcf : public CppUnit::TestCase {
         
         
         
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->reset_VCF_to_data());
+        CPPUNIT_ASSERT_NO_THROW(vcf_file->reset_data_to_first_entry());
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
          * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
@@ -356,7 +356,7 @@ class TestVcf : public CppUnit::TestCase {
         }  
     
     void test_read_NA18501(){
-        vcf_file = new Vcf("tests/NA18501_CHROM1.vcf");
+        vcf_file = new VariantReader("tests/NA18501_CHROM1.vcf");
         vcf_file->filter_window_ = 100;
         CPPUNIT_ASSERT_EQUAL(string("tests/NA18501_CHROM1.vcf"), vcf_file->file_name_);
         // Just initialized, read buffer line: 
@@ -463,4 +463,4 @@ class TestVcf : public CppUnit::TestCase {
     };
 
 //Uncomment this to activate the test
-CPPUNIT_TEST_SUITE_REGISTRATION( TestVcf );
+CPPUNIT_TEST_SUITE_REGISTRATION( TestVariantReader );

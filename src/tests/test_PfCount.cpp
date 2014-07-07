@@ -4,8 +4,7 @@
 
 #include "../src/pfparam.hpp"
 //#include "../src/usage.hpp"
-#include "../src/vcf.hpp"
-
+#include "../src/variantReader.hpp"
 #include "../src/scrm/param.h"
 #include "../src/scrm/model.h"
 #include "../src/scrm/forest.h"

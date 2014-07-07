@@ -21,10 +21,10 @@
 
 */
 
+//#include "../src/variantReader.hpp"
+#include"variantReader.hpp"
 
-#include"vcf.hpp"
-
-void Vcf::print_vcf_line( vector<string> sample_names ){
+void VariantReader::print_vcf_line( ){
     dout << "CHROM = " <<chrom_<<endl;
     dout << "POS = " << site_ <<endl;
     for (size_t i=0;i<sample_names.size();i++){
@@ -36,14 +36,14 @@ void Vcf::print_vcf_line( vector<string> sample_names ){
     }
 
 
-void Vcf::print(){
+void VariantReader::print(){
     for (size_t i = 0; i < vec_of_sample_alt_bool.size(); i++){
             cout << vec_of_sample_alt_bool[i]<<" ";
         } cout << endl;
     }
         
     
-bool Vcf::print_sample_name(){
+bool VariantReader::print_sample_name(){
     dout << "Sample names:" << endl;
     for (size_t i = 0; i < this->nsam(); i++){
         dout << sample_names[i]<<" ";

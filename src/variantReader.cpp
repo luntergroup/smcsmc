@@ -22,14 +22,14 @@
 */
 
 
-#include"vcf.hpp"
+#include"variantReader.hpp"
 using namespace std;
 
 /*! Initialize vcf file, search for the end of the vcf header. 
  *  Extract the first block of data ( "buffer_length" lines ) into buff
  */
-VariantReader::VariantReader(string file_name, int buffer_length){ /*! Initialize by read in the vcf header file */
-    this->init(file_name, buffer_length);
+VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int buffer_length){ /*! Initialize by read in the vcf header file */
+    this->init(file_name, buffer_length, FileType_in);
     
     ifstream in_file;
     in_file.open(file_name.c_str());
@@ -41,7 +41,7 @@ VariantReader::VariantReader(string file_name, int buffer_length){ /*! Initializ
     header_end_pos_=0;
     header_end_line=0;
     in_file.seekg (0, in_file.end);
-    vcf_file_length = in_file.tellg();
+    //vcf_file_length = in_file.tellg();
     in_file.seekg (0, in_file.beg);
     if (in_file.good()){
         getline (in_file,line);
@@ -73,29 +73,10 @@ VariantReader::VariantReader(string file_name, int buffer_length){ /*! Initializ
     this->read_new_block(); // END by start reading a block
     }
     
-
-void VariantReader::reset_VCF_to_data(){
-    /*! Reset the data to the first line, end of the header file 
-     *  Extract new block of data
-     */ 
-    this->end_pos_            = this->header_end_pos_;
-    this->end_data_           = false;
-    this->eof_                = false;
-    this->current_line_index_ = 0;    
-    this->current_block_line_ = 0;
-    this->site_               = 0;
-    this->previous_site_at_   = 0;
-    this->chrom_              = 0;
-    this->pervious_chrom_     = 0;
-    if ( this->empty_file() ){ this->empty_file_line_counter_ = 0;  }
-    //this->empty_file_line_counter_ = 0;
-    this->read_new_block();
-    }
-    
-    
-void VariantReader::init(string infile_name, int buffer_length){
+void VariantReader::init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in){
     /*! Initialize the VariantReader class members
      */
+    this->FileType = FileType_in; 
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
@@ -113,9 +94,31 @@ void VariantReader::init(string infile_name, int buffer_length){
     this->eof_                       = false;
     this->end_data_                  = false;
     this->buffer_max_number_of_lines = buffer_length;
-    this->file_name_                 = infile_name;    
-    this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
+    this->file_name_                 = infile_name;
+    this->invariant_ = ( this->FileType == EMPTY ) ? true : false ;
+    //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
     }
+
+
+void VariantReader::reset_data_to_first_entry(){
+    /*! Reset the data to the first line, end of the header file 
+     *  Extract new block of data
+     */ 
+    this->end_pos_            = this->header_end_pos_;
+    this->end_data_           = false;
+    this->eof_                = false;
+    this->current_line_index_ = 0;    
+    this->current_block_line_ = 0;
+    this->site_               = 0;
+    this->previous_site_at_   = 0;
+    this->chrom_              = 0;
+    this->pervious_chrom_     = 0;
+    if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0;  }
+    this->read_new_block();
+    }
+    
+    
+
 
 
 void VariantReader::read_new_line(){
@@ -293,7 +296,7 @@ void VariantReader::read_new_block(){
     buffer_lines.clear();
     current_block_line_ = 0;
 
-    if ( this->empty_file() ){
+    if ( this->FileType == EMPTY ){
         this->site_ = 0;
         this->eof_=true;
         return;
@@ -320,8 +323,7 @@ void VariantReader::read_new_block(){
 
 
 string VariantReader::extract_alt_(string tmp_str, size_t start, size_t end){
-    /*! Extract haplotype
-     */ 
+    /*! Extract haplotype */ 
     size_t alt_index = strtol (tmp_str.substr(start,end-start).c_str(), NULL, 0);
     string alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
     return alt_dummy;
