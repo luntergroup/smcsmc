@@ -112,6 +112,7 @@ class VariantReader: public Variant{
         //bool empty_file() const { return this->empty_file_; }
 
         bool end_data() const { return this->end_data_; }
+        INPUT_FILETYPE FileType;
 
     private:
 
@@ -137,7 +138,6 @@ class VariantReader: public Variant{
         // Members
         //   
         
-        INPUT_FILETYPE FileType;
         
         
         bool eof_;

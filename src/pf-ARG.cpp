@@ -158,7 +158,8 @@ void pfARG_core(PfParam &pfARG_para,
          */ 
          
         
-        if ( !VCFfile->empty_file() && VCFfile->site() >= model->loci_length() ){ 
+        //if ( !VCFfile->empty_file() && VCFfile->site() >= model->loci_length() ){ 
+        if ( VCFfile->FileType!=EMPTY && VCFfile->site() >= model->loci_length() ){ 
             cout<<" VCF data is beyond loci length"<<endl;
             VCFfile->force_to_end_data();
             //countNe->extract_and_update_count( current_states , VCFfile->site() ); // I think this is not necessary here, as we will do it anyway ...
@@ -214,7 +215,8 @@ void pfARG_core(PfParam &pfARG_para,
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
     bool with_data_to_the_end = true;
     current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
-      
+    // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
+    // should include coalescent events as well ...
     current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
     cout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 

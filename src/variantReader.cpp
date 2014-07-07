@@ -133,7 +133,7 @@ void VariantReader::read_new_line(){
     phased.clear(); // True if it is phased, which has '|'
     
     
-    if ( this->empty_file() ){
+    if ( this->FileType == EMPTY ){
         this->set_missding_data ( true );
         this->empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
