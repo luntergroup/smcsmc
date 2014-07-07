@@ -258,7 +258,7 @@ void ParticleContainer::normalize_probability(){
 
 
 void ParticleContainer::update_state_to_data(
-                        Vcf * VCFfile, 
+                        VariantReader * VCFfile, 
                         Model * model, 
                         valarray<double> & weight_cum_sum
                         //bool finite_bool

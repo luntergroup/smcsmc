@@ -48,7 +48,7 @@ class ParticleContainer{
         //
         // Methods
         //   
-        void update_state_to_data(Vcf * VCFfile, 
+        void update_state_to_data(VariantReader * VCFfile, 
                                   Model * model, 
                                   valarray<double> & weight_cum_sum);
                                   //bool finite_bool = false);

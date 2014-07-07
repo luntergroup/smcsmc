@@ -216,7 +216,7 @@ void PfParam::convert_scrm_input (){
 
 void PfParam::finalize(  ){
      /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
-    this->VCFfile =  new Vcf(this->vcf_NAME, this->buff_length);
+    this->VCFfile =  new VariantReader(this->vcf_NAME, this->buff_length);
     this->VCFfile->filter_window_ = this->filter_window_;
     this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
     

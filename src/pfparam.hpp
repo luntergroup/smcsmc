@@ -34,7 +34,7 @@ using namespace std;
  */ 
 class PfParam{
     #ifdef UNITTEST
-    //friend class TestVcf;
+    //friend class TestVariantReader;
     friend class TestParam;
     #endif
     friend class ParticleContainer;
@@ -77,7 +77,7 @@ class PfParam{
         bool heat_bool;
         //bool finite_bool;
 
-        Vcf * VCFfile;
+        VariantReader * VCFfile;
         Param *SCRMparam;
         Model *model;
         MersenneTwister *rg ;

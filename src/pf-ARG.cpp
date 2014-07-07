@@ -91,7 +91,7 @@ void pfARG_core(PfParam &pfARG_para,
     Model *model = pfARG_para.model;
     MersenneTwister *rg = pfARG_para.rg;
     size_t Nparticles = pfARG_para.N ;
-    Vcf *VCFfile = pfARG_para.VCFfile;
+    VariantReader *VCFfile = pfARG_para.VCFfile;
     
     VCFfile->read_new_line();
     cout<< "############# starting vcf file at base " <<VCFfile->site()<<endl;

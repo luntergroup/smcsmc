@@ -25,11 +25,9 @@
 #include<string>
 #include<fstream>
 #include<iostream>
-//#include<boost/assign/std/vector.hpp>
 #include<vector>
 #include<cassert>       // assert
 #include<stdexcept>      // std::invalid_argument
-#include<stdexcept>
 #include<stdlib.h>     /* strtol, strtod */
 #include<climits> // INT_MAX
 
@@ -47,11 +45,11 @@ using namespace std;
 #define VCF
 
 /*! \brief VCF file reader @ingroup group_data */
-class Vcf{
+class VariantReader{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
-    friend class TestVcf;
+    friend class TestVariantReader;
     friend class TestParam;
     #endif
 
@@ -60,8 +58,8 @@ class Vcf{
         //
         // Constructors and Destructors
         //            
-        Vcf(string file_name, int buffer_length = 100);
-        ~Vcf(){};        
+        VariantReader(string file_name, int buffer_length = 100);
+        ~VariantReader(){};        
         
         //
         // Methods

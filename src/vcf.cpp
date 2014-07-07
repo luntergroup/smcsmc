@@ -28,7 +28,7 @@ using namespace std;
 /*! Initialize vcf file, search for the end of the vcf header. 
  *  Extract the first block of data ( "buffer_length" lines ) into buff
  */
-Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf header file */
+VariantReader::VariantReader(string file_name, int buffer_length){ /*! Initialize by read in the vcf header file */
     this->init(file_name, buffer_length);
     
     ifstream in_file;
@@ -74,7 +74,7 @@ Vcf::Vcf(string file_name, int buffer_length){ /*! Initialize by read in the vcf
     }
     
 
-void Vcf::reset_VCF_to_data(){
+void VariantReader::reset_VCF_to_data(){
     /*! Reset the data to the first line, end of the header file 
      *  Extract new block of data
      */ 
@@ -93,8 +93,8 @@ void Vcf::reset_VCF_to_data(){
     }
     
     
-void Vcf::init(string infile_name, int buffer_length){
-    /*! Initialize the Vcf class members
+void VariantReader::init(string infile_name, int buffer_length){
+    /*! Initialize the VariantReader class members
      */
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
@@ -118,8 +118,8 @@ void Vcf::init(string infile_name, int buffer_length){
     }
 
 
-void Vcf::read_new_line(){
-    /*! Read Vcf data, extract mutation site and haplotype
+void VariantReader::read_new_line(){
+    /*! Read VariantReader data, extract mutation site and haplotype
      */ 
     this->current_line_index_++;
     
@@ -223,7 +223,7 @@ void Vcf::read_new_line(){
         skip = false;  // If all fields are good, do not skip
         }
     //
-    // CHECK END of Vcf
+    // CHECK END of VariantReader
     this->current_block_line_++;
     
     if ( (current_block_line_) == buffer_lines.size() ){ // END of the buff block
@@ -278,10 +278,10 @@ void Vcf::read_new_line(){
     }
 
 
-void Vcf::empty_block() { buffer_lines.clear(); }
+void VariantReader::empty_block() { buffer_lines.clear(); }
 
 
-void Vcf::read_new_block(){
+void VariantReader::read_new_block(){
     
     if (current_line_index_ == 0){
         cout << "Set data to the first entry, read a block of " <<  this->buffer_max_number_of_lines << " entries" <<endl;
@@ -319,7 +319,7 @@ void Vcf::read_new_block(){
     }
 
 
-string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
+string VariantReader::extract_alt_(string tmp_str, size_t start, size_t end){
     /*! Extract haplotype
      */ 
     size_t alt_index = strtol (tmp_str.substr(start,end-start).c_str(), NULL, 0);
@@ -328,7 +328,7 @@ string Vcf::extract_alt_(string tmp_str, size_t start, size_t end){
     }
     
 
-void Vcf::check_feilds(string line){
+void VariantReader::check_feilds(string line){
     size_t feild_start = 0;
     size_t feild_end = 0;
     int field_index = 0;

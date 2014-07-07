@@ -38,8 +38,7 @@ class Starevent{
         Starevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
-                  double opportunity,
-                  eventCode event_code );
+                  double opportunity, eventCode event_code );
         ~Starevent(){ };
     //
     protected:
@@ -47,9 +46,7 @@ class Starevent{
         void init();
         void clear();
 
-        //
         // Getters and setters
-        //
         size_t pop_i() const {return this->pop_i_; } 
         void set_pop_i( size_t i ){ this->pop_i_ = i; }
                  
@@ -73,6 +70,7 @@ class Starevent{
                 
         double base() const { return this->base_; }
         void set_base ( double base ) { this->base_ = base; }
+
         bool print_event( string event);
         
     private:
@@ -95,17 +93,14 @@ class Starevent{
 class Migrevent : public Starevent{
     friend class CountModel;
     public:
-        Migrevent(size_t pop_i, 
-                  size_t mig_pop,
+        Migrevent(size_t pop_i, size_t mig_pop,
                   //double start_time,
                   //double end_time, 
-                  double opportunity,
-                  eventCode event_code )
+                  double opportunity, eventCode event_code )
                  : Starevent ( pop_i, 
                     //start_time, 
                     //end_time, 
-                    opportunity, 
-                    event_code ){ 
+                    opportunity, event_code ){ 
                         this->set_mig_pop_i (mig_pop); 
                         assert( this->print_event() );
                         };
