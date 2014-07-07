@@ -1,4 +1,3 @@
-#bin_PROGRAMS = scrm_linear scrm_omp scrm_linear_prof
 bin_PROGRAMS = pf-ARG pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
 check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests scrm_omp scrm_linear
@@ -46,9 +45,9 @@ scrm_src = scrm/node.cc scrm/node.h \
         scrm/random/mersenne_twister.cc   scrm/random/random_generator.h \
         scrm/random/fastfunc.cc           scrm/random/fastfunc.h 
         
-scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_main.cpp
-scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_main.cpp
-scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_main.cpp
+scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
+scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
+scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             scrm/forest-debug.cc \
@@ -76,6 +75,7 @@ pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src)
 
 pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 #pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
+#pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
 
 #pf_ARG_prof_SOURCES = $(shared_SOURCES)  pf-ARG.cpp debug/usage.cpp 
 pf_ARG_prof_SOURCES = $(pf_ARG_SOURCES)  
