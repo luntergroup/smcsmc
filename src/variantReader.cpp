@@ -96,6 +96,7 @@ void VariantReader::init(string infile_name, int buffer_length, INPUT_FILETYPE F
     this->buffer_max_number_of_lines = buffer_length;
     this->file_name_                 = infile_name;
     this->invariant_ = ( this->FileType == EMPTY ) ? true : false ;
+    this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
     }
 
@@ -114,6 +115,7 @@ void VariantReader::reset_data_to_first_entry(){
     this->chrom_              = 0;
     this->pervious_chrom_     = 0;
     if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0;  }
+    //this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     this->read_new_block();
     }
     
@@ -134,7 +136,8 @@ void VariantReader::read_new_line(){
     
     
     if ( this->FileType == EMPTY ){
-        this->set_missding_data ( true );
+        //this->set_missding_data ( true );
+        //this->prior_seq_state = MISSING; 
         this->empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
@@ -143,7 +146,8 @@ void VariantReader::read_new_line(){
         return;    
     }
     
-    this->set_missding_data ( false ); // Inialize missing data to false, assume that the current line is ok
+    //this->set_missding_data ( false ); // Inialize missing data to false, assume that the current line is ok
+    this->prior_seq_state = SEQ_INVARIANT;
     string line = this->buffer_lines[current_block_line_];
     size_t feild_start=0;
     size_t feild_end=0;
@@ -177,6 +181,7 @@ void VariantReader::read_new_line(){
             if ( ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
                 cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
                 //cout << "skipping: "<< line << endl; // DEBUG
+                this->current_variant_state = OTHER_VARIANT;
                 break;
                 }            
             }
@@ -189,6 +194,7 @@ void VariantReader::read_new_line(){
                 alt_str=tmp_str.substr(alt_start,alt_end);
                 if ( alt_str.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
                     cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to insertion" << endl;
+                    this->current_variant_state = OTHER_VARIANT;
                     alt_not_valid = true;
                     break;
                     }
@@ -256,7 +262,8 @@ void VariantReader::read_new_line(){
     // If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line. 
     if ( (site_ - previous_site_at_) > missing_data_threshold_ ){
         cout << " New data ( "<< site_ <<" ) is too far away from previous (" << previous_site_at_ << "), treat as missing data" << endl;
-        this->set_missding_data ( true );
+        //this->set_missding_data ( true );
+        this->prior_seq_state = MISSING;
         }            
     // If it is not skipped, overwrite the previous site and chrom
     previous_site_at_ = site_; // If the current line is valid, update the previous site to the current site.

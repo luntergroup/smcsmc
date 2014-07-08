@@ -22,21 +22,21 @@
 */
 
 #include "particleContainer.hpp"
-#include <omp.h>
+//#include <omp.h>
 
 #define PARTICLES_PER_BLOCK 100
 
-//#ifdef _OPENMP
-    //#include <omp.h>
-    //#define TIMESCALE 1
-//#else
-    //#define omp_get_thread_num() 0
-    //#define omp_get_num_procs() 0
-    //#define omp_get_num_threads() 1
-    //#define omp_set_num_threads(bob) 0
-    //#define omp_get_wtime() clock()
-    //#define TIMESCALE CLOCKS_PER_SEC
-//#endif
+#ifdef _OPENMP
+    #include <omp.h>
+    #define TIMESCALE 1
+#else
+    #define omp_get_thread_num() 0
+    #define omp_get_num_procs() 0
+    #define omp_get_num_threads() 1
+    #define omp_set_num_threads(bob) 0
+    #define omp_get_wtime() clock()
+    #define TIMESCALE CLOCKS_PER_SEC
+#endif
 /*! 
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.

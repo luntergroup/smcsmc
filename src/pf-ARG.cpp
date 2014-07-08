@@ -42,8 +42,8 @@ int main(int argc, char *argv[]){
     /*! Extract pfARG parameters */
     PfParam pfARG_para( argc, argv );
     
-    if ( argc==1 ){
-        //pfARG_para.print_help();
+    if ( argc == 1 ){
+        pfARG_para.print_help();
         } 
     try {//else, proceed
         

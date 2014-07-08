@@ -266,7 +266,8 @@ void ParticleContainer::update_state_to_data(
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
-    bool withdata = !VCFfile->missing_data();
+    //bool withdata = !VCFfile->missing_data();
+    bool withdata = VCFfile->prior_seq_state == SEQ_INVARIANT;
     double mutation_rate = model->mutation_rate();
     
     /*!
@@ -480,7 +481,7 @@ void ParticleContainer::set_particles_with_random_weight(){
         }
     }
 
-
+// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
 void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
     for (size_t i = 0; i < this->particles.size(); i++){
         double opportunity_x = seqend - this->particles[i]->current_base();

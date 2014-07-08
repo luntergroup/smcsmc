@@ -40,9 +40,7 @@ class PfParam{
     friend class ParticleContainer;
     public:
         
-        //
         // Constructors and Destructors
-        //              
         PfParam(int argc, char *argv[]);            
         ~PfParam();
         
@@ -73,9 +71,9 @@ class PfParam{
         double lag;            
         bool online_bool;
 
-        //bool hist_bool;
         bool heat_bool;
         //bool finite_bool;
+        //bool hist_bool;
 
         VariantReader * VCFfile;
         Param *SCRMparam;
@@ -90,8 +88,7 @@ class PfParam{
 
         //
         // Methods
-        //   
-        
+        //           
         void init();
         void insert_mutation_rate_in_scrm_input ( );
         void insert_recomb_rate_and_seqlen_in_scrm_input ( );
@@ -123,9 +120,7 @@ class PfParam{
             return input;
             }
             
-        //
         // Members
-        //  
         const int argc_;
         int argc_i;
         char * const* argv_;
@@ -148,7 +143,8 @@ class PfParam{
 
         // ------------------------------------------------------------------
         // Input 
-        // ------------------------------------------------------------------
+        // ------------------------------------------------------------------        
+        INPUT_FILETYPE FileType;
         string pattern;     /*! population segement pattern */
         double top_t;
         double ESS_;   // scaled between zero and one
@@ -161,7 +157,7 @@ class PfParam{
         int missing_data_threshold_;
 
         // ------------------------------------------------------------------
-        // Output 
+        // Output Related
         // ------------------------------------------------------------------
         bool log_bool;            
         string out_NAME_prefix;            
@@ -173,8 +169,6 @@ class PfParam{
         //string BL_NAME;
         string SURVIVOR_NAME;
         int heat_seq_window;
-        
-        INPUT_FILETYPE FileType;
         
     };
     

@@ -45,9 +45,21 @@ using namespace std;
 #define VARIANTREADER
 
 
+enum INPUT_FILETYPE {EMPTY, VCF, GVCF, RGVCF};
+enum Variant_State {SNP, INVARIANT, OTHER_VARIANT};
+enum Seq_State { MISSING, SEQ_INVARIANT};
 
-class Variant{
-    friend class VariantReader;
+/*!
+ * P1 ----------- P2 ___________ P3
+ * 
+ * ----: INVARIANT
+ * ____: MISSING
+ * 
+ * Let P denote Variant position, at position P, the state can be a SNP, INVARIANT or OTHER_VARIANT(indel, insertion, or deletion)
+ * Between two positions P1 and P2, the sequence state (from position P1 to P2) can be missing data, or INVARIANT
+ */ 
+class VariantPosition{
+    //friend class VariantReader;
 
     public:
         int chrom() const { return this ->chrom_; }
@@ -56,10 +68,11 @@ class Variant{
         size_t nsam() const { return this->nsam_; } 
         bool invariant() const { return this->invariant_; }
 
-    private:
-
-        Variant(){};
-
+    protected:
+        
+        VariantPosition(){};
+        Variant_State current_variant_state;
+        Seq_State prior_seq_state;
         void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
 
         size_t nsam_;
@@ -75,13 +88,12 @@ class Variant{
         vector <string> vec_of_sample_alt;
         vector <bool> phased; // True if it is phased, which has '|'
         
-        bool invariant_;
+        bool invariant_; // If a "Variant" is invariant (True), it is treated as not a mutation
     };
 
-enum INPUT_FILETYPE {EMPTY, VCF, GVCF, RGVCF};
 
 /*! \brief VCF file reader @ingroup group_data */
-class VariantReader: public Variant{
+class VariantReader: public VariantPosition{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
@@ -107,8 +119,8 @@ class VariantReader: public Variant{
         // Getters:
         //
         //bool withdata() const { return this->withdata_; }
-        void set_missding_data ( bool TRUEorFALSE ) { this->missing_data_ = TRUEorFALSE ; }
-        bool missing_data() const { return this->missing_data_; }
+        //void set_missding_data ( bool TRUEorFALSE ) { this->missing_data_ = TRUEorFALSE ; }
+        //bool missing_data() const { return this->missing_data_; }
         //bool empty_file() const { return this->empty_file_; }
 
         bool end_data() const { return this->end_data_; }
@@ -134,43 +146,41 @@ class VariantReader: public Variant{
         string extract_alt_(string tmp_str, size_t start, size_t end);
         bool print_sample_name();
         
-        //
         // Members
-        //   
         
-        
-        
+        // FILE related
         bool eof_;
         string file_name_;
         size_t current_line_index_; // line counter in the entire vcf file
-        //bool withdata_;
-        bool missing_data_;
-        //bool empty_file_;
         size_t vcf_length_;
         bool end_data_;
         size_t end_pos_;
+        int buffer_max_number_of_lines;
         
-        
-        //HEADER
+        // Header related
         size_t header_end_pos_;
         size_t nfield_;
+        size_t header_end_line;        
         
-        //VCFBODY
+        // Block related
         size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
+
+        //bool withdata_;
+        //bool missing_data_;
+        //bool empty_file_;
         
         
         //all these numbers can not be negative
         int pervious_chrom_;
         int previous_site_at_;
+
         int ghost_num_mut;
         int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.
         int missing_data_threshold_; // if two snps are too far away apart, treat as missing data
         int even_interval_; 
         
         //size_t vcf_file_length;
-        size_t header_end_line;        
-        int buffer_max_number_of_lines;
 
         vector <string> buffer_lines;
         
