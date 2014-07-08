@@ -28,9 +28,13 @@ using namespace std;
 /*! Initialize vcf file, search for the end of the vcf header. 
  *  Extract the first block of data ( "buffer_length" lines ) into buff
  */
-VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int buffer_length){ /*! Initialize by read in the vcf header file */
-    this->init(file_name, buffer_length, FileType_in);
-    
+VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int buffer_length): buffer_max_number_of_lines(buffer_length)
+{ 
+    this->FileType = FileType_in; 
+    this->file_name_                 = file_name;
+    /*! Initialize by read in the vcf header file */
+    this->init();
+
     ifstream in_file;
     in_file.open(file_name.c_str());
     in_file.seekg (0, in_file.end);
@@ -73,10 +77,9 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
     this->read_new_block(); // END by start reading a block
     }
     
-void VariantReader::init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in){
-    /*! Initialize the VariantReader class members
+void VariantReader::init(){
+    /*! Initialize other VariantReader class members
      */
-    this->FileType = FileType_in; 
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
@@ -93,9 +96,8 @@ void VariantReader::init(string infile_name, int buffer_length, INPUT_FILETYPE F
     this->ghost_num_mut            = 0;
     this->eof_                       = false;
     this->end_data_                  = false;
-    this->buffer_max_number_of_lines = buffer_length;
-    this->file_name_                 = infile_name;
-    this->invariant_ = ( this->FileType == EMPTY ) ? true : false ;
+    //this->invariant_ = ( this->FileType == EMPTY ) ? true : false ;
+    this->current_variant_state = ( this->FileType == EMPTY ) ? INVARIANT : SNP ;
     this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
     }
@@ -185,7 +187,8 @@ void VariantReader::read_new_line(){
                 break;
                 }            
             }
-
+// REQUIRES MORE WORK HERE!!!
+// IF THIS IS GVCF OR RGVCF FILE, ALT BASE IS "."
         else if ( field_index == 4 ){
             size_t alt_start=0;size_t alt_end=0; string alt_str;
             bool alt_not_valid = false;
@@ -212,7 +215,16 @@ void VariantReader::read_new_line(){
                 //cout << "skipping: "<< line << endl; // DEBUG
                 break;
                 }                       
-            }            
+            }
+        
+// REQUIRES MORE WORK HERE!!!        
+        else if ( field_index == 7 ){ // READ INFO FIELD, EXTRACT THE LENGTH OF MISSING BASE FROM RGVCF, OR EXTRACT THE LENGTH OF INVARIANT FROM GVCF
+            //if (tmp_str!="PASS"){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                //cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
+                ////cout << "skipping: "<< line << endl; // DEBUG
+                //break;
+                //}                       
+            }                            
 
         else if (field_index > 8){
             size_t bar_index=tmp_str.find('|',0);        

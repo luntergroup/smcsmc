@@ -59,14 +59,13 @@ enum Seq_State { MISSING, SEQ_INVARIANT};
  * Between two positions P1 and P2, the sequence state (from position P1 to P2) can be missing data, or INVARIANT
  */ 
 class VariantPosition{
-    //friend class VariantReader;
 
     public:
         int chrom() const { return this ->chrom_; }
         int site() const { return this->site_; } 
         vector <bool> vec_of_sample_alt_bool;
         size_t nsam() const { return this->nsam_; } 
-        bool invariant() const { return this->invariant_; }
+        //bool invariant() const { return this->invariant_; }
 
     protected:
         
@@ -88,7 +87,7 @@ class VariantPosition{
         vector <string> vec_of_sample_alt;
         vector <bool> phased; // True if it is phased, which has '|'
         
-        bool invariant_; // If a "Variant" is invariant (True), it is treated as not a mutation
+        //bool invariant_; // If a "Variant" is invariant (True), it is treated as not a mutation
     };
 
 
@@ -133,8 +132,9 @@ class VariantReader: public VariantPosition{
         //   
         void empty_block();
         void read_new_block();
-        void init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in);
-
+        //void init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in);
+        void init();
+        
         //  Setters and getters:
         size_t nfield() const { return this->nfield_; }    
 

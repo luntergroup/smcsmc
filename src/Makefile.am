@@ -67,8 +67,8 @@ omp_src = particleContainer_extra_omp.cpp count_extra_omp.cpp
 
 shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
 
-#pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
-pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
+pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
+#pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
 
 pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp $(omp_src)
 #pf_ARG_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
