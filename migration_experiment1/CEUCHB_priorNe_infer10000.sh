@@ -31,6 +31,6 @@ infer_mig_pattern="-eM 0.02599 1 -eM 0.03736 1 -eM 0.05044 1 "
     #do 
 TASK=$(expr ${SGE_TASK_ID} )
 outprefix=${prefix}rep${TASK}
-pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK}
+pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK} ${TASK} ${TASK}
     #done
 # should add pattern to this!
