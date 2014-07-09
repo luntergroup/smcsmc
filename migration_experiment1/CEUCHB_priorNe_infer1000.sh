@@ -27,9 +27,10 @@ pattern="1*3+25*2+1*4+1*6"
 tmax=8
 
 infer_mig_pattern="-eM 0.02599 1 -eM 0.03736 1 -eM 0.05044 1 "
-for TASK in 'seq $SGE_TASK_START $SGE_TASK_END';
-    do 
-    outprefix=${prefix}rep${TASK}
-    pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK}
-    done
+#for TASK in 'seq $SGE_TASK_START $SGE_TASK_END';
+    #do 
+TASK=$SGE_TASK_ID
+outprefix=${prefix}rep${TASK}
+pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK}
+    #done
 # should add pattern to this!
