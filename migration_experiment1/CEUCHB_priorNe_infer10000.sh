@@ -29,7 +29,7 @@ tmax=8
 infer_mig_pattern="-eM 0.02599 1 -eM 0.03736 1 -eM 0.05044 1 "
 #for TASK in 'seq $SGE_TASK_START $SGE_TASK_END';
     #do 
-TASK=${SGE_TASK_ID}
+TASK=$(expr ${SGE_TASK_ID} )
 outprefix=${prefix}rep${TASK}
 pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK}
     #done
