@@ -31,7 +31,7 @@ infer_mig_pattern="1 "
     #do 
 TASK=$(expr ${SGE_TASK_ID} )
 outprefix=${prefix}rep${TASK}
-pf-ARG -l 0 ${cmd} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK} ${TASK} ${TASK}
+pf-ARG -l 0 ${cmd} ${assign_haploid} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK} ${TASK} ${TASK}
 
 #echo "pf-ARG -l 0 ${cmd} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK}" >> what_I_ve_done
     #done

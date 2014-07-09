@@ -29,7 +29,7 @@ tmax=8
 infer_mig_pattern="-eM 0.02599 1 -eM 0.03736 1 -eM 0.05044 1 "
 
 TASK=$(expr ${SGE_TASK_ID} )
-outprefix=${prefix}rep${TASK}
-pf-ARG -l 0 ${cmd} ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK} ${TASK} ${TASK}
+outprefix=${prefix}_Splitrep${TASK}
+pf-ARG -l 0 ${cmd} ${assign_haploid} 0 ${split} ${infer_mig_pattern} ${pop_struct} -EM ${EM} -Np ${Np} -o ${outprefix} -vcf ${data} -seed ${TASK} ${TASK} ${TASK}
 
 # should add pattern to this!
