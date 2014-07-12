@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -cwd
 #$ -V
-#$ -P bsg.prjb -q short.qb
+#$ -P bsg.prjb -q long.qb
 #$ -e CEUCHB_priorNeNp1000_ErrFiles
 #$ -o CEUCHB_priorNeNp1000_OutFiles
 #$ -N CEUCHB_priorNeNp1000
