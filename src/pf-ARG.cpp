@@ -229,6 +229,9 @@ void pfARG_core(PfParam &pfARG_para,
     bool append_to_history_file = true;
     pfARG_para.appending_Ne_file( append_to_history_file );
 
+    /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
+    current_states.appendingStuffToFile( sequence_end, pfARG_para);    
+
     current_states.clear(); // This line is sufficient to clear the memory.
     VCFfile->reset_data_to_first_entry();
     
