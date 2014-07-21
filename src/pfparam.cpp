@@ -219,6 +219,10 @@ void PfParam::convert_scrm_input (){
     ///*! Extract scrm parameters */ 
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     this->SCRMparam->parse( *this->model );
+    // By default, use SMC' model, check if exact window length has been set or not, if it not (i.e. exact window length is infinity, which is denoted by -1) set it to 0.
+    if ( this->model->exact_window_length() == -1 ){
+        this->model->set_exact_window_length ( 0 );
+        }
     this->rg = new MersenneTwister(this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
     this->original_recombination_rate_ = model->recombination_rate();
     }
