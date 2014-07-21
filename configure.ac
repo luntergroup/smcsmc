@@ -50,6 +50,7 @@ case $host_os in
     #AC_CHECK_HEADERS([boost/assign/std/vector.hpp boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Try downloading from :http://www.boost.org. Or: sudo apt-get install libboost-all-dev])])        
     ;;
     #compile on cluster 3, ./configure CXXFLAGS=-I/usr/local/boost
+    # compile on rescomp, ./configure CXX=/users/mcvean/joezhu//gcc-4.8.3/bin/g++
    *BSD*)
         # Do something specific for BSD
         ;;
