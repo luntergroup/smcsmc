@@ -59,7 +59,7 @@ arg_src = coalevent.cpp \
 
 count_src = count.cpp count-semi-debug.cpp 
        
-param_src = pattern.cpp pfparam.cpp variantReader.cpp 
+param_src = pattern.cpp pfparam.cpp variantReader.cpp rescue.cpp
 
 series_src = particleContainer_extra.cpp count_extra.cpp
 

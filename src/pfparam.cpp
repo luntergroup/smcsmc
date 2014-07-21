@@ -68,6 +68,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         else if ( argv_i == "-filter" ){ this->filter_window_ = this->readNextInput<int>(); }
         else if ( argv_i == "-missing"){ this->missing_data_threshold_ = this->readNextInput<int>(); }
         else if ( argv_i == "-online" ){ this->online_bool = true; }
+        else if ( argv_i == "-rescue" ){ this->rescue_bool = true; }
             
         // ------------------------------------------------------------------
         // Output 
@@ -143,6 +144,7 @@ void PfParam::init(){
     this->filter_window_   = 0;
     //this->filter_window_   = 2;
     this->missing_data_threshold_ = INT_MAX;
+    this->rescue_bool = false;
     }
 
 
@@ -152,11 +154,7 @@ void PfParam::insert_mutation_rate_in_scrm_input ( ) {
         this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
         this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
             //this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input; 
-        }
-    //else { // if "-t" is find ... 
-        
-        //}
-    
+        }    
     }
 
     
@@ -248,11 +246,18 @@ void PfParam::finalize(  ){
     //remove( this->BL_NAME.c_str()    );
     remove( this->Ne_NAME.c_str()    );
     remove( this->log_NAME.c_str()   );
-    remove( this->HIST_NAME.c_str()  );
     remove( this->SURVIVOR_NAME.c_str()); 
+    if ( this->rescue_bool ){ // By default, no rescue
+        cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
+        cout << this->scrm_input <<endl;
+        }
+    else { 
+        remove( this->HIST_NAME.c_str() );
+        }
     
     this->finalize_scrm_input ( );
     }
+        
 
 int PfParam::log( ){
     if (log_bool){  

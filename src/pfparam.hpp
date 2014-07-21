@@ -159,7 +159,8 @@ class PfParam{
         // ------------------------------------------------------------------
         // Output Related
         // ------------------------------------------------------------------
-        bool log_bool;            
+        bool log_bool;
+        bool rescue_bool;
         string out_NAME_prefix;            
         string HIST_NAME;
         string Ne_NAME;
