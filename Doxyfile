@@ -669,6 +669,10 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = src/doxygen_notation.txt \
+src/help.cpp \
+src/help.hpp \
+src/rescue.hpp \
+src/rescue.cpp \
 src/coalevent.cpp \
 src/coalevent.hpp \
 src/count.cpp \

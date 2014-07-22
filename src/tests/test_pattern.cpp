@@ -40,7 +40,7 @@ class TestPattern : public CppUnit::TestCase {
             expr = pattern.c_str();
             num_seg = extract_NumberOfSegment( expr , seg_level1_vec, seg_level2_vec) ; 
             CPPUNIT_ASSERT_EQUAL((size_t)16, num_seg);
-	    t_i = extract_Segment( num_seg, this->top_t);
+            t_i = extract_Segment( num_seg, this->top_t);
             CPPUNIT_ASSERT_EQUAL(top_t, t_i.back());
             CPPUNIT_ASSERT_EQUAL(t_i.size(), num_seg);            
             new_ti = regroup_Segment (t_i, seg_level1_vec, seg_level2_vec);

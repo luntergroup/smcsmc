@@ -59,13 +59,13 @@ arg_src = coalevent.cpp \
 
 count_src = count.cpp count-semi-debug.cpp 
        
-param_src = pattern.cpp pfparam.cpp variantReader.cpp rescue.cpp
+param_src = pattern.cpp pfparam.cpp variantReader.cpp rescue.cpp 
 
 series_src = particleContainer_extra.cpp count_extra.cpp
 
 omp_src = particleContainer_extra_omp.cpp count_extra_omp.cpp
 
-shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) pf-ARG.cpp
+shared_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_src) help.cpp pf-ARG.cpp
 
 pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(series_src) 
 #pf_ARG_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 

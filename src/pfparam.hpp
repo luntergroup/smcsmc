@@ -50,14 +50,6 @@ class PfParam{
         int  log( );
         void appending_Ne_file( bool hist = false );
 
-        void print_help();
-        void print_option();
-        void print_example();
-
-        //
-        // Members
-        //
-        
         // ------------------------------------------------------------------
         // PfParameters 
         // ------------------------------------------------------------------                         

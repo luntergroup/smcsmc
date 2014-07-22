@@ -21,32 +21,11 @@
 
 */
 
+#include <iostream>     /* cout */
+#include <stdlib.h>     /* exit, EXIT_FAILURE */
+#include <iomanip>      // std::setw
+using namespace std;
 
-#include "rescue.hpp"
-#include <fstream>      // std::ifstream
-
-RescueHist::RescueHist ( string HIST_filename ) {
-    // open file, loop through, if there is "====", rescure again, and add EMstep by one
-    ifstream in_file( HIST_filename.c_str() );
-
-    //if (hist){
-        //Ne_file << "=========\n"; 
-        //}
-    //Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
-    
-    in_file.close();
-    }
-
-
-void RescueHist::rescue_RE () { // this need to rescale by the sequence length ...
-    
-    }
-
-
-void RescueHist::rescue_ME () {
-    
-    }
-
-void RescueHist::rescue_NE () {
-    
-    }
+void Help_option();
+void Help_example();
+void Help_header();

@@ -22,8 +22,10 @@
 */
 
 
-#include"pfparam.hpp"
-#include"pattern.hpp"
+#include "pfparam.hpp"
+#include "pattern.hpp"
+#include "rescue.hpp"
+#include "help.hpp"
 
 PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
     this->init(); // Initialize pfARG program parameters
@@ -81,8 +83,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }        
         
         else if (argv_i == "-h" || argv_i == "-help") {
-            this->print_option();
-            exit(1);
+            Help_header();            
             }
             
         else {
@@ -249,6 +250,8 @@ void PfParam::finalize(  ){
     remove( this->SURVIVOR_NAME.c_str()); 
     if ( this->rescue_bool ){ // By default, no rescue
         cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
+        RescueHist rescueHist( this->HIST_NAME );
+        this->scrm_input = rescueHist.rescured_param_string;
         cout << this->scrm_input <<endl;
         }
     else { 
@@ -406,52 +409,6 @@ void PfParam::appending_Ne_file( bool hist ){
     return;
     }        
 
-
-void PfParam::print_help(){
-    cout << endl;
-    cout << endl;
-    cout << "*****************************************************************" << endl;
-    cout << "*                          pf-ARG                               *" << endl;
-    cout << "*              Author:  Sha Zhu, Gerton Lunter                  *" << endl;
-    cout << "*****************************************************************" << endl;
-    cout << endl<<endl;
-    cout << "Too few command line arguments" << endl;
-    cout << "    Options:" << endl;
-    this->print_option();
-    this->print_example();
-    exit(1);
-    }
-
-
-void PfParam::print_option(){
-    cout <<"   Options:" << endl;
-    cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]." << endl;
-    cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Proportion of the effective sample size [ 0.6 ]." << endl;
-    cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segment [ \"3*1+2*3+4\" ]." <<endl;
-    cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximal time, in unit of 4N0 [ 3 ]." <<endl;
-    cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM steps [ 20 ]." << endl;
-    //cout << setw(10)<<"-lag"    << setw(5) << "FLT" << "  --  " << "Lagging step [ 1000 ]." << endl;
-    cout << setw(10)<<"-vcf"    << setw(5) << "STR" << "  --  " << "Data file in vcf format [ Chrom1.vcf ]." << endl;
-    //cout << setw(20)<<"-buff BUFFSIZE" << "  --  " << "User define the size of buffer for the vcf file BUFFSIZE." << endl;
-    cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
-    cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
-    cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
-    cout << " SCRM parameters " << endl;
-    //std::ostream *output = &std::cout;
-    //this->SCRMparam->printHelp(*output); 
-    //this->SCRMparam->printHelp(std::cout); // set help parameters for calling help in scrm...
-    }
-
-
-void PfParam::print_example(){
-    cout << "Example:" << endl;
-    cout << "pf-ARG 10 -nsam 3" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf -buff 4" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf" << endl;
-    cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -vcf eg_vcf.vcf" << endl;
-    cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -vcf eg_vcf.vcf " << endl;
-    }
 
 
 //void PfParam::get_scrm_argv(){

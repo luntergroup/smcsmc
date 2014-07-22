@@ -21,9 +21,9 @@
 
 */
 
-#include"count.hpp" 
-#include"debug/usage.hpp"
-
+#include "count.hpp" 
+#include "debug/usage.hpp"
+#include "help.hpp"
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */ 
@@ -39,23 +39,19 @@ int main(int argc, char *argv[]){
     
     bool print_update_count = false; // DEBUG
 
-    /*! Extract pfARG parameters */
-    PfParam pfARG_para( argc, argv );
-    
     if ( argc == 1 ){
-        pfARG_para.print_help();
+        Help_header();
         } 
-    try {//else, proceed
         
-        /*! 
-         * INITIALIZE CountModel
-         */
+    try {//else, proceed
+        /*! Extract pfARG parameters */
+        PfParam pfARG_para( argc, argv );
+        
+        /*!  INITIALIZE CountModel */
         CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
         
-        /*!
-         * EM step
-         */                 
+        /*! EM step */                 
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
             cout << "Now starting EM_step " << I << endl;
             pfARG_core( pfARG_para, 
@@ -75,6 +71,7 @@ int main(int argc, char *argv[]){
         } 
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        Help_option();
         return EXIT_FAILURE;
         }
     }

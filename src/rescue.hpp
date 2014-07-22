@@ -21,32 +21,23 @@
 
 */
 
+#include <string>
+using namespace std;
 
-#include "rescue.hpp"
-#include <fstream>      // std::ifstream
+/*! 
+ * Rescue the execution by read the *HIST file, rather than the parameters directly
+ */
+class RescueHist{
+    friend class PfParam;
 
-RescueHist::RescueHist ( string HIST_filename ) {
-    // open file, loop through, if there is "====", rescure again, and add EMstep by one
-    ifstream in_file( HIST_filename.c_str() );
-
-    //if (hist){
-        //Ne_file << "=========\n"; 
-        //}
-    //Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
+    RescueHist( string HIST_filename );
+    ~RescueHist(){};
     
-    in_file.close();
-    }
-
-
-void RescueHist::rescue_RE () { // this need to rescale by the sequence length ...
+    // Method
+    void rescue_RE();
+    void rescue_NE();
+    void rescue_ME();
     
-    }
-
-
-void RescueHist::rescue_ME () {
-    
-    }
-
-void RescueHist::rescue_NE () {
-    
-    }
+    // Member
+    string rescured_param_string;
+    };
