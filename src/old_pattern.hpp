@@ -26,46 +26,19 @@
 #include <vector>
 #include <math.h>
 #include <string>
-#include <stdexcept>
 
-
-//#ifndef NDEBUG
-//#define dout std::cout
-//#else
-//#pragma GCC diagnostic ignored "-Wunused-value"
-//#define dout 0 && std::cout
-//#endif
+#ifndef NDEBUG
+#define dout std::cout
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define dout 0 && std::cout
+#endif
 
 using namespace std;
 
-
-class Pattern{
-    friend class PfParam;
-    friend class TestPattern;
-    
-    Pattern (string pattern, double top_t);
-    ~Pattern( ){};
-    
-    // Methods
-    size_t extract_Number( );
-    size_t extract_SegmentFactors( ) ;
-    void check_pattern ( );
-    void extract_NumberOfSegment ( ) ;
-    vector <double> extract_Segment ( );
-    vector <double> regroup_Segment (vector <double> old_seg);
-
-    void init(){
-        this->expr_ = NULL;
-        this->num_seg_ = 0;
-        }
-    
-    // Members
-    string pattern_str;
-    vector <size_t> seg_level1_vec_;
-    vector <size_t> seg_level2_vec_;
-    const char * expr_;
-    double top_t_;
-    size_t num_seg_;
-    };
-
-
+size_t extract_Number(const char*& expr);
+size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) ;
+size_t extract_NumberOfSegment (const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) ;
+vector <double> extract_Segment (size_t num_seg, double top_t);
+vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec);
+string convert_pattern (string pattern, double top_t);

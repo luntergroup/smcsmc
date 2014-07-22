@@ -44,7 +44,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                                        this->ESS_default_bool = false; }
         else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
                                        this->EM_bool = true; }        
-        else if ( argv_i == "-tmax" ){ this->top_t = readNextInput<double>(); }        
+        else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }        
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }
             
@@ -141,7 +141,7 @@ void PfParam::init(){
     this->model = new Model();
     this->rg               = NULL;  
     this->scrm_input       = "";
-    this->top_t            = 2;
+    this->top_t_            = 2;
     this->filter_window_   = 0;
     //this->filter_window_   = 2;
     this->missing_data_threshold_ = INT_MAX;
@@ -199,8 +199,8 @@ void PfParam::finalize_scrm_input (  ){
     this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
     this->insert_mutation_rate_in_scrm_input ( );
     this->insert_sample_size_in_scrm_input ( );       
-    
-    this->scrm_input = "scrm " + this->scrm_input + convert_pattern(pattern, top_t);    
+    Pattern tmp_pattern( pattern, top_t_ );
+    this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
     cout << scrm_input <<endl;
     this->convert_scrm_input ();
     }

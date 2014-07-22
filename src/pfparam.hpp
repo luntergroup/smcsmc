@@ -138,7 +138,7 @@ class PfParam{
         // ------------------------------------------------------------------        
         INPUT_FILETYPE FileType;
         string pattern;     /*! population segement pattern */
-        double top_t;
+        double top_t_;
         double ESS_;   // scaled between zero and one
 
         // VCF related

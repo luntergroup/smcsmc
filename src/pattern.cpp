@@ -27,11 +27,11 @@
 /*! 
  * \brief Extract number from expression
  */    
-size_t extract_Number(const char*& expr) {
+size_t Pattern::extract_Number( ) {
     char* end_ptr;
-    double res = strtod(expr, &end_ptr); // convert a string to double
+    double res = strtod(expr_, &end_ptr); // convert a string to double
     // Advance the pointer and return the result
-    expr = end_ptr;
+    this->expr_ = end_ptr;
     return (size_t)res;
     }
     
@@ -39,20 +39,22 @@ size_t extract_Number(const char*& expr) {
 /*!
  * \brief Extract segment factor from expression
  */
-size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
-    size_t seg_level1 = extract_Number(expr);
-    seg_level1_vec.push_back(seg_level1);
-    char op = *expr;
+size_t Pattern::extract_SegmentFactors( ) {
+    size_t seg_level1 = this->extract_Number( );
+    this->seg_level1_vec_.push_back(seg_level1);
 
+    this->check_pattern();
+
+    char op = *this->expr_;
     if( op == '+' || op == '\0' ){
-        seg_level1_vec.pop_back();
-        seg_level1_vec.push_back( (size_t)1 );
-        seg_level2_vec.push_back(seg_level1);
+        this->seg_level1_vec_.pop_back();
+        this->seg_level1_vec_.push_back( (size_t)1 );
+        this->seg_level2_vec_.push_back(seg_level1);
         return seg_level1;
         }
-    expr++;
-    size_t seg_level2 = extract_Number(expr);
-    seg_level2_vec.push_back(seg_level2);
+    this->expr_++;
+    size_t seg_level2 = this->extract_Number( );
+    this->seg_level2_vec_.push_back(seg_level2);
     seg_level1 *= seg_level2;
     return seg_level1;
     }
@@ -61,28 +63,29 @@ size_t extract_SegmentFactors(const char*& expr, vector <size_t> & seg_level1_ve
 /*!
  * \brief Extract segments from expression
  */
-size_t extract_NumberOfSegment (const char*& expr, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
-    size_t num_seg = extract_SegmentFactors(expr, seg_level1_vec, seg_level2_vec);
+void Pattern::extract_NumberOfSegment ( ) {
+    this->num_seg_ = this->extract_SegmentFactors( );
     for(;;) {
-        char op = *expr;
+        char op = *this->expr_;
+                
         if( op != '+' ){
-            return num_seg;
+            return;
             }
-        expr++;
-        size_t next_num_seg = extract_SegmentFactors(expr, seg_level1_vec, seg_level2_vec);        
-        num_seg += next_num_seg;
+        this->expr_++;
+        this->num_seg_ += this->extract_SegmentFactors( );
         }
-    return num_seg;
     }
 
 
 /*!
  * \brief PSMC time segment scheme. The time interval [0, top_t] is devided into num_seg number of segments
  */
-vector <double> extract_Segment (size_t num_seg, double top_t){
-    vector <double> t_i(num_seg);
-    for (size_t i = 0; i < num_seg ; i++ ){
-        t_i [i] = 0.1 * exp ( (double)i / (double)(num_seg-1) * log(1 + 10 * top_t) ) - 0.1; 
+vector <double> Pattern::extract_Segment ( ){ // This should include the number of samples, as the time intervals should be different according to the number of samples
+    vector <double> t_i( this->num_seg_ );
+    for (size_t i = 0; i < this->num_seg_ ; i++ ){
+        /*! \todo alternative ways to divide the exponential segments */
+        // This needs more work, 
+        t_i [i] = 0.1 * exp ( (double)i / (double)(this->num_seg_ - 1) * log( 1 + 10 * this->top_t_ ) ) - 0.1; 
         //cout<<t_i[i]<<" ";
         }
     //cout<<endl;
@@ -90,37 +93,55 @@ vector <double> extract_Segment (size_t num_seg, double top_t){
     }
 
 
-vector <double> regroup_Segment (vector <double> old_seg, vector <size_t> & seg_level1_vec, vector <size_t> & seg_level2_vec) {
+vector <double> Pattern::regroup_Segment ( vector <double> old_seg ) {
     vector <double> t_i;
     size_t index = 0;
-    for ( size_t seg_i = 0; seg_i < seg_level1_vec.size(); seg_i++){
-        for ( size_t i = 0; i < seg_level1_vec[seg_i]; i++){
+    for ( size_t seg_i = 0; seg_i < this->seg_level1_vec_.size(); seg_i++){
+        for ( size_t i = 0; i < this->seg_level1_vec_[seg_i]; i++){
                 t_i.push_back(old_seg[index]);
-                index += seg_level2_vec[seg_i];
+                index += this->seg_level2_vec_[seg_i];
             }
         }
-    dout<<"t_i size = " << t_i.size()<<endl;    
+    //dout<<"t_i size = " << t_i.size()<<endl;    
     return t_i;
     }
 
 
-string convert_pattern (string pattern, double top_t){
-    if ( pattern.size() == 0 ){
-        return "";
+Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
+    if ( pattern[0] == '+' || pattern[0] == '-' ){
+        throw std::invalid_argument( string(" Illegal pattern! "));
         }
     
-    const char * expr = pattern.c_str();
-    vector <size_t> seg_level1_vec;
-    vector <size_t> seg_level2_vec;
-    size_t num_seg = extract_NumberOfSegment ( expr, seg_level1_vec, seg_level2_vec);
-    dout << "Number of time segments: " << num_seg <<endl;
-    vector <double> t_i = extract_Segment( num_seg, top_t);
-    vector <double> new_ti = regroup_Segment (t_i, seg_level1_vec, seg_level2_vec);
-    string Ne_array;    
+    this->expr_ = pattern.c_str();    
+    this->extract_NumberOfSegment ( );
+    
+    if ( this->num_seg_ < 2 ){
+        this->pattern_str = "";
+        return;
+        }
+        
+    //dout << "Number of time segments: " << this->num_seg_ <<endl;
+    vector <double> t_i = extract_Segment( );
+    vector <double> new_ti = regroup_Segment (t_i);
+
     for (size_t i = 0; i < new_ti.size(); i++ ){
-        Ne_array += " -eN " + to_string( new_ti [i] / 2 ) + " 1";
+        this->pattern_str += " -eN " + to_string( new_ti [i] / 2 ) + " 1";
         }
     
-    dout<<Ne_array<<endl;
-    return Ne_array;    
+    //dout << this->pattern_str << endl;    
+    }
+
+
+void Pattern::check_pattern ( ){
+    char op = *this->expr_;
+    if ( op != '+' && op != '\0' && op != '*' && !isdigit(op) ){
+        throw std::invalid_argument( string("Character ") + op + string(" is invalid for pattern!"));
+        }    
+    char op_next = *(this->expr_ + 1);    
+    if ( op == '+' && ( op_next == '*' || op_next == '+' || op_next == '\0' ) ){
+        throw std::invalid_argument( string(" Illegal pattern! "));
+        }
+    if ( op == '*' && ( op_next == '*' || op_next == '+' || op_next == '\0' || isdigit(op_next) ) ){
+        throw std::invalid_argument( string(" Illegal pattern! "));
+        }
     }
