@@ -19,7 +19,7 @@ AC_PROG_RANLIB
 #AC_CHECK_LIB(cppunit,TestCase,[],AC_MSG_WARN([cppunit is not installed]))
 #AC_CHECK_LIB(cppunit,TestCase,[],AC_MSG_WARN([User define 'cppunit' location. e.g. LDFLAGS=-L/opt/local/lib]))
 AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/opt/local/lib)
-AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/home/joezhu/cppunit/lib)
+#AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/home/joezhu/cppunit/lib)
 # Checks for header files for scrm.
 AC_HEADER_STDC
 AC_LANG(C++) 
@@ -39,8 +39,9 @@ case $host_os in
   darwin* )
 #Check whether the environment variable CXX or CCC (in that order) is set; if so, then set output variable CXX to its value.
     AC_PROG_CXX([clang])
-    export CXX=clang++
+#    export CXX=clang++
     export CXXFLAGS=-I/opt/local/include -stdlib=libc++ 
+#    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/gcc-4.8.3/lib64 # or add this line to .profile
     #AC_CHECK_HEADERS([/opt/local/include/boost/assign/std/vector.hpp /opt/local/include/boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Install from the port: sudo port install boost])])
         ;;
   linux*)

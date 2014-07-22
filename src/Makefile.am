@@ -99,7 +99,8 @@ unit_tests_SOURCES = $(arg_src) $(scrm_param) $(scrm_src) $(param_src) $(count_s
 
 unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
 
-unit_tests_LDADD= -L/home/joezhu/cppunit/cppunit-1.12.1/lib -lcppunit -ldl
+#unit_tests_LDADD= -L/home/joezhu/cppunit/cppunit-1.12.1/lib -lcppunit -ldl
+unit_tests_LDADD= -lcppunit -ldl
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
 #unit_tests_LDADD= -L/usr/include 
 
