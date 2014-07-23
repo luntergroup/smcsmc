@@ -33,7 +33,7 @@ class TestVariantReader : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nsam() );
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nfield() );
         CPPUNIT_ASSERT_EQUAL( int(0), vcf_file->chrom() );
-        CPPUNIT_ASSERT_EQUAL( true, vcf_file->empty_file() );
+        CPPUNIT_ASSERT_EQUAL( EMPTY, vcf_file->FileType );
         
         CPPUNIT_ASSERT_EQUAL( true, vcf_file->eof() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
         CPPUNIT_ASSERT_EQUAL( false, vcf_file->end_data() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
@@ -57,13 +57,13 @@ class TestVariantReader : public CppUnit::TestCase {
         }  
     
     void test_Constructors() {
-        vcf_file = new VariantReader("tests/test2sample.vcf");
+        vcf_file = new VariantReader("tests/test2sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test2sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 3227 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(10), vcf_file->nfield());
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->empty_file());
+        CPPUNIT_ASSERT_EQUAL( VCF, vcf_file->FileType );
         
         CPPUNIT_ASSERT_EQUAL((int)0, vcf_file->site());
         CPPUNIT_ASSERT_EQUAL((int)0, vcf_file->chrom());
@@ -94,13 +94,13 @@ class TestVariantReader : public CppUnit::TestCase {
         delete vcf_file;
         
         
-        vcf_file = new VariantReader("tests/test4sample.vcf");
+        vcf_file = new VariantReader("tests/test4sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test4sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 6518 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(11), vcf_file->nfield());
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->empty_file());
+        CPPUNIT_ASSERT_EQUAL( VCF, vcf_file->FileType );
         
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
@@ -117,8 +117,9 @@ class TestVariantReader : public CppUnit::TestCase {
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
         CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[3]);        
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->missing_data());
+        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
         
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
@@ -135,13 +136,14 @@ class TestVariantReader : public CppUnit::TestCase {
         
         delete vcf_file;
 
-        vcf_file = new VariantReader("tests/test6sample.vcf");
+        vcf_file = new VariantReader("tests/test6sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 13813 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(3), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(12), vcf_file->nfield());
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->empty_file());
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
         
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
@@ -161,7 +163,8 @@ class TestVariantReader : public CppUnit::TestCase {
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[3]);   
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]); 
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]);      
-        CPPUNIT_ASSERT_EQUAL(false, vcf_file->missing_data());
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
 
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -205,7 +208,7 @@ class TestVariantReader : public CppUnit::TestCase {
     
     void test_empty_block(){
         int buff_len = 10;
-        vcf_file = new VariantReader("tests/test6sample.vcf", buff_len);
+        vcf_file = new VariantReader("tests/test6sample.vcf", VCF, buff_len);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
         CPPUNIT_ASSERT_EQUAL(size_t(buff_len), vcf_file->buffer_lines.size());
@@ -221,7 +224,7 @@ class TestVariantReader : public CppUnit::TestCase {
     
     void test_new_block(){
         int buff_len = 3;
-        vcf_file = new VariantReader("tests/test6sample.vcf", buff_len);
+        vcf_file = new VariantReader("tests/test6sample.vcf", VCF, buff_len);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line()); // vcf data line 1
 //1       0       rs0     A       T       67      PASS    NS=2;   GT      0|0     1|0     0|0
@@ -312,7 +315,7 @@ class TestVariantReader : public CppUnit::TestCase {
 
     
     void test_reset_data_to_first_entry(){
-        vcf_file = new VariantReader("tests/test6sample.vcf");
+        vcf_file = new VariantReader("tests/test6sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
@@ -356,7 +359,7 @@ class TestVariantReader : public CppUnit::TestCase {
         }  
     
     void test_read_NA18501(){
-        vcf_file = new VariantReader("tests/NA18501_CHROM1.vcf");
+        vcf_file = new VariantReader("tests/NA18501_CHROM1.vcf", VCF);
         vcf_file->filter_window_ = 100;
         CPPUNIT_ASSERT_EQUAL(string("tests/NA18501_CHROM1.vcf"), vcf_file->file_name_);
         // Just initialized, read buffer line: 
@@ -365,17 +368,21 @@ class TestVariantReader : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->vec_of_sample_alt_bool.size());
+        
+        cout <<"broke here"<<endl;
 
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;        
         //extract from line 
         //1	52238	rs150021059	T	G	100	PASS	.	GT	1|0
+        cout <<"broke here"<<endl;
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
+        cout <<"broke here"<<endl;
         CPPUNIT_ASSERT_EQUAL(int(52238), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
         CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
-
+cout <<"broke here"<<endl;
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
         //1	55164	rs3091274	C	A	100	PASS	.	GT	1|0
@@ -446,10 +453,12 @@ class TestVariantReader : public CppUnit::TestCase {
 
             CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
             if ( vcf_file->site() == 142565398 ){
-                CPPUNIT_ASSERT_EQUAL(true, vcf_file->missing_data());
+                CPPUNIT_ASSERT_EQUAL(MISSING, vcf_file->prior_seq_state);
+                CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
                 }
             else {
-                CPPUNIT_ASSERT_EQUAL(false, vcf_file->missing_data());
+                CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
+                CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
                 }
             if (vcf_file->site() > 142872424){
                 break;}

@@ -9,7 +9,7 @@ class TestPattern : public CppUnit::TestCase {
   
     CPPUNIT_TEST_SUITE( TestPattern );
     
-//    CPPUNIT_TEST( test_extract_NumberOfSegment ); 
+    CPPUNIT_TEST( test_extract_NumberOfSegment ); 
     
     CPPUNIT_TEST( test_for_faulty_pattern );
 
@@ -31,7 +31,9 @@ class TestPattern : public CppUnit::TestCase {
         void test_for_faulty_pattern () {
             top_t = 2.0; 
             
-            pattern = "1*";
+            //pattern = ;
+            CPPUNIT_ASSERT_THROW( Pattern("1*", top_t), std::invalid_argument ); 
+
             
             pattern = "1adf*";
             
@@ -61,44 +63,36 @@ class TestPattern : public CppUnit::TestCase {
             pattern = "1+1";
             
             pattern = "3+2+2+2+2+2+3";
-            //expr = pattern.c_str();
             pattern_tester = new Pattern (pattern, top_t);
-            //num_seg = extract_NumberOfSegment( expr , seg_level1_vec_, seg_level2_vec_) ; 
-            CPPUNIT_ASSERT_EQUAL( (size_t)16, pattern_tester->extract_NumberOfSegment() );
-            t_i = extract_Segment( num_seg, this->top_t);
-            CPPUNIT_ASSERT_EQUAL(top_t, t_i.back());
-            CPPUNIT_ASSERT_EQUAL(t_i.size(), num_seg);            
-            new_ti = regroup_Segment (t_i, seg_level1_vec_, seg_level2_vec_);
+            CPPUNIT_ASSERT_EQUAL( (size_t)16, pattern_tester->num_seg_ );
+            t_i = pattern_tester->extract_Segment( );// pattern_tester->num_seg_, pattern_tester->top_t_);
+            CPPUNIT_ASSERT_EQUAL(pattern_tester->top_t_, t_i.back());
+            CPPUNIT_ASSERT_EQUAL(t_i.size(), pattern_tester->num_seg_);            
+            new_ti = pattern_tester->regroup_Segment ( t_i );
             CPPUNIT_ASSERT_EQUAL((size_t)7, new_ti.size());
-            
-            //seg_level1_vec_.clear();
-            //seg_level2_vec_.clear();
+            delete pattern_tester;
             
             pattern = "3+2+2+2+2+2+2";
-            expr = pattern.c_str();
-            num_seg = extract_NumberOfSegment( expr , seg_level1_vec_, seg_level2_vec_) ; 
-            CPPUNIT_ASSERT_EQUAL((size_t)15, num_seg);
-            t_i = extract_Segment( num_seg, top_t);
-            CPPUNIT_ASSERT_EQUAL(top_t, t_i.back());
-            CPPUNIT_ASSERT_EQUAL(t_i.size(), num_seg);
-            new_ti = regroup_Segment (t_i, seg_level1_vec_, seg_level2_vec_);
+            pattern_tester = new Pattern (pattern, top_t);
+            CPPUNIT_ASSERT_EQUAL((size_t)15, pattern_tester->num_seg_);
+            t_i = pattern_tester->extract_Segment( );// pattern_tester->num_seg_, pattern_tester->top_t_);
+            CPPUNIT_ASSERT_EQUAL(pattern_tester->top_t_, t_i.back());
+            CPPUNIT_ASSERT_EQUAL(t_i.size(), pattern_tester->num_seg_);            
+            new_ti = pattern_tester->regroup_Segment ( t_i );
             CPPUNIT_ASSERT_EQUAL((size_t)7, new_ti.size());
-            //seg_level1_vec_.clear();
-            //seg_level2_vec_.clear();
-            
+            delete pattern_tester;
+
+
             pattern = "1*4+25*2+1*4+1*6";
-            expr = pattern.c_str();
-            num_seg = extract_NumberOfSegment( expr , seg_level1_vec_, seg_level2_vec_) ; 
-            CPPUNIT_ASSERT_EQUAL((size_t)64, num_seg);
-            t_i = extract_Segment( num_seg, top_t);
-            CPPUNIT_ASSERT_EQUAL(top_t, t_i.back());
-            CPPUNIT_ASSERT_EQUAL(t_i.size(), num_seg);
-            new_ti = regroup_Segment (t_i, seg_level1_vec_, seg_level2_vec_);
+            pattern_tester = new Pattern (pattern, top_t);
+            CPPUNIT_ASSERT_EQUAL((size_t)64, pattern_tester->num_seg_);
+            t_i = pattern_tester->extract_Segment( );// pattern_tester->num_seg_, pattern_tester->top_t_);
+            CPPUNIT_ASSERT_EQUAL(pattern_tester->top_t_, t_i.back());
+            CPPUNIT_ASSERT_EQUAL(t_i.size(), pattern_tester->num_seg_);            
+            new_ti = pattern_tester->regroup_Segment ( t_i );
             CPPUNIT_ASSERT_EQUAL((size_t)28, new_ti.size());
-            //seg_level1_vec_.clear();
-            //seg_level2_vec_.clear();
-            
-            
+            delete pattern_tester;
+
             }  
     };
     

@@ -108,8 +108,8 @@ vector <double> Pattern::regroup_Segment ( vector <double> old_seg ) {
 
 
 Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
-    if ( pattern[0] == '+' || pattern[0] == '-' ){
-        throw std::invalid_argument( string(" Illegal pattern! "));
+    if ( !isdigit(pattern[0]) && pattern.size() > 0){
+        throw std::invalid_argument( string(" Illegal pattern case (1) ! "));
         }
     
     this->expr_ = pattern.c_str();    
@@ -134,14 +134,15 @@ Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
 
 void Pattern::check_pattern ( ){
     char op = *this->expr_;
+    //cout << " current op is "<<op<<endl;
     if ( op != '+' && op != '\0' && op != '*' && !isdigit(op) ){
         throw std::invalid_argument( string("Character ") + op + string(" is invalid for pattern!"));
         }    
     char op_next = *(this->expr_ + 1);    
     if ( op == '+' && ( op_next == '*' || op_next == '+' || op_next == '\0' ) ){
-        throw std::invalid_argument( string(" Illegal pattern! "));
+        throw std::invalid_argument( string(" Illegal pattern  case (2) ! "));
         }
-    if ( op == '*' && ( op_next == '*' || op_next == '+' || op_next == '\0' || isdigit(op_next) ) ){
-        throw std::invalid_argument( string(" Illegal pattern! "));
+    if ( op == '*' && ( op_next == '*' || op_next == '+' || op_next == '\0' ) ){
+        throw std::invalid_argument( string(" Illegal pattern  case (3) ! "));
         }
     }
