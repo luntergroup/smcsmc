@@ -359,6 +359,11 @@ class TestVariantReader : public CppUnit::TestCase {
         }  
     
     void test_read_NA18501(){
+// CHECK if file is available 
+ifstream my_file("tests/NA18501_CHROM1.vcf");
+if ( !my_file.good() ){
+    cout << endl << endl << "tests/NA18501_CHROM1.vcf does not exist, unit test will fail" << endl << endl;
+    }
         vcf_file = new VariantReader("tests/NA18501_CHROM1.vcf", VCF);
         vcf_file->filter_window_ = 100;
         CPPUNIT_ASSERT_EQUAL(string("tests/NA18501_CHROM1.vcf"), vcf_file->file_name_);
@@ -369,20 +374,15 @@ class TestVariantReader : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->vec_of_sample_alt_bool.size());
         
-        cout <<"broke here"<<endl;
-
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;        
         //extract from line 
         //1	52238	rs150021059	T	G	100	PASS	.	GT	1|0
-        cout <<"broke here"<<endl;
-        CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
-        cout <<"broke here"<<endl;
+        CPPUNIT_ASSERT_NO_THROW( vcf_file->read_new_line() );
         CPPUNIT_ASSERT_EQUAL(int(52238), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
         CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
         CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
-cout <<"broke here"<<endl;
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
         //1	55164	rs3091274	C	A	100	PASS	.	GT	1|0
@@ -452,14 +452,16 @@ cout <<"broke here"<<endl;
         do{             
 
             CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
+            
             if ( vcf_file->site() == 142565398 ){
                 CPPUNIT_ASSERT_EQUAL(MISSING, vcf_file->prior_seq_state);
                 CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
                 }
             else {
                 CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
-                CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
+                //CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state); // This not always true now! it can handle other polymophisms....
                 }
+            
             if (vcf_file->site() > 142872424){
                 break;}
         }while(!vcf_file->end_data());

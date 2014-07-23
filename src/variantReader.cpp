@@ -150,6 +150,7 @@ void VariantReader::read_new_line(){
     
     //this->set_missding_data ( false ); // Inialize missing data to false, assume that the current line is ok
     this->prior_seq_state = SEQ_INVARIANT;
+    this->current_variant_state = SNP;
     string line = this->buffer_lines[current_block_line_];
     size_t feild_start=0;
     size_t feild_end=0;
