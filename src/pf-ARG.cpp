@@ -211,7 +211,8 @@ void pfARG_core(PfParam &pfARG_para,
     
     bool append_to_history_file = true;
     pfARG_para.appending_Ne_file( append_to_history_file );
-
+	countNe->log_counts( pfARG_para );
+	
     /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
     current_states.appendingStuffToFile( sequence_end, pfARG_para);    
 

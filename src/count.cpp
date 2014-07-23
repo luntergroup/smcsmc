@@ -177,6 +177,34 @@ void CountModel::reset_model_parameters(double current_base, Model * model, bool
         return;
         }
     }
+
+
+void CountModel::log_counts( PfParam& param ) {
+	// log coalescent counts
+	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
+		for (size_t pop_idx = 0; pop_idx < this->population_number(); pop_idx++ ) {
+			param.append_to_count_file( epoch_idx, "Coal", pop_idx, -1, this->total_weighted_coal_opportunity[epoch_idx][pop_idx], 
+																	    this->total_coal_count[epoch_idx][pop_idx] );
+		}
+	}
+	// log recombination counts
+	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
+		param.append_to_count_file( epoch_idx, "Recomb", -1, -1, this->total_weighted_recomb_opportunity[epoch_idx][0], 
+																 this->total_recomb_count[epoch_idx][0] );
+	}
+	// log migration counts
+	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
+		for (size_t from_pop_idx = 0; from_pop_idx < this->population_number(); from_pop_idx++ ) {
+			for (size_t to_pop_idx = 0; to_pop_idx < this->population_number(); to_pop_idx++ ) {
+				if (from_pop_idx != to_pop_idx) {
+					param.append_to_count_file( epoch_idx, "Migr", from_pop_idx, to_pop_idx, this->total_weighted_mig_opportunity[epoch_idx][from_pop_idx], 
+																						     this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx] );
+				}
+			}
+		}
+	}
+}
+
     
 
 void CountModel::compute_mig_rate(){

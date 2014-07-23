@@ -49,6 +49,7 @@ class CountModel: public Model{
         void init();
         void extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters(double current_base, Model * model, bool online = true, bool force_update = false, bool print = true);
+        void log_counts( PfParam& param );
                 
     private:
 
@@ -99,9 +100,10 @@ class CountModel: public Model{
         
         double recomb_count_;
         double recomb_opportunity_;
+        double inferred_recomb_rate;
+
         double const_lag_;               
         double const_minimal_lag_update_ratio_; 
-        double inferred_recomb_rate;
         double update_param_threshold_;
         double update_param_interval_;
 

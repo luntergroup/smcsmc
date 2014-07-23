@@ -199,9 +199,13 @@ void PfParam::finalize_scrm_input (  ){
     this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
     this->insert_mutation_rate_in_scrm_input ( );
     this->insert_sample_size_in_scrm_input ( );       
-    Pattern tmp_pattern( pattern, top_t_ );
-    this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
-    cout << scrm_input <<endl;
+    if (pattern.size() > 0) {
+		Pattern tmp_pattern( pattern, top_t_ );
+		this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
+	} else {
+		this->scrm_input = "scrm " + this->scrm_input;
+	}
+    cout << scrm_input << endl;
     this->convert_scrm_input ();
     }
 
@@ -238,6 +242,7 @@ void PfParam::finalize(  ){
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
     //this->BL_NAME      = out_NAME_prefix + "BL";
     this->Ne_NAME      = out_NAME_prefix + "Ne";
+    this->Count_NAME   = out_NAME_prefix + "Count";
     this->log_NAME     = out_NAME_prefix + ".log";
     this->HIST_NAME    = out_NAME_prefix + "HIST";
     this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
@@ -246,6 +251,7 @@ void PfParam::finalize(  ){
     remove( this->WEIGHT_NAME.c_str());
     //remove( this->BL_NAME.c_str()    );
     remove( this->Ne_NAME.c_str()    );
+    remove( this->Count_NAME.c_str() );
     remove( this->log_NAME.c_str()   );
     remove( this->SURVIVOR_NAME.c_str()); 
     if ( this->rescue_bool ){ // By default, no rescue
@@ -354,6 +360,23 @@ void PfParam::log_param( ){
         
     log_file.close();
     }
+
+
+void PfParam::append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count) {
+	string file_name = Count_NAME;
+	ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+	int field_length_1 = 7;
+	int field_length_2 = 15;
+	count_file << setw(field_length_1) << epoch << " "
+	           << setw(field_length_1) << label << " "
+	           << setw(field_length_1) << from_pop << " "
+	           << setw(field_length_1) << to_pop << " "
+	           << setw(field_length_2) << opportunity << " "
+	           << setw(field_length_2) << count << " "
+	           << setw(field_length_2) << count/(opportunity+1e-10)
+	           << endl;
+	count_file.close();
+	}
 
 
 void PfParam::appending_Ne_file( bool hist ){

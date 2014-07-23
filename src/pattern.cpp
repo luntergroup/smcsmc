@@ -29,34 +29,50 @@
  */    
 size_t Pattern::extract_Number( ) {
     char* end_ptr;
-    double res = strtod(expr_, &end_ptr); // convert a string to double
+    if (!isdigit(*expr_)) {
+        throw std::invalid_argument( "While parsing expression: expected digit as first character in number; got " + (*this->expr_) );
+    }
+    size_t res = strtol(expr_, &end_ptr, 10); // convert a string to long
     // Advance the pointer and return the result
     this->expr_ = end_ptr;
-    return (size_t)res;
+    return res;
     }
     
 
 /*!
- * \brief Extract segment factor from expression
+ * \brief Extract segment factor from expression, and returns total number of bins
+ *        It will return with the next character being either \0 or +
  */
 size_t Pattern::extract_SegmentFactors( ) {
+
+	// extract first number of the factor
     size_t seg_level1 = this->extract_Number( );
-    this->seg_level1_vec_.push_back(seg_level1);
 
-    this->check_pattern();
-
+	// see if we're done
     char op = *this->expr_;
-    if( op == '+' || op == '\0' ){
-        this->seg_level1_vec_.pop_back();
+    if( op == '+' || op == '\0' ) {
+		// just one number
         this->seg_level1_vec_.push_back( (size_t)1 );
-        this->seg_level2_vec_.push_back(seg_level1);
+        this->seg_level2_vec_.push_back( seg_level1 );
         return seg_level1;
-        }
+    }
+
+	// check that the format is correct
+	if (*this->expr_ != '*') {
+		throw std::invalid_argument( "While parsing expression: expected '*' to separate factors; got " + (*this->expr_) );
+	}
     this->expr_++;
+
     size_t seg_level2 = this->extract_Number( );
+	this->seg_level1_vec_.push_back(seg_level1);
     this->seg_level2_vec_.push_back(seg_level2);
-    seg_level1 *= seg_level2;
-    return seg_level1;
+
+	op = *this->expr_;
+	if ( op != '+' && op != '\0' ) {
+		throw std::invalid_argument( "While parsing expression: expected '+' to separate terms; got " + (*this->expr_) );
+	}
+
+    return seg_level1 * seg_level2;
     }
 
 
@@ -64,15 +80,17 @@ size_t Pattern::extract_SegmentFactors( ) {
  * \brief Extract segments from expression
  */
 void Pattern::extract_NumberOfSegment ( ) {
+
+	// extract first factor; we know there should be at least 1
     this->num_seg_ = this->extract_SegmentFactors( );
-    for(;;) {
-        char op = *this->expr_;
-                
-        if( op != '+' ){
-            return;
-            }
+    while (*this->expr_) {
+
+		// skip over the '+'
         this->expr_++;
+
+		// parse the next factor
         this->num_seg_ += this->extract_SegmentFactors( );
+
         }
     }
 
@@ -108,12 +126,9 @@ vector <double> Pattern::regroup_Segment ( vector <double> old_seg ) {
 
 
 Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
-    if ( !isdigit(pattern[0]) && pattern.size() > 0){
-        throw std::invalid_argument( string(" Illegal pattern case (1) ! "));
-        }
     
     this->expr_ = pattern.c_str();    
-    this->extract_NumberOfSegment ( );
+    this->extract_NumberOfSegment( );
     
     if ( this->num_seg_ < 2 ){
         this->pattern_str = "";
@@ -131,18 +146,3 @@ Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
     //dout << this->pattern_str << endl;    
     }
 
-
-void Pattern::check_pattern ( ){
-    char op = *this->expr_;
-    //cout << " current op is "<<op<<endl;
-    if ( op != '+' && op != '\0' && op != '*' && !isdigit(op) ){
-        throw std::invalid_argument( string("Character ") + op + string(" is invalid for pattern!"));
-        }    
-    char op_next = *(this->expr_ + 1);    
-    if ( op == '+' && ( op_next == '*' || op_next == '+' || op_next == '\0' ) ){
-        throw std::invalid_argument( string(" Illegal pattern  case (2) ! "));
-        }
-    if ( op == '*' && ( op_next == '*' || op_next == '+' || op_next == '\0' ) ){
-        throw std::invalid_argument( string(" Illegal pattern  case (3) ! "));
-        }
-    }

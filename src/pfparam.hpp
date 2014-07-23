@@ -49,6 +49,7 @@ class PfParam{
         //
         int  log( );
         void appending_Ne_file( bool hist = false );
+        void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count );
 
         // ------------------------------------------------------------------
         // PfParameters 
@@ -156,13 +157,14 @@ class PfParam{
         string out_NAME_prefix;            
         string HIST_NAME;
         string Ne_NAME;
+        string Count_NAME;
         string log_NAME;
         string TMRCA_NAME;
         string WEIGHT_NAME;
         //string BL_NAME;
         string SURVIVOR_NAME;
         int heat_seq_window;
-        
+
     };
     
 #endif
