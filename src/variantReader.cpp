@@ -30,8 +30,8 @@ using namespace std;
  */
 VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int buffer_length): buffer_max_number_of_lines(buffer_length)
 { 
-    this->FileType = FileType_in; 
-    this->file_name_                 = file_name;
+    this->file_name_ = file_name;
+    this->FileType = this->file_name_.size() > 0 ? FileType_in : EMPTY; 
     /*! Initialize by read in the vcf header file */
     this->init();
 

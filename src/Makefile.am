@@ -98,7 +98,7 @@ unit_tests_SOURCES = $(shared_SOURCES) $(series_src)  \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
-                     tests/test_variantReader.cpp \
+                     tests/test_vcf.cpp tests/test_gvcf.cpp\                   
                      #tests/test_random_generator.cpp \
 		     #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)

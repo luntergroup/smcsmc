@@ -256,8 +256,8 @@ void PfParam::finalize(  ){
     remove( this->SURVIVOR_NAME.c_str()); 
     if ( this->rescue_bool ){ // By default, no rescue
         cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        RescueHist rescueHist( this->HIST_NAME );
-        this->scrm_input = rescueHist.rescured_param_string;
+        //RescueHist rescueHist( this->HIST_NAME );
+        //this->scrm_input = rescueHist.rescured_param_string;
         cout << this->scrm_input <<endl;
         }
     else { 

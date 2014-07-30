@@ -1,14 +1,11 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-//#include <boost/lexical_cast.hpp> 
-
 #include "../src/variantReader.hpp"
-//#include "variantReader.hpp"
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
-class TestVariantReader : public CppUnit::TestCase {
+class TestVCF : public CppUnit::TestCase {
   
-    CPPUNIT_TEST_SUITE( TestVariantReader );
+    CPPUNIT_TEST_SUITE( TestVCF );
     
     CPPUNIT_TEST( test_Constructors ); 
     CPPUNIT_TEST( test_empty_file ); 
@@ -359,11 +356,11 @@ class TestVariantReader : public CppUnit::TestCase {
         }  
     
     void test_read_NA18501(){
-// CHECK if file is available 
-ifstream my_file("tests/NA18501_CHROM1.vcf");
-if ( !my_file.good() ){
-    cout << endl << endl << "tests/NA18501_CHROM1.vcf does not exist, unit test will fail" << endl << endl;
-    }
+    // CHECK if file is available 
+    ifstream my_file("tests/NA18501_CHROM1.vcf");
+    if ( !my_file.good() ){
+        cout << endl << endl << "tests/NA18501_CHROM1.vcf does not exist, unit test will fail" << endl << endl;
+        }
         vcf_file = new VariantReader("tests/NA18501_CHROM1.vcf", VCF);
         vcf_file->filter_window_ = 100;
         CPPUNIT_ASSERT_EQUAL(string("tests/NA18501_CHROM1.vcf"), vcf_file->file_name_);
@@ -474,4 +471,4 @@ if ( !my_file.good() ){
     };
 
 //Uncomment this to activate the test
-CPPUNIT_TEST_SUITE_REGISTRATION( TestVariantReader );
+CPPUNIT_TEST_SUITE_REGISTRATION( TestVCF );

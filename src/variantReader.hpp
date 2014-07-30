@@ -96,7 +96,8 @@ class VariantReader: public VariantPosition{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
-    friend class TestVariantReader;
+    friend class TestVCF;
+    friend class TestGVCF;
     friend class TestParam;
     #endif
 
