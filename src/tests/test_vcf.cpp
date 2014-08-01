@@ -25,7 +25,7 @@ class TestVCF : public CppUnit::TestCase {
         int testing_even_interval = 1000 ;
         CPPUNIT_ASSERT_NO_THROW( vcf_file->even_interval_ = testing_even_interval );
         CPPUNIT_ASSERT_EQUAL( string(""), vcf_file->file_name_ );
-        CPPUNIT_ASSERT_EQUAL( size_t(-1), vcf_file->vcf_length_ );  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
+        CPPUNIT_ASSERT_EQUAL( size_t(-1), vcf_file->file_length_ );  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
 
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nsam() );
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nfield() );
@@ -56,7 +56,7 @@ class TestVCF : public CppUnit::TestCase {
     void test_Constructors() {
         vcf_file = new VariantReader("tests/test2sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test2sample.vcf"), vcf_file->file_name_);
-        CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 3227 characters
+        CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 3227 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(10), vcf_file->nfield());
@@ -93,7 +93,7 @@ class TestVCF : public CppUnit::TestCase {
         
         vcf_file = new VariantReader("tests/test4sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test4sample.vcf"), vcf_file->file_name_);
-        CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 6518 characters
+        CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 6518 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(11), vcf_file->nfield());
@@ -135,7 +135,7 @@ class TestVCF : public CppUnit::TestCase {
 
         vcf_file = new VariantReader("tests/test6sample.vcf", VCF);
         CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), vcf_file->file_name_);
-        CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->vcf_length_);  // wc test2sample.vcf, length of the file is 13813 characters
+        CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 13813 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(3), vcf_file->nsam());
         CPPUNIT_ASSERT_EQUAL(size_t(12), vcf_file->nfield());

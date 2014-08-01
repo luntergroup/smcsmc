@@ -1,6 +1,8 @@
 bin_PROGRAMS = pf-ARG pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
-check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
+#check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
+check_PROGRAMS = unit_tests generate_vcf
+
 TESTS = unit_tests 
 
 PROG = PF-ARG 
@@ -100,7 +102,8 @@ unit_tests_SOURCES = $(shared_SOURCES) $(series_src)  \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
-                     tests/test_vcf.cpp tests/test_gvcf.cpp\                   
+                     tests/test_gvcf.cpp\                   
+                     #tests/test_vcf.cpp 
                      #tests/test_random_generator.cpp \
 		     #tests/test_Count.cpp\
                      #$(pf_ARG_SOURCES)

@@ -38,7 +38,7 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
     ifstream in_file;
     in_file.open(file_name.c_str());
     in_file.seekg (0, in_file.end);
-    vcf_length_ = in_file.tellg();
+    file_length_ = in_file.tellg();
     
     in_file.seekg (0, in_file.beg);
     string line;
@@ -50,6 +50,7 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
     if (in_file.good()){
         getline (in_file,line);
         header_end_pos_ += line.size()+1;
+        cout <<line<<endl;
         while (line.size()>0 ){   
             //dout << header_end_line<<"  " <<line.size() <<"  " << header_end_pos_<<"  " << line<<endl;
             if (line[0]=='#'){
@@ -59,13 +60,14 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
                     } 
                 else {
                     check_feilds(line);
-                    //break; //end of the header
+                    break; //end of the header
                     }
                 }
     
             getline (in_file,line);
             
-            if ( line.find("PASS")!= std::string::npos ){ break; } // This will skip to the first line of the useable data
+            // This requires more thinking, are we checking the data quality?
+            //if ( line.find("PASS")!= std::string::npos ){ break; } // This will skip to the first line of the useable data
             
             header_end_pos_ += line.size()+1;
             header_end_line++;
@@ -91,7 +93,7 @@ void VariantReader::init(){
     this->chrom_              = 0;
     this->pervious_chrom_     = 0;
     this->missing_data_threshold_ = INT_MAX;
-    this->vcf_length_                = 0;
+    this->file_length_                = 0;
     this->even_interval_             = 0.0;
     this->ghost_num_mut            = 0;
     this->eof_                       = false;
@@ -157,7 +159,7 @@ void VariantReader::read_new_line(){
     int field_index=0;
     string tmp_str;
     
-    //cout<<line<<endl;//DEBUG
+    cout<<line<<endl;//DEBUG
     
     while(feild_end<line.size()){
         skip = true;
@@ -189,7 +191,7 @@ void VariantReader::read_new_line(){
                 }            
             }
 // REQUIRES MORE WORK HERE!!!
-// IF THIS IS GVCF OR RGVCF FILE, ALT BASE IS "."
+// IF THIS IS GVCF OR RGVCF FILE, REF ALT BASE IS "." or "N"
         else if ( field_index == 4 ){
             size_t alt_start=0;size_t alt_end=0; string alt_str;
             bool alt_not_valid = false;
@@ -210,13 +212,14 @@ void VariantReader::read_new_line(){
                 }                
             }
         
-        else if ( field_index == 6 ){
-            if (tmp_str!="PASS"){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
-                cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
-                //cout << "skipping: "<< line << endl; // DEBUG
-                break;
-                }                       
-            }
+// ATTENTION, DO NOT CHECK QUALITY AT THE MOMENT
+        //else if ( field_index == 6 ){
+            //if (tmp_str!="PASS"){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                //cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
+                ////cout << "skipping: "<< line << endl; // DEBUG
+                //break;
+                //}                       
+            //}
         
 // REQUIRES MORE WORK HERE!!!        
         else if ( field_index == 7 ){ // READ INFO FIELD, EXTRACT THE LENGTH OF MISSING BASE FROM RGVCF, OR EXTRACT THE LENGTH OF INVARIANT FROM GVCF
@@ -305,7 +308,7 @@ void VariantReader::empty_block() { buffer_lines.clear(); }
 
 
 void VariantReader::read_new_block(){
-    
+    cout  <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl;
     if (current_line_index_ == 0){
         cout << "Set data to the first entry, read a block of " <<  this->buffer_max_number_of_lines << " entries" <<endl;
         } 
@@ -328,7 +331,7 @@ void VariantReader::read_new_block(){
     string tmp_str;
     
     getline(infile, tmp_str);
-    
+    cout << tmp_str<<endl;
     while (infile.good() && tmp_str.size()>0 && (count) < buffer_max_number_of_lines){ 
         buffer_lines.push_back(tmp_str);
         this->end_pos_ += tmp_str.size()+1;
@@ -336,8 +339,8 @@ void VariantReader::read_new_block(){
         getline(infile, tmp_str);
         }
     
-    this->eof_ = ( vcf_length_ <= this->end_pos_ );
-    
+    this->eof_ = ( file_length_ <= this->end_pos_ );
+    //cout << "buffer_lines [0] "<<buffer_lines [0] <<endl;
     infile.close();
     }
 

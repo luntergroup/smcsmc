@@ -153,7 +153,7 @@ class VariantReader: public VariantPosition{
         bool eof_;
         string file_name_;
         size_t current_line_index_; // line counter in the entire vcf file
-        size_t vcf_length_;
+        size_t file_length_;
         bool end_data_;
         size_t end_pos_;
         int buffer_max_number_of_lines;
