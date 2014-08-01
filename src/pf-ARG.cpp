@@ -26,7 +26,7 @@
 #include "help.hpp"
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
- */ 
+ */
 //int new_forest_counter    = 0; // DEBUG
 //int delete_forest_counter = 0; // DEBUG
 //int recombination_counter = 0; // DEBUG

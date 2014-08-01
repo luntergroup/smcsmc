@@ -1,10 +1,12 @@
 bin_PROGRAMS = pf-ARG pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
-check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests 
+check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
 TESTS = unit_tests 
 
 PROG = PF-ARG 
 
+generate_vcf: 
+	./tests/pop_struct.py sim-1 2 1
 
 unittests: unit_tests
 	./unit_tests 
