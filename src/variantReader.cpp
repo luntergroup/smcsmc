@@ -48,10 +48,10 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
     //vcf_file_length = in_file.tellg();
     in_file.seekg (0, in_file.beg);
     if (in_file.good()){
-        getline (in_file,line);
+        getline (in_file, line);
         header_end_pos_ += line.size()+1;
         cout <<line<<endl;
-        while (line.size()>0 ){   
+        while ( line.size()>0 ){   
             //dout << header_end_line<<"  " <<line.size() <<"  " << header_end_pos_<<"  " << line<<endl;
             if (line[0]=='#'){
                 if (line[1]=='#'){
@@ -64,12 +64,12 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
                     }
                 }
     
-            getline (in_file,line);
+            getline (in_file, line);
             
             // This requires more thinking, are we checking the data quality?
             //if ( line.find("PASS")!= std::string::npos ){ break; } // This will skip to the first line of the useable data
             
-            header_end_pos_ += line.size()+1;
+            header_end_pos_ += line.size() + 1;
             header_end_line++;
             }    
     
@@ -78,20 +78,20 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
     in_file.close();
     this->read_new_block(); // END by start reading a block
     }
+
     
 void VariantReader::init(){
     /*! Initialize other VariantReader class members
      */
+    this->reset_chrom_site(); // reinitilize VariantPosition
+    this->reset_pervious_chrom_site(); // reinitilize VariantSegment
+    
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
     this->nsam_                      = 0;
     this->nfield_                    = 0;    
     this->current_block_line_        = 0;
-    this->site_               = 0;
-    this->previous_site_at_   = 0;
-    this->chrom_              = 0;
-    this->pervious_chrom_     = 0;
     this->missing_data_threshold_ = INT_MAX;
     this->file_length_                = 0;
     this->even_interval_             = 0.0;
@@ -108,17 +108,16 @@ void VariantReader::init(){
 void VariantReader::reset_data_to_first_entry(){
     /*! Reset the data to the first line, end of the header file 
      *  Extract new block of data
-     */ 
+     */
+    this->reset_chrom_site(); // reinitilize VariantPosition
+    this->reset_pervious_chrom_site(); // reinitilize VariantSegment
+     
     this->end_pos_            = this->header_end_pos_;
     this->end_data_           = false;
     this->eof_                = false;
     this->current_line_index_ = 0;    
     this->current_block_line_ = 0;
-    this->site_               = 0;
-    this->previous_site_at_   = 0;
-    this->chrom_              = 0;
-    this->pervious_chrom_     = 0;
-    if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0;  }
+    if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0; }
     //this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     this->read_new_block();
     }
@@ -161,17 +160,15 @@ void VariantReader::read_new_line(){
     
     cout<<line<<endl;//DEBUG
     
-    while(feild_end<line.size()){
+    while ( feild_end < line.size() ){
         skip = true;
-        feild_end = min( line.find('\t',feild_start), line.find('\n', feild_start) );
+        feild_end = min ( line.find('\t',feild_start), line.find('\n', feild_start) );
         tmp_str = line.substr( feild_start, feild_end - feild_start );
         
-        if ( field_index == 0 ){
-            chrom_ = strtol( tmp_str.c_str(), NULL, 0);
-            }
+        if      ( field_index == 0 ) { this->chrom_ = strtol( tmp_str.c_str(), NULL, 0); }
         
         else if ( field_index == 1 ) {
-            site_ = strtol( tmp_str.c_str(), NULL, 0);
+            this->site_ = strtol( tmp_str.c_str(), NULL, 0);
             //cout << " current site " << site_ << ", and previous site is at " << previous_site_at_<<endl; // DEBUG
             //cout << "(site_ - previous_site_at_) = "<<(site_ - previous_site_at_)<<endl;
             //cout << "pervious_chrom_ = "<<pervious_chrom_<< ", chrom_"<<chrom_<<endl;
@@ -182,14 +179,19 @@ void VariantReader::read_new_line(){
             }
 
         else if ( field_index == 3 ){
-            ref = tmp_str; 
-            if ( ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
-                cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to deletion or replacement" << endl;
+            this->ref = tmp_str; 
+            if ( this->ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
+                cout << "Skip reads at chrom " << this->chrom_<<" at position " <<  this->site_<<", due to deletion or replacement" << endl;
                 //cout << "skipping: "<< line << endl; // DEBUG
                 this->current_variant_state = OTHER_VARIANT;
                 break;
                 }            
             }
+            else if ( this->ref == "." || this->ref == "N" ) {
+                
+                
+                }
+            
 // REQUIRES MORE WORK HERE!!!
 // IF THIS IS GVCF OR RGVCF FILE, REF ALT BASE IS "." or "N"
         else if ( field_index == 4 ){
@@ -231,6 +233,7 @@ void VariantReader::read_new_line(){
             }                            
 
         else if (field_index > 8){
+            
             size_t bar_index=tmp_str.find('|',0);        
             size_t slash_index=tmp_str.find('/',0);
             size_t colon_index=tmp_str.find(':',0);
@@ -242,6 +245,7 @@ void VariantReader::read_new_line(){
             vec_of_sample_alt_bool.push_back( (alt_index_0 == (size_t)0) ? false : true);
             size_t alt_index_2 = strtol (tmp_str.substr(2,1).c_str(), NULL, 0);;
             vec_of_sample_alt_bool.push_back( (alt_index_2 == (size_t)0) ? false : true);
+            
             }
         feild_start=feild_end+1;        
         field_index++;
@@ -308,7 +312,7 @@ void VariantReader::empty_block() { buffer_lines.clear(); }
 
 
 void VariantReader::read_new_block(){
-    cout  <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl;
+    //cout  <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl <<"***** READ new block ****" <<endl;
     if (current_line_index_ == 0){
         cout << "Set data to the first entry, read a block of " <<  this->buffer_max_number_of_lines << " entries" <<endl;
         } 
@@ -345,12 +349,12 @@ void VariantReader::read_new_block(){
     }
 
 
-string VariantReader::extract_alt_(string tmp_str, size_t start, size_t end){
+string VariantReader::extract_alt_( string &tmp_str, size_t start, size_t end ){
     /*! Extract haplotype */ 
     size_t alt_index = strtol (tmp_str.substr(start,end-start).c_str(), NULL, 0);
     string alt_dummy = ( alt_index==0 ) ? ref : alt[alt_index-1];
     return alt_dummy;
-    }
+}
     
 
 void VariantReader::check_feilds(string line){
@@ -371,19 +375,19 @@ void VariantReader::check_feilds(string line){
             case 6: if ( tmp_str != "FILTER" ){ throw std::invalid_argument( "Seventh Header entry should be FILTER: " + tmp_str ); } break;
             case 7: if ( tmp_str != "INFO"   ){ throw std::invalid_argument( "Eighth Header entry should be INFO: "    + tmp_str ); } break;
             case 8: if ( tmp_str != "FORMAT" ){ throw std::invalid_argument( "Ninth Header entry should be FORMAT: "   + tmp_str ); } break;
-            }
+        }
         
         if (field_index > 8){  sample_names.push_back(tmp_str); }
         
         feild_start = feild_end+1;
         field_index++;
-        } // End of while loop: feild_end < line.size()
+    } // End of while loop: feild_end < line.size()
     
     this->nfield_ = field_index;
-    set_nsam( (int)sample_names.size() );
-    assert( print_sample_name() );   
     
-    }
+    this->set_nsam( (int)sample_names.size() );
+    assert( print_sample_name() );       
+}
 
 
 

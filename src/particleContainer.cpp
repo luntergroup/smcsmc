@@ -267,7 +267,7 @@ void ParticleContainer::update_state_to_data(
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
     double mutation_at = VCFfile->site();
     //bool withdata = !VCFfile->missing_data();
-    bool withdata = VCFfile->prior_seq_state == SEQ_INVARIANT;
+    bool is_invariant = VCFfile->prior_seq_state == SEQ_INVARIANT;
     double mutation_rate = model->mutation_rate();
     
     /*!
@@ -311,7 +311,7 @@ void ParticleContainer::update_state_to_data(
      */
     
     //Extend ARGs and update weight for not seeing mutations along the equences
-    this->extend_ARGs( mutation_at, mutation_rate, withdata );
+    this->extend_ARGs( mutation_at, mutation_rate, is_invariant );
     
     //Update weight for seeing mutation at the position 
     this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 

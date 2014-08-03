@@ -71,11 +71,11 @@ class VariantPosition{
         
         VariantPosition(){};
         Variant_State current_variant_state;
-        Seq_State prior_seq_state;
         void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
-
+        void reset_chrom_site(){ this->chrom_ = 0; this->site_ = 0; }
+                
         size_t nsam_;
-
+        
         int site_;
         int chrom_;
 
@@ -88,11 +88,22 @@ class VariantPosition{
         vector <bool> phased; // True if it is phased, which has '|'
         
         //bool invariant_; // If a "Variant" is invariant (True), it is treated as not a mutation
-    };
+};
+
+
+class VariantSegment: public VariantPosition{
+        
+    protected:
+        Seq_State prior_seq_state;
+        void reset_pervious_chrom_site(){ this->pervious_chrom_ = 0; this->previous_site_at_ = 0; }
+        //all these numbers can not be negative
+        int pervious_chrom_;
+        int previous_site_at_;
+};
 
 
 /*! \brief VCF file reader @ingroup group_data */
-class VariantReader: public VariantPosition{
+class VariantReader: public VariantSegment{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
@@ -104,7 +115,7 @@ class VariantReader: public VariantPosition{
     public:
         // Constructors and Destructors
         VariantReader(string file_name, INPUT_FILETYPE FileType_in = EMPTY, int buffer_length = 100);
-        ~VariantReader(){};        
+        ~VariantReader(){};
         
         // Methods
         void read_new_line();
@@ -144,7 +155,7 @@ class VariantReader: public VariantPosition{
         void set_even_interval( int interval ) { this->even_interval_ = interval; }
                  
         void check_feilds(string line);
-        string extract_alt_(string tmp_str, size_t start, size_t end);
+        string extract_alt_(string &tmp_str, size_t start, size_t end);
         bool print_sample_name();
         
         // Members
@@ -170,11 +181,6 @@ class VariantReader: public VariantPosition{
         //bool withdata_;
         //bool missing_data_;
         //bool empty_file_;
-        
-        
-        //all these numbers can not be negative
-        int pervious_chrom_;
-        int previous_site_at_;
 
         int ghost_num_mut;
         int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.

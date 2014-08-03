@@ -64,7 +64,7 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
             /*!
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
-            if (updated_to < mutation_at) {
+            if ( updated_to < mutation_at ) {
                 //dout<<"calling here"<<endl;
                 this->particles[particle_i]->sampleNextGenealogy();
                 
