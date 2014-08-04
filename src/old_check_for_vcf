@@ -1,0 +1,109 @@
+        gvcf_file = new VariantReader("tests/test4sample.vcf", VCF);
+        CPPUNIT_ASSERT_EQUAL(string("tests/test4sample.vcf"), gvcf_file->file_name_);
+        CPPUNIT_ASSERT_EQUAL(size_t(6518), gvcf_file->file_length_);  // wc test2sample.vcf, length of the file is 6518 characters
+
+        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->nsam());
+        CPPUNIT_ASSERT_EQUAL(size_t(11), gvcf_file->nfield());
+        CPPUNIT_ASSERT_EQUAL( VCF, gvcf_file->FileType );
+        
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->chrom());
+        
+        
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        /*! read the following line
+         * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
+         * 1	0	rs0	A	T	67	PASS	NS=2;	GT	0|0	1|1
+         */
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, gvcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, gvcf_file->current_variant_state);
+        
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        /*! read the following line
+         * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
+         * 1       1       rs0     A       T       67      PASS    NS=2;   GT      0|0     1|1
+         */
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[3]); 
+        
+        delete gvcf_file;
+
+        gvcf_file = new VariantReader("tests/test6sample.vcf", GVCF);
+        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), gvcf_file->file_name_);
+        CPPUNIT_ASSERT_EQUAL(size_t(13813), gvcf_file->file_length_);  // wc test2sample.vcf, length of the file is 13813 characters
+
+        CPPUNIT_ASSERT_EQUAL(size_t(3), gvcf_file->nsam());
+        CPPUNIT_ASSERT_EQUAL(size_t(12), gvcf_file->nfield());
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, gvcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, gvcf_file->current_variant_state);
+        
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->chrom());
+        
+         //cout << gvcf_file->buffer_lines[gvcf_file->current_block_line_]<<endl;   
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        /*! read the following line
+         * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
+         * 1	0	rs0	A	T	67	PASS	NS=2;	GT	0|0	1|0	0|0
+         */
+        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(size_t(6), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]); 
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);   
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[4]); 
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[5]);      
+        CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, gvcf_file->prior_seq_state);
+        CPPUNIT_ASSERT_EQUAL(SNP, gvcf_file->current_variant_state);
+
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+                
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        /*! read the following line
+         * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
+         * 1       4       rs0     A       T       67      PASS    NS=2;   GT      0|0     1|0     0|0
+         */
+        CPPUNIT_ASSERT_EQUAL(int(4), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(size_t(6), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[4]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[5]); 
+        
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
+        /*! read the following line
+         * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
+         *  1       7       rs0     A       T       67      PASS    NS=2;   GT      0|0     0|1     0|0
+         */
+        CPPUNIT_ASSERT_EQUAL(int(7), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(size_t(6), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[3]); 
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[4]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[5]);
+        
+        delete gvcf_file;

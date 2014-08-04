@@ -65,14 +65,13 @@ class VariantPosition{
         int site() const { return this->site_; } 
         vector <bool> vec_of_sample_alt_bool;
         size_t nsam() const { return this->nsam_; } 
-        //bool invariant() const { return this->invariant_; }
 
     protected:
         
         VariantPosition(){};
         Variant_State current_variant_state;
         void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
-        void reset_chrom_site(){ this->chrom_ = 0; this->site_ = 0; }
+        void reset_chrom_site(){ this->chrom_ = -1; this->site_ = -1; }
                 
         size_t nsam_;
         
@@ -87,7 +86,6 @@ class VariantPosition{
         vector <string> vec_of_sample_alt;
         vector <bool> phased; // True if it is phased, which has '|'
         
-        //bool invariant_; // If a "Variant" is invariant (True), it is treated as not a mutation
 };
 
 
@@ -95,7 +93,7 @@ class VariantSegment: public VariantPosition{
         
     protected:
         Seq_State prior_seq_state;
-        void reset_pervious_chrom_site(){ this->pervious_chrom_ = 0; this->previous_site_at_ = 0; }
+        void reset_pervious_chrom_site(){ this->pervious_chrom_ = 0; this->previous_site_at_ = -1; }
         //all these numbers can not be negative
         int pervious_chrom_;
         int previous_site_at_;
@@ -125,23 +123,13 @@ class VariantReader: public VariantSegment{
         // DEBUG
         void print_vcf_line();
         void print();
-        
-        //
-        // Getters:
-        //
-        //bool withdata() const { return this->withdata_; }
-        //void set_missding_data ( bool TRUEorFALSE ) { this->missing_data_ = TRUEorFALSE ; }
-        //bool missing_data() const { return this->missing_data_; }
-        //bool empty_file() const { return this->empty_file_; }
 
         bool end_data() const { return this->end_data_; }
         INPUT_FILETYPE FileType;
 
     private:
 
-        //
         // Methods
-        //   
         void empty_block();
         void read_new_block();
         //void init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in);
@@ -151,26 +139,25 @@ class VariantReader: public VariantSegment{
         size_t nfield() const { return this->nfield_; }    
 
         bool eof() const { return this->eof_; }
-        int even_interval() const { return this-> even_interval_; }
+        //int even_interval() const { return this-> even_interval_; }
         void set_even_interval( int interval ) { this->even_interval_ = interval; }
         
         
         string tmp_line;
-        string tmp_str;                 
-        //void check_feilds(string line);
+        string tmp_str;
         void check_feilds( );
                 
-        void extract_field_CHROM( );
-        void extract_field_POS ( );
-        void extract_field_ID ( );
-        void extract_field_REF ( );
-        void extract_field_ALT ( );
-        void extract_field_QUAL ( );
-        void extract_field_FILTER ( );
-        void extract_field_INFO ( );
-        void extract_field_FORMAT ( );
+        void extract_field_CHROM   ( );
+        void extract_field_POS     ( );
+        void extract_field_ID      ( );
+        void extract_field_REF     ( );
+        void extract_field_ALT     ( );
+        void extract_field_QUAL    ( );
+        void extract_field_FILTER  ( );
+        void extract_field_INFO    ( );
+        void extract_field_FORMAT  ( );
+        void extract_field_VARIANT ( );
         
-        //string extract_field_ALT_str(string &tmp_str, size_t start, size_t end);
         string extract_field_ALT_str( size_t start, size_t end );
         bool print_sample_name();
         
@@ -194,10 +181,6 @@ class VariantReader: public VariantSegment{
         size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
 
-        //bool withdata_;
-        //bool missing_data_;
-        //bool empty_file_;
-
         int ghost_num_mut;
         int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.
         int missing_data_threshold_; // if two snps are too far away apart, treat as missing data
@@ -207,10 +190,7 @@ class VariantReader: public VariantSegment{
 
         vector <string> buffer_lines;
         
-        //bool skip;
-        
-        //bool is_good_line;
-        bool tmp_line_is_skiped;
+        bool skip_tmp_line;
     };
 
 #endif
