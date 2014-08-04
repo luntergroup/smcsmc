@@ -96,7 +96,7 @@ void ParticleContainer::resample_for_check(valarray<int> & sample_count){
         for ( size_t j = 0; j < this->particles[i]->ForestState_copies.size(); j++){
             this->push( this->particles[i]->ForestState_copies[j] );
             }
-        this->particles[i]=NULL;
+        this->particles[i] = NULL;
         }
             
     this->shifting(sample_count.sum());
@@ -320,7 +320,7 @@ void ParticleContainer::update_state_to_data(
     ////this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
     
     //Update the cumulated probabilities, as well as computing the effective sample size
-    this->update_cum_sum_array_find_ESS(weight_cum_sum); 
+    this->update_cum_sum_array_find_ESS( weight_cum_sum );
     }
 
 

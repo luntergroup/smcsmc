@@ -11,6 +11,11 @@ PROG = PF-ARG
 generate_vcf: 
 	./tests/pop_struct.py sim-1 2 1
 	./tests/pop_struct.py sim-1 4 1
+	head -50 sim-1Samples4msdata1.vcf > sim-1Samples4msdata1_first50_lines.vcf 
+	sed -e "s/END=1434;/END=1430;/" -e "s/END=6582;/END=5000;/" -e "s/END=24916;/END=24900;/" -e "s/END=35798;/END=34000;/" sim-1Samples4msdata1.gvcf  | head -150 > sim-1Samples4msdata1_edited.gvcf 
+	tail -n+3150 sim-1Samples4msdata1.gvcf >> sim-1Samples4msdata1_edited.gvcf 
+	
+#./tests/pop_struct.py sim-1 6 1
 
 unittests: unit_tests
 	./unit_tests 

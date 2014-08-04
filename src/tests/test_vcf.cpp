@@ -28,20 +28,21 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL( size_t(-1), vcf_file->file_length_ );  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
 
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nsam() );
-        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nfield() );
-        CPPUNIT_ASSERT_EQUAL( int(0), vcf_file->chrom() );
+        //CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->nfield() );
+        CPPUNIT_ASSERT_EQUAL( int(-1), vcf_file->chrom() );
         CPPUNIT_ASSERT_EQUAL( EMPTY, vcf_file->FileType );
         
-        CPPUNIT_ASSERT_EQUAL( true, vcf_file->eof() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
+        CPPUNIT_ASSERT_EQUAL( true, vcf_file->eof_); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
         CPPUNIT_ASSERT_EQUAL( false, vcf_file->end_data() ); // Empty file directly goes to the end of the file, as it may extend virtual data, it is not the end of the data
         
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_line_index_ );
         
         CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->empty_file_line_counter_ );        
         CPPUNIT_ASSERT_EQUAL( int(0), vcf_file->site() );
-        
+                    CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_block_line_ );
         // Start reading new "lines" in empty file
         for (size_t i = 0; i < 11; i++){
+                        CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_block_line_ );
             CPPUNIT_ASSERT_NO_THROW( vcf_file->read_new_line() );
             CPPUNIT_ASSERT_EQUAL( size_t(0), vcf_file->current_block_line_ );
             CPPUNIT_ASSERT_EQUAL( size_t(1+i), vcf_file->empty_file_line_counter_ );
@@ -59,11 +60,11 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(size_t(3227), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 3227 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(1), vcf_file->nsam());
-        CPPUNIT_ASSERT_EQUAL(size_t(10), vcf_file->nfield());
+        //CPPUNIT_ASSERT_EQUAL(size_t(10), vcf_file->nfield());
         CPPUNIT_ASSERT_EQUAL( VCF, vcf_file->FileType );
         
-        CPPUNIT_ASSERT_EQUAL((int)0, vcf_file->site());
-        CPPUNIT_ASSERT_EQUAL((int)0, vcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->chrom());
         
         
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -96,11 +97,11 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(size_t(6518), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 6518 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->nsam());
-        CPPUNIT_ASSERT_EQUAL(size_t(11), vcf_file->nfield());
+        //CPPUNIT_ASSERT_EQUAL(size_t(11), vcf_file->nfield());
         CPPUNIT_ASSERT_EQUAL( VCF, vcf_file->FileType );
         
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->chrom());
         
         
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -138,12 +139,12 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(size_t(13813), vcf_file->file_length_);  // wc test2sample.vcf, length of the file is 13813 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(3), vcf_file->nsam());
-        CPPUNIT_ASSERT_EQUAL(size_t(12), vcf_file->nfield());
+        //CPPUNIT_ASSERT_EQUAL(size_t(12), vcf_file->nfield());
         CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
         CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
         
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->chrom());
         
          //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;   
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -367,8 +368,8 @@ class TestVCF : public CppUnit::TestCase {
         // Just initialized, read buffer line: 
         //1	52238	rs150021059	T	G	100	PASS	.	GT	1|0
         // but not yet processed        
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
-        CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->chrom());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->vec_of_sample_alt_bool.size());
         
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;        

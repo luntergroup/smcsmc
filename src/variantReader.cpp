@@ -86,7 +86,7 @@ void VariantReader::init(){
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
     this->nsam_                      = 0;
-    this->nfield_                    = 0;    
+    //this->nfield_                    = 0;    
     //this->current_block_line_        = 0;
     this->missing_data_threshold_ = INT_MAX;
     this->file_length_                = 0;
@@ -98,6 +98,8 @@ void VariantReader::init(){
     this->current_variant_state = ( this->FileType == EMPTY ) ? INVARIANT : SNP ;
     this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
+    
+    this->empty_block();
     }
 
 
@@ -114,7 +116,6 @@ void VariantReader::reset_data_to_first_entry(){
     this->current_line_index_ = 0;    
     //this->current_block_line_ = 0;
     if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0; }
-    //this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;    
     this->read_new_block();
     }
     
@@ -128,7 +129,7 @@ void VariantReader::read_new_line(){
         this->empty_file_line_counter_ ++; 
         this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
         // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut +1)); // DEBUG 
+        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut + 1)); // DEBUG 
         return;    
     }
     
@@ -373,7 +374,7 @@ void VariantReader::check_feilds(){
         field_index++;
     } // End of while loop: field_end < line.size()
     
-    this->nfield_ = field_index;
+    //this->nfield_ = field_index;
     
     this->set_nsam( (int)sample_names.size() );
     assert( print_sample_name() );       

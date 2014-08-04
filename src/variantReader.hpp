@@ -132,13 +132,12 @@ class VariantReader: public VariantSegment{
         // Methods
         void empty_block();
         void read_new_block();
-        //void init(string infile_name, int buffer_length, INPUT_FILETYPE FileType_in);
         void init();
         
         //  Setters and getters:
-        size_t nfield() const { return this->nfield_; }    
+        //size_t nfield() const { return this->nfield_; }    
 
-        bool eof() const { return this->eof_; }
+        //bool eof() const { return this->eof_; }
         //int even_interval() const { return this-> even_interval_; }
         void set_even_interval( int interval ) { this->even_interval_ = interval; }
         
@@ -159,6 +158,7 @@ class VariantReader: public VariantSegment{
         void extract_field_VARIANT ( );
         
         string extract_field_ALT_str( size_t start, size_t end );
+
         bool print_sample_name();
         
         // Members
@@ -174,14 +174,14 @@ class VariantReader: public VariantSegment{
         
         // Header related
         size_t header_end_pos_;
-        size_t nfield_;
+        //size_t nfield_;
         size_t header_end_line;        
         
         // Block related
         size_t current_block_line_;  // line counter in the current data block
         size_t empty_file_line_counter_;
 
-        int ghost_num_mut;
+        size_t ghost_num_mut;
         int filter_window_;  // If two snps are too close, i.e. difference between the site is less than this window, should skip to the next read.
         int missing_data_threshold_; // if two snps are too far away apart, treat as missing data
         int even_interval_; 
