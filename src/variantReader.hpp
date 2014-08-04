@@ -153,9 +153,25 @@ class VariantReader: public VariantSegment{
         bool eof() const { return this->eof_; }
         int even_interval() const { return this-> even_interval_; }
         void set_even_interval( int interval ) { this->even_interval_ = interval; }
-                 
-        void check_feilds(string line);
-        string extract_alt_(string &tmp_str, size_t start, size_t end);
+        
+        
+        string tmp_line;
+        string tmp_str;                 
+        //void check_feilds(string line);
+        void check_feilds( );
+                
+        void extract_field_CHROM( );
+        void extract_field_POS ( );
+        void extract_field_ID ( );
+        void extract_field_REF ( );
+        void extract_field_ALT ( );
+        void extract_field_QUAL ( );
+        void extract_field_FILTER ( );
+        void extract_field_INFO ( );
+        void extract_field_FORMAT ( );
+        
+        //string extract_field_ALT_str(string &tmp_str, size_t start, size_t end);
+        string extract_field_ALT_str( size_t start, size_t end );
         bool print_sample_name();
         
         // Members
@@ -191,8 +207,10 @@ class VariantReader: public VariantSegment{
 
         vector <string> buffer_lines;
         
-        bool skip;
-
+        //bool skip;
+        
+        //bool is_good_line;
+        bool tmp_line_is_skiped;
     };
 
 #endif
