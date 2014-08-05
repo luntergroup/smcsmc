@@ -310,11 +310,48 @@ void ParticleContainer::update_state_to_data(
      * 
      */
     
+    /*!
+     * P0-------p0------P1-----p1-----P2
+     * 
+     * VCF: p0 = P0, p1 = P1, P0, P1, and P2 are SNP
+     * Previously updated till P0/p0, 
+     * Action: extend from P0/p0 to P1, then update at P1.
+     * 
+     * GVCF: P0: SNP, P1: SNP, same as VCF
+     *       P0: invariant, P1: SNP
+     *           previouly updated till p0, for invariant between P0 and p0
+     *           Action: extend missing from p0 to P1, then update at P1/p1
+     *       P0: SNP, P1: invariant
+     *           previously updated till P0/p0, 
+     *           Action: extending invariant from P0 till p1, no update at P1 nor p1
+     *       P0: invariant, P1: invariant
+     *           previouly updated till p0, extend invariant till p1, no update at P1 nor p1
+     * 
+     * RGVCF: P0: SNP, P1: SNP, same as VCF
+     *       P0: invariant, P1: SNP
+     *           previouly updated till P0/p0, for missing between P0 and p0
+     *           Action: extend invariant from p0 to P1, then update at P1/p1
+     *       P0: SNP, P1: invariant
+     *           previously updated till P0/p0, 
+     *           Action: extending invariatn from P0/p0 till p1, no update at P1 nor p1
+     *       P0: invariant, P1: invariant
+     *           previouly updated till p0, extend missing till p1, no update at P1 nor p1
+     * 
+     */ 
+    
+    
     //Extend ARGs and update weight for not seeing mutations along the equences
     this->extend_ARGs( mutation_at, mutation_rate, is_invariant );
-    
     //Update weight for seeing mutation at the position 
     this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 
+                                                 
+    /*!
+     * extend to P1, 
+     * If P1 == p1
+     *      update at p1
+     * else 
+     *      then extend to p1 (two types of extension, different from the previous extension)
+     */                                                  
     //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->invariant(), VCFfile->vec_of_sample_alt_bool ); 
     //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
     ////this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
