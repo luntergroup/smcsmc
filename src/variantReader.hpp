@@ -83,7 +83,7 @@ class VariantPosition{
         int site_;
         int chrom_;
                 
-        size_t nsam_;
+        size_t nsam_; // number of diploid sample
 
         string ref;
         vector <string> alt;
@@ -102,10 +102,10 @@ class VariantSegment: public VariantPosition{
         Seq_State previous_seg_state;        
         Seq_State current_seg_state;
         void reset_chrom_site(){ 
-            this->chrom_ = -1; 
-            this->site_ = -1; 
+            this->chrom_ = 0; 
+            this->site_ = 0; 
             this->pervious_chrom_ = 0; 
-            this->previous_site_at_ = -1; 
+            this->previous_site_at_ = 0; 
             this->previous_seg_state = ZERO_SEG;
             this->previous_variant_state = INVARIANT;
             }
@@ -159,7 +159,13 @@ class VariantReader: public VariantSegment{
         string tmp_line;
         string tmp_str;
         void check_feilds( );
-                
+        
+        
+        void initialize_read_newLine();                
+        void check_and_update_block();
+        void check_and_update_newLine();
+        void finalize_read_new_line();
+        
         void extract_field_CHROM   ( );
         void extract_field_POS     ( );
         void extract_field_ID      ( );
@@ -174,12 +180,16 @@ class VariantReader: public VariantSegment{
         string extract_field_ALT_str( size_t start, size_t end );
 
 
-        void check_and_update_block();
-        void check_and_update_newLine();
-        void finalize_read_new_line();
+        
         bool print_sample_name();
         
         // Members
+
+        // Line related
+        size_t feild_start;
+        size_t field_end;
+        int field_index;
+
         
         // FILE related
         bool eof_;

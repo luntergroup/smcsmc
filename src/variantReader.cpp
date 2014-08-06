@@ -130,13 +130,14 @@ void VariantReader::read_new_line(){
         field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
         this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
         
-        if      ( field_index == 0 ) { this->extract_field_CHROM();   }                
-        else if ( field_index == 1 ) { this->extract_field_POS ();    }        
+        if      ( field_index == 0 ) { this->extract_field_CHROM();   }  /*! Throw exception when it is on different chrom*/        
+        else if ( field_index == 1 ) { this->extract_field_POS ();    }  /*! Skip the line if two sites are two close, apply the filtering */
         //else if ( field_index == 2 ) { this->extract_field_ID ();   }        
-        else if ( field_index == 3 ) { this->extract_field_REF () ;   }
-        else if ( field_index == 4 ) { this->extract_field_ALT () ;   }
+        else if ( field_index == 3 ) { this->extract_field_REF () ;   }  /*! REF field, Skip the line, if the length of REF string is greater than one, treated as deletion or indel*/
+        else if ( field_index == 4 ) { this->extract_field_ALT () ;   }  /*! ALT field, Skip the line if any alter field */
+                                                                         /*! what about the case of 1|1, ./.*/
         //else if ( field_index == 5 ) { this->extract_field_QUAL() ; } // ATTENTION, DO NOT CHECK QUALITY AT THE MOMENT
-        else if ( field_index == 6 ) { this->extract_field_FILTER();  }
+        else if ( field_index == 6 ) { this->extract_field_FILTER();  }  /*! Skip if it is not passed for snp, or it is not refcall */
         else if ( field_index == 7 ) { this->extract_field_INFO();    } // READ INFO FIELD, EXTRACT THE LENGTH OF MISSING BASE FROM RGVCF, OR EXTRACT THE LENGTH OF INVARIANT FROM GVCF
         else if ( field_index > 8  ) { this->extract_field_VARIANT(); }
         
@@ -172,13 +173,13 @@ void VariantReader::initialize_read_newLine(){
     vec_of_sample_alt_bool.clear();
     sample_alt.clear();
     phased.clear(); // True if it is phased, which has '|'    
+
     this->tmp_line = this->buffer_lines[this->current_block_line_];
-    size_t feild_start=0;
-    size_t field_end=0;
-    int field_index=0;
+
+    this->feild_start = 0;
+    this->field_end   = 0;
+    this->field_index    = 0;
     this->skip_tmp_line = false;
-    
-    
     }
 
 
@@ -208,8 +209,7 @@ void VariantReader::finalize_read_new_line(){
         //this->set_missding_data ( true );
         this->previous_seg_state = MISSING;
         } 
-    if ( this->FileType == VCF ){ }
-        
+            
     // If it is not skipped, overwrite the previous site and chrom
     this->previous_site_at_ = this->site_; // If the current line is valid, update the previous site to the current site.
     this->pervious_chrom_ = this->chrom_ ; // If the current line is valid, update the previous chrom_ to the current chrom_. to check if they are on the same chrom        
@@ -350,19 +350,27 @@ void VariantReader::extract_field_FILTER ( ){
     }
     
 void VariantReader::extract_field_INFO ( ){
-    if ( this->FileType == VCF ){ 
-        this->seg_end_site_ = this->site_;
+    assert ( this->skip_tmp_line = false );
+
+    if ( this->current_variant_state == SNP ){ 
+        assert( this->current_seg_state == ZERO_SEG );
+        this->seg_end_site_ = this->site_; 
         }
     else {
-        int number_after_END
-        this->seg_end_site_ = number_after_END;
+        assert( this->tmp_str.find("END=",0) != std::string::npos );
+        this->seg_end_site_ = strtol( tmp_str.substr( (size_t)4 ).c_str(), NULL, 0);        
+        assert ( (this->FileType == GVCF) || ( this->FileType == RGVCF ) );
+        this->current_seg_state = this->FileType == GVCF ? SEQ_INVARIANT : MISSING ;
+        //if ( this->FileType == GVCF ) { this->current_seg_state = SEQ_INVARIANT; }
+        //else if ( this->FileType == RGVCF ) { this->current_seg_state = MISSING; }
         }
     }
+
 
 void VariantReader::extract_field_FORMAT ( ){ }
 
 void VariantReader::extract_field_VARIANT ( ){
-    
+    assert ( this->skip_tmp_line = false );
     if ( this->current_variant_state == INVARIANT ){
         this->vec_of_sample_alt_bool.push_back( false );
         this->vec_of_sample_alt_bool.push_back( false );
@@ -400,7 +408,7 @@ void VariantReader::check_feilds(){
     while( field_end < this->tmp_line.size() ) {
         field_end = min( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n',feild_start) ); 
         this->tmp_str = this->tmp_line.substr( feild_start, field_end-feild_start );
-        switch (field_index){
+        switch ( field_index ){
             case 0: if ( this->tmp_str != "#CHROM" ){ throw std::invalid_argument( "First Header entry should be #CHROM: "   + tmp_str ); } break;
             case 1: if ( this->tmp_str != "POS"    ){ throw std::invalid_argument( "Second Header entry should be POS: "     + tmp_str ); } break;
             case 2: if ( this->tmp_str != "ID"     ){ throw std::invalid_argument( "Third Header entry should be ID: "       + tmp_str ); } break;
