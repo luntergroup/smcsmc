@@ -80,7 +80,7 @@ void VariantReader::init(){
     /*! Initialize other VariantReader class members
      */
     this->reset_chrom_site(); // reinitilize VariantPosition
-    this->reset_pervious_chrom_site(); // reinitilize VariantSegment
+    //this->reset_pervious_chrom_site(); // reinitilize VariantSegment
     
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
@@ -96,7 +96,7 @@ void VariantReader::init(){
     this->end_data_                  = false;
 
     this->current_variant_state = ( this->FileType == EMPTY ) ? INVARIANT : SNP ;
-    this->prior_seq_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
+    this->previous_seg_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
     //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
     
     this->empty_block();
@@ -108,7 +108,7 @@ void VariantReader::reset_data_to_first_entry(){
      *  Extract new block of data
      */
     this->reset_chrom_site(); // reinitilize VariantPosition
-    this->reset_pervious_chrom_site(); // reinitilize VariantSegment
+    //this->reset_pervious_chrom_site(); // reinitilize VariantSegment
      
     this->end_pos_            = this->header_end_pos_;
     this->end_data_           = false;
@@ -123,6 +123,39 @@ void VariantReader::reset_data_to_first_entry(){
 void VariantReader::read_new_line(){
     /*! Read VariantReader data, extract mutation site and haplotype
      */ 
+     
+    this->initialize_read_newLine(); 
+
+    while ( field_end < this->tmp_line.size() && !this->skip_tmp_line ){
+        field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
+        this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
+        
+        if      ( field_index == 0 ) { this->extract_field_CHROM();   }                
+        else if ( field_index == 1 ) { this->extract_field_POS ();    }        
+        //else if ( field_index == 2 ) { this->extract_field_ID ();   }        
+        else if ( field_index == 3 ) { this->extract_field_REF () ;   }
+        else if ( field_index == 4 ) { this->extract_field_ALT () ;   }
+        //else if ( field_index == 5 ) { this->extract_field_QUAL() ; } // ATTENTION, DO NOT CHECK QUALITY AT THE MOMENT
+        else if ( field_index == 6 ) { this->extract_field_FILTER();  }
+        else if ( field_index == 7 ) { this->extract_field_INFO();    } // READ INFO FIELD, EXTRACT THE LENGTH OF MISSING BASE FROM RGVCF, OR EXTRACT THE LENGTH OF INVARIANT FROM GVCF
+        else if ( field_index > 8  ) { this->extract_field_VARIANT(); }
+        
+        feild_start = field_end+1;        
+        field_index++;
+        }
+    //
+    // CHECK END of VariantReader
+    this->current_block_line_++;        
+    this->check_and_update_block();
+    this->check_and_update_newLine();
+    this->finalize_read_new_line();
+    }
+
+void VariantReader::initialize_read_newLine(){
+    this->previous_seg_state = this->current_seg_state;
+    this->previous_variant_state = this->current_variant_state ;
+
+    
     this->current_line_index_++;
         
     if ( this->FileType == EMPTY ){
@@ -144,50 +177,43 @@ void VariantReader::read_new_line(){
     size_t field_end=0;
     int field_index=0;
     this->skip_tmp_line = false;
-
-    while ( field_end < this->tmp_line.size() && !this->skip_tmp_line ){
-        field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
-        this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
-        
-        if      ( field_index == 0 ) { this->extract_field_CHROM();   }                
-        else if ( field_index == 1 ) { this->extract_field_POS ();    }        
-        //else if ( field_index == 2 ) { this->extract_field_ID ();   }        
-        else if ( field_index == 3 ) { this->extract_field_REF () ;   }
-        else if ( field_index == 4 ) { this->extract_field_ALT () ;   }
-        //else if ( field_index == 5 ) { this->extract_field_QUAL() ; } // ATTENTION, DO NOT CHECK QUALITY AT THE MOMENT
-        else if ( field_index == 6 ) { this->extract_field_FILTER();  }
-        else if ( field_index == 7 ) { this->extract_field_INFO();    } // READ INFO FIELD, EXTRACT THE LENGTH OF MISSING BASE FROM RGVCF, OR EXTRACT THE LENGTH OF INVARIANT FROM GVCF
-        else if ( field_index > 8  ) { this->extract_field_VARIANT(); }
-        
-        feild_start = field_end+1;        
-        field_index++;
-        }
-    //
-    // CHECK END of VariantReader
-    this->current_block_line_++;
     
+    
+    }
+
+
+void VariantReader::check_and_update_block(){
     if ( (this->current_block_line_ == this->buffer_lines.size() ) && !this->eof_ ){ // END of the buff block
         this->read_new_block();
         }
+    this->end_data_ = this->eof_;    
+    }
 
-    this->end_data_ = this->eof_;
-        
+void VariantReader::check_and_update_newLine(){
     if ( this->skip_tmp_line ){
+        // revert, if the current line is going to be skipped.
+        
+        this->current_seg_state = this->previous_seg_state ;
+        this->current_variant_state = this->previous_variant_state ;
         if ( !this->end_data_ ){ this->read_new_line(); }  // If this line is bad, and hasn't reached to the end of the data. skip, then read again
         else { this->site_ = this->previous_site_at_; }
+        }    
     }
-        
+
+void VariantReader::finalize_read_new_line(){
+
     // If we have made to here, that means, this line is good, so, we need to check the distance between this line and the next line. 
     if ( (site_ - previous_site_at_) > missing_data_threshold_ ){
         cout << " New data ( "<< site_ <<" ) is too far away from previous (" << previous_site_at_ << "), treat as missing data" << endl;
         //this->set_missding_data ( true );
-        this->prior_seq_state = MISSING;
-        }            
+        this->previous_seg_state = MISSING;
+        } 
+    if ( this->FileType == VCF ){ }
+        
     // If it is not skipped, overwrite the previous site and chrom
-    previous_site_at_ = site_; // If the current line is valid, update the previous site to the current site.
-    pervious_chrom_ = chrom_ ; // If the current line is valid, update the previous chrom_ to the current chrom_. to check if they are on the same chrom
+    this->previous_site_at_ = this->site_; // If the current line is valid, update the previous site to the current site.
+    this->pervious_chrom_ = this->chrom_ ; // If the current line is valid, update the previous chrom_ to the current chrom_. to check if they are on the same chrom        
     }
-
 
 void VariantReader::empty_block() {
     this->current_block_line_ = 0;
@@ -233,7 +259,6 @@ void VariantReader::extract_field_CHROM () {
 
 
 void VariantReader::extract_field_POS ( ){ 
-    this->prior_seq_state = SEQ_INVARIANT;
     
     this->site_ = strtol( tmp_str.c_str(), NULL, 0); 
     assert ( this->pervious_chrom_ == this->chrom_ );
@@ -254,7 +279,6 @@ void VariantReader::extract_field_REF ( ){
      *  if it is gvcf file, and REF is "." or "N", it is INVARIANT, 
      */ 
     
-    this->current_variant_state = SNP;
     this->ref = tmp_str; 
     
     if ( this->ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
@@ -264,22 +288,36 @@ void VariantReader::extract_field_REF ( ){
         return ;
     } 
     
-    if ( this->FileType == GVCF || this->FileType == RGVCF ) {
-        if ( this->ref == "." || this->ref == "N" ) { this->current_variant_state = INVARIANT; }
-        // else, need to check the ALT field
-    }
+    if ( this->ref == "." || this->ref == "N" ) { 
+        if ( this->FileType == GVCF  ) { 
+             this->current_variant_state = INVARIANT; 
+             this->current_seg_state = SEQ_INVARIANT;
+             }
+        else if ( this->FileType == RGVCF ) { 
+             this->current_variant_state = INVARIANT;
+             this->current_seg_state = MISSING; 
+             }
+        }
+    else { // assume besides ".", "N", it can only be "A","T", "C", "G"
+        this->current_variant_state = SNP;
+        this->current_seg_state = ZERO_SEG;            
+        }
 }
 
 // REQUIRES MORE WORK HERE!!!
 // IF THIS IS GVCF OR RGVCF FILE, REF ALT BASE IS "." or "N"
 void VariantReader::extract_field_ALT ( ){
-    if ( this->FileType == GVCF || this->FileType == RGVCF ) { // Is this necessary? is it possible for vcf to have ALT = "." or "N"?
-        if ( this->tmp_str == "." || this->tmp_str == "N" ) { 
-            this->current_variant_state = INVARIANT; 
-            return;    
-        }        
-    }
-    
+    if ( this->tmp_str == "." || this->tmp_str == "N" ) { 
+        if ( this->FileType == GVCF  ) { 
+             this->current_variant_state = INVARIANT; 
+             this->current_seg_state = SEQ_INVARIANT;
+             }
+        if ( this->FileType == RGVCF ) { 
+             this->current_variant_state = INVARIANT;
+             this->current_seg_state = MISSING; 
+             }
+        return;
+    }    
     size_t alt_start = 0; 
     size_t alt_end = 0; 
     string alt_tmp_str;
@@ -312,7 +350,13 @@ void VariantReader::extract_field_FILTER ( ){
     }
     
 void VariantReader::extract_field_INFO ( ){
-          
+    if ( this->FileType == VCF ){ 
+        this->seg_end_site_ = this->site_;
+        }
+    else {
+        int number_after_END
+        this->seg_end_site_ = number_after_END;
+        }
     }
 
 void VariantReader::extract_field_FORMAT ( ){ }

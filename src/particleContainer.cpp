@@ -265,9 +265,11 @@ void ParticleContainer::update_state_to_data(
                         ){
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
-    double mutation_at = VCFfile->site();
-    //bool withdata = !VCFfile->missing_data();
-    bool is_invariant = VCFfile->prior_seq_state == SEQ_INVARIANT;
+    double P1 = VCFfile->site();
+    double p1 = VCFfile->seg_end_site();
+
+    bool previous_segment_is_invariant = VCFfile->previous_seg_state == SEQ_INVARIANT;
+    bool current_segment_is_invariant = VCFfile->current_seg_state == SEQ_INVARIANT;
     double mutation_rate = model->mutation_rate();
     
     /*!
@@ -339,22 +341,23 @@ void ParticleContainer::update_state_to_data(
      * 
      */ 
     
-    
-    //Extend ARGs and update weight for not seeing mutations along the equences
-    this->extend_ARGs( mutation_at, mutation_rate, is_invariant );
-    //Update weight for seeing mutation at the position 
-    this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 
-                                                 
     /*!
      * extend to P1, 
      * If P1 == p1
      *      update at p1
      * else 
      *      then extend to p1 (two types of extension, different from the previous extension)
-     */                                                  
-    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->invariant(), VCFfile->vec_of_sample_alt_bool ); 
-    //this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, VCFfile->empty_file(), VCFfile->vec_of_sample_alt_bool ); 
-    ////this->update_state_weights_at_A_single_site( mutation_at, mutation_rate, withdata, VCFfile->vec_of_sample_alt_bool ); // DEBUG
+     */ 
+    //Extend ARGs and update weight for not seeing mutations along the equences
+    this->extend_ARGs( P1, mutation_rate, previous_segment_is_invariant );
+    if ( P1 == p1 ){
+        //Update weight for seeing mutation at the position 
+        this->update_state_weights_at_A_single_site( p1, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 
+        }
+    else {
+        //Extend ARGs and update weight for not seeing mutations along the equences
+        this->extend_ARGs( p1, mutation_rate, current_segment_is_invariant );
+        }
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );

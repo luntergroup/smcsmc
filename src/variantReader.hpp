@@ -46,8 +46,11 @@ using namespace std;
 
 
 enum INPUT_FILETYPE {EMPTY, VCF, GVCF, RGVCF};
+enum Seq_State { ZERO_SEG, 
+                 SEQ_INVARIANT, 
+                 MISSING /*! segment indicates missing, rgvcf entry */}; 
 enum Variant_State {SNP, INVARIANT, OTHER_VARIANT};
-enum Seq_State { MISSING, SEQ_INVARIANT};
+
 
 /*!
  * P1 ----------- P2 ___________ P3
@@ -70,13 +73,17 @@ class VariantPosition{
         
         VariantPosition(){};
         Variant_State current_variant_state;
+        Variant_State previous_variant_state;
         void set_nsam( size_t nsam ) { this->nsam_ = nsam; }
-        void reset_chrom_site(){ this->chrom_ = -1; this->site_ = -1; }
-                
-        size_t nsam_;
+
+        //all these numbers can not be negative
+        int pervious_chrom_;
+        int previous_site_at_;
         
         int site_;
         int chrom_;
+                
+        size_t nsam_;
 
         string ref;
         vector <string> alt;
@@ -92,11 +99,18 @@ class VariantPosition{
 class VariantSegment: public VariantPosition{
         
     protected:
-        Seq_State prior_seq_state;
-        void reset_pervious_chrom_site(){ this->pervious_chrom_ = 0; this->previous_site_at_ = -1; }
-        //all these numbers can not be negative
-        int pervious_chrom_;
-        int previous_site_at_;
+        Seq_State previous_seg_state;        
+        Seq_State current_seg_state;
+        void reset_chrom_site(){ 
+            this->chrom_ = -1; 
+            this->site_ = -1; 
+            this->pervious_chrom_ = 0; 
+            this->previous_site_at_ = -1; 
+            this->previous_seg_state = ZERO_SEG;
+            this->previous_variant_state = INVARIANT;
+            }
+        int seg_end_site() const { return this->seg_end_site_; } 
+        int seg_end_site_;
 };
 
 
@@ -159,6 +173,10 @@ class VariantReader: public VariantSegment{
         
         string extract_field_ALT_str( size_t start, size_t end );
 
+
+        void check_and_update_block();
+        void check_and_update_newLine();
+        void finalize_read_new_line();
         bool print_sample_name();
         
         // Members
