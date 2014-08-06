@@ -41,7 +41,7 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
         dout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
         assert (updated_to >= this->particles[particle_i]->current_base());
         while ( updated_to < mutation_at ) {
-            
+            //cout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
             dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
             /*!
              * First, update the likelihood up to either mutation_at or the end of this state
@@ -76,7 +76,6 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
                 }
             
             }
-        
         assert (updated_to == mutation_at);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
         //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;

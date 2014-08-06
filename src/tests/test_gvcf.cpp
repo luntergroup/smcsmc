@@ -1,6 +1,7 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include "../src/variantReader.hpp"
+
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 class TestGVCF : public CppUnit::TestCase {
@@ -20,12 +21,16 @@ class TestGVCF : public CppUnit::TestCase {
  public:
     
     void test_empty_file(){
+        //VariantReader( "random", GVCF );
+        CPPUNIT_ASSERT_THROW ( VariantReader( "random", GVCF ) , std::invalid_argument );
+        //delete gvcf_file;
+
         gvcf_file = new VariantReader( "", GVCF );
         CPPUNIT_ASSERT_EQUAL( EMPTY, gvcf_file->FileType );
         int testing_even_interval = 1000 ;
         CPPUNIT_ASSERT_NO_THROW( gvcf_file->even_interval_ = testing_even_interval );
         CPPUNIT_ASSERT_EQUAL( string(""), gvcf_file->file_name_ );
-        CPPUNIT_ASSERT_EQUAL( size_t(-1), gvcf_file->file_length_ );  // As this is an empty file, it will reach the end of the file, and seekg will go to "infinity", which is size_t(-1)
+        CPPUNIT_ASSERT_EQUAL( size_t(0), gvcf_file->file_length_ );  
 
         CPPUNIT_ASSERT_EQUAL( size_t(0), gvcf_file->nsam() );
         //CPPUNIT_ASSERT_EQUAL( size_t(0), gvcf_file->nfield() );
@@ -48,7 +53,7 @@ class TestGVCF : public CppUnit::TestCase {
             CPPUNIT_ASSERT_NO_THROW( gvcf_file->read_new_line() );
             //CPPUNIT_ASSERT_EQUAL( size_t(0), gvcf_file->current_block_line_ ); // No need to initialize current_block_line_
             CPPUNIT_ASSERT_EQUAL( size_t(1+i), gvcf_file->empty_file_line_counter_ );
-            CPPUNIT_ASSERT_EQUAL( int(i*testing_even_interval), gvcf_file->site() );
+            //CPPUNIT_ASSERT_EQUAL( int(i*testing_even_interval), gvcf_file->site() );
             }
             
         CPPUNIT_ASSERT_EQUAL( true, gvcf_file->end_data() );
@@ -59,7 +64,7 @@ class TestGVCF : public CppUnit::TestCase {
     void test_Constructors() {
         gvcf_file = new VariantReader("sim-1Samples2msdata1.gvcf", GVCF);
         CPPUNIT_ASSERT_EQUAL(string("sim-1Samples2msdata1.gvcf"), gvcf_file->file_name_);
-        CPPUNIT_ASSERT_EQUAL(size_t(784647), gvcf_file->file_length_);  // wc sim-1Samples2msdata1.vcf, length of the file is 784647 characters
+        CPPUNIT_ASSERT_EQUAL(size_t(784263), gvcf_file->file_length_);  // wc sim-1Samples2msdata1.vcf, length of the file is 784647 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(1), gvcf_file->nsam()); // 1 diploid sample
         //CPPUNIT_ASSERT_EQUAL(size_t(10), gvcf_file->nfield());
@@ -89,7 +94,7 @@ class TestGVCF : public CppUnit::TestCase {
          *1	382	rs0	A	T	67	PASS	NS=2;	GT	0|1
          */
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        cout<< gvcf_file->tmp_line<<endl;
+        //cout<< gvcf_file->tmp_line<<endl;
         CPPUNIT_ASSERT_EQUAL(int(382), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(382), gvcf_file->seg_end_site());
         CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->vec_of_sample_alt_bool.size());
@@ -103,7 +108,7 @@ class TestGVCF : public CppUnit::TestCase {
          *1       383     .       .       .       0       REFCALL;        END=1906;       GT      ./.
          */
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        cout<< gvcf_file->tmp_line<<endl;
+        //cout<< gvcf_file->tmp_line<<endl;
         CPPUNIT_ASSERT_EQUAL(int(383), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1906), gvcf_file->seg_end_site());
         CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->vec_of_sample_alt_bool.size());
@@ -116,7 +121,7 @@ class TestGVCF : public CppUnit::TestCase {
         gvcf_file = new VariantReader("sim-1Samples4msdata1_edited.gvcf", GVCF);
         CPPUNIT_ASSERT_EQUAL(string("sim-1Samples4msdata1_edited.gvcf"), gvcf_file->file_name_);
 
-        CPPUNIT_ASSERT_EQUAL(size_t(1612504), gvcf_file->file_length_);  // wc sim-1Samples4msdata1_first40_lines.vcf, length of the file is 784647 characters
+        CPPUNIT_ASSERT_EQUAL(size_t(1611032), gvcf_file->file_length_);  // wc sim-1Samples4msdata1_first40_lines.vcf, length of the file is 784647 characters
 
         CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->nsam()); // 2 diploid sample
         //CPPUNIT_ASSERT_EQUAL(size_t(10), gvcf_file->nfield());
@@ -268,29 +273,27 @@ class TestGVCF : public CppUnit::TestCase {
 
     
     void test_reset_data_to_first_entry(){
-        gvcf_file = new VariantReader("tests/test6sample.vcf", VCF);
-        CPPUNIT_ASSERT_EQUAL(string("tests/test6sample.vcf"), gvcf_file->file_name_);
+        gvcf_file = new VariantReader("sim-1Samples4msdata1_edited.gvcf", VCF);
+        CPPUNIT_ASSERT_EQUAL(string("sim-1Samples4msdata1_edited.gvcf"), gvcf_file->file_name_);
+        
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
         /*! read the following line
          * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
-         * 1	0	rs0	A	T	67	PASS	NS=2;	GT	0|0	1|0	0|0
+         * 1       1       .       .       .       0       REFCALL;        END=12; GT      ./.     ./.
          */
-        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);   
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[4]); 
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[5]);      
+        
         
         do{ 
             CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
             //cout<<"Valid site "<<gvcf_file->site()<<endl;
         }while(!gvcf_file->end_data());
-        
-        
         
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->reset_data_to_first_entry());
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
@@ -298,15 +301,13 @@ class TestGVCF : public CppUnit::TestCase {
          * #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA1	NA2
          * 1	0	rs0	A	T	67	PASS	NS=2;	GT	0|0	1|0	0|0
          */
-        CPPUNIT_ASSERT_EQUAL(int(0), gvcf_file->site());
+        CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), gvcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
+        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
         CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);   
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[4]); 
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[5]);      
                 
         delete gvcf_file;
         }  

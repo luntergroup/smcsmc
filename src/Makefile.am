@@ -1,4 +1,4 @@
-bin_PROGRAMS = pf-ARG 
+bin_PROGRAMS = pf-ARG pf-ARG_dbg
 #pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
 #check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
@@ -9,13 +9,12 @@ TESTS = unit_tests
 PROG = PF-ARG 
 
 generate_vcf: 
-	./tests/pop_struct.py sim-1 2 1
-	./tests/pop_struct.py sim-1 4 1
-	head -50 sim-1Samples4msdata1.vcf > sim-1Samples4msdata1_first50_lines.vcf 
-	sed -e "s/END=1434;/END=1430;/" -e "s/END=6582;/END=5000;/" -e "s/END=24916;/END=24900;/" -e "s/END=35798;/END=34000;/" sim-1Samples4msdata1.gvcf  | head -150 > sim-1Samples4msdata1_edited.gvcf 
-	tail -n+3150 sim-1Samples4msdata1.gvcf >> sim-1Samples4msdata1_edited.gvcf 
+	test -s ./sim-1Samples2msdata1.vcf  || ./tests/pop_struct.py sim-1 2 1	
+	test -s sim-1Samples4msdata1_edited.gvcf || { ./tests/pop_struct.py sim-1 4 1 ; \
+	head -50 sim-1Samples4msdata1.vcf > sim-1Samples4msdata1_first50_lines.vcf ; \
+	sed -e "s/END=1434;/END=1430;/" -e "s/END=6582;/END=5000;/" -e "s/END=24916;/END=24900;/" -e "s/END=35798;/END=34000;/" sim-1Samples4msdata1.gvcf  | head -150 > sim-1Samples4msdata1_edited.gvcf ; \
+	tail -n+3150 sim-1Samples4msdata1.gvcf >> sim-1Samples4msdata1_edited.gvcf; }
 	
-#./tests/pop_struct.py sim-1 6 1
 
 unittests: unit_tests
 	./unit_tests 
@@ -102,14 +101,14 @@ pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
 unit_tests_SOURCES = $(shared_SOURCES) $(series_src)  \
                      $(debug_src) \
-                     tests/test_runner.cpp \
-                     tests/test_param.cpp \
+                     tests/test_runner.cpp \                     
                      tests/test_pattern.cpp \
                      tests/test_Coalevent.cpp \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
-                     tests/test_gvcf.cpp\                   
+                     tests/test_gvcf.cpp\   
+                     tests/test_param.cpp \                
                      #tests/test_vcf.cpp 
                      #tests/test_random_generator.cpp \
 		     #tests/test_Count.cpp\

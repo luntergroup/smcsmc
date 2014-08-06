@@ -1,6 +1,6 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <boost/lexical_cast.hpp> 
+//#include <boost/lexical_cast.hpp> 
 
 #include "../src/pfparam.hpp"
 #include "../src/help.hpp"
@@ -195,7 +195,7 @@ class TestParam : public CppUnit::TestCase {
         double default_recomb_rate = 0.00001;
         double default_loci_length = 50000;  
     
-        char *argv1[] = { "pf-ARG"};
+        char *argv1[] = {"pf-ARG"};
         PfParam pfARG_para1(1, argv1);
         vcf_file =  new VariantReader(pfARG_para1.input_variantFileName, VCF, pfARG_para1.buff_length);
         

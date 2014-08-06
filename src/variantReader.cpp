@@ -29,22 +29,35 @@ using namespace std;
  *  Extract the first block of data ( "buffer_length" lines ) into buff
  */
 VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int buffer_length): buffer_max_number_of_lines(buffer_length) { 
+    //try{
     this->file_name_ = file_name;
     this->FileType = this->file_name_.size() > 0 ? FileType_in : EMPTY; 
     /*! Initialize by read in the vcf header file */
     this->init();
 
+    if ( this->FileType != EMPTY ){
+        this->skip_Header();
+    }
+    this->read_new_block(); // END by start reading a block
+    //}
+    //catch (const string &e) {
+        ////std::cerr << "Error: " << e.what() << std::endl;
+        //std::cerr << "Error: " << e << std::endl;
+    //}
+}
+
+void VariantReader::skip_Header(){
     ifstream in_file;
-    in_file.open(file_name.c_str());
+    in_file.open( this->file_name_.c_str());
     in_file.seekg (0, in_file.end);
     this->file_length_ = in_file.tellg();
     
     in_file.seekg (0, in_file.beg);
     header_end_pos_=0;
     header_end_line=0;
-    in_file.seekg (0, in_file.end);
-    in_file.seekg (0, in_file.beg);
-    if (in_file.good()){
+    //in_file.seekg (0, in_file.end);
+    //in_file.seekg (0, in_file.beg);
+    if ( in_file.good() ){
         getline ( in_file, this->tmp_line ); 
         header_end_pos_ += this->tmp_line.size() + 1;
         //cout << this->tmp_line <<endl;
@@ -70,18 +83,17 @@ VariantReader::VariantReader(string file_name, INPUT_FILETYPE FileType_in, int b
         }    
     
     }
+    else {
+        throw std::invalid_argument ( std::string("Invaild file: ") + this->file_name_ );
+        }
     this->end_pos_ = this->header_end_pos_;
     in_file.close();
-    this->read_new_block(); // END by start reading a block
-}
-
+    }
     
 void VariantReader::init(){
     /*! Initialize other VariantReader class members
      */
-    this->reset_chrom_site(); // reinitilize VariantPosition
-    //this->reset_pervious_chrom_site(); // reinitilize VariantSegment
-    
+    this->reset_chrom_site(); // reinitilize VariantPosition   
     this->filter_window_             = 1;
     this->current_line_index_        = 0;
     this->empty_file_line_counter_   = 0;
@@ -94,11 +106,6 @@ void VariantReader::init(){
     this->ghost_num_mut            = 0;
     this->eof_                       = false;
     this->end_data_                  = false;
-
-    this->current_variant_state = ( this->FileType == EMPTY ) ? INVARIANT : SNP ;
-    this->previous_seg_state = ( this->FileType == EMPTY ) ? MISSING : SEQ_INVARIANT;
-    //this->empty_file_ = ( file_name_.size() > 0 ) ? false : true;    
-    
     this->empty_block();
     }
 
@@ -107,23 +114,26 @@ void VariantReader::reset_data_to_first_entry(){
     /*! Reset the data to the first line, end of the header file 
      *  Extract new block of data
      */
-    this->reset_chrom_site(); // reinitilize VariantPosition
-    //this->reset_pervious_chrom_site(); // reinitilize VariantSegment
-     
+    this->reset_chrom_site(); // reinitilize VariantPosition     
     this->end_pos_            = this->header_end_pos_;
     this->end_data_           = false;
     this->eof_                = false;
     this->current_line_index_ = 0;    
-    //this->current_block_line_ = 0;
     if ( this->FileType == EMPTY ){ this->empty_file_line_counter_ = 0; }
     this->read_new_block();
     }
-    
+
 
 void VariantReader::read_new_line(){
     /*! Read VariantReader data, extract mutation site and haplotype
      */ 
-     
+    this->current_line_index_++;
+    
+    if ( this->FileType == EMPTY ){
+        this->set_empty_line_entry();
+        return;    
+    }
+    
     this->initialize_read_newLine(); 
 
     while ( field_end < this->tmp_line.size() && !this->skip_tmp_line ){
@@ -152,21 +162,25 @@ void VariantReader::read_new_line(){
     this->finalize_read_new_line();
     }
 
+void VariantReader::set_empty_line_entry(){
+    this->current_variant_state = INVARIANT ;
+    this->previous_seg_state = MISSING;
+    this->current_seg_state  = MISSING;
+
+    this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
+    this->seg_end_site_ = this->site_;
+
+    // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
+    this->empty_file_line_counter_ ++; 
+    this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut + 1)); // DEBUG 
+    }    
+
+
 void VariantReader::initialize_read_newLine(){
-    this->previous_seg_state = this->current_seg_state;
     this->previous_variant_state = this->current_variant_state ;
 
-    
-    this->current_line_index_++;
-        
-    if ( this->FileType == EMPTY ){
-        this->empty_file_line_counter_ ++; 
-        this->site_ = ( current_line_index_ == 1 ) ? 0 : this->site_ + even_interval_;
-        // add counter for empty file, first time calling read_new_line, site() = 0, second time, set site() = 100000, and haplotype  =  false  
-        this->end_data_ = (this->empty_file_line_counter_ > (this->ghost_num_mut + 1)); // DEBUG 
-        return;    
-    }
-    
+    this->previous_seg_state = this->current_seg_state;
+
     // Initialize read new line
     alt.clear();
     vec_of_sample_alt.clear();
@@ -174,15 +188,16 @@ void VariantReader::initialize_read_newLine(){
     sample_alt.clear();
     phased.clear(); // True if it is phased, which has '|'    
 
-    this->tmp_line = this->buffer_lines[this->current_block_line_];
-
     this->feild_start = 0;
     this->field_end   = 0;
     this->field_index    = 0;
     this->skip_tmp_line = false;
+    
+    this->tmp_line = this->buffer_lines[this->current_block_line_];
+
     }
 
-
+/*! Check if it has reached the end of the buffer block, if so, read the next block */ 
 void VariantReader::check_and_update_block(){
     if ( (this->current_block_line_ == this->buffer_lines.size() ) && !this->eof_ ){ // END of the buff block
         this->read_new_block();
@@ -283,7 +298,7 @@ void VariantReader::extract_field_REF ( ){
     
     if ( this->ref.size() > 1 ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
         cout << "Skip reads at chrom " << this->chrom_<<" at position " <<  this->site_<<", due to deletion or replacement" << endl;
-        this->current_variant_state = OTHER_VARIANT;
+        //this->current_variant_state = OTHER_VARIANT; // IGNORE OTHER_VARIANT FOR NOW, JUST SKIP
         this->skip_tmp_line = true;
         return ;
     } 
@@ -304,8 +319,7 @@ void VariantReader::extract_field_REF ( ){
         }
 }
 
-// REQUIRES MORE WORK HERE!!!
-// IF THIS IS GVCF OR RGVCF FILE, REF ALT BASE IS "." or "N"
+
 void VariantReader::extract_field_ALT ( ){
     if ( this->tmp_str == "." || this->tmp_str == "N" ) { 
         if ( this->FileType == GVCF  ) { 

@@ -158,9 +158,10 @@ class VariantReader: public VariantSegment{
         
         string tmp_line;
         string tmp_str;
+        void skip_Header( );
         void check_feilds( );
         
-        
+        void set_empty_line_entry();
         void initialize_read_newLine();                
         void check_and_update_block();
         void check_and_update_newLine();
