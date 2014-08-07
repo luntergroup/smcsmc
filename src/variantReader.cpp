@@ -179,6 +179,7 @@ void VariantReader::set_empty_line_entry(){
 void VariantReader::initialize_read_newLine(){
     this->previous_variant_state = this->current_variant_state ;
 
+// \todo !!! need to work on the previous_seg_state
     this->previous_seg_state = this->current_seg_state;
 
     // Initialize read new line
@@ -373,6 +374,7 @@ void VariantReader::extract_field_INFO ( ){
     else {
         assert( this->tmp_str.find("END=",0) != std::string::npos );
         this->seg_end_site_ = strtol( tmp_str.substr( (size_t)4 ).c_str(), NULL, 0);        
+        
         assert ( (this->FileType == GVCF) || ( this->FileType == RGVCF ) );
         this->current_seg_state = this->FileType == GVCF ? SEQ_INVARIANT : MISSING ;
         //if ( this->FileType == GVCF ) { this->current_seg_state = SEQ_INVARIANT; }
