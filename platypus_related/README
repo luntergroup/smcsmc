@@ -1,1 +1,5 @@
 Use NA12878 sample, high coverage
+
+
+~/oxford-svn/utility/vcf_gvcf_rgvcf/gvcf2rgvcf.py NA12878.vcf 2500000000
+
