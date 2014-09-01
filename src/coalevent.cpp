@@ -69,7 +69,8 @@ bool Starevent::print_event(string event){
         if ( this->event_state() == NOEVENT ){
             dout<< " potetial "<< event;
             }
-        dout << " at "<< this->base()<< endl;
+        dout << " at base "<< this->base() ;
+        dout << " at epoch "<< this->change_time_i() << endl;
     return true;
     }
 
