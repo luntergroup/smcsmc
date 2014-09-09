@@ -172,7 +172,8 @@ void ForestState::record_all_event(TimeInterval const &ti){
             }
         if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
-            coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y;
+            //coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y;
+            coal_opportunity += contemporaries_.size( active_node(i)->population() ) * opportunity_y;
             migr_opportunity += opportunity_y;
             }
         }

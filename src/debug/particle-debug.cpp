@@ -28,7 +28,7 @@ bool ParticleContainer::check_state_orders(){
 	dout << "check particle orders, there are " << this->particles.size()<<" particles" <<endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
 		dout << "Particle " << i << " next genealogy change occurs at position: " << std::setw(14) << this->particles[i]->next_base();
-		dout << "  lambda=" << std::setw(10) << particles[i]->local_tree_length();
+		dout << "  lambda=" << std::setw(10) << particles[i]->getLocalTreeLength();
 		dout << " weight =" << std::setw(10) << this->particles[i]->weight() <<std::endl;
         }
     dout << std::endl;

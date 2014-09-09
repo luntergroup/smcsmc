@@ -525,7 +525,7 @@ void ParticleContainer::set_particles_with_random_weight(){
 void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
     for (size_t i = 0; i < this->particles.size(); i++){
         double opportunity_x = seqend - this->particles[i]->current_base();
-        double opportunity_y = this->particles[i]->local_tree_length();
+        double opportunity_y = this->particles[i]->getLocalTreeLength();
         double recomb_opportunity = opportunity_x * opportunity_y;
         this->particles[i]->record_Recombevent(0, 
                                                //0, 0, 

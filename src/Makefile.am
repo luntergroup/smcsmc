@@ -41,6 +41,7 @@ pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp
 scrm_param = scrm/param.cc scrm/param.h \
         scrm/model.cc scrm/model.h \
         scrm/summary_statistics/newick_tree.cc \
+        scrm/summary_statistics/oriented_forest.cc \
         scrm/summary_statistics/frequency_spectrum.cc \
         scrm/summary_statistics/seg_sites.cc \
 		scrm/summary_statistics/tmrca.cc \
@@ -128,7 +129,9 @@ include_HEADERS = variantReader.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/random/constant_generator.h scrm/random/mersenne_twister.h \
                   scrm/random/random_generator.h scrm/event.h \
                   scrm/summary_statistics/newick_tree.h \
+                  scrm/summary_statistics/oriented_forest.h \
                   scrm/summary_statistics/frequency_spectrum.h \
                   scrm/summary_statistics/seg_sites.h \
-                  scrm/summary_statistics/tmrca.h
+                  scrm/summary_statistics/tmrca.h \
+                  scrm/contemporaries_container.h
 				  

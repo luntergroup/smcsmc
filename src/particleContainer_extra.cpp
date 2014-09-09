@@ -47,7 +47,7 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
              * First, update the likelihood up to either mutation_at or the end of this state
              */
             double update_to = min( mutation_at, this->particles[particle_i]->next_base() );
-            double length_of_local_tree = this->particles[particle_i]->local_tree_length(); // in generations
+            double length_of_local_tree = this->particles[particle_i]->getLocalTreeLength(); // in generations
             double likelihood_of_segment;
             if (withdata) {
                 likelihood_of_segment = exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ); // assume infinite site model

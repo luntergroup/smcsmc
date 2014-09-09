@@ -122,6 +122,7 @@ void CountModel::reset_recomb_rate ( Model *model ){
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
 
+
 void CountModel::reset_mig_rate ( Model *model ) {
     if (this->has_migration() == false) return;
     this->compute_mig_rate();
