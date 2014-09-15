@@ -163,15 +163,19 @@ void pfARG_core(PfParam &pfARG_para,
 
             continue;
             }
+        cout <<"current base is at "<<VCFfile->site()<<" and it is ";
+        cout << (VCFfile->end_data()?"YES":"NOT");
+        cout << " the end of data "<<endl;
+        
         
         valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
             
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
- 
+ cout << "update_state_to_datat"<<endl;
         current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
-
+cout << "update_state_to_data finished"<<endl;
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
@@ -193,6 +197,7 @@ void pfARG_core(PfParam &pfARG_para,
                 //cout<< VCFfile->site() << endl;
         VCFfile->read_new_line(); // Read new line from the vcf file        
         } while( !VCFfile->end_data() );
+        cout<<"here"<<endl;
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...

@@ -154,6 +154,7 @@ ForestState::~ForestState(){
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
+    //cout << "within record all event "<<endl;
     double coal_opportunity = 0.0;
     double recomb_opportunity = 0.0;
     double migr_opportunity = 0.0;

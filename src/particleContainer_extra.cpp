@@ -28,46 +28,40 @@
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
 void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
-    dout << endl<<" We are extending particles" << endl<<endl;
+    cout << endl<<" We are extending particles" << endl<<endl;
     
- 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
+ 	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
         //cout << "Hello World from thread " << omp_get_thread_num() << '\n';
-        dout << "We are updating particle " << particle_i << endl;
+        cout << "We are updating particle " << particle_i << endl;
         /*! 
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         double updated_to = this->particles[particle_i]->site_where_weight_was_updated();
-        dout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
+        cout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
         assert (updated_to >= this->particles[particle_i]->current_base());
         while ( updated_to < mutation_at ) {
             //cout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
-            dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
+            cout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
             /*!
              * First, update the likelihood up to either mutation_at or the end of this state
              */
             double update_to = min( mutation_at, this->particles[particle_i]->next_base() );
             double length_of_local_tree = this->particles[particle_i]->getLocalTreeLength(); // in generations
-            double likelihood_of_segment;
-            if (withdata) {
-                likelihood_of_segment = exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ); // assume infinite site model
-                //likelihood_of_segment = pow(0.5 - 0.5*exp(-length_of_local_tree*2*mutation_rate ), (update_to - updated_to)); // Finite site model
-                dout << " Likelihood of no mutations in segment of length" << (update_to - updated_to) << " is " << likelihood_of_segment << endl;
-                } 
-            else {
-                likelihood_of_segment = 1;
-                dout << " no data" << endl;
-                }
+            double likelihood_of_segment = withdata ? exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ) : 1 ;// assume infinite site model
+            cout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
+            cout << ( withdata ? ", as invariant.": ", as missing data" ) << endl;
             this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_segment);
             updated_to = update_to;  // rescues the invariant
-            
+cout <<"here"<<endl;            
             /*!
              * Next, if we haven't reached mutation_at now, add a new state and iterate
              */
             if ( updated_to < mutation_at ) {
                 //dout<<"calling here"<<endl;
+                cout <<"sampleNextGenealogy"<<endl;
                 this->particles[particle_i]->sampleNextGenealogy();
-                
+                cout <<"sampleNextGenealogy finished"<<endl;
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
@@ -76,10 +70,11 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
                 }
             
             }
+            cout <<"here"<<endl;        
         assert (updated_to == mutation_at);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
         //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;
-        
+cout <<"here"<<endl;        
         }
     
     

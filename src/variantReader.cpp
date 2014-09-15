@@ -135,6 +135,7 @@ void VariantReader::read_new_line(){
     }
     
     this->initialize_read_newLine(); 
+    assert ( !this->skip_tmp_line );
 
     while ( field_end < this->tmp_line.size() && !this->skip_tmp_line ){
         field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
@@ -181,7 +182,7 @@ void VariantReader::initialize_read_newLine(){
 
 // \todo !!! need to work on the previous_seg_state
     this->previous_seg_state = this->current_seg_state;
-
+    //this->current_seg_state = SEQ_INVARIANT;
     // Initialize read new line
     alt.clear();
     vec_of_sample_alt.clear();
@@ -269,6 +270,7 @@ void VariantReader::read_new_block(){
 
 
 void VariantReader::extract_field_CHROM () { 
+
     this->chrom_ = strtol( tmp_str.c_str(), NULL, 0); 
     if ( pervious_chrom_ != chrom_ && pervious_chrom_!= 0 ) { throw std::invalid_argument ( "Two different chroms" ); }
     }
@@ -277,7 +279,9 @@ void VariantReader::extract_field_CHROM () {
 void VariantReader::extract_field_POS ( ){ 
     
     this->site_ = strtol( tmp_str.c_str(), NULL, 0); 
-    assert ( this->pervious_chrom_ == this->chrom_ );
+    cout << "this->pervious_chrom_ ="<<this->pervious_chrom_<<endl;
+    cout << "this->chrom_ = "<<this->chrom_<<endl;
+    if (  this->pervious_chrom_ > 0) {assert ( this->pervious_chrom_ == this->chrom_ );}
     assert ( this->previous_site_at_ >= 0);
 
     if ( ( this->site_ - this->previous_site_at_ ) < this->filter_window_   ) { // Making 100, as a filtering process, to screen mutations that are too close
@@ -357,6 +361,7 @@ void VariantReader::extract_field_ALT ( ){
 void VariantReader::extract_field_QUAL ( ){}
 
 void VariantReader::extract_field_FILTER ( ){ 
+    this->skip_tmp_line = false;
     if ( this->tmp_str.find( "PASS") == std::string::npos && this->tmp_str.find( "REFCALL") == std::string::npos ){ // BAD LINE, SKIP EXACTING INFORMATION FOR FIELD
         cout << "Skip reads at chrom " << chrom_<<" at position " <<  site_<<", due to low qualitiy." << endl;
         //cout << "skipping: "<< line << endl; // DEBUG
@@ -365,18 +370,21 @@ void VariantReader::extract_field_FILTER ( ){
     }
     
 void VariantReader::extract_field_INFO ( ){
-    assert ( this->skip_tmp_line = false );
 
     if ( this->current_variant_state == SNP ){ 
         assert( this->current_seg_state == ZERO_SEG );
         this->seg_end_site_ = this->site_; 
         }
     else {
-        assert( this->tmp_str.find("END=",0) != std::string::npos );
+        assert( this->tmp_str.find( "END=", 0 ) != std::string::npos );
         this->seg_end_site_ = strtol( tmp_str.substr( (size_t)4 ).c_str(), NULL, 0);        
         
         assert ( (this->FileType == GVCF) || ( this->FileType == RGVCF ) );
         this->current_seg_state = this->FileType == GVCF ? SEQ_INVARIANT : MISSING ;
+        //if      ( this->FileType == VCF )  this->current_seg_state = SEQ_INVARIANT;
+        //else if ( this->FileType == GVCF )  this->current_seg_state = SEQ_INVARIANT;
+        //else    ( this->FileType == RGVCF )  this->current_seg_state = MISSING;
+        
         //if ( this->FileType == GVCF ) { this->current_seg_state = SEQ_INVARIANT; }
         //else if ( this->FileType == RGVCF ) { this->current_seg_state = MISSING; }
         }
@@ -386,7 +394,7 @@ void VariantReader::extract_field_INFO ( ){
 void VariantReader::extract_field_FORMAT ( ){ }
 
 void VariantReader::extract_field_VARIANT ( ){
-    assert ( this->skip_tmp_line = false );
+    //assert ( this->skip_tmp_line = false );
     if ( this->current_variant_state == INVARIANT ){
         this->vec_of_sample_alt_bool.push_back( false );
         this->vec_of_sample_alt_bool.push_back( false );
