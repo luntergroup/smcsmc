@@ -404,14 +404,14 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 		return marginal_likelihood;
         }
 	else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
-		//Node *left = trackLocalNode(node->first_child());
-        Node *left = node->getLocalChild1();
+		Node *left = trackLocalNode(node->first_child());
+        //Node *left = node->getLocalChild1();
 		double t1=node->height()- left->height();
         double ut1 = 1 - exp(-t1 * mutation_rate); // assume infinite site
 		assert(ut1>=0 && ut1<=1);
 		valarray<double> y = cal_marginal_likelihood_infinite(left);
-		//Node *right = trackLocalNode(node->second_child());
-        Node *right = node->getLocalChild2();
+		Node *right = trackLocalNode(node->second_child());
+        //Node *right = node->getLocalChild2();
 		double t2=node->height()- right->height();
 		double ut2 = 1 - exp(-t2 * mutation_rate); // assume infinite site
         assert(ut2>=0 && ut2<=1);
