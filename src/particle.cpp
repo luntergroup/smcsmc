@@ -43,7 +43,7 @@ void ForestState::making_copies( int number_of_copies ){
         new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
         //new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
         new_copy_state->model_ = new Model( *this->model_);
-        //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
+        //dout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
         this->ForestState_copies.push_back(new_copy_state);
         }
     assert( this->ForestState_copies.size() == (size_t)number_of_copies ); 
@@ -81,9 +81,7 @@ ForestState::ForestState( const ForestState & copied_state )
     
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
-        }
-    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
-        
+        }        
 	dout << "current particle's weight is " << this->weight()<<endl;
     //new_forest_counter++;  // DEBUG
     }
@@ -113,7 +111,6 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
         }
     // Copy Migration events
     for (size_t i = 0 ; i < copied_state.MigreventContainer.size() ; i++ ){ 
-        //cout<<"hea"<<endl;
         deque < Migrevent* > MigreventContainer_i;   /*!< \brief Coalescent events recorder */
         for (size_t ii = 0 ; ii < copied_state.MigreventContainer[i].size(); ii++){
             Migrevent* new_migrevent = copied_state.MigreventContainer[i][ii];
@@ -154,7 +151,7 @@ ForestState::~ForestState(){
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
-    //cout << "within record all event "<<endl;
+    //dout << "within record all event "<<endl;
     double coal_opportunity = 0.0;
     double recomb_opportunity = 0.0;
     double migr_opportunity = 0.0;
@@ -173,8 +170,8 @@ void ForestState::record_all_event(TimeInterval const &ti){
             }
         if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
-            //coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y;
-            coal_opportunity += contemporaries_.size( active_node(i)->population() ) * opportunity_y;
+            coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y;
+            //coal_opportunity += contemporaries_.size( active_node(i)->population() ) * opportunity_y;
             migr_opportunity += opportunity_y;
             }
         }

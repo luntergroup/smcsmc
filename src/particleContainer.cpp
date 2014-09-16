@@ -349,19 +349,19 @@ void ParticleContainer::update_state_to_data(
      *      then extend to p1 (two types of extension, different from the previous extension)
      */ 
     //Extend ARGs and update weight for not seeing mutations along the equences
-    cout << " extend ARG part I, previous_segment is " ;
-    cout << (previous_segment_is_invariant? "":"Not" );
-    cout << " invariant" <<endl;
+    dout << " extend ARG part I, previous_segment is " ;
+    dout << (previous_segment_is_invariant? "":"Not" );
+    dout << " invariant" <<endl;
     this->extend_ARGs( P1, mutation_rate, previous_segment_is_invariant );
-    cout << " extend ARG part I finished "<<endl;
+
     if ( P1 == p1 ){
         //Update weight for seeing mutation at the position 
-        cout << " Update state weight at a SNP "<<endl;
+        dout << " Update state weight at a SNP "<<endl;
         this->update_state_weights_at_A_single_site( p1, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 
         }
     else {
         //Extend ARGs and update weight for not seeing mutations along the equences
-    cout << " extend ARG part II "<<endl;
+        dout << " extend ARG part II "<<endl;
         this->extend_ARGs( p1, mutation_rate, current_segment_is_invariant );
         }
     

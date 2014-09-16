@@ -163,9 +163,9 @@ void pfARG_core(PfParam &pfARG_para,
 
             continue;
             }
-        cout <<"current base is at "<<VCFfile->site()<<" and it is ";
-        cout << (VCFfile->end_data()?"YES":"NOT");
-        cout << " the end of data "<<endl;
+        dout <<"current base is at "<<VCFfile->site()<<" and it is ";
+        dout << (VCFfile->end_data()?"YES":"NOT");
+        dout << " the end of data "<<endl;
         
         
         valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
@@ -173,9 +173,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till VCFfile->site() 
          */
- cout << "update_state_to_datat"<<endl;
         current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
-cout << "update_state_to_data finished"<<endl;
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
         current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
@@ -188,7 +186,7 @@ cout << "update_state_to_data finished"<<endl;
 
 
         if ( pfARG_para.ESS() == 1 ){
-            cout << " random weights" <<endl;
+            dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();    
             }
                 
@@ -197,8 +195,7 @@ cout << "update_state_to_data finished"<<endl;
                 //cout<< VCFfile->site() << endl;
         VCFfile->read_new_line(); // Read new line from the vcf file        
         } while( !VCFfile->end_data() );
-        cout<<"here"<<endl;
-
+     
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
     bool with_data_to_the_end = true;
@@ -206,7 +203,7 @@ cout << "update_state_to_data finished"<<endl;
     // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
     // should include coalescent events as well ...
     current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
-    cout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
+    dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 

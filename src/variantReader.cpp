@@ -60,7 +60,7 @@ void VariantReader::skip_Header(){
     if ( in_file.good() ){
         getline ( in_file, this->tmp_line ); 
         header_end_pos_ += this->tmp_line.size() + 1;
-        //cout << this->tmp_line <<endl;
+        //dout << this->tmp_line <<endl;
         while ( this->tmp_line.size()>0 ){   
             if ( this->tmp_line[0]=='#' ){
                 if ( this->tmp_line[1]=='#' ){
@@ -279,8 +279,7 @@ void VariantReader::extract_field_CHROM () {
 void VariantReader::extract_field_POS ( ){ 
     
     this->site_ = strtol( tmp_str.c_str(), NULL, 0); 
-    cout << "this->pervious_chrom_ ="<<this->pervious_chrom_<<endl;
-    cout << "this->chrom_ = "<<this->chrom_<<endl;
+
     if (  this->pervious_chrom_ > 0) {assert ( this->pervious_chrom_ == this->chrom_ );}
     assert ( this->previous_site_at_ >= 0);
 
