@@ -1,0 +1,10 @@
+Process diary
+
+Step 1. Generate data FOR TWO DIPLOID SAMPLES
+    
+    Generate model from sim-1 structure
+    ./pop_struct.py sim-1 4 1 whole-genome
+
+Step 2. Set up scripts for testing pairs of number of particles, and sequence length
+
+
