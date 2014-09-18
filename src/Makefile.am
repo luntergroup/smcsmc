@@ -43,7 +43,8 @@ scrm_param = scrm/param.cc scrm/param.h \
         scrm/summary_statistics/frequency_spectrum.cc \
         scrm/summary_statistics/seg_sites.cc \
 		scrm/summary_statistics/tmrca.cc \
-		scrm/summary_statistics/first_last_tmrca.cc
+		scrm/summary_statistics/first_last_tmrca.cc 
+		
 		        
 
 scrm_src = scrm/node.cc scrm/node.h \
@@ -131,6 +132,5 @@ include_HEADERS = variantReader.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/summary_statistics/seg_sites.h \
                   scrm/summary_statistics/tmrca.h 
                   
-#scrm/contemporaries_container.h
-#scrm/summary_statistics/oriented_forest.h 
+#scrm/contemporaries_container.h scrm/summary_statistics/oriented_forest.h 
 				  
