@@ -22,3 +22,25 @@ install-sh
 missing
 *.deps/
 test-driver
+*.o
+src/pf-ARG
+src/pf-ARG_dbg
+
+
+## Tex compiles
+*.log
+*.bbl
+*.blg
+*.d
+*.fls
+*.out
+*.make
+*.pdf
+*.aux
+*.temp
+*.bak
+*.dvi
+*.idx
+*.nav
+*.snm
+*.toc
