@@ -44,3 +44,9 @@ src/pf-ARG_dbg
 *.nav
 *.snm
 *.toc
+
+
+## Other
+*.pyc
+
+*_exp
