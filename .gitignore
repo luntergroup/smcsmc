@@ -1,0 +1,24 @@
+## generic files to ignore
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
+
+## Compiling
+*Makefile
+*Makefile.in
+compile
+config.guess
+config.log
+config.status
+config.sub
+configure
+INSTALL
+aclocal.m4
+autom4te.cache/
+depcomp
+install-sh
+missing
+*.deps/
+test-driver
