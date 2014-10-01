@@ -37,8 +37,8 @@ void VariantReader::print_vcf_line( ){
 
 
 void VariantReader::print(){
-    for (size_t i = 0; i < vec_of_sample_alt_bool.size(); i++){
-            cout << vec_of_sample_alt_bool[i]<<" ";
+    for (size_t i = 0; i < int_vec_of_sample_alt.size(); i++){
+            cout << int_vec_of_sample_alt[i]<<" ";
         } cout << endl;
     }
         

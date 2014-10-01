@@ -46,9 +46,9 @@ using namespace std;
 
 
 enum INPUT_FILETYPE {EMPTY, VCF, GVCF, RGVCF};
-enum Seq_State { ZERO_SEG, 
-                 SEQ_INVARIANT, 
-                 MISSING /*! segment indicates missing, rgvcf entry */}; 
+enum Seq_State { ZERO_SEG,      /* point; may be variant */
+                 SEQ_INVARIANT, /* segment; invariant */
+                 MISSING  };    /* segment; no data */ 
 enum Variant_State {SNP, INVARIANT, OTHER_VARIANT};
 
 
@@ -66,7 +66,7 @@ class VariantPosition{
     public:
         int chrom() const { return this ->chrom_; }
         int site() const { return this->site_; } 
-        vector <bool> vec_of_sample_alt_bool;
+        vector <int> int_vec_of_sample_alt;
         size_t nsam() const { return this->nsam_; } 
 
     protected:

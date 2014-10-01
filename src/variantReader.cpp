@@ -186,7 +186,7 @@ void VariantReader::initialize_read_newLine(){
     // Initialize read new line
     alt.clear();
     vec_of_sample_alt.clear();
-    vec_of_sample_alt_bool.clear();
+    int_vec_of_sample_alt.clear();
     sample_alt.clear();
     phased.clear(); // True if it is phased, which has '|'    
 
@@ -395,8 +395,8 @@ void VariantReader::extract_field_FORMAT ( ){ }
 void VariantReader::extract_field_VARIANT ( ){
     //assert ( this->skip_tmp_line = false );
     if ( this->current_variant_state == INVARIANT ){
-        this->vec_of_sample_alt_bool.push_back( false );
-        this->vec_of_sample_alt_bool.push_back( false );
+        this->int_vec_of_sample_alt.push_back( 0 );
+        this->int_vec_of_sample_alt.push_back( 0 );
         return;
     }
     
@@ -409,10 +409,10 @@ void VariantReader::extract_field_VARIANT ( ){
     this->vec_of_sample_alt.push_back( extract_field_ALT_str( break_index+1, colon_index));
     
     size_t alt_index_0 = strtol (tmp_str.substr(0,1).c_str(), NULL, 0);;    
-    this->vec_of_sample_alt_bool.push_back( (alt_index_0 == (size_t)0) ? false : true);
+    this->int_vec_of_sample_alt.push_back( (alt_index_0 == (size_t)0) ? 0 : 1);
     
     size_t alt_index_2 = strtol (tmp_str.substr(2,1).c_str(), NULL, 0);;
-    this->vec_of_sample_alt_bool.push_back( (alt_index_2 == (size_t)0) ? false : true);    
+    this->int_vec_of_sample_alt.push_back( (alt_index_2 == (size_t)0) ? 0 : 1);    
     }
 
 

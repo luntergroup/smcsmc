@@ -82,7 +82,7 @@ class ForestState : public Forest{
         void making_copies( int number_of_copies );
 
         // Update weight
-        void include_haplotypes_at_tips(vector <bool> haplotypes_at_tips); /*!< \brief Update data to the particle */        
+        void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */        
         double calculate_likelihood( bool withdata ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         

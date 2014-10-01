@@ -350,7 +350,7 @@ void ForestState::clear_MigreventContainer(){
     }
     
 
-void ForestState::include_haplotypes_at_tips(vector <bool> haplotypes_at_tips){
+void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips){
 	for (size_t j=0; j < haplotypes_at_tips.size();j++){		
 		this->nodes()->at(j)->set_mutation_state(haplotypes_at_tips[j]);
 	    }
@@ -390,43 +390,40 @@ void ForestState::include_haplotypes_at_tips(vector <bool> haplotypes_at_tips){
  * * */
 
 
-inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node){// Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitute of 10 to the power of negative 8.
-	double mutation_rate = this->model().mutation_rate();
-	valarray<double> marginal_likelihood(2);
+inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node) {
+
+	valarray<double> x(2);
 	dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
-	if ( node->first_child() == NULL && ((node->label())>0) ){
-        marginal_likelihood[1] = node->mutation_state() ? 1.0 : 0.0;
-        marginal_likelihood[0] = node->mutation_state() ? 0.0 : 1.0;	
-		dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		return marginal_likelihood;
-        }
-	else{ // this is an interior node, but need to check if it is real, i.e. any of its children is a local
-		Node *left = trackLocalNode(node->first_child()); // jz_stable
-        //Node *left = node->getLocalChild1(); // jz
-		double t1=node->height()- left->height();
-        double ut1 = 1 - exp(-t1 * mutation_rate); // assume infinite site
-		assert(ut1>=0 && ut1<=1);
-		valarray<double> y = cal_marginal_likelihood_infinite(left);
-		Node *right = trackLocalNode(node->second_child()); // jz_stable
-        //Node *right = node->getLocalChild2(); // jz
-		double t2=node->height()- right->height();
-		double ut2 = 1 - exp(-t2 * mutation_rate); // assume infinite site
-        assert(ut2>=0 && ut2<=1);
-		valarray<double> z = cal_marginal_likelihood_infinite(right);		
-		marginal_likelihood[0] = (y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2)) ;
-		marginal_likelihood[1] = (y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2)) ;
-		dout << "Marginal probability at " << node->label() << " is " << marginal_likelihood[0]<<"," << marginal_likelihood[1]<<endl;
-		
-		//dout << "node is " << node<<", t1=" << t1<<", t2=" << t2<<endl;
-		//dout << "prob is " << ", ut1=" << ut1<<", ut2=" << ut2<<endl;
-		//dout << "prob is " << ", y[0]=" << y[0]<<", y[1]=" << y[1]<<endl;
-		//dout << "prob is " << ", z[0]=" << z[0]<<", z[1]=" << z[1]<<endl;
-		//dout << "marginal_likelihood[0] =(" << y[0]*ut1 <<"+" <<  y[1]*(1-ut1) <<")*(" <<  z[0]*ut2 <<"+" <<  z[1]*(1-ut2)<<")" << endl ;
-        //dout << ", marginal_likelihood  = " << marginal_likelihood[0]<<", " <<  marginal_likelihood[1]<<endl;
-		return marginal_likelihood;
-        }				
+
+	// deal with the case that this node is a leaf node
+	if ( node->first_child() == NULL ) {
+	  assert ( node->second_child() == NULL );     // if a node has no first child, it won't have a second child
+	  assert ( node->label() > 0 );                // we only traverse the local tree, therefore the leaf node must be contemporary
+	  x[0] = node->mutation_state() == 1 ? 0.0 : 1.0;	// also encode state==-1 (missing data) as 1.0
+	  x[1] = node->mutation_state() == 0 ? 0.0 : 1.0;   // also encode state==-1 (missing data) as 1.0
+	  dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
+	  return x;
     }
 
+        // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitude of 10 to the power of negative 8.
+	double mutation_rate = this->model().mutation_rate();
+	Node *left = trackLocalNode(node->first_child());   // jz_stable
+	Node *right = trackLocalNode(node->second_child()); // jz_stable
+    //Node *left = node->getLocalChild1();  // jz
+    //Node *right = node->getLocalChild2(); // jz
+	double t1 = node->height() - left->height();
+	double t2 = node->height() - right->height();
+    double ut1 = 1 - exp(-t1 * mutation_rate); // assume infinite site
+	double ut2 = 1 - exp(-t2 * mutation_rate); // assume infinite site
+	assert (ut1>=0 && ut1<=1);
+        assert (ut2>=0 && ut2<=1);
+	valarray<double> y = cal_marginal_likelihood_infinite(left);
+	valarray<double> z = cal_marginal_likelihood_infinite(right);		
+	x[0] = (y[0] * ut1 + y[1] * (1-ut1) ) * (z[0] * ut2 + z[1] * (1-ut2) );
+	x[1] = (y[0] * (1-ut1) + y[1] * ut1 ) * (z[0] * (1-ut2) + z[1] * ut2 );
+	dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
+	return x;
+    }
 
 	
 /*! 
@@ -435,15 +432,17 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  * @ingroup group_pf_resample
  */
 double ForestState::calculate_likelihood( bool withdata ) {
-	if (withdata){
-		dout << "calculate_likelihood function, root is " <<  this->local_root()<<endl;
-		valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
-		dout << "marginal likelihood is " << marginal_likelihood[0]<< "," << marginal_likelihood[1] <<endl;
-		double prior[2] = {0.5,0.5};
-		double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
-		dout << "likelihood is " << likelihood<<endl;
-		return likelihood;
-        }
-	else{ return 1;}
-    }
+
+  if (withdata){
+    dout << "calculate_likelihood function, root is " << this->local_root() << endl;
+    valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
+    dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
+    double prior[2] = {0.5,0.5};
+    double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
+    dout << "likelihood is " << likelihood << endl;
+    return likelihood;
+  } else {
+    return 1;
+  }
+}
 

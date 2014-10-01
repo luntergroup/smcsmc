@@ -19,8 +19,7 @@ AC_CANONICAL_HOST
 AC_PROG_RANLIB
 
 # Check for C++11
-AX_CXX_COMPILE_STDCXX_11([noext])
-
+#AX_CXX_COMPILE_STDCXX_11([noext])
 
 #Checks for libraries
 AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/opt/local/lib)
@@ -70,6 +69,6 @@ fi
 
 AM_CONDITIONAL([HAVE_PDFLATEX], test -n "$PDFLATEX")
 
-AC_CONFIG_FILES([Makefile src/Makefile tex-files/Makefile ])
+AC_CONFIG_FILES([Makefile src/Makefile ])
 AC_OUTPUT
 #

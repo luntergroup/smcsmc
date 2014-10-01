@@ -96,7 +96,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initial particles */ 
     double initial_position = 0;
     ParticleContainer current_states(model, rg, Nparticles, 
-                                    //VCFfile->vec_of_sample_alt_bool, VCFfile->withdata(), 
+                                    //VCFfile->int_vec_of_sample_alt, VCFfile->withdata(), 
                                     initial_position,
                                     pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;

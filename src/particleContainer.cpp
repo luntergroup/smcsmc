@@ -357,7 +357,7 @@ void ParticleContainer::update_state_to_data(
     if ( P1 == p1 ){
         //Update weight for seeing mutation at the position 
         dout << " Update state weight at a SNP "<<endl;
-        this->update_state_weights_at_A_single_site( p1, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->vec_of_sample_alt_bool ); 
+        this->update_state_weights_at_A_single_site( p1, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->int_vec_of_sample_alt ); 
         }
     else {
         //Extend ARGs and update weight for not seeing mutations along the equences

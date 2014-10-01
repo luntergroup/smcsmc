@@ -83,7 +83,7 @@ void ParticleContainer::update_state_weights_at_A_single_site(
     double mutation_rate, 
     //bool withdata,
     bool empty_file,
-    vector <bool> haplotypes_at_tips
+    vector <int> &haplotypes_at_tips
     ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	

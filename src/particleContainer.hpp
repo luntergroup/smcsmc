@@ -80,7 +80,7 @@ class ParticleContainer{
         void update_state_weights_at_A_single_site(double mutation_at,
                                                    double mutation_rate, 
                                                    bool withdata,
-                                                   vector <bool> haplotypes_at_tips);
+                                                   vector <int> &haplotypes_at_tips);
                                                    //bool finite_bool);
         void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */        
 
