@@ -55,7 +55,7 @@ void ForestState::making_copies( int number_of_copies ){
  * @ingroup group_pf_init
  * */
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
-            :Forest( model,random_generator ) {
+            :Forest( model, random_generator ) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     //this->init_EventContainers( model );    
 	//this->buildInitialTree();    
@@ -72,7 +72,6 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ) {
-                
     this->setParticleWeight( copied_state.weight() );
 	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
     this->setAncestor ( copied_state.ancestor() );

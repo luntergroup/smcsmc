@@ -126,9 +126,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
                 new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-                //new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
                 new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
-                //cout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
                 }
             } 
@@ -159,11 +157,11 @@ void ParticleContainer::shifting(int number_of_particles){
     // SHIFTING, this is not pretty, there must be some other ways to do this ...
     for (int i = 0; i < number_of_particles; i++){
         this->particles[i] = this->particles[i+number_of_particles];
-        }
+    }
     this -> particles.resize(number_of_particles);
     this -> particles.shrink_to_fit();
     // SHIFTING AND RESIZING THE PARTICLE ARRAY FINISHED    
-    }
+}
 
 
 
