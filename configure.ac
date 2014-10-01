@@ -4,20 +4,25 @@ AC_INIT([pf-ARG],esyscmd([sh -c "date \"+%Y%m%d\" | tr -d '\n'"]),[joezhu@well.o
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
+# Suppress output at compilation
 m4_ifndef([AM_SILENT_RULES], [m4_define([AM_SILENT_RULES],[])])
 AM_SILENT_RULES([yes])
 
-#AC_PROG_INSTALL
-#AC_PREREQ
+# Load macros in 'm4'-dir
+AC_CONFIG_MACRO_DIR([m4])
+
+AC_PROG_INSTALL
+AC_PREREQ
 AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_RANLIB
 
+# Check for C++11
+AX_CXX_COMPILE_STDCXX_11([noext])
+
 
 #Checks for libraries
-#AC_CHECK_LIB(cppunit,TestCase,[],AC_MSG_WARN([cppunit is not installed]))
-#AC_CHECK_LIB(cppunit,TestCase,[],AC_MSG_WARN([User define 'cppunit' location. e.g. LDFLAGS=-L/opt/local/lib]))
 AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/opt/local/lib)
 #AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/home/joezhu/cppunit/lib)
 # Checks for header files for scrm.
@@ -26,65 +31,6 @@ AC_LANG(C++)
 #AC_CHECK_HEADERS([cassert cstddef cfloat stdexcept iostream vector map iomanip fstream ctime cmath boost/assign/std/vector.hpp boost/random.hpp])
 #AC_CHECK_HEADERS([boost/random.hpp boost/assign/std/vector.hpp],[],AC_MSG_WARN([User define 'boost' location. e.g. CXXFLAGS=-I/opt/local/include]))
 #AC_CHECK_HEADERS([boost/random.hpp boost/assign/std/vector.hpp],[],CXXFLAGS=-I../opt/local/include)
-
-
-#
-# Platform specific setup
-#
-#############################
-AC_CANONICAL_HOST
-# Check for which host we are on and setup a few things
-# specifically based on the host
-case $host_os in
-  darwin* )
-#Check whether the environment variable CXX or CCC (in that order) is set; if so, then set output variable CXX to its value.
-    AC_PROG_CXX([clang])
-#    export CXX=clang++
-    export CXXFLAGS=-I/opt/local/include -stdlib=libc++ 
-#    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/gcc-4.8.3/lib64 # or add this line to .profile
-    #AC_CHECK_HEADERS([/opt/local/include/boost/assign/std/vector.hpp /opt/local/include/boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Install from the port: sudo port install boost])])
-        ;;
-  linux*)
-#Check whether the environment variable CXX or CCC (in that order) is set; if so, then set output variable CXX to its value.
-    AC_PROG_CXX
-#    export CXX=g++
-    #AC_CHECK_HEADERS([boost/assign/std/vector.hpp boost/lexical_cast.hpp ],[],[AC_MSG_ERROR(['boost' header files not found. Try downloading from :http://www.boost.org. Or: sudo apt-get install libboost-all-dev])])        
-    ;;
-    #compile on cluster 3, ./configure CXXFLAGS=-I/usr/local/boost
-    # compile on rescomp, ./configure CXX=/users/mcvean/joezhu//gcc-4.8.3/bin/g++
-   *BSD*)
-        # Do something specific for BSD
-        ;;
-    *)
-        #Default Case
-        AC_MSG_ERROR([Your platform is not currently supported])
-        ;;
-esac
-
-#AM_CONDITIONAL([DARWIN_HOST], test $host_os = darwin)
-#AM_CONDITIONAL([LINUX_HOST], test $host_os = linux)
-
-
-# Checks for the compiler viersion
-#GCC_VERSION_MAJOR=$(g++ -dumpversion | cut -d'.' -f1)
-#GCC_VERSION_MINOR=$(g++ -dumpversion | cut -d'.' -f2)
-
-#if test "$GCC_VERSION_MAJOR" -ge 4
-#then
-	#if test "$GCC_VERSION_MINOR" -lt 7
-	#then
-		#AC_MSG_ERROR([Require g++ compiler 4.7+])
-	#fi
-#else
-	#AC_MSG_ERROR([Require g++ compiler 4.7+])
-#fi 
-
-# Checks for the std=c++0x option
-#AX_CXX_COMPILE_STDCXX_0X
-
-# Checks for the std=c++11 option
-#AX_CXX_COMPILE_STDCXX_11([ext|noext],[mandatory|optional])
-#AX_CXX_COMPILE_STDCXX_11()
 
 
 # Checks for typedefs, structures, and compiler characteristics.
