@@ -18,23 +18,38 @@ class TestForestState : public CppUnit::TestCase {
   CPPUNIT_TEST_SUITE_END();
 
  private:
-    //Model model;
-    Model * model;
     MersenneTwister *rg;
+    ForestState *particle;
 
  public:
- 
-    void testInitialization(){
-        rg = new MersenneTwister();
+    void setUp() {
+        rg = new MersenneTwister(1234);
+        //particle = new ForestState(new Model(5), rg);
+        //particle->createExampleTree();
+    }
+    
+    void tearDown() {
+        //delete particle->writable_model();
+        //delete particle;
+        delete rg;
+    }
+
+    void testLikelihood(){
         
-        ForestState new_state = ForestState(new Model(4),rg);
+    
+    }
+
+    void testInitialization(){
+        //rg = new MersenneTwister();
+        
+        //ForestState new_state = ForestState(new Model(4),rg);
         
         //CPPUNIT_ASSERT( new_state.model().sample_size() == 4 );
         //CPPUNIT_ASSERT( new_state.random_generator() == rg );
         //CPPUNIT_ASSERT_EQUAL(0.0, new_state.site_where_weight_was_updated() );
         //CPPUNIT_ASSERT_EQUAL(1.0, new_state.weight());
         //CPPUNIT_ASSERT(new_state.previous_state == NULL);
-        cout<<endl;
+        //cout<<endl;
         //CPPUNIT_ASSERT(new_state.printTree());
         
         //delete rg;

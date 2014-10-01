@@ -2,7 +2,7 @@ bin_PROGRAMS = pf-ARG pf-ARG_dbg
 #pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
 #check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
-check_PROGRAMS = unit_tests generate_vcf
+check_PROGRAMS = unit_tests generate_vcf pf-ARG_omp pf-ARG_prof pf-ARG_omp_prof
 
 TESTS = unit_tests 
 
@@ -102,14 +102,14 @@ pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
 unit_tests_SOURCES = $(shared_SOURCES) $(series_src)  \
                      $(debug_src) \
-                     tests/test_runner.cpp \                     
+                     tests/test_runner.cpp \
                      tests/test_pattern.cpp \
                      tests/test_Coalevent.cpp \
                      tests/test_FroestState.cpp\
                      tests/test_PfCount.cpp\
                      tests/test_ParticleContainer.cpp\
-                     tests/test_gvcf.cpp\   
-                     tests/test_param.cpp \                
+                     tests/test_gvcf.cpp\
+                     tests/test_param.cpp \
                      #tests/test_vcf.cpp 
                      #tests/test_random_generator.cpp \
 		     #tests/test_Count.cpp\
