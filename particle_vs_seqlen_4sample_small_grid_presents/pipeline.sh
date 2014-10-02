@@ -2,7 +2,7 @@
 JOB="particle_vs_seqlen_4sample_smaller_grid"
 
 mkdir /well/gerton/joezhu/${JOB}
-DATA=sim-1Samples4msdata1.vcf
+DATA=sim-1Samples4msdata1.seg
 
 WTCHG_prj=bsg.prjc
 
@@ -48,7 +48,7 @@ script="#!/bin/bash
 TASK=\$(expr \${SGE_TASK_ID} )
 outprefix=/well/gerton/joezhu/${JOB}/${currentjob}TASK\${TASK}
 
-{ time -p pf-ARG -Np ${particle_array[particle_index]} -EM ${EM} -t ${theta_array[seqlen_index]} -r ${rho_array[seqlen_index]} ${seqlen_array[seqlen_index]} ${pattern_tmax} -vcf ${DATA} -o \${outprefix} -seed \${TASK} \${TASK} \${TASK} ;} 2> \${outprefix}_time.txt
+{ time -p pf-ARG  -nsam 4 -Np ${particle_array[particle_index]} -EM ${EM} -t ${theta_array[seqlen_index]} -r ${rho_array[seqlen_index]} ${seqlen_array[seqlen_index]} ${pattern_tmax} -seg ${DATA} -o \${outprefix} -seed \${TASK} \${TASK} \${TASK} ;} 2> \${outprefix}_time.txt
 "     
         echo "${script}" > ${currentjob}.sh
         
