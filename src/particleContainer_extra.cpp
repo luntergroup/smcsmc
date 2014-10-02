@@ -27,7 +27,7 @@
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, bool withdata ){
+void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state ){
     dout << endl<<" We are extending particles" << endl<<endl;
     
  	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
@@ -39,22 +39,22 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
         double updated_to = this->particles[particle_i]->site_where_weight_was_updated();
         dout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
         assert (updated_to >= this->particles[particle_i]->current_base());
-        while ( updated_to < mutation_at ) {
-            dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << mutation_at << endl;            
+        while ( updated_to < extend_to ) {
+            dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << extend_to << endl;            
             /*!
-             * First, update the likelihood up to either mutation_at or the end of this state
+             * First, update the likelihood up to either extend_to or the end of this state
              */
-            double update_to = min( mutation_at, this->particles[particle_i]->next_base() );
+            double update_to = min( extend_to, this->particles[particle_i]->next_base() );
             double length_of_local_tree = this->particles[particle_i]->getLocalTreeLength(); // in generations
-            double likelihood_of_segment = withdata ? exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ) : 1 ;// assume infinite site model
+            double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ) : 1 ;// assume infinite site model
             dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
-            dout << ( withdata ? ", as invariant.": ", as missing data" ) << endl;
+            dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
             this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_segment);
             updated_to = update_to;  // rescues the invariant
             /*!
-             * Next, if we haven't reached mutation_at now, add a new state and iterate
+             * Next, if we haven't reached extend_to now, add a new state and iterate
              */
-            if ( updated_to < mutation_at ) {
+            if ( updated_to < extend_to ) {
                 this->particles[particle_i]->sampleNextGenealogy();
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
@@ -64,9 +64,8 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
                 }
             
             }
-        assert (updated_to == mutation_at);        
-        this->particles[particle_i]->setSiteWhereWeightWasUpdated( mutation_at );
-        //cout<<"current_base() = "<<this->particles[particle_i]->current_base()<<" mutation at "<<mutation_at<< " next_base = "<<this->particles[particle_i]->next_base() <<endl;
+        assert (updated_to == extend_to);        
+        this->particles[particle_i]->setSiteWhereWeightWasUpdated( extend_to );
         }
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
@@ -78,20 +77,13 @@ void ParticleContainer::extend_ARGs( double mutation_at, double mutation_rate, b
 /*! \brief Update particle weight according to the haplotype data
  *	@ingroup group_pf_update
  */
-void ParticleContainer::update_state_weights_at_A_single_site(
-    double mutation_at,
-    double mutation_rate, 
-    //bool withdata,
-    bool empty_file,
-    vector <int> &haplotypes_at_tips
-    ){
+void ParticleContainer::update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips ){
 			
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
 	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
 		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
 
-		//double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood(withdata); // DEBUG 
-        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( !empty_file ); // DEBUG , if it is not empty_file, calculate the likelihood
+        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( );
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);

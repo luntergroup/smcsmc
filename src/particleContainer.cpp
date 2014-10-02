@@ -255,113 +255,18 @@ void ParticleContainer::normalize_probability(){
     }
 
 
-void ParticleContainer::update_state_to_data(
-                        VariantReader * VCFfile, 
-                        Model * model, 
-                        valarray<double> & weight_cum_sum
-                        //bool finite_bool
-                        ){
+void ParticleContainer::update_state_to_data( double mutation_rate, size_t loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
+    
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
-    dout << " ### PROGRESS: update weight at " << VCFfile->site()<<endl;
-    double P1 = VCFfile->site();
-    double p1 = VCFfile->seg_end_site();
+    dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
 
-    bool previous_segment_is_invariant = ( VCFfile->previous_seg_state != MISSING ) ; // previous_segment_is_invariant could be ZERO_SEG or SEQ_INVARIANT
-    bool current_segment_is_invariant = VCFfile->current_seg_state != MISSING; // current_segment_is_invariant could be ZERO_SEG or SEQ_INVARIANT
-    double mutation_rate = model->mutation_rate();
-    
-    /*!
-     * \verbatim
-                 
-                                  previous VCFfile->site()
-                              p0  mut0  p1  p2  p3         p4  mut1
-                              .   .     .   .   .          .   . 
-                              .   .     .   .   .          .   VCFfile->site()
-                              .   .         .   .          .   .
-                                  .     1       .              .
-                                  .     x---o   .          4   .
-                              0   .     |   |   .          x-------o
-                              x---------o   |   .          |   .
-                              |   .         |              |   .
-                              |   .         x---o          |   .
-         x--------o           |   .         2   |          |   .
-                  |           |   .             x----------o   .
-                  |           |   .             3              .
-                  x-----------o   .                            .
-                                  .                            .
-                                  .                            .
-      
-      \endverbatim
-     * At the start of calling this function, the tail ForestState is state 0.
-     * Let p_i denotes the position of the start of State i.
-     * mut0 was the previous mutation position
-     * mut1 is the current mutation position
-     * 
-     * At the start of this function, likelihood of this particle is updated upto mut0
-     * When extending the ARG, we first update the likelihood from mut0 to p1 for 
-     * not observing any mutation on this segment of sequence. The new state occurs at p1,
-     * until p4. The probability of not observing mutation is updated until mut1.
-     * 
-     * Call function update_state_weights_at_A_single_site(), update the particle weight for
-     * observe mutation at site mut1. The probability of all particles are updated until mut1.
-     * 
-     * Calculate the cumulated likelihood of all particles and the effective sample size (ESS).
-     * 
-     * 
-     */
-    
-    /*!
-     * P0-------p0------P1-----p1-----P2
-     * 
-     * VCF: p0 = P0, p1 = P1, P0, P1, and P2 are SNP
-     * Previously updated till P0/p0, 
-     * Action: extend from P0/p0 to P1, then update at P1.
-     * 
-     * GVCF: P0: SNP, P1: SNP, same as VCF
-     *       P0: invariant, P1: SNP
-     *           previouly updated till p0, for invariant between P0 and p0
-     *           Action: extend missing from p0 to P1, then update at P1/p1
-     *       P0: SNP, P1: invariant
-     *           previously updated till P0/p0, 
-     *           Action: extending invariant from P0 till p1, no update at P1 nor p1
-     *       P0: invariant, P1: invariant
-     *           previouly updated till p0, extend invariant till p1, no update at P1 nor p1
-     * 
-     * RGVCF: P0: SNP, P1: SNP, same as VCF
-     *       P0: invariant, P1: SNP
-     *           previouly updated till P0/p0, for missing between P0 and p0
-     *           Action: extend invariant from p0 to P1, then update at P1/p1
-     *       P0: SNP, P1: invariant
-     *           previously updated till P0/p0, 
-     *           Action: extending invariatn from P0/p0 till p1, no update at P1 nor p1
-     *       P0: invariant, P1: invariant
-     *           previouly updated till p0, extend missing till p1, no update at P1 nor p1
-     * 
-     */ 
-    
-    /*!
-     * extend to P1, 
-     * If P1 == p1
-     *      update at p1
-     * else 
-     *      then extend to p1 (two types of extension, different from the previous extension)
-     */ 
+    //Update weight for seeing mutation at the position 
+    dout << " Update state weight at a SNP "<<endl;
+    this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_start ); 
+
     //Extend ARGs and update weight for not seeing mutations along the equences
-    dout << " extend ARG part I, previous_segment is " ;
-    dout << (previous_segment_is_invariant? "":"Not" );
-    dout << " invariant" <<endl;
-    this->extend_ARGs( P1, mutation_rate, previous_segment_is_invariant );
+    this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) , Segfile->segment_state() );
 
-    if ( P1 == p1 ){
-        //Update weight for seeing mutation at the position 
-        dout << " Update state weight at a SNP "<<endl;
-        this->update_state_weights_at_A_single_site( p1, mutation_rate, VCFfile->current_variant_state != SNP, VCFfile->int_vec_of_sample_alt ); 
-        }
-    else {
-        //Extend ARGs and update weight for not seeing mutations along the equences
-        dout << " extend ARG part II "<<endl;
-        this->extend_ARGs( p1, mutation_rate, current_segment_is_invariant );
-        }
     
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );
@@ -439,7 +344,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
            remove all the state prior to the minimum of
             current_printing_base and 
                 previous_backbase     
-                .                      backbase                     VCFfile->site()
+                .                      backbase                     Segfile->site()
                 .                      .                            .
                 .                      .     3                      .
                 .                      .     x---o              6   .

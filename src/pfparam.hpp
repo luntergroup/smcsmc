@@ -22,7 +22,7 @@
 */
 
 #include "scrm/param.h"
-#include "variantReader.hpp"
+#include "segdata.hpp"
 
 using namespace std;
 
@@ -34,7 +34,6 @@ using namespace std;
  */ 
 class PfParam{
     #ifdef UNITTEST
-    //friend class TestVariantReader;
     friend class TestParam;
     #endif
     friend class ParticleContainer;
@@ -65,10 +64,8 @@ class PfParam{
         bool online_bool;
 
         bool heat_bool;
-        //bool finite_bool;
-        //bool hist_bool;
 
-        VariantReader * VCFfile;
+        Segment * Segfile;
         Param *SCRMparam;
         Model *model;
         MersenneTwister *rg ;
@@ -137,17 +134,12 @@ class PfParam{
         // ------------------------------------------------------------------
         // Input 
         // ------------------------------------------------------------------        
-        INPUT_FILETYPE FileType;
         string pattern;     /*! population segement pattern */
         double top_t_;
         double ESS_;   // scaled between zero and one
 
-        // VCF related
-        string input_variantFileName; // vcf file name
-        int buff_length; // number of lines vcf file read at once
-        int ghost; // ghost snp, when no data is used, this is used for debugging
-        int filter_window_;  // If two snps are two close, i.e. difference between the site is less than this window, should skip to the next read.
-        int missing_data_threshold_;
+        // Segdata related
+        string input_SegmentDataFileName;
 
         // ------------------------------------------------------------------
         // Output Related

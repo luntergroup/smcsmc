@@ -48,13 +48,8 @@ class ParticleContainer{
         //
         // Methods
         //   
-        void update_state_to_data(VariantReader * VCFfile, 
-                                  Model * model, 
-                                  valarray<double> & weight_cum_sum);
-                                  //bool finite_bool = false);
-        void extend_ARGs(double mutation_at,
-                             double mutation_rate, 
-                             bool withdata);
+        void update_state_to_data( double mutation_rate, size_t loci_length, Segment * Segfile, valarray<double> & weight_cum_sum);
+        void extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state );
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
@@ -73,15 +68,11 @@ class ParticleContainer{
         
     private:
         
-        //
+        // 
         // Methods
         //   
        
-        void update_state_weights_at_A_single_site(double mutation_at,
-                                                   double mutation_rate, 
-                                                   bool withdata,
-                                                   vector <int> &haplotypes_at_tips);
-                                                   //bool finite_bool);
+        void update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips);
         void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */        
 
         // Resampling

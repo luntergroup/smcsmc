@@ -422,7 +422,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 	x[1] = (y[0] * (1-ut1) + y[1] * ut1 ) * (z[0] * (1-ut2) + z[1] * ut2 );
 	dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
 	return x;
-    }
+}
 
 	
 /*! 
@@ -430,9 +430,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  *  If there is no data given at the site i, return likelihood as 1. Since all particles at this site are equally probable 
  * @ingroup group_pf_resample
  */
-double ForestState::calculate_likelihood( bool withdata ) {
-
-  if (withdata){
+double ForestState::calculate_likelihood( ) {
     dout << "calculate_likelihood function, root is " << this->local_root() << endl;
     valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
     dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
@@ -440,8 +438,5 @@ double ForestState::calculate_likelihood( bool withdata ) {
     double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
     dout << "likelihood is " << likelihood << endl;
     return likelihood;
-  } else {
-    return 1;
-  }
 }
 

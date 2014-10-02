@@ -64,9 +64,7 @@ scrm_src = scrm/node.cc scrm/node.h \
 debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
             scrm/forest-debug.cc \
             debug/particle-debug.cpp \
-            debug/count-debug.cpp \
-            debug/variantReader-debug.cpp
-
+            debug/count-debug.cpp 
 
 arg_src = coalevent.cpp \
           particle.cpp \
@@ -74,7 +72,7 @@ arg_src = coalevent.cpp \
 
 count_src = count.cpp count-semi-debug.cpp 
        
-param_src = pattern.cpp pfparam.cpp variantReader.cpp rescue.cpp 
+param_src = pattern.cpp pfparam.cpp segdata.cpp rescue.cpp 
 
 series_src = particleContainer_extra.cpp count_extra.cpp
 
@@ -122,7 +120,7 @@ unit_tests_LDADD= -lcppunit -ldl
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
 #unit_tests_LDADD= -L/usr/include 
 
-include_HEADERS = variantReader.hpp pfparam.hpp particle.hpp pattern.hpp\
+include_HEADERS = segdata.hpp pfparam.hpp particle.hpp pattern.hpp\
                   scrm/forest.h scrm/model.h scrm/node.h scrm/node_container.h \
                   scrm/time_interval.h scrm/tree_point.h \
                   scrm/random/constant_generator.h scrm/random/mersenne_twister.h \
@@ -134,3 +132,5 @@ include_HEADERS = variantReader.hpp pfparam.hpp particle.hpp pattern.hpp\
                   
 #scrm/contemporaries_container.h scrm/summary_statistics/oriented_forest.h 
 				  
+clean:
+	rm sim-1*

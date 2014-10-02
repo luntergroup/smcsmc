@@ -88,16 +88,17 @@ void pfARG_core(PfParam &pfARG_para,
     Model *model = pfARG_para.model;
     MersenneTwister *rg = pfARG_para.rg;
     size_t Nparticles = pfARG_para.N ;
-    VariantReader *VCFfile = pfARG_para.VCFfile;
-    
-    VCFfile->read_new_line();
-    cout<< "############# starting vcf file at base " <<VCFfile->site()<<endl;
+    Segment *Segfile = pfARG_para.Segfile;
+    double mutation_rate = model->mutation_rate();
+
+    Segfile->read_new_line();
+    cout<< "############# starting vcf file at base " <<Segfile->segment_start()<<endl;
     
     /*! Initial particles */ 
-    double initial_position = 0;
+    //double initial_position = 0;
     ParticleContainer current_states(model, rg, Nparticles, 
-                                    //VCFfile->int_vec_of_sample_alt, VCFfile->withdata(), 
-                                    initial_position,
+                                    //Segfile->int_vec_of_sample_alt, Segfile->withdata(), 
+                                    Segfile->segment_start(),
                                     pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
@@ -109,12 +110,12 @@ void pfARG_core(PfParam &pfARG_para,
     bool force_update = false;
     do{
         getrusage(who,p);            // PROFILING
-        process(p, VCFfile->site()); // PROFILING
+        process(p, Segfile->segment_start()); // PROFILING
 
         /*! A particle path, where x-----o is a ForestState. 
          *  The particle weight is the weight at the ForestState 6
          *  Even though the particle has extended to state 6, 
-         *  which means the Weight has included upto VCFfile->site()
+         *  which means the Weight has included upto Segfile->site()
          *  
          * The ForestState we are intested in is upon until backbase,
          * which is state 2 in this case.
@@ -122,16 +123,16 @@ void pfARG_core(PfParam &pfARG_para,
          * Update count step should include all the coalescent events of 
          * State 0, 1, and 2
          * 
-         * backbase is the sequence position that the current mutation "VCFfile->site()" go back lag    
+         * backbase is the sequence position that the current mutation "Segfile->site()" go back lag    
          * 
-         * previous_backbase is the sequence position that the previous mutation "VCFfile->site()" go back lag
+         * previous_backbase is the sequence position that the previous mutation "Segfile->site()" go back lag
          * 
          *  \verbatim
                       
            remove all the state prior to the minimum of
             current_printing_base and 
                 previous_backbase     
-                .                      backbase                     VCFfile->site()
+                .                      backbase                     Segfile->site()
                 .                      .                            .
                 .                      .     3                      .
                 .                      .     x---o              6   .
@@ -155,34 +156,27 @@ void pfARG_core(PfParam &pfARG_para,
          */ 
          
         
-        //if ( !VCFfile->empty_file() && VCFfile->site() >= model->loci_length() ){ 
-        if ( VCFfile->FileType!=EMPTY && VCFfile->site() >= model->loci_length() ){ 
-            cout<<" VCF data is beyond loci length"<<endl;
-            VCFfile->force_to_end_data();
-            //countNe->extract_and_update_count( current_states , VCFfile->site() ); // I think this is not necessary here, as we will do it anyway ...
 
-            continue;
-            }
-        dout <<"current base is at "<<VCFfile->site()<<" and it is ";
-        dout << (VCFfile->end_data()?"YES":"NOT");
+        dout <<"current base is at "<<Segfile->segment_start()<<" and it is ";
+        dout << (Segfile->end_data()? "YES":"NOT");
         dout << " the end of data "<<endl;
         
         
         valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
             
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
-         *      In this case, we will be update till VCFfile->site() 
+         *      In this case, we will be update till Segfile->site() 
          */
-        current_states.update_state_to_data(VCFfile, model, weight_cum_sum);
+        current_states.update_state_to_data( mutation_rate, model->loci_length(), Segfile, weight_cum_sum);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
-        current_states.appendingStuffToFile( VCFfile->site(), pfARG_para);    
+        current_states.appendingStuffToFile( min(Segfile->segment_end(),  model->loci_length()), pfARG_para);    
 
         /*! UPDATE CUM COUNT AND OPPORTUNITIES ACCORDING TO THE PARTICLE WEIGHT */ 
-        countNe->extract_and_update_count( current_states , VCFfile->site() );
+        countNe->extract_and_update_count( current_states , min(Segfile->segment_end(),  model->loci_length()) );
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters(VCFfile->site(), model, pfARG_para.online_bool, force_update = false, false);
+        countNe->reset_model_parameters( min(Segfile->segment_end(),  model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
 
 
         if ( pfARG_para.ESS() == 1 ){
@@ -191,15 +185,22 @@ void pfARG_core(PfParam &pfARG_para,
             }
                 
         /*! ESS resampling. Filtering step*/        
-        current_states.ESS_resampling(weight_cum_sum, sample_count, VCFfile->site(), pfARG_para.ESSthreshold, Nparticles);
-                //cout<< VCFfile->site() << endl;
-        VCFfile->read_new_line(); // Read new line from the vcf file        
-        } while( !VCFfile->end_data() );
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),  model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        if ( Segfile->segment_end() >= model->loci_length() ){ 
+            cout<<" Segment data is beyond loci length"<<endl;
+            Segfile->set_end_data (true);
+
+            //break;
+        }
+        
+        Segfile->read_new_line(); // Read new line from the vcf file  
+        
+        } while( !Segfile->end_data() );
      
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
-    bool with_data_to_the_end = true;
-    current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
+    //bool with_data_to_the_end = true;
+    //current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
     // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
     // should include coalescent events as well ...
     current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
@@ -208,7 +209,7 @@ void pfARG_core(PfParam &pfARG_para,
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 
 
-    countNe->extract_and_update_count( current_states , sequence_end, true ); // VCFfile->end_data()
+    countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
     bool append_to_history_file = true;
@@ -219,6 +220,5 @@ void pfARG_core(PfParam &pfARG_para,
     current_states.appendingStuffToFile( sequence_end, pfARG_para);    
 
     current_states.clear(); // This line is sufficient to clear the memory.
-    VCFfile->reset_data_to_first_entry();
-    
+    Segfile->reset_data_to_first_entry();
     } // End of void pfARG_core( ... )

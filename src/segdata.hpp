@@ -53,36 +53,57 @@ class Segment{
     friend class TestParam;
     #endif
 
+
+    Segment_State segment_state() const { return this->segment_state_; }
+    //bool variant_state() const { return this->variant_state_; }
+    bool genetic_break() const { return this->genetic_break_; }
     // Important stuff
-    int current_site;
-    Segment_State current_state;
-    bool variant;                   // Variant state (given it is a variant) at the start of the segment, True or False
+    size_t segment_start_;
+    size_t segment_length_;
+    Segment_State segment_state_;
+    //bool variant_state_;                   // Variant state (given it is not missing ) at the start of the segment, True or False
+    bool genetic_break_;
     vector <int> allelic_state_at_Segment_start; // Since missing variant can be represented here, variant can be ignored?
-    bool genetic_break;
+    
+    bool empty_file;
+    size_t nsam_;
     
     // less important stuff
-    
-    Segment( string file_name );
-    ~Segment(){};
-    
-    // Methods
-    void read_new_line();
-    void reset_data_to_first_entry();
 
-    ifstream in_file;
     string file_name_;
     string tmp_line;
     string tmp_str;
 
     vector <string> buffer_lines;
     size_t current_line_index_; 
-
     
-        // Line related
+    // Line related
     size_t feild_start;
     size_t field_end;
     int field_index;
+    
+    
+    Segment( string file_name , size_t nsam );
+    ~Segment(){};
+    
+    // Methods
+    void init();
+    void initialize_read_newLine();
+    void extract_field_VARIANT();
 
+    size_t num_of_entries_;
+    bool end_data_;
+    
+public:
+    size_t segment_start() const { return this->segment_start_; }
+    size_t segment_length() const { return this->segment_length_; }
+    size_t segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
+
+    void read_new_line();
+    void reset_data_to_first_entry(){ this->current_line_index_ = 0;};
+
+    bool end_data() const {return end_data_; }
+    void set_end_data ( bool condition ) { this->end_data_ = condition ; }
 };
 
 #endif
