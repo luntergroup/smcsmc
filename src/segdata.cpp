@@ -64,10 +64,7 @@ void Segment::read_new_line(){
 
     this->initialize_read_newLine(); 
     
-    if ( this->empty_file && this->segment_start_ > 10000000 ){
-        this->end_data_ = true;
-        return;
-    }
+    if ( this->empty_file ){ return; }
     
     if ( this->current_line_index_ == this->buffer_lines.size() ) {
         this->end_data_ = true;
