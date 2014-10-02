@@ -97,7 +97,9 @@ void Segment::extract_field_VARIANT ( ){
 
     assert( nsam_ == this->tmp_str.size() );
     for ( size_t i = 0; i < nsam_; i++){
-        this->allelic_state_at_Segment_start.push_back ( strtol( &this->tmp_str[i], NULL, 0) );
+        this->allelic_state_at_Segment_start.push_back ( strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0) );
+        //cout << this->allelic_state_at_Segment_start.back();
     }
+    //cout<<endl;
 }    
 
