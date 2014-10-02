@@ -100,7 +100,12 @@ public:
     size_t segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
 
     void read_new_line();
-    void reset_data_to_first_entry(){ this->current_line_index_ = 0;};
+    void reset_data_to_first_entry(){ 
+        this->current_line_index_ = 0; 
+        this->set_end_data(false);
+        this->segment_start_ = 1;
+        this->segment_length_ = 0;
+    };
 
     bool end_data() const {return end_data_; }
     void set_end_data ( bool condition ) { this->end_data_ = condition ; }
