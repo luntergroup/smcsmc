@@ -55,7 +55,8 @@ void Segment::initialize_read_newLine(){
     this->field_end   = 0;
     this->field_index = 0;
     
-    this->segment_start_ += this->segment_length_;     
+    this->segment_start_ += this->segment_length_;    
+    // check for genetic break, see if starts from a new chrom 
     }
 
 void Segment::read_new_line(){
