@@ -20,49 +20,50 @@ generate_vcf:
 unittests: unit_tests
 	./unit_tests 
 
-pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
-#pf_ARG_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
+common_flags = -O3 -Wall -Wno-unknown-pragmas -I scrm/src/
+pf_ARG_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   #options for not showing debug messages
+#pf_ARG_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG -fopenmp  #options for not showing debug messages
 
-pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas  -DNDEBUG   #options for not showing debug messages
-pf_ARG_dbg_CXXFLAGS= -std=c++0x  #options for showing debug messages
+pf_ARG_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -DNDEBUG   #options for not showing debug messages
+pf_ARG_dbg_CXXFLAGS= -std=c++0x -I scrm/src/ #options for showing debug messages
 
-pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG -fopenmp  #options for not showing debug messages
-#pf_ARG_omp_CXXFLAGS= -std=c++0x -g -O3 -Wall -Wno-unknown-pragmas -DNDEBUG   #options for not showing debug messages
+pf_ARG_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG -fopenmp  #options for not showing debug messages
+#pf_ARG_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   #options for not showing debug messages
 
-pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
+pf_ARG_omp_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -fopenmp -DNDEBUG   #options for not showing debug messages
 
 
 
-#pf_ARG_prof_CXXFLAGS= -std=c++0x -pg -O3 -Wall -Wno-unknown-pragmas -fopenmp -DNDEBUG   #options for not showing debug messages
+#pf_ARG_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -fopenmp -DNDEBUG   #options for not showing debug messages
 #pf_ARG_dbg_CXXFLAGS= -std=c++0x -fopenmp #options for showing debug messages
-#scrm/summary_statistics/oriented_forest.cc 
+#scrm/src/summary_statistics/oriented_forest.cc 
 
-scrm_param = scrm/param.cc scrm/param.h \
-        scrm/model.cc scrm/model.h \
-        scrm/summary_statistics/newick_tree.cc \
-        scrm/summary_statistics/frequency_spectrum.cc \
-        scrm/summary_statistics/seg_sites.cc \
-		scrm/summary_statistics/tmrca.cc \
-		scrm/summary_statistics/first_last_tmrca.cc 
+scrm_param = scrm/src/param.cc scrm/src/param.h \
+        scrm/src/model.cc scrm/src/model.h \
+        scrm/src/summary_statistics/newick_tree.cc \
+        scrm/src/summary_statistics/frequency_spectrum.cc \
+        scrm/src/summary_statistics/seg_sites.cc \
+		scrm/src/summary_statistics/tmrca.cc \
+		scrm/src/summary_statistics/first_last_tmrca.cc 
 		
 		        
 
-scrm_src = scrm/node.cc scrm/node.h \
-        scrm/node_container.cc scrm/node_container.h \
-        scrm/time_interval.cc scrm/time_interval.h \
-        scrm/tree_point.cc scrm/tree_point.h \
-        scrm/forest.cc \
-        scrm/random/mersenne_twister.h  \
-        scrm/random/random_generator.cc \
-        scrm/random/mersenne_twister.cc   scrm/random/random_generator.h \
-        scrm/random/fastfunc.cc           scrm/random/fastfunc.h 
+scrm_src = scrm/src/node.cc scrm/src/node.h \
+        scrm/src/node_container.cc scrm/src/node_container.h \
+        scrm/src/time_interval.cc scrm/src/time_interval.h \
+        scrm/src/tree_point.cc scrm/src/tree_point.h \
+        scrm/src/forest.cc \
+        scrm/src/random/mersenne_twister.h  \
+        scrm/src/random/random_generator.cc \
+        scrm/src/random/mersenne_twister.cc   scrm/src/random/random_generator.h \
+        scrm/src/random/fastfunc.cc           scrm/src/random/fastfunc.h 
         
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 
-debug_src = scrm/random/constant_generator.cc scrm/random/constant_generator.h \
-            scrm/forest-debug.cc \
+debug_src = scrm/src/random/constant_generator.cc scrm/src/random/constant_generator.h \
+            scrm/src/forest-debug.cc \
             debug/particle-debug.cpp \
             debug/count-debug.cpp 
 
@@ -121,16 +122,16 @@ unit_tests_LDADD= -lcppunit -ldl
 #unit_tests_LDADD= -L/usr/include 
 
 include_HEADERS = segdata.hpp pfparam.hpp particle.hpp pattern.hpp\
-                  scrm/forest.h scrm/model.h scrm/node.h scrm/node_container.h \
-                  scrm/time_interval.h scrm/tree_point.h \
-                  scrm/random/constant_generator.h scrm/random/mersenne_twister.h \
-                  scrm/random/random_generator.h scrm/event.h \
-                  scrm/summary_statistics/newick_tree.h \
-                  scrm/summary_statistics/frequency_spectrum.h \
-                  scrm/summary_statistics/seg_sites.h \
-                  scrm/summary_statistics/tmrca.h 
+                  scrm/src/forest.h scrm/src/model.h scrm/src/node.h scrm/src/node_container.h \
+                  scrm/src/time_interval.h scrm/src/tree_point.h \
+                  scrm/src/random/constant_generator.h scrm/src/random/mersenne_twister.h \
+                  scrm/src/random/random_generator.h scrm/src/event.h \
+                  scrm/src/summary_statistics/newick_tree.h \
+                  scrm/src/summary_statistics/frequency_spectrum.h \
+                  scrm/src/summary_statistics/seg_sites.h \
+                  scrm/src/summary_statistics/tmrca.h 
                   
-#scrm/contemporaries_container.h scrm/summary_statistics/oriented_forest.h 
+#scrm/src/contemporaries_container.h scrm/src/summary_statistics/oriented_forest.h 
 				  
 clean:
 	rm sim-1*

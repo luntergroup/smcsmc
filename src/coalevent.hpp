@@ -22,7 +22,7 @@
 */
 
 
-#include "scrm/forest.h"
+#include "forest.h"
 
 #ifndef STAREVENT
 #define STAREVENT

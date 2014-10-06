@@ -21,7 +21,7 @@
 
 */
 
-#include "scrm/param.h"
+#include "param.h"
 #include "segdata.hpp"
 
 using namespace std;
