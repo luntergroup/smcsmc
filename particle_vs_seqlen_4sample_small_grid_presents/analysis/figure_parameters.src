@@ -1,8 +1,0 @@
-suffix="_4sample_smaller_gridTASK"
-iteration="{ 31,...,10, 09, 08, 07, 06,05, 04, 03, 02, 01}"
-#particles="{1000, 3000, 10000}"
-#seqlen="{30000000, 120000000, 300000000}"
-particles="{1000, 3000}"
-seqlen="{30000000, 120000000}"
-nodata=false
-figurefile="particl_vs_seqlen_4sample_smaller_grid"
