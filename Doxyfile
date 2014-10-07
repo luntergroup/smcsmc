@@ -688,15 +688,14 @@ src/pfparam.cpp \
 src/pfparam.hpp \
 src/segdata.cpp \
 src/segdata.hpp \
-src/scrm/param.cc src/scrm/param.h \
-src/scrm/copy_forest.cc \
-src/scrm/node.cc src/scrm/node.h \
-src/scrm/node_container.cc src/scrm/node_container.h \
-src/scrm/time_interval.cc src/scrm/time_interval.h \
-src/scrm/tree_point.cc src/scrm/tree_point.h \
-src/scrm/model.cc src/scrm/model.h \
-src/scrm/random/mersenne_twister.cc src/scrm/random/mersenne_twister.h \
-src/scrm/forest.cc src/scrm/forest.h src/scrm/forest-debug.cc \
+src/scrm/src/param.cc src/scrm/src/param.h \
+src/scrm/src/node.cc src/scrm/src/node.h \
+src/scrm/src/node_container.cc src/scrm/src/node_container.h \
+src/scrm/src/time_interval.cc src/scrm/src/time_interval.h \
+src/scrm/src/tree_point.cc src/scrm/src/tree_point.h \
+src/scrm/src/model.cc src/scrm/src/model.h \
+src/scrm/src/random/mersenne_twister.cc src/scrm/src/random/mersenne_twister.h \
+src/scrm/src/forest.cc src/scrm/src/forest.h src/scrm/src/forest-debug.cc \
 utility/doxygen_notation.txt \
 utility/ms2something.py \
 utility/pop_struct.py  \
@@ -1327,7 +1326,7 @@ EXTRA_SEARCH_MAPPINGS  =
 # If the GENERATE_LATEX tag is set to YES (the default) Doxygen will
 # generate Latex output.
 
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put.
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be
@@ -1371,7 +1370,7 @@ EXTRA_PACKAGES         =
 # the first chapter. If it is left blank doxygen will generate a
 # standard header. Notice: only use this tag if you know what you are doing!
 
-LATEX_HEADER           = tex-files/refheader.tex
+LATEX_HEADER           = 
 
 # The LATEX_FOOTER tag can be used to specify a personal LaTeX footer for
 # the generated latex document. The footer should contain everything after

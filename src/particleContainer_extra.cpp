@@ -69,7 +69,6 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
         }
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
-    
     }
 
 

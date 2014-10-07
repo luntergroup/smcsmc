@@ -2,7 +2,7 @@ bin_PROGRAMS = pf-ARG pf-ARG_dbg
 #pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
 #check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
-check_PROGRAMS = unit_tests generate_vcf pf-ARG_omp pf-ARG_prof pf-ARG_omp_prof
+check_PROGRAMS = unit_tests pf-ARG_omp pf-ARG_prof pf-ARG_omp_prof
 
 TESTS = unit_tests 
 
@@ -18,6 +18,7 @@ generate_vcf:
 	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./tests/gvcf2rgvcf.py sim-1Samples4msdata1_edited.gvcf 30000000
 
 unittests: unit_tests
+.PHONY: generate_vcf
 	./unit_tests 
 
 common_flags = -O3 -Wall -Wno-unknown-pragmas -I scrm/src/
@@ -101,20 +102,14 @@ pf_ARG_dbg_SOURCES = $(pf_ARG_SOURCES) $(debug_src)
 
 unit_tests_SOURCES = $(shared_SOURCES) $(series_src)  \
                      $(debug_src) \
-                     tests/test_runner.cpp \
-                     tests/test_pattern.cpp \
-                     tests/test_Coalevent.cpp \
-                     tests/test_FroestState.cpp\
-                     tests/test_PfCount.cpp\
-                     tests/test_ParticleContainer.cpp\
-                     tests/test_gvcf.cpp\
-                     tests/test_param.cpp \
-                     #tests/test_vcf.cpp 
-                     #tests/test_random_generator.cpp \
-		     #tests/test_Count.cpp\
-                     #$(pf_ARG_SOURCES)
-
-unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x 
+                     unittest/test_runner.cpp \
+                     unittest/test_pattern.cpp \
+                     unittest/test_Coalevent.cpp \
+                     unittest/test_FroestState.cpp\
+                     unittest/test_PfCount.cpp\
+                     unittest/test_ParticleContainer.cpp
+                                          
+unit_tests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -I scrm/src/ -I src/
 
 #unit_tests_LDADD= -L/home/joezhu/cppunit/cppunit-1.12.1/lib -lcppunit -ldl
 unit_tests_LDADD= -lcppunit -ldl
@@ -133,5 +128,5 @@ include_HEADERS = segdata.hpp pfparam.hpp particle.hpp pattern.hpp\
                   
 #scrm/src/contemporaries_container.h scrm/src/summary_statistics/oriented_forest.h 
 				  
-clean:
-	rm sim-1*
+clean-local: 
+	test -z "unittest/sim-1Samples2msdata1.seg" || rm -f unittest/sim-1*

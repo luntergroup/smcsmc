@@ -2,12 +2,12 @@
 #include <cppunit/extensions/HelperMacros.h>
 //#include <boost/lexical_cast.hpp> 
 
-#include "../src/pfparam.hpp"
-#include "../src/help.hpp"
-#include "../src/variantReader.hpp"
-#include "../src/scrm/param.h"
-#include "../src/scrm/model.h"
-#include "../src/scrm/forest.h"
+#include "pfparam.hpp"
+#include "help.hpp"
+#include "variantReader.hpp"
+#include "param.h"
+#include "model.h"
+#include "forest.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
@@ -36,7 +36,7 @@ class TestParam : public CppUnit::TestCase {
     PfParam pfARG_para1(1, argv1);
     CPPUNIT_ASSERT_EQUAL( (size_t)100, pfARG_para1.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para1.log_bool );  
-    CPPUNIT_ASSERT_EQUAL( 200, pfARG_para1.buff_length );  
+    //CPPUNIT_ASSERT_EQUAL( 200, pfARG_para1.buff_length );  
     CPPUNIT_ASSERT_EQUAL( (double)0, pfARG_para1.lag );  
     CPPUNIT_ASSERT_EQUAL( string("pfARG"), pfARG_para1.out_NAME_prefix );  
     CPPUNIT_ASSERT_EQUAL( 0.5, pfARG_para1.ESS() );  
@@ -59,7 +59,7 @@ class TestParam : public CppUnit::TestCase {
     PfParam pfARG_para2(11, argv2);
     CPPUNIT_ASSERT_EQUAL( (size_t)10, pfARG_para2.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.log_bool );  
-    CPPUNIT_ASSERT_EQUAL( (int)200, pfARG_para2.buff_length );  
+    //CPPUNIT_ASSERT_EQUAL( (int)200, pfARG_para2.buff_length );  
     CPPUNIT_ASSERT_EQUAL( (double)10, pfARG_para2.lag );  
     CPPUNIT_ASSERT_EQUAL( (string)"pfARG", pfARG_para2.out_NAME_prefix );  
     

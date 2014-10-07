@@ -1,6 +1,6 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include "../src/variantReader.hpp"
+#include "variantReader.hpp"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
@@ -84,9 +84,9 @@ class TestGVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(381), gvcf_file->seg_end_site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[1]);
         
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
         /*! read the following line
@@ -97,9 +97,9 @@ class TestGVCF : public CppUnit::TestCase {
         //cout<< gvcf_file->tmp_line<<endl;
         CPPUNIT_ASSERT_EQUAL(int(382), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(382), gvcf_file->seg_end_site());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(gvcf_file->int_vec_of_sample_alt[1]);
 
 
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
@@ -111,9 +111,9 @@ class TestGVCF : public CppUnit::TestCase {
         //cout<< gvcf_file->tmp_line<<endl;
         CPPUNIT_ASSERT_EQUAL(int(383), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1906), gvcf_file->seg_end_site());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[1]);
                 
         delete gvcf_file;
         
@@ -141,11 +141,11 @@ class TestGVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(12), gvcf_file->seg_end_site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[3]);
         
         CPPUNIT_ASSERT_NO_THROW(gvcf_file->read_new_line());
         /*! read the following line
@@ -155,11 +155,11 @@ class TestGVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
         CPPUNIT_ASSERT_EQUAL(int(13), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(13), gvcf_file->seg_end_site());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(gvcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(gvcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(gvcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(gvcf_file->int_vec_of_sample_alt[3]);
         
         delete gvcf_file;
     }
@@ -283,11 +283,11 @@ class TestGVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);   
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[3]);   
         
         
         do{ 
@@ -303,11 +303,11 @@ class TestGVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), gvcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!gvcf_file->vec_of_sample_alt_bool[3]);   
+        CPPUNIT_ASSERT_EQUAL(size_t(4), gvcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!gvcf_file->int_vec_of_sample_alt[3]);   
                 
         delete gvcf_file;
         }  

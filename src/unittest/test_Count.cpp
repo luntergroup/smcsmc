@@ -2,11 +2,11 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <boost/lexical_cast.hpp> 
 
-#include "../src/count.hpp"
+#include "count.hpp"
 #include <algorithm>    // std::equal
 
-#include "../src/scrm/model.h"
-#include "../src/scrm/param.h"
+#include "model.h"
+#include "param.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

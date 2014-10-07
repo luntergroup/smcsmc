@@ -1,6 +1,6 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include "../src/variantReader.hpp"
+#include "variantReader.hpp"
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 class TestVCF : public CppUnit::TestCase {
@@ -74,9 +74,9 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
         
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         /*! read the following line
@@ -85,9 +85,9 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(2), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[1]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[1]);
         
         delete vcf_file;
         
@@ -111,11 +111,11 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[3]);
+        CPPUNIT_ASSERT_EQUAL(size_t(4), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[3]);
         CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
         CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
         
@@ -126,11 +126,11 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(4), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[3]); 
+        CPPUNIT_ASSERT_EQUAL(size_t(4), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[3]); 
         
         delete vcf_file;
 
@@ -154,13 +154,13 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]); 
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[3]);   
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]); 
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]);      
+        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]); 
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[3]);   
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[4]); 
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[5]);      
         CPPUNIT_ASSERT_EQUAL(SEQ_INVARIANT, vcf_file->prior_seq_state);
         CPPUNIT_ASSERT_EQUAL(SNP, vcf_file->current_variant_state);
 
@@ -175,13 +175,13 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(4), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[3]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]); 
+        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[3]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[4]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[5]); 
         
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -192,13 +192,13 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(7), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[3]); 
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]);
+        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[3]); 
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[4]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[5]);
         
         delete vcf_file;
 
@@ -322,13 +322,13 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[3]);   
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]); 
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]);      
+        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[3]);   
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[4]); 
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[5]);      
         
         do{ 
             CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
@@ -345,13 +345,13 @@ class TestVCF : public CppUnit::TestCase {
          */
         CPPUNIT_ASSERT_EQUAL(int(0), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[0]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[2]);
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[3]);   
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[4]); 
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[5]);      
+        CPPUNIT_ASSERT_EQUAL(size_t(6), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[0]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[2]);
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[3]);   
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[4]); 
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[5]);      
                 
         delete vcf_file;
         }  
@@ -370,7 +370,7 @@ class TestVCF : public CppUnit::TestCase {
         // but not yet processed        
         CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(-1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->vec_of_sample_alt_bool.size());
+        CPPUNIT_ASSERT_EQUAL(size_t(0), vcf_file->int_vec_of_sample_alt.size());
         
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;        
         //extract from line 
@@ -378,18 +378,18 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW( vcf_file->read_new_line() );
         CPPUNIT_ASSERT_EQUAL(int(52238), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
         //1	55164	rs3091274	C	A	100	PASS	.	GT	1|0
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(55164), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
@@ -397,9 +397,9 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(55299), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
 
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
@@ -408,9 +408,9 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(57952), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
@@ -418,9 +418,9 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(58814), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
         //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
         //extract from line 
@@ -428,9 +428,9 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(63671), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
 
 //cout << vcf_file->buffer_lines[vcf_file->current_block_line_]<<endl;
@@ -441,9 +441,9 @@ class TestVCF : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(vcf_file->read_new_line());
         CPPUNIT_ASSERT_EQUAL(int(66176), vcf_file->site());
         CPPUNIT_ASSERT_EQUAL(int(1), vcf_file->chrom());
-        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->vec_of_sample_alt_bool.size());
-        CPPUNIT_ASSERT(!vcf_file->vec_of_sample_alt_bool[1]);
-        CPPUNIT_ASSERT(vcf_file->vec_of_sample_alt_bool[0]);
+        CPPUNIT_ASSERT_EQUAL(size_t(2), vcf_file->int_vec_of_sample_alt.size());
+        CPPUNIT_ASSERT(!vcf_file->int_vec_of_sample_alt[1]);
+        CPPUNIT_ASSERT(vcf_file->int_vec_of_sample_alt[0]);
 
 
         vcf_file->missing_data_threshold_ = 1000000;

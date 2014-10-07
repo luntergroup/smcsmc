@@ -2,12 +2,11 @@
 #include <cppunit/extensions/HelperMacros.h>
 //#include <boost/lexical_cast.hpp> 
 
-#include "../src/pfparam.hpp"
-//#include "../src/usage.hpp"
-#include "../src/variantReader.hpp"
-#include "../src/scrm/param.h"
-#include "../src/scrm/model.h"
-#include "../src/scrm/forest.h"
+#include "pfparam.hpp"
+#include "variantReader.hpp"
+#include "param.h"
+#include "model.h"
+#include "forest.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

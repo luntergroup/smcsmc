@@ -3,8 +3,8 @@
  */
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include "../src/scrm/random/mersenne_twister.h"
-#include "../src/scrm/random/random_generator.h"
+#include "random/mersenne_twister.h"
+#include "random/random_generator.h"
 
 class TestRandomGenerator : public CppUnit::TestCase {
 
