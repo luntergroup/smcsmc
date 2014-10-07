@@ -4,3 +4,6 @@
 [submodule "src/scrm"]
 	path = src/scrm
 	url = https://github.com/smcsmc/scrm_jz_stable_branch.git
+[submodule "src/unittest/utility"]
+	path = src/unittest/utility
+	url = https://github.com/smcsmc/utilities.git

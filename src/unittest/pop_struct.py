@@ -1,1 +1,1 @@
-../../utility/pop_struct.py
+utility/pop_struct.py
