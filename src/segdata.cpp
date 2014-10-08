@@ -80,8 +80,8 @@ void Segment::read_new_line(){
         if      ( field_index == 0 ) { assert ( strtol( tmp_str.c_str(), NULL, 0) == this->segment_start_ );  }  
         else if ( field_index == 1 ) { this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0);    }  
         else if ( field_index == 2 ) { this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING; }
-        //else if ( field_index == 3 ) { this->variant_state_ = ( this->tmp_str == "T" ) ? true : false; }  
-        else if ( field_index == 4 ) { this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false; }  
+        else if ( field_index == 3 ) { this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false; }  
+        else if ( field_index == 4 ) { this->chrom_ = strtol( tmp_str.c_str(), NULL, 0); }  
         else if ( field_index == 5 ) { this->extract_field_VARIANT(); }
         
         feild_start = field_end+1;        
@@ -98,7 +98,9 @@ void Segment::extract_field_VARIANT ( ){
 
     assert( nsam_ == this->tmp_str.size() );
     for ( size_t i = 0; i < nsam_; i++){
-        this->allelic_state_at_Segment_start.push_back ( strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0) );
+        int seg_contant = ( this->tmp_str[i] == '.' ) ? -1 : strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0);
+        this->allelic_state_at_Segment_start.push_back ( seg_contant );
+        //this->allelic_state_at_Segment_start.push_back ( strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0) );
         //cout << this->allelic_state_at_Segment_start.back();
     }
     //cout<<endl;

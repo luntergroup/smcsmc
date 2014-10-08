@@ -63,6 +63,7 @@ class Segment{
     Segment_State segment_state_;
     //bool variant_state_;                   // Variant state (given it is not missing ) at the start of the segment, True or False
     bool genetic_break_;
+    size_t chrom_;
     vector <int> allelic_state_at_Segment_start; // Since missing variant can be represented here, variant can be ignored?
     
     bool empty_file;
