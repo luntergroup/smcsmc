@@ -165,9 +165,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
         if (states_[i] == 2) {
             // node i is tracing a non-local branch; opportunities for recombination
             assert(active_node(i)->last_update() >= model().getCurrentSequencePosition());
+			// If the interval [ active_node(i)->last_update(), this->current_base() ] straddles one (or more) recombination rate changes,
+			// we should do something more complicated:
+			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
+			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
             recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
+            dout << "Tracing non-local branch along " << opportunity_y << " generations, from " << active_node(i)->last_update() << " to " << this->current_base() << endl;
             }
-        if (states_[i] == 1) {
+        else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y; // jz_stable
             //coal_opportunity += contemporaries_.size( active_node(i)->population() ) * opportunity_y; // jz
