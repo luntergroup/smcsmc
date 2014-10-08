@@ -1,4 +1,4 @@
 [submodule "utility"]
     path = utility
-    url = https://github.com/smcsmc/utilities.git
+    url = git@github.com:smcsmc/utilities.git
     branch = master
