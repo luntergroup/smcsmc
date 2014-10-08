@@ -2,23 +2,23 @@ bin_PROGRAMS = pf-ARG pf-ARG_dbg
 #pf-ARG_omp pf-ARG_dbg
 #particleCountainer particle param coalevent scrm_dummy
 #check_PROGRAMS = pf-ARG_dbg pf-ARG_prof pf-ARG_omp_prof unit_tests generate_vcf
-check_PROGRAMS = unit_tests pf-ARG_omp pf-ARG_prof pf-ARG_omp_prof
+check_PROGRAMS = unit_tests pf-ARG_omp pf-ARG_prof pf-ARG_omp_prof generate_vcf
 
 TESTS = unit_tests 
 
 PROG = PF-ARG 
 
 generate_vcf: 
-	test -s ./sim-1Samples2msdata1.vcf  || ./tests/pop_struct.py sim-1 2 1	
-	test -s ./sim-1Samples2msdata1.rgvcf || ./tests/gvcf2rgvcf.py sim-1Samples2msdata1.gvcf 30000000
-	test -s sim-1Samples4msdata1_edited.gvcf || { ./tests/pop_struct.py sim-1 4 1 ; \
+	test -s ./sim-1Samples2msdata1.vcf  || ./unittest/pop_struct.py sim-1 2 1	
+	test -s ./sim-1Samples2msdata1.rgvcf || ./unittest/gvcf2rgvcf.py sim-1Samples2msdata1.gvcf 30000000
+	test -s sim-1Samples4msdata1_edited.gvcf || { ./unittest/pop_struct.py sim-1 4 1 ; \
 	head -50 sim-1Samples4msdata1.vcf > sim-1Samples4msdata1_first50_lines.vcf ; \
 	sed -e "s/END=1434;/END=1430;/" -e "s/END=6582;/END=5000;/" -e "s/END=24916;/END=24900;/" -e "s/END=35798;/END=34000;/" sim-1Samples4msdata1.gvcf  | head -150 > sim-1Samples4msdata1_edited.gvcf ; \
 	tail -n+3150 sim-1Samples4msdata1.gvcf >> sim-1Samples4msdata1_edited.gvcf; }
-	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./tests/gvcf2rgvcf.py sim-1Samples4msdata1_edited.gvcf 30000000
+	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./unittest/gvcf2rgvcf.py sim-1Samples4msdata1_edited.gvcf 30000000
 
-unittests: unit_tests
-.PHONY: generate_vcf
+unittests: unit_tests 
+#.PHONY: generate_vcf
 	./unit_tests 
 
 common_flags = -O3 -Wall -Wno-unknown-pragmas -I scrm/src/
