@@ -55,7 +55,8 @@ void Starevent::init(){
     this->set_event_state(INIT_NULL);
     
     this->set_change_time_i ( 0 );
-    this->set_base ( 0 );
+    this->set_start_base ( 0 );
+    this->set_end_base ( 0 );
     this->pointer_counter_ = 1;
     }
 

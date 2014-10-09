@@ -24,22 +24,22 @@
 
 #include "forest.h"
 
-#ifndef STAREVENT
-#define STAREVENT
+#ifndef Coalevent
+#define Coalevent
 
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
-class Starevent{ 
+class Coalevent{ 
     friend class CountModel;
     friend class ForestState;
     //friend class Migrevent;
     public:
-        Starevent(size_t pop_i, 
+        Coalevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
                   double opportunity, eventCode event_code );
-        ~Starevent(){ };
+        ~Coalevent(){ };
     //
     protected:
         // Methods
@@ -68,8 +68,11 @@ class Starevent{
         size_t change_time_i() const { return this->change_time_i_; }
         void set_change_time_i( size_t i ){ this->change_time_i_ = i ; }
                 
-        double base() const { return this->base_; }
-        void set_base ( double base ) { this->base_ = base; }
+        double start_base() const { return this->start_base_; }
+        void set_start_base ( double base ) { this->start_base_ = base; }
+
+        double end_base() const { return this->end_base_; }
+        void set_end_base ( double base ) { this->end_base_ = base; }
 
         bool print_event( string event);
         
@@ -78,26 +81,43 @@ class Starevent{
         size_t change_time_i_;
         size_t pop_i_;                
         //double start_height_;
-        //double end_height_;                 
+        //double end_height_;
         double opportunity_;        
         size_t num_event_;        
         eventCode event_state_; 
-        double base_;
+        double start_base_;
+        double end_base_;
+
         int pointer_counter_; // Number of ForestStates are pointing at this event
     };
 
 
+class Recombevent : public Coalevent{
+    friend class CountModel;
+    public:
+        Recombevent(size_t pop_i, 
+                  double start_base, 
+                  double opportunity, eventCode event_code )
+                 : Coalevent ( pop_i, 
+                    //start_time, 
+                    //end_time, 
+                    opportunity, event_code ){ 
+                        this->set_mig_pop_i (mig_pop); 
+                        assert( this->print_event() );
+                        };    
+    }
+
 /*!
- * \brief Derived class of Starevent, recording the number and the time intervals of Migration events between two ForestState 
+ * \brief Derived class of Coalevent, recording the number and the time intervals of Migration events between two ForestState 
  */    
-class Migrevent : public Starevent{
+class Migrevent : public Coalevent{
     friend class CountModel;
     public:
         Migrevent(size_t pop_i, size_t mig_pop,
                   //double start_time,
                   //double end_time, 
                   double opportunity, eventCode event_code )
-                 : Starevent ( pop_i, 
+                 : Coalevent ( pop_i, 
                     //start_time, 
                     //end_time, 
                     opportunity, event_code ){ 
@@ -105,8 +125,8 @@ class Migrevent : public Starevent{
                         assert( this->print_event() );
                         };
 
-        Migrevent(const Migrevent & previous_Starevent) : Starevent (previous_Starevent) { 
-            this->set_mig_pop_i ( previous_Starevent.mig_pop() ); 
+        Migrevent(const Migrevent & previous_Coalevent) : Coalevent (previous_Coalevent) { 
+            this->set_mig_pop_i ( previous_Coalevent.mig_pop() ); 
             };
         ~Migrevent(){};
         
