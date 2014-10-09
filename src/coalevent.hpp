@@ -24,8 +24,8 @@
 
 #include "forest.h"
 
-#ifndef Coalevent
-#define Coalevent
+#ifndef EventRecorder
+#define EventRecorder
 
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
@@ -68,24 +68,21 @@ class Coalevent{
         size_t change_time_i() const { return this->change_time_i_; }
         void set_change_time_i( size_t i ){ this->change_time_i_ = i ; }
                 
-        double start_base() const { return this->start_base_; }
-        void set_start_base ( double base ) { this->start_base_ = base; }
-
         double end_base() const { return this->end_base_; }
         void set_end_base ( double base ) { this->end_base_ = base; }
 
-        bool print_event( string event);
+        
         
     private:
+        bool print_event();
         // Members
         size_t change_time_i_;
         size_t pop_i_;                
         //double start_height_;
-        //double end_height_;
+        double end_height_;
         double opportunity_;        
         size_t num_event_;        
         eventCode event_state_; 
-        double start_base_;
         double end_base_;
 
         int pointer_counter_; // Number of ForestStates are pointing at this event
@@ -94,18 +91,25 @@ class Coalevent{
 
 class Recombevent : public Coalevent{
     friend class CountModel;
+    friend class ForestState;
     public:
-        Recombevent(size_t pop_i, 
-                  double start_base, 
-                  double opportunity, eventCode event_code )
+        Recombevent( size_t pop_i, double opportunity, eventCode event_code, double start_base )
                  : Coalevent ( pop_i, 
                     //start_time, 
                     //end_time, 
                     opportunity, event_code ){ 
-                        this->set_mig_pop_i (mig_pop); 
+                        this->set_start_base (start_base); 
                         assert( this->print_event() );
-                        };    
-    }
+                        };
+
+
+    private:
+        bool print_event();
+        double start_base() const { return this->start_base_; }
+        void set_start_base ( double base ) { this->start_base_ = base; }
+
+        double start_base_;
+    };
 
 /*!
  * \brief Derived class of Coalevent, recording the number and the time intervals of Migration events between two ForestState 
@@ -113,10 +117,7 @@ class Recombevent : public Coalevent{
 class Migrevent : public Coalevent{
     friend class CountModel;
     public:
-        Migrevent(size_t pop_i, size_t mig_pop,
-                  //double start_time,
-                  //double end_time, 
-                  double opportunity, eventCode event_code )
+        Migrevent( size_t pop_i, double opportunity, eventCode event_code, size_t mig_pop )
                  : Coalevent ( pop_i, 
                     //start_time, 
                     //end_time, 

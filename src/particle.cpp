@@ -90,9 +90,9 @@ ForestState::ForestState( const ForestState & copied_state )
 void ForestState::copyEventContainers(const ForestState & copied_state ){
     // Copy Coalescent events
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
-        deque < Starevent* > CoaleventContainer_i;   
+        deque < Coalevent* > CoaleventContainer_i;   
         for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
-            Starevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
+            Coalevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
             new_coalevent->pointer_counter_++;
             CoaleventContainer_i.push_back ( new_coalevent ) ;
             }
@@ -100,9 +100,9 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
         }
     // Copy Recombination events
     for (size_t i = 0 ; i < copied_state.RecombeventContainer.size() ; i++ ){ 
-        deque < Starevent* > RecombeventContainer_i;  
+        deque < Recombevent* > RecombeventContainer_i;  
         for (size_t ii = 0 ; ii < copied_state.RecombeventContainer[i].size(); ii++){
-            Starevent* new_recombevent = copied_state.RecombeventContainer[i][ii];
+            Recombevent* new_recombevent = copied_state.RecombeventContainer[i][ii];
             new_recombevent->pointer_counter_++;
             RecombeventContainer_i.push_back (new_recombevent) ;
             }
@@ -124,9 +124,9 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
 
 void ForestState::init_EventContainers( Model * model ){
     for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
-        deque < Starevent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < Coalevent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
         CoaleventContainer.push_back( CoaleventContainer_i );        
-        deque < Starevent* > RecombeventContainer_i; /*!< \brief Recombination events recorder */
+        deque < Recombevent* > RecombeventContainer_i; /*!< \brief Recombination events recorder */
         RecombeventContainer.push_back( RecombeventContainer_i );
         deque < Migrevent* > MigreventContainer_i;   /*!< \brief Migration events recorder */
         MigreventContainer.push_back( MigreventContainer_i );                
@@ -214,17 +214,15 @@ void ForestState::record_all_event(TimeInterval const &ti){
     if (migr_opportunity > 0 && this->model().population_number()>1) {
         if ( tmp_event_.isMigration() ){
             this->record_Migrevent(tmp_event_.node()->population(), 
-                                    tmp_event_.mig_pop(), 
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, EVENT );    
+                                    migr_opportunity, EVENT , tmp_event_.mig_pop());
             } 
         else {
-            this->record_Migrevent(active_node(0)->population(),    
-                                    size_t(-1),           
+            this->record_Migrevent(active_node(0)->population(),                                    
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, NOEVENT );
+                                    migr_opportunity, NOEVENT, size_t(-1) );
             }
         }
     
@@ -236,14 +234,14 @@ void ForestState::record_all_event(TimeInterval const &ti){
                                      //ti.start_height(), 
                                      //ti.start_height() + opportunity_y, 
                                      recomb_opportunity,
-                                     EVENT );
+                                     EVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
             } 
         else {
             this->record_Recombevent( 0,
                                       //ti.start_height(), 
                                       //ti.start_height() + opportunity_y, 
                                       recomb_opportunity,
-                                      NOEVENT );
+                                      NOEVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
             }
         }
     return;
@@ -260,14 +258,14 @@ void ForestState::record_Coalevent(
                   double opportunity, 
                   eventCode event_code) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
-    Starevent * new_event = new Starevent( pop_i,
+    Coalevent * new_event = new Coalevent( pop_i,
                           //start_time,
                           //end_time, 
                           opportunity,
                           event_code);	
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_base ( this->current_base() );
-    assert(new_event->print_event("Coalsecent"));
+    new_event->set_end_base ( this->current_base() );
+    assert(new_event->print_event());
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     
     }
@@ -280,16 +278,18 @@ void ForestState::record_Recombevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code){
-    Starevent* new_event = new Starevent( pop_i,
+                          eventCode event_code,
+                          double base){
+    Recombevent* new_event = new Recombevent( pop_i,
                           //start_time,
                           //end_time, 
                           opportunity,
-                          event_code);	
+                          event_code,
+                          base);
 	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_base ( this->current_base() );
+    new_event->set_end_base ( this->current_base() );
     //if (event_code==EVENT){recombination_counter++;} // DEBUG
-    assert(new_event->print_event("Recombination"));
+    assert(new_event->print_event());
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
     
@@ -298,19 +298,17 @@ void ForestState::record_Recombevent(size_t pop_i,
 * @ingroup group_count_coal
 */
 void ForestState::record_Migrevent(size_t pop_i,
-                          size_t mig_pop,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code) {
+                          eventCode event_code, size_t mig_pop) {
     Migrevent* new_event = new Migrevent( pop_i,
-                          mig_pop,
                           //start_time,
                           //end_time, 
                           opportunity,
-                          event_code);	                                          
+                          event_code, mig_pop );
     new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_base ( this->current_base() );
+    new_event->set_end_base ( this->current_base() );
 	this->MigreventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }    
 

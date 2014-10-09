@@ -98,14 +98,13 @@ class ForestState : public Forest{
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code);
+                          eventCode event_code, double start_base);
 
-        void record_Migrevent(size_t pop_i,
-                          size_t mig_pop,
+        void record_Migrevent(size_t pop_i,                          
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code);                          
+                          eventCode event_code, size_t mig_pop);                          
         
         // Setters and getters: //
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
@@ -116,8 +115,8 @@ class ForestState : public Forest{
         size_t ancestor() const { return this->ancestor_; }
 
         // Members //
-        vector < deque < Starevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < deque < Starevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < deque < Coalevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        vector < deque < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
                 
         double site_where_weight_was_updated_;

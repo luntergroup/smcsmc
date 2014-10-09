@@ -69,13 +69,15 @@ class CountModel: public Model{
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
-        void update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) ;
+        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
+        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, size_t x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ) ;
         void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx );
 
         void compute_recomb_rate();
         void compute_mig_rate();
 
-        void resize_Starevent ( deque < Starevent *> & StareventContainer_i , int index) ;
+        void resize_Starevent ( deque < Coalevent *> & CoaleventContainer_i , int index) ;
+        void resize_Starevent ( deque < Recombevent *> & RecombeventContainer_i , int index) ;
         void resize_Migrevent ( deque < Migrevent *> & MigreventContainer_i , int index) ;
 
         //void check_CountModel_Ne();

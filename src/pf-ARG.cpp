@@ -203,8 +203,8 @@ void pfARG_core(PfParam &pfARG_para,
     //current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
     // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
     // should include coalescent events as well ...
-    current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
-    dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
+    //current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
+    //dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 

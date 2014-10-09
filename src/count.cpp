@@ -264,25 +264,43 @@ void CountModel::compute_recomb_rate () {
             
         
 
-void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) {
+//void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) {
+    //// Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
+    //// When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
+    //while (StareventContainer_i.size() > 0 && StareventContainer_i[0]->base() <= x_end) { // DEBUG changed "<" to "<=" ???
+        //Starevent * current_Starevent = StareventContainer_i[0];
+        //total_star_count[current_Starevent->pop_i()]       += weight * current_Starevent->num_event();
+        //total_star_opportunity[current_Starevent->pop_i()] += weight * current_Starevent->opportunity();            
+        //current_Starevent->pointer_counter_ --;
+        //if (current_Starevent->pointer_counter_ == 0) {
+            //delete current_Starevent;
+            //}
+        //StareventContainer_i.pop_front();
+        //}
+    //}
+//void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
+
+void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (StareventContainer_i.size() > 0 && StareventContainer_i[0]->base() <= x_end) { // DEBUG changed "<" to "<=" ???
-        Starevent * current_Starevent = StareventContainer_i[0];
-        total_star_count[current_Starevent->pop_i()]       += weight * current_Starevent->num_event();
-        total_star_opportunity[current_Starevent->pop_i()] += weight * current_Starevent->opportunity();            
-        current_Starevent->pointer_counter_ --;
-        if (current_Starevent->pointer_counter_ == 0) {
-            delete current_Starevent;
+    while (CoaleventContainer_i.size() > 0 && CoaleventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
+        Coalevent * current_Coalevent = CoaleventContainer_i[0];
+        total_coal_count[current_Coalevent->pop_i()]       += weight * current_Coalevent->num_event();
+        total_coal_opportunity[current_Coalevent->pop_i()] += weight * current_Coalevent->opportunity();            
+        current_Coalevent->pointer_counter_ --;
+        if (current_Coalevent->pointer_counter_ == 0) {
+            delete current_Coalevent;
             }
-        StareventContainer_i.pop_front();
+        CoaleventContainer_i.pop_front();
         }
     }
+
+
 
 void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->base() < x_end) {
+    while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() < x_end) {
         Migrevent * current_Migrevent = MigreventContainer_i[0];
         if (current_Migrevent->event_state() == EVENT) {
             total_mig_count[epoch_idx][current_Migrevent->pop_i()][current_Migrevent->mig_pop()] += weight * current_Migrevent->num_event();
