@@ -150,9 +150,10 @@ ForestState::~ForestState(){
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
+    dout << "!!!!!!!! Record all event ";
     //dout << "within record all event "<<endl;
     double coal_opportunity = 0.0;
-    double recomb_opportunity = 0.0;
+    //double recomb_opportunity = 0.0;
     double migr_opportunity = 0.0;
 
     //opportunity_y is the branch length of the conterporaries within the interval
@@ -169,7 +170,12 @@ void ForestState::record_all_event(TimeInterval const &ti){
 			// we should do something more complicated:
 			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
 			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
-            recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
+            //recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
+            if (this->current_base() > active_node(i)->last_update())
+                this->record_Recombevent( 0,
+                                      ( this->current_base() - active_node(i)->last_update() ) * opportunity_y,
+                                      ( tmp_event_.isRecombination() && ( tmp_event_.node() == active_node(i) ) ) ? EVENT : NOEVENT, 
+                                      active_node(i)->last_update()); // DEBUG 0 for now, this is tricky, as the last update is base different
             dout << "Tracing non-local branch along " << opportunity_y << " generations, from " << active_node(i)->last_update() << " to " << this->current_base() << endl;
             }
         else if (states_[i] == 1) {
@@ -226,24 +232,27 @@ void ForestState::record_all_event(TimeInterval const &ti){
             }
         }
     
-    if (recomb_opportunity > 0) {
-        // do not store the population, as the recomb_opportunity is also calculated 
-        // over the full tree rather than per-population
-        if (tmp_event_.isRecombination()) {
-            this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
-                                     //ti.start_height(), 
-                                     //ti.start_height() + opportunity_y, 
-                                     recomb_opportunity,
-                                     EVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
-            } 
-        else {
-            this->record_Recombevent( 0,
-                                      //ti.start_height(), 
-                                      //ti.start_height() + opportunity_y, 
-                                      recomb_opportunity,
-                                      NOEVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
-            }
-        }
+    
+    // Record recombination event count and opportunity separately
+    
+    //if (recomb_opportunity > 0) {
+        //// do not store the population, as the recomb_opportunity is also calculated 
+        //// over the full tree rather than per-population
+        //if (tmp_event_.isRecombination()) {
+            //this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
+                                     ////ti.start_height(), 
+                                     ////ti.start_height() + opportunity_y, 
+                                     //recomb_opportunity,
+                                     //EVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
+            //} 
+        //else {
+            //this->record_Recombevent( 0,
+                                      ////ti.start_height(), 
+                                      ////ti.start_height() + opportunity_y, 
+                                      //recomb_opportunity,
+                                      //NOEVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
+            //}
+        //}
     return;
     }
 
