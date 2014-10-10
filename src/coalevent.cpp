@@ -54,7 +54,7 @@ void Coalevent::init(){
     this->set_opportunity(0);
     this->set_event_state(INIT_NULL);
     
-    this->set_change_time_i ( 0 );
+    this->set_epoch_index ( 0 );
     this->set_end_base ( 0 );
     this->pointer_counter_ = 1;
     }
@@ -65,9 +65,9 @@ bool Coalevent::print_event(){
     //<< setw(10) << this->start_height()  << " to " 
     //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential " : to_string(this->num_event()) ) << " Coalescent, ";
+    dout << ( ( this->event_state() == NOEVENT ) ? "potential" : to_string(this->num_event()) ) << " Coalescent, ";
     dout << " at base "<< this->end_base() ;
-    dout << " at epoch "<< this->change_time_i() << endl;
+    dout << " at epoch "<< this->epoch_index() << endl;
     return true;
     }
 
@@ -76,10 +76,10 @@ bool Recombevent::print_event(){
     //<< setw(10) << this->start_height()  << " to " 
     //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential " : to_string(this->num_event()) ) << " Recombination, ";
-    dout << "from base "<< this->end_base() ;
+    dout << ( ( this->event_state() == NOEVENT ) ? "potential" : to_string(this->num_event()) ) << " Recombination, ";
+    dout << "from base "<< this->start_base() ;
     dout << " to base "<< this->end_base() ;
-    dout << " at epoch "<< this->change_time_i() << endl;
+    dout << " at epoch "<< this->epoch_index() << endl;
     return true;
     }
 
@@ -88,7 +88,7 @@ bool Migrevent::print_event(){
         //<< setw(10) << this->start_height()  << " to " 
              //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential ": to_string(this->num_event()) ) << " Migration, ";
+    dout << ( ( this->event_state() == NOEVENT ) ? "potential": to_string(this->num_event()) ) << " Migration, ";
     dout << "from pop " << this->pop_i() << " to " << ( ( this->event_state() == NOEVENT ) ? "some other population" : to_string ( this->mig_pop() ) );
     //dout << setw(2)  << this->num_event()     << " migration, ";
         //if ( this->event_state() == NOEVENT ){

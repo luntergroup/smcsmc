@@ -33,12 +33,10 @@
 class Coalevent{ 
     friend class CountModel;
     friend class ForestState;
-    //friend class Migrevent;
+    friend class Migrevent;
+    friend class Recombevent;
+    
     public:
-        Coalevent(size_t pop_i, 
-                  //double start_time,
-                  //double end_time, 
-                  double opportunity, eventCode event_code );
         ~Coalevent(){ };
     //
     protected:
@@ -65,18 +63,21 @@ class Coalevent{
         eventCode event_state() const { return this->event_state_ ;}
         void set_event_state(eventCode state){ this->event_state_ = state; }
         
-        size_t change_time_i() const { return this->change_time_i_; }
-        void set_change_time_i( size_t i ){ this->change_time_i_ = i ; }
+        size_t epoch_index() const { return this->epoch_index_; }
+        void set_epoch_index( size_t i ){ this->epoch_index_ = i ; }
                 
         double end_base() const { return this->end_base_; }
-        void set_end_base ( double base ) { this->end_base_ = base; }
-
-        
+        void set_end_base ( double base ) { this->end_base_ = base; }        
         
     private:
+        Coalevent(size_t pop_i, 
+                  //double start_time,
+                  //double end_time, 
+                  double opportunity, eventCode event_code );
+
         bool print_event();
         // Members
-        size_t change_time_i_;
+        size_t epoch_index_;
         size_t pop_i_;                
         //double start_height_;
         double end_height_;
@@ -92,51 +93,46 @@ class Coalevent{
 class Recombevent : public Coalevent{
     friend class CountModel;
     friend class ForestState;
-    public:
-        Recombevent( size_t pop_i, double opportunity, eventCode event_code, double start_base )
-                 : Coalevent ( pop_i, 
-                    //start_time, 
-                    //end_time, 
-                    opportunity, event_code ){ 
-                        this->set_start_base (start_base); 
-                        assert( this->print_event() );
-                        };
+    //public:
+    Recombevent( size_t pop_i, double opportunity, eventCode event_code, double start_base )
+             : Coalevent ( pop_i, 
+                //start_time, 
+                //end_time, 
+                opportunity, event_code ){ 
+                    this->set_start_base (start_base); 
+                    };
 
+    bool print_event();
+    double start_base() const { return this->start_base_; }
+    void set_start_base ( double base ) { this->start_base_ = base; }
 
-    private:
-        bool print_event();
-        double start_base() const { return this->start_base_; }
-        void set_start_base ( double base ) { this->start_base_ = base; }
-
-        double start_base_;
-    };
+    double start_base_;
+};
 
 /*!
  * \brief Derived class of Coalevent, recording the number and the time intervals of Migration events between two ForestState 
  */    
 class Migrevent : public Coalevent{
     friend class CountModel;
-    public:
-        Migrevent( size_t pop_i, double opportunity, eventCode event_code, size_t mig_pop )
-                 : Coalevent ( pop_i, 
-                    //start_time, 
-                    //end_time, 
-                    opportunity, event_code ){ 
-                        this->set_mig_pop_i (mig_pop); 
-                        assert( this->print_event() );
-                        };
+    friend class ForestState;
+    Migrevent( size_t pop_i, double opportunity, eventCode event_code, size_t mig_pop )
+             : Coalevent ( pop_i, 
+                //start_time, 
+                //end_time, 
+                opportunity, event_code ){ 
+                    this->set_mig_pop_i (mig_pop); 
+                    };
 
-        Migrevent(const Migrevent & previous_Coalevent) : Coalevent (previous_Coalevent) { 
-            this->set_mig_pop_i ( previous_Coalevent.mig_pop() ); 
-            };
-        ~Migrevent(){};
-        
-    private:
-        bool print_event();
-        size_t mig_pop() const {return this->mig_pop_; } 
-        void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }    
-        
-        size_t mig_pop_;
-    };
+    Migrevent(const Migrevent & previous_Coalevent) : Coalevent (previous_Coalevent) { 
+        this->set_mig_pop_i ( previous_Coalevent.mig_pop() ); 
+        };
+    ~Migrevent(){};
+    
+    bool print_event();
+    size_t mig_pop() const {return this->mig_pop_; } 
+    void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }    
+    
+    size_t mig_pop_;
+};
 
 #endif

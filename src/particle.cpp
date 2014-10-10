@@ -150,10 +150,8 @@ ForestState::~ForestState(){
 
 
 void ForestState::record_all_event(TimeInterval const &ti){
-    dout << "!!!!!!!! Record all event ";
-    //dout << "within record all event "<<endl;
     double coal_opportunity = 0.0;
-    //double recomb_opportunity = 0.0;
+    double recomb_opportunity = 0.0;
     double migr_opportunity = 0.0;
 
     //opportunity_y is the branch length of the conterporaries within the interval
@@ -170,12 +168,12 @@ void ForestState::record_all_event(TimeInterval const &ti){
 			// we should do something more complicated:
 			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
 			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
-            //recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
-            if (this->current_base() > active_node(i)->last_update())
-                this->record_Recombevent( 0,
-                                      ( this->current_base() - active_node(i)->last_update() ) * opportunity_y,
-                                      ( tmp_event_.isRecombination() && ( tmp_event_.node() == active_node(i) ) ) ? EVENT : NOEVENT, 
-                                      active_node(i)->last_update()); // DEBUG 0 for now, this is tricky, as the last update is base different
+            recomb_opportunity += ( this->current_base() - active_node(i)->last_update() ) * opportunity_y;
+            //if (this->current_base() > active_node(i)->last_update())
+                //this->record_Recombevent( 0,
+                                      //( this->current_base() - active_node(i)->last_update() ) * opportunity_y,
+                                      //( tmp_event_.isRecombination() && ( tmp_event_.node() == active_node(i) ) ) ? EVENT : NOEVENT, 
+                                      //active_node(i)->last_update()); // DEBUG 0 for now, this is tricky, as the last update is base different
             dout << "Tracing non-local branch along " << opportunity_y << " generations, from " << active_node(i)->last_update() << " to " << this->current_base() << endl;
             }
         else if (states_[i] == 1) {
@@ -235,26 +233,26 @@ void ForestState::record_all_event(TimeInterval const &ti){
     
     // Record recombination event count and opportunity separately
     
-    //if (recomb_opportunity > 0) {
-        //// do not store the population, as the recomb_opportunity is also calculated 
-        //// over the full tree rather than per-population
+    if (recomb_opportunity > 0) {
+        // do not store the population, as the recomb_opportunity is also calculated 
+        // over the full tree rather than per-population
+        this->record_Recombevent( 0, recomb_opportunity, tmp_event_.isRecombination() ? EVENT : NOEVENT, tmp_event_.node()->last_update() );
         //if (tmp_event_.isRecombination()) {
-            //this->record_Recombevent( 0, // active_node( tmp_event_.getActiveNode() )->population(),
+            //this->record_Recombevent( 0,
                                      ////ti.start_height(), 
                                      ////ti.start_height() + opportunity_y, 
                                      //recomb_opportunity,
-                                     //EVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
-            //} 
-        //else {
+                                     //EVENT, tmp_event_.node()->last_update()); 
+        //} else {
             //this->record_Recombevent( 0,
                                       ////ti.start_height(), 
                                       ////ti.start_height() + opportunity_y, 
                                       //recomb_opportunity,
-                                      //NOEVENT, 0); // DEBUG 0 for now, this is tricky, as the last update is base different
-            //}
+                                      //NOEVENT, tmp_event_.node()->last_update()); 
         //}
-    return;
     }
+    return;
+}
 
 
 /*! \brief Record Coalescent events
@@ -272,7 +270,7 @@ void ForestState::record_Coalevent(
                           //end_time, 
                           opportunity,
                           event_code);	
-	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+	new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_end_base ( this->current_base() );
     assert(new_event->print_event());
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
@@ -295,13 +293,52 @@ void ForestState::record_Recombevent(size_t pop_i,
                           opportunity,
                           event_code,
                           base);
-	new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+	new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_end_base ( this->current_base() );
     //if (event_code==EVENT){recombination_counter++;} // DEBUG
     assert(new_event->print_event());
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }
     
+void ForestState::compute_opportunity_y_s ( ){
+    this->opportunity_y_s.clear();
+    this->writable_model()->resetTime( 0 );
+    
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
+        dout << "* * Time interval: " << (*ti).start_height() << " - "
+             << (*ti).end_height() << " " ;
+        // Need to consider multiple populations
+        dout << ti.numberOfLocalContemporaries() << " local Contemporaries"   << std::endl;
+        this->writable_model()->resetTime( (*ti).start_height() );
+        if ( (this->writable_model()->current_time_idx_ ) >= this->opportunity_y_s.size() ){
+            this->opportunity_y_s.push_back( ti.numberOfLocalContemporaries() * ( (*ti).end_height() - (*ti).start_height() ) );
+        } else{
+            this->opportunity_y_s[this->writable_model()->current_time_idx_] += ti.numberOfLocalContemporaries() * ( (*ti).end_height() - (*ti).start_height() ) ;
+        }        
+    }
+    
+    // Checking 
+    double total_bl = 0;
+    for (size_t i =0 ; i < opportunity_y_s.size(); i++){
+        total_bl +=  this->opportunity_y_s[i];
+        }
+    
+    dout << "total_bl " << total_bl<< ", this->local_tree_length() =" << this->local_tree_length()<<endl;
+    assert ( (total_bl - this->local_tree_length() ) < 1e-8);
+    assert ( opportunity_y_s.size() == this->model().change_times_.size() );
+}
+
+
+void ForestState::record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event ){
+    double start_base = this->current_base() - recomb_opportunity_x ;    
+    for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
+        Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i] * recomb_opportunity_x, (epoch_i == this->writable_model()->current_time_idx_ && record_event ) ? EVENT : NOEVENT, start_base);
+        new_event->set_epoch_index ( epoch_i ) ;
+        new_event->set_end_base ( this->current_base() );
+        assert(new_event->print_event());
+        this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
+    } 
+}
     
 /*! \brief Record Migration events
 * @ingroup group_count_coal
@@ -316,8 +353,9 @@ void ForestState::record_Migrevent(size_t pop_i,
                           //end_time, 
                           opportunity,
                           event_code, mig_pop );
-    new_event->set_change_time_i ( this->writable_model()->current_time_idx_ ) ;
+    new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
     new_event->set_end_base ( this->current_base() );
+    assert(new_event->print_event());
 	this->MigreventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     }    
 
@@ -404,7 +442,7 @@ void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips){
 inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node) {
 
 	valarray<double> x(2);
-	dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
+	//dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
 
 	// deal with the case that this node is a leaf node
 	if ( node->first_child() == NULL ) {
@@ -412,7 +450,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 	  assert ( node->label() > 0 );                // we only traverse the local tree, therefore the leaf node must be contemporary
 	  x[0] = node->mutation_state() == 1 ? 0.0 : 1.0;	// also encode state==-1 (missing data) as 1.0
 	  x[1] = node->mutation_state() == 0 ? 0.0 : 1.0;   // also encode state==-1 (missing data) as 1.0
-	  dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
+	  //dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
 	  return x;
     }
 
@@ -432,7 +470,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 	valarray<double> z = cal_marginal_likelihood_infinite(right);		
 	x[0] = (y[0] * ut1 + y[1] * (1-ut1) ) * (z[0] * ut2 + z[1] * (1-ut2) );
 	x[1] = (y[0] * (1-ut1) + y[1] * ut1 ) * (z[0] * (1-ut2) + z[1] * ut2 );
-	dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
+	//dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
 	return x;
 }
 
@@ -443,12 +481,12 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  * @ingroup group_pf_resample
  */
 double ForestState::calculate_likelihood( ) {
-    dout << "calculate_likelihood function, root is " << this->local_root() << endl;
+    //dout << "calculate_likelihood function, root is " << this->local_root() << endl;
     valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
-    dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
+    //dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
     double prior[2] = {0.5,0.5};
     double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
-    dout << "likelihood is " << likelihood << endl;
+    //dout << "likelihood is " << likelihood << endl;
     return likelihood;
 }
 

@@ -27,11 +27,11 @@
 #include <deque>
 
 
-#ifndef NDEBUG
-#define dout std::cout
-#else
-#define dout 0 && std::cout
-#endif
+//#ifndef NDEBUG
+//#define dout std::cout
+//#else
+//#define dout 0 && std::cout
+//#endif
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE
@@ -86,14 +86,19 @@ class ForestState : public Forest{
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         
+        
+        vector <double> opportunity_y_s ; 
+
         // Record events
+        void compute_opportunity_y_s ();
+        void record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event );
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
                           eventCode event_code);
-        
+                                  
         void record_Recombevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
