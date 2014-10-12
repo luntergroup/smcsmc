@@ -21,6 +21,9 @@ AC_PROG_RANLIB
 # Check for C++11
 #AX_CXX_COMPILE_STDCXX_11([noext])
 
+# This is an obsolescent macro that checks that the C compiler supports the -c and -o options together. Note that, since Automake 1.14, the AC_PROG_CC is rewritten to implement such checks itself, and thus the explicit use of AM_PROG_CC_C_O should no longer be required.
+AM_PROG_CC_C_O
+
 #Checks for libraries
 AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/opt/local/lib)
 #AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/home/joezhu/cppunit/lib)
