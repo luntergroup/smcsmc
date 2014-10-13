@@ -92,7 +92,7 @@ void pfARG_core(PfParam &pfARG_para,
     double mutation_rate = model->mutation_rate();
 
     Segfile->read_new_line();
-    cout<< "############# starting vcf file at base " <<Segfile->segment_start()<<endl;
+    cout<< "############# starting seg file at base " <<Segfile->segment_start()<<endl;
     
     /*! Initial particles */ 
     //double initial_position = 0;
@@ -106,7 +106,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
 
-    /*! Go through vcf data */
+    /*! Go through seg data */
     bool force_update = false;
     do{
         getrusage(who,p);            // PROFILING
@@ -183,17 +183,16 @@ void pfARG_core(PfParam &pfARG_para,
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();    
             }
-                
         /*! ESS resampling. Filtering step*/        
         current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),  model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
-        if ( Segfile->segment_end() >= model->loci_length() ){ 
+        if ( Segfile->segment_end() >= model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);
 
             //break;
         }
         
-        Segfile->read_new_line(); // Read new line from the vcf file  
+        Segfile->read_new_line(); // Read new line from the seg file  
         
         } while( !Segfile->end_data() );
      

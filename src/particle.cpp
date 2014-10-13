@@ -287,6 +287,10 @@ void ForestState::record_Recombevent(size_t pop_i,
                           double opportunity, 
                           eventCode event_code,
                           double base){
+    // RECOMBINATION OFF
+    return;
+    // RECOMBINATION OFF
+                                
     Recombevent* new_event = new Recombevent( pop_i,
                           //start_time,
                           //end_time, 
@@ -330,6 +334,11 @@ void ForestState::compute_opportunity_y_s ( ){
 
 
 void ForestState::record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event ){
+
+    // RECOMBINATION OFF
+    return;
+    // RECOMBINATION OFF
+
     double start_base = this->current_base() - recomb_opportunity_x ;    
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
         Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i] * recomb_opportunity_x, (epoch_i == this->writable_model()->current_time_idx_ && record_event ) ? EVENT : NOEVENT, start_base);

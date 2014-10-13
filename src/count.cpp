@@ -117,6 +117,10 @@ void CountModel::reset_Ne ( Model *model ){
 
 
 void CountModel::reset_recomb_rate ( Model *model ){
+    // RECOMBINATION OFF
+    return;
+    // RECOMBINATION OFF
+
     this->compute_recomb_rate();
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
@@ -225,6 +229,7 @@ void CountModel::compute_mig_rate(){
  * \brief Compute the recombination rate once we have sweeped through all the data, and recorded the recomb_opportunity and recomb_counts
  */ 
 void CountModel::compute_recomb_rate () {
+
     this->recomb_opportunity_ = 0;
     this->recomb_count_ = 0;
     for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ){
@@ -262,23 +267,6 @@ void CountModel::compute_recomb_rate () {
                      * In this example, only count the coalescent events occured on states 1 and 2.
                      */ 
             
-        
-
-//void CountModel::update_star_count( deque < Starevent *> & StareventContainer_i, double weight, size_t x_end, vector<double>& total_star_count, vector<double>& total_star_opportunity ) {
-    //// Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
-    //// When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    //while (StareventContainer_i.size() > 0 && StareventContainer_i[0]->base() <= x_end) { // DEBUG changed "<" to "<=" ???
-        //Starevent * current_Starevent = StareventContainer_i[0];
-        //total_star_count[current_Starevent->pop_i()]       += weight * current_Starevent->num_event();
-        //total_star_opportunity[current_Starevent->pop_i()] += weight * current_Starevent->opportunity();            
-        //current_Starevent->pointer_counter_ --;
-        //if (current_Starevent->pointer_counter_ == 0) {
-            //delete current_Starevent;
-            //}
-        //StareventContainer_i.pop_front();
-        //}
-    //}
-//void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
 
 void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
@@ -296,6 +284,12 @@ void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContai
     }
 
 void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, size_t x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ){
+
+    // RECOMBINATION OFF
+    return;
+    // RECOMBINATION OFF
+
+
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     while (RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
