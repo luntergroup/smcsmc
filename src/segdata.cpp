@@ -15,7 +15,7 @@ Segment::Segment( string file_name, size_t nsam) {
         //this->variant_state_ = false;
         this->genetic_break_ = true; 
         for ( size_t i = 0; i < nsam_; i++){
-            this->allelic_state_at_Segment_start.push_back ( 2 );
+            this->allelic_state_at_Segment_start.push_back ( -1 );
         }
         return;
     }
@@ -64,8 +64,9 @@ void Segment::read_new_line(){
      */ 
 
     this->initialize_read_newLine(); 
-    
-    if ( this->empty_file ){ return; }
+    if ( this->empty_file ){ 
+        //this->end_data_ = true; 
+        return; }
     
     if ( this->current_line_index_ == this->buffer_lines.size() ) {
         this->end_data_ = true;
