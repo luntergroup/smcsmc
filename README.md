@@ -15,7 +15,7 @@ On Mac OS:
 port install autoconf autoconf-archive doxygen cppunit 
 ./bootstrap
 make
-
+```
 
 Still working progress
 In order to use the multithread version on Mac, please follow the instruction
