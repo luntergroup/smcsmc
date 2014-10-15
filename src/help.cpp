@@ -31,8 +31,8 @@ void Help_option(){
     cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximal time, in unit of 4N0 [ 3 ]." <<endl;
     cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM steps [ 20 ]." << endl;
     //cout << setw(10)<<"-lag"    << setw(5) << "FLT" << "  --  " << "Lagging step [ 1000 ]." << endl;
-    cout << setw(10)<<"-vcf"    << setw(5) << "STR" << "  --  " << "Data file in vcf format [ Chrom1.vcf ]." << endl;
-    //cout << setw(20)<<"-buff BUFFSIZE" << "  --  " << "User define the size of buffer for the vcf file BUFFSIZE." << endl;
+    cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]." << endl;
+    //cout << setw(20)<<"-buff BUFFSIZE" << "  --  " << "User define the size of buffer for the seg file BUFFSIZE." << endl;
     cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
@@ -43,10 +43,10 @@ void Help_option(){
 void Help_example(){
     cout << "    Example:" << endl;
     cout << "pf-ARG 10 -nsam 3" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf -buff 4" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -vcf eg_vcf.vcf" << endl;
-    cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -vcf eg_vcf.vcf" << endl;
-    cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -vcf eg_vcf.vcf " << endl;
+    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg -buff 4" << endl;
+    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
+    cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
+    cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
 };
 
 void Help_header(){
