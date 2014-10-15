@@ -1,5 +1,5 @@
 #include"vcf_data.hpp"
-#include"pf-ARG.hpp"
+#include"smcsmc.hpp"
 //#include"scrm/copy_forest.h"
 
 using namespace pfARG;

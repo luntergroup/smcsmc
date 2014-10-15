@@ -32,7 +32,7 @@ class TestParam : public CppUnit::TestCase {
   void testParse() {
     CPPUNIT_ASSERT_NO_THROW( Param().parse(model) );
 
-    char *argv1[] = { "pf-ARG"};
+    char *argv1[] = { "smcsmc"};
     PfParam pfARG_para1(1, argv1);
     CPPUNIT_ASSERT_EQUAL( (size_t)100, pfARG_para1.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para1.log_bool );  
@@ -55,7 +55,7 @@ class TestParam : public CppUnit::TestCase {
     ////CPPUNIT_ASSERT_EQUAL( false, pars.tmrca_bool );
 
 
-    char *argv2[] = { "pf-ARG", "-Np", "10", "-log", "-lag", "10", "-online", "-EM", "5", "-ESS", "0.75"};
+    char *argv2[] = { "smcsmc", "-Np", "10", "-log", "-lag", "10", "-online", "-EM", "5", "-ESS", "0.75"};
     PfParam pfARG_para2(11, argv2);
     CPPUNIT_ASSERT_EQUAL( (size_t)10, pfARG_para2.N );
     CPPUNIT_ASSERT_EQUAL( true, pfARG_para2.log_bool );  
@@ -79,7 +79,7 @@ class TestParam : public CppUnit::TestCase {
     ////CPPUNIT_ASSERT_EQUAL( false, pars2.tmrca_bool );
 
     
-    char *argv3[] = { "pf-ARG", "-log", "-lag", "10", "-online" , "-Na"};
+    char *argv3[] = { "smcsmc", "-log", "-lag", "10", "-online" , "-Na"};
     //CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument); // "-Na" is invalid
     argv3[5] = "-ESS";
     CPPUNIT_ASSERT_THROW( PfParam(6, argv3), std::invalid_argument ); // "-ESS" expect more input
@@ -96,7 +96,7 @@ class TestParam : public CppUnit::TestCase {
     argv3[6] = "10";
     CPPUNIT_ASSERT_NO_THROW( PfParam(7, argv3)); // "Valid input! "
     
-    //char *argv4[] = { "pf-ARG", "-logo"}; // "-logo" is unknown option
+    //char *argv4[] = { "smcsmc", "-logo"}; // "-logo" is unknown option
     //CPPUNIT_ASSERT_THROW( PfParam(2, argv4), std::invalid_argument);
     // Check for -eN, -l, and so on ...
     
@@ -195,7 +195,7 @@ class TestParam : public CppUnit::TestCase {
         double default_recomb_rate = 0.00001;
         double default_loci_length = 50000;  
     
-        char *argv1[] = {"pf-ARG"};
+        char *argv1[] = {"smcsmc"};
         PfParam pfARG_para1(1, argv1);
         vcf_file =  new VariantReader(pfARG_para1.input_variantFileName, VCF, pfARG_para1.buff_length);
         
@@ -213,7 +213,7 @@ class TestParam : public CppUnit::TestCase {
         delete model1;
         delete scrm_para;
         
-        char *argv2[] = { "pf-ARG", "-vcf", "test6sample.vcf"};
+        char *argv2[] = { "smcsmc", "-vcf", "test6sample.vcf"};
         PfParam pfARG_para2(3, argv2);
         vcf_file =  new VariantReader(pfARG_para2.input_variantFileName, VCF, pfARG_para2.buff_length);
         CPPUNIT_ASSERT_EQUAL( (size_t)3, vcf_file->nsam());
