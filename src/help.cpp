@@ -1,12 +1,12 @@
 /*
- * pf-ARG is short for particle filters for ancestral recombination graphs. 
+ * smcsmc is short for particle filters for ancestral recombination graphs. 
  * This is a free software for demographic inference from genome data with particle filters. 
  * 
  * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
  * 
- * This file is part of pf-ARG.
+ * This file is part of smcsmc.
  * 
- * pf-ARG is free software: you can redistribute it and/or modify
+ * smcsmc is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -42,18 +42,18 @@ void Help_option(){
 
 void Help_example(){
     cout << "    Example:" << endl;
-    cout << "pf-ARG 10 -nsam 3" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg -buff 4" << endl;
-    cout << "./pf-ARG -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
-    cout << "./pf-ARG -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
-    cout << "./pf-ARG -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
+    cout << "smcsmc 10 -nsam 3" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg -buff 4" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
 };
 
 void Help_header(){
     cout << endl;
     cout << endl;
     cout << "*****************************************************************" << endl;
-    cout << "*                          pf-ARG                               *" << endl;
+    cout << "*                          smcsmc                               *" << endl;
     cout << "*              Author:  Sha Zhu, Gerton Lunter                  *" << endl;
     cout << "*****************************************************************" << endl;
     cout << endl<<endl;

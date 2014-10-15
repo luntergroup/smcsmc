@@ -1,4 +1,4 @@
-AC_INIT([pf-ARG],esyscmd([sh -c "date \"+%Y%m%d\" | tr -d '\n'"]),[joezhu@well.ox.ac.uk])
+AC_INIT([smcsmc],esyscmd([sh -c "date \"+%Y%m%d\" | tr -d '\n'"]),[joezhu@well.ox.ac.uk])
 
 #AC_CONFIG_HEADER([config.h])
 
@@ -52,7 +52,7 @@ AC_CHECK_FUNCS([pow])
 #AC_HEADER_STDBOOL
 
 m4_include([m4/ac_doxygen.m4])
-DX_INIT_DOXYGEN(pf-ARG, Doxyfile, html/)
+DX_INIT_DOXYGEN(smcsmc, Doxyfile, html/)
 DX_HTML_FEATURE(ON)
 DX_CHM_FEATURE(OFF)
 DX_CHI_FEATURE(OFF)

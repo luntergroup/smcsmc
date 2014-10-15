@@ -1,12 +1,12 @@
 /*
- * pf-ARG is short for particle filters for ancestral recombination graphs. 
+ * smcsmc is short for particle filters for ancestral recombination graphs. 
  * This is a free software for demographic inference from genome data with particle filters. 
  * 
  * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
  * 
- * This file is part of pf-ARG.
+ * This file is part of smcsmc.
  * 
- * pf-ARG is free software: you can redistribute it and/or modify
+ * smcsmc is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -32,14 +32,6 @@
 #include<climits> // INT_MAX
 
 using namespace std;
-
-//#ifndef NDEBUG
-//#define dout std::cout
-//#else
-////#pragma GCC diagnostic ignored "-Wunused-value"
-//#pragma clang diagnostic ignored "-Wdeprecated-register"
-//#define dout 0 && std::cout
-//#endif
 
 #ifndef SEGDATA
 #define SEGDATA
