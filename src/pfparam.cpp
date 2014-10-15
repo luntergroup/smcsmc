@@ -222,7 +222,7 @@ void PfParam::convert_scrm_input (){
 
 
 void PfParam::finalize(  ){
-     /*! Initialize vcf file, and data up to the first data entry says "PASS"   */
+     /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam );
     //this->VCFfile->filter_window_ = this->filter_window_;
     //this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
@@ -287,7 +287,6 @@ void PfParam::log_param( ){
         //}
     
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
-    //log_file << (( FileType == VCF ) ? "vcf" : "") << ( ( FileType == GVCF )? "gvcf" : "" ) << ( ( FileType == RGVCF )? "rgvcf":"" ) << " Data file: " ;
     log_file << "Segment Data file: " ;
     log_file << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
