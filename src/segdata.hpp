@@ -106,6 +106,12 @@ public:
         this->set_end_data(false);
         this->segment_start_ = 1;
         this->segment_length_ = 0;
+        if ( this->empty_file ){
+            this->segment_length_ = 1000000;
+            this->segment_state_ = SEGMENT_MISSING;
+            //this->variant_state_ = false;
+            this->genetic_break_ = true; 
+        }
     };
 
     bool end_data() const {return end_data_; }
