@@ -33,6 +33,8 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 //cout << "["<<epoch_idx<< "] " << this->change_times_[epoch_idx] << " x_end = " << x_end<<endl;
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
+        // Lagging is used to update the current count with probabilities that are lagging-distanced in the future
+        // const_minimal_lag_update_ratio is for optimise purpose, so the count will not updated as frequent
         if ( (x_end - this->counted_to[epoch_idx]) <= lagging * this->const_minimal_lag_update_ratio_ ) {
             continue;
 			}	
