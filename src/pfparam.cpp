@@ -287,7 +287,6 @@ void PfParam::log_param( ){
         //}
     
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";        
-    //log_file << (( FileType == VCF ) ? "seg" : "") << ( ( FileType == GVCF )? "gseg" : "" ) << ( ( FileType == RGVCF )? "rgseg":"" ) << " Data file: " ;
     log_file << "Segment Data file: " ;
     log_file << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
