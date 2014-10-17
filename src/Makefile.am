@@ -1,8 +1,8 @@
 bin_PROGRAMS = smcsmc smcsmc_dbg
 #smcsmc_omp smcsmc_dbg
-#particleCountainer particle param coalevent scrm_dummy
-#check_PROGRAMS = smcsmc_dbg smcsmc_prof smcsmc_omp_prof unit_tests generate_vcf
-check_PROGRAMS = unit_tests smcsmc_omp smcsmc_prof smcsmc_omp_prof generate_vcf
+#particleCountainer particle param coalevent scrm_dummy 
+#check_PROGRAMS = smcsmc_dbg smcsmc_prof smcsmc_omp_prof unit_tests generate_vcf smcsmc_omp_prof smcsmc_omp
+check_PROGRAMS = unit_tests  smcsmc_prof  generate_vcf
 
 TESTS = unit_tests 
 

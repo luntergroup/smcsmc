@@ -483,10 +483,10 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 double ForestState::calculate_likelihood( ) {
     //dout << "calculate_likelihood function, root is " << this->local_root() << endl;
     valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
-    //dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
+    dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
     double prior[2] = {0.5,0.5};
     double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
-    //dout << "likelihood is " << likelihood << endl;
+    dout << "ForestState::calculate_likelihood( ) likelihood is " << likelihood << endl;
     return likelihood;
 }
 
