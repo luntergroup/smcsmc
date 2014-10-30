@@ -27,6 +27,14 @@
 #ifndef EventRecorder
 #define EventRecorder
 
+#ifndef NDEBUG
+#define EventRecorderdout (std::cout << "    EventRecorder ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
+#endif
+
+
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */

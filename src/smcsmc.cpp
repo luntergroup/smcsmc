@@ -27,9 +27,9 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */
-//int new_forest_counter    = 0; // DEBUG
-//int delete_forest_counter = 0; // DEBUG
-//int recombination_counter = 0; // DEBUG
+int new_forest_counter    = 0; // DEBUG
+int delete_forest_counter = 0; // DEBUG
+int recombination_counter = 0; // DEBUG
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
         
         /*! Clean up */
         delete countNe;
-        //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+        cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 
     catch (const exception &e) {
@@ -91,9 +91,9 @@ void pfARG_core(PfParam &pfARG_para,
     Segment *Segfile = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
 
-    Segfile->read_new_line();
-    cout<< "############# starting seg file at base " <<Segfile->segment_start()<<endl;
-    
+
+    cout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
+    Segfile->read_new_line();    
     /*! Initial particles */ 
     //double initial_position = 0;
     ParticleContainer current_states(model, rg, Nparticles, 
@@ -202,8 +202,9 @@ void pfARG_core(PfParam &pfARG_para,
     //current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
     // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
     // should include coalescent events as well ...
-    //current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
-    //dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
+    
+    current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
+    dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 

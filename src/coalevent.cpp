@@ -61,7 +61,7 @@ void Coalevent::init(){
 
 
 bool Coalevent::print_event(){
-    dout << "# # # ";
+    EventRecorderdout << "";
     //<< setw(10) << this->start_height()  << " to " 
     //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";
@@ -72,7 +72,7 @@ bool Coalevent::print_event(){
     }
 
 bool Recombevent::print_event(){
-    dout << "# # # ";
+    EventRecorderdout << "";
     //<< setw(10) << this->start_height()  << " to " 
     //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";
@@ -84,7 +84,7 @@ bool Recombevent::print_event(){
     }
 
 bool Migrevent::print_event(){
-	dout << "# # # ";
+	EventRecorderdout << "";
         //<< setw(10) << this->start_height()  << " to " 
              //<< setw(10) << this->end_height()    << ", " 
     dout << setw(13) << this->opportunity()   << " opportunity for ";

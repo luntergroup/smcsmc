@@ -180,8 +180,8 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-    // cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-    // cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
+     cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+     cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
     
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
@@ -267,7 +267,7 @@ void ParticleContainer::update_state_to_data( double mutation_rate, size_t loci_
     //Extend ARGs and update weight for not seeing mutations along the equences
     this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) , Segfile->segment_state() );
 
-    
+    dout << "Extended until " << this->particles[0]->current_base() <<endl;
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );
     }
@@ -430,17 +430,12 @@ void ParticleContainer::set_particles_with_random_weight(){
         }
     }
 
-//// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
-//void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
-    //for (size_t i = 0; i < this->particles.size(); i++){
-        //double opportunity_x = seqend - this->particles[i]->current_base();
-        //double opportunity_y = this->particles[i]->getLocalTreeLength();
-        //double recomb_opportunity = opportunity_x * opportunity_y;
-        //this->particles[i]->record_Recombevent(0, 
-                                               ////0, 0, 
-                                               //recomb_opportunity, NOEVENT);
-        //}
-    //}
+// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
+void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double loci_length ){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        this->particles[i]->record_the_final_recomb_opportunity ( loci_length );
+    }
+}
 
 
 void ParticleContainer::print_particle_probabilities(){

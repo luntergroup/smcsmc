@@ -27,19 +27,21 @@
 #include <deque>
 
 
-//#ifndef NDEBUG
-//#define dout std::cout
-//#else
-//#define dout 0 && std::cout
-//#endif
+#ifndef NDEBUG
+#define ForestStatedout (std::cout << "    ForestState ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define ForestStatedout 0 && (std::cout << "    ForestState ")
+#endif
+
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE
 #define PARTICLE
 
-//extern int new_forest_counter;
-//extern int delete_forest_counter;
-//extern int recombination_counter; //DEBUG
+extern int new_forest_counter;
+extern int delete_forest_counter;
+extern int recombination_counter; //DEBUG
 
 struct TmrcaState {
     TmrcaState (double base, double tmrca) { 
@@ -92,6 +94,7 @@ class ForestState : public Forest{
         // Record events
         void compute_opportunity_y_s ();
         void record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event );
+        void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,
                           //double start_time, 
