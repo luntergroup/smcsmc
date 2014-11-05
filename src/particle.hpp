@@ -114,6 +114,11 @@ class ForestState : public Forest{
                           double opportunity, 
                           eventCode event_code, size_t mig_pop);                          
         
+        double recomb_opp_x_within_scrm; // DEBUG
+        void record_recomb_opp_within_scrm ( double recomb_rate ){
+            this->recomb_opp_x_within_scrm = recomb_rate / this->model().recombination_rate();
+        }
+        
         // Setters and getters: //
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
