@@ -93,26 +93,27 @@ class ForestState : public Forest{
 
         // Record events
         void compute_opportunity_y_s ();
-        void record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event );
-        void record_the_final_recomb_opportunity ( double loci_length );
+        void record_Recombevent_b4_extension ( );
+        void record_Recombevent_atNewGenealogy ( );
+        //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code);
+                          eventCode event_code, double end_base);
                                   
         void record_Recombevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code, double start_base);
+                          eventCode event_code, double start_base, double end_base);
 
         void record_Migrevent(size_t pop_i,                          
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code, size_t mig_pop);                          
+                          eventCode event_code, size_t mig_pop, double end_base);                          
         
         double recomb_opp_x_within_scrm; // DEBUG
         void record_recomb_opp_within_scrm ( double recomb_rate ){

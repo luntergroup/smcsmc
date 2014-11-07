@@ -172,14 +172,8 @@ void ForestState::record_all_event(TimeInterval const &ti){
 			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
 			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
             start_base = active_node(i)->last_update();
-            recomb_opportunity += ( this->current_base() - start_base ) * opportunity_y;
-            number_of_recomb_branch++;
-            //if (this->current_base() > active_node(i)->last_update())
-                //this->record_Recombevent( 0,
-                                      //( this->current_base() - active_node(i)->last_update() ) * opportunity_y,
-                                      //( tmp_event_.isRecombination() && ( tmp_event_.node() == active_node(i) ) ) ? EVENT : NOEVENT, 
-                                      //active_node(i)->last_update()); // DEBUG 0 for now, this is tricky, as the last update is base different
-            ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
+            //recomb_opportunity += ( this->current_base() - start_base ) * opportunity_y;
+            number_of_recomb_branch++;            
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y; // jz_stable
@@ -201,21 +195,21 @@ void ForestState::record_all_event(TimeInterval const &ti){
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
+                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() );
             } 
         else if (states_[0] == 1){
             this->record_Coalevent(active_node(0)->population(), 
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT ); 
+                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() ); 
             } 
         else if (states_[1] == 1){
             this->record_Coalevent(active_node(1)->population(), 
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
                                     coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT );
+                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() );
             }
         }
     if (migr_opportunity > 0 && this->model().population_number()>1) {
@@ -223,24 +217,24 @@ void ForestState::record_all_event(TimeInterval const &ti){
             this->record_Migrevent(tmp_event_.node()->population(), 
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, EVENT , tmp_event_.mig_pop());
+                                    migr_opportunity, EVENT , tmp_event_.mig_pop(), this->current_base() );
             } 
         else {
             this->record_Migrevent(active_node(0)->population(),                                    
                                     //ti.start_height(), 
                                     //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, NOEVENT, size_t(-1) );
+                                    migr_opportunity, NOEVENT, size_t(-1), this->current_base() );
             }
         }
     
     
     // Record recombination event count and opportunity separately
-    if (recomb_opportunity > 0) {
-        // do not store the population, as the recomb_opportunity is also calculated 
-        // over the full tree rather than per-population
-        this->record_Recombevent( 0, recomb_opportunity, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base );
+    if ( this->current_base() > start_base ) {
+        // do not store the population, as the recomb_opportunity is also calculated over the full tree rather than per-population
+        this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
         assert(start_base != -1 );
         assert( number_of_recomb_branch == 1);
+        ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
         if ( number_of_recomb_branch != 1 )  // DEBUG
             throw::invalid_argument (" number_of_recomb_branch != 1 "); // DEBUG
     }
@@ -259,20 +253,19 @@ void ForestState::record_Coalevent(
                   size_t pop_i,
                   //double start_time, 
                   //double end_time, 
-                  double opportunity, 
-                  eventCode event_code) {
+                  double opp_y, 
+                  eventCode event_code,
+                  double end_base ) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
     Coalevent * new_event = new Coalevent( pop_i,
                           //start_time,
                           //end_time, 
-                          opportunity,
-                          event_code);	
+                          opp_y,
+                          event_code, end_base);
 	new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_end_base ( this->current_base() );
     assert(new_event->print_event());
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
-    
-    }
+}
 
 
 /*! \brief Record Recombination events
@@ -281,21 +274,21 @@ void ForestState::record_Coalevent(
 void ForestState::record_Recombevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
-                          double opportunity, 
+                          double opp_y, 
                           eventCode event_code,
-                          double base){
+                          double start_base, double end_base){
     Recombevent* new_event = new Recombevent( pop_i,
                           //start_time,
                           //end_time, 
-                          opportunity,
+                          opp_y,
                           event_code,
-                          base);
+                          start_base,
+                          end_base );
 	new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_end_base ( this->current_base() );
     if (event_code==EVENT){recombination_counter++;} // DEBUG
     assert(new_event->print_event());
     this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
-    }
+}
 
 
 void ForestState::compute_opportunity_y_s ( ){
@@ -328,31 +321,36 @@ void ForestState::compute_opportunity_y_s ( ){
     assert ( opportunity_y_s.size() == this->model().change_times_.size() );
 }
 
-
-void ForestState::record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event ){
-    recombination_counter++; // DEBUG
-    double start_base = this->current_base() - recomb_opportunity_x ; 
-    
+void ForestState::record_Recombevent_b4_extension (){
+    this->compute_opportunity_y_s ();
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
-        Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i] * recomb_opportunity_x, (epoch_i == this->writable_model()->current_time_idx_ && record_event ) ? EVENT : NOEVENT, start_base);
+        Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base(), this->next_base_ );
         new_event->set_epoch_index ( epoch_i ) ;
-        new_event->set_end_base ( this->current_base() );
         assert(new_event->print_event());
         this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
     } 
 }
 
-void ForestState::record_the_final_recomb_opportunity ( double loci_length ){
-    this->compute_opportunity_y_s();
-    double recomb_opportunity_x = loci_length - this->current_base();    
+void ForestState::record_Recombevent_atNewGenealogy ( ){
+    recombination_counter++; // DEBUG    
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
-        Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i] * recomb_opportunity_x, NOEVENT, this->current_base() );
-        new_event->set_epoch_index ( epoch_i ) ;
-        new_event->set_end_base ( this->current_base() );
-        assert(new_event->print_event());
-        this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
+        if ( epoch_i != this->writable_model()->current_time_idx_ )
+            continue;
+        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->event_state_ = EVENT;
+        assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->epoch_index() == epoch_i );
     } 
 }
+
+//void ForestState::record_the_final_recomb_opportunity ( double loci_length ){
+    //this->compute_opportunity_y_s();
+    //for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
+        //Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base() );
+        //new_event->set_epoch_index ( epoch_i ) ;
+        //new_event->set_end_base ( loci_length ); // As this is the final recombination event, the end base is at the end of the sequence
+        //assert(new_event->print_event());
+        //this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
+    //} 
+//}
 
 /*! \brief Record Migration events
 * @ingroup group_count_coal
@@ -360,18 +358,17 @@ void ForestState::record_the_final_recomb_opportunity ( double loci_length ){
 void ForestState::record_Migrevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, size_t mig_pop) {
+                          double opp_y, 
+                          eventCode event_code, size_t mig_pop, double end_base) {
     Migrevent* new_event = new Migrevent( pop_i,
                           //start_time,
                           //end_time, 
-                          opportunity,
-                          event_code, mig_pop );
+                          opp_y,
+                          event_code, mig_pop, end_base);
     new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
-    new_event->set_end_base ( this->current_base() );
     assert(new_event->print_event());
 	this->MigreventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
-    }    
+}
 
 
 /*! Clear coalescent and recombination events recorded between two states.*/

@@ -430,12 +430,12 @@ void ParticleContainer::set_particles_with_random_weight(){
         }
     }
 
-// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
-void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double loci_length ){
-    for (size_t i = 0; i < this->particles.size(); i++){
-        this->particles[i]->record_the_final_recomb_opportunity ( loci_length );
-    }
-}
+//// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
+//void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double loci_length ){
+    //for (size_t i = 0; i < this->particles.size(); i++){
+        //this->particles[i]->record_the_final_recomb_opportunity ( loci_length );
+    //}
+//}
 
 
 void ParticleContainer::print_particle_probabilities(){

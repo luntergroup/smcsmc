@@ -34,14 +34,16 @@ Coalevent::Coalevent(
            size_t pop_i,
            //double start_time,
            //double end_time, 
-           double opportunity,
-           eventCode event_code ) {
+           double opportunity_y,
+           eventCode event_code, 
+           double end_base) {
     this->init();    
     this->set_pop_i(pop_i);
     //this->set_start_height( start_time );
     //this->set_end_height ( end_time );
-    this->set_opportunity( opportunity );
+    this->set_opportunity_y( opportunity_y );
     this->set_event_state(event_code);
+    this->set_end_base ( end_base );
     this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
     }
 
@@ -51,8 +53,8 @@ void Coalevent::init(){
     //this->set_start_height(0);
     //this->set_end_height(0);    
     this->set_num_event(0);
-    this->set_opportunity(0);
-    this->set_event_state(INIT_NULL);
+    this->set_opportunity_y(0);
+    this->set_event_state( INIT_NULL );
     
     this->set_epoch_index ( 0 );
     this->set_end_base ( 0 );
