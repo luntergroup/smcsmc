@@ -1,3 +1,5 @@
+Record recombination opportunity before extend to the new genealogy
+
 # RECOMBINATION CALCULATION IS CURRENTLY OFF ...
 build-dep libcppunit-dev
 
