@@ -300,6 +300,7 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
 
+    if ( RecombeventContainer_i.size() == 0 ) return;
     // First process all recombination event segments that lie fully to the left of x_end
     assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= x_end );
     do {
