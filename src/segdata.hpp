@@ -76,7 +76,7 @@ class Segment{
     int field_index;
     
     
-    Segment( string file_name , size_t nsam );
+    Segment( string file_name , size_t nsam, size_t seqlen );
     ~Segment(){};
     
     // Methods
