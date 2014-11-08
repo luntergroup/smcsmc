@@ -94,7 +94,7 @@ class ForestState : public Forest{
         // Record events
         void compute_opportunity_y_s ();
         void record_Recombevent_b4_extension ( );
-        void record_Recombevent_atNewGenealogy ( );
+        void record_Recombevent_atNewGenealogy ( double event_height );
         //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti);
         void record_Coalevent(size_t pop_i,

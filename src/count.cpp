@@ -296,27 +296,27 @@ void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContai
     }
 
 void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, size_t x_start, size_t x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ){
+     
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
 
     // First process all recombination event segments that lie fully to the left of x_end
-    while (RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
-
+    assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= x_end );
+    do {
         Recombevent * current_Recombevent = RecombeventContainer_i[0];
         // always include the recombination event, since it lies at the right end of the segment
         total_recomb_count[current_Recombevent->pop_i()]       += weight * current_Recombevent->num_event();
         // only include the recombination opportunity that overlaps the interval [x_start, x_end]
 
-        total_recomb_opportunity[current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity();            
+        total_recomb_opportunity[current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity_between( max( current_Recombevent->start_base(), (double)x_start ), min( current_Recombevent->end_base(), (double)x_end ) );
         current_Recombevent->pointer_counter_ --;
-        if (current_Recombevent->pointer_counter_ == 0) {
+        if (current_Recombevent->pointer_counter_ == 0) 
             delete current_Recombevent;
-            }
 
         RecombeventContainer_i.pop_front();
-        }
-    }
-
+        
+    }  while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= x_end) ; // DEBUG changed "<" to "<=" ???
+}
 
 void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters

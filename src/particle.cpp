@@ -229,7 +229,7 @@ void ForestState::record_all_event(TimeInterval const &ti){
     
     
     // Record recombination event count and opportunity separately
-    if ( this->current_base() > start_base ) {
+    if ( this->current_base() > start_base && start_base != -1 ) {
         // do not store the population, as the recomb_opportunity is also calculated over the full tree rather than per-population
         this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
         assert(start_base != -1 );
@@ -331,12 +331,16 @@ void ForestState::record_Recombevent_b4_extension (){
     } 
 }
 
-void ForestState::record_Recombevent_atNewGenealogy ( ){
+void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
+    this->writable_model()->resetTime( event_height );
+
     recombination_counter++; // DEBUG    
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
         if ( epoch_i != this->writable_model()->current_time_idx_ )
             continue;
-        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->event_state_ = EVENT;
+        
+        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_event_state ( EVENT );
+        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_num_event( 1 );
         assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->epoch_index() == epoch_i );
     } 
 }
