@@ -24,16 +24,17 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, size_t seqlen ) { 
+Segment::Segment( string file_name, size_t nsam, size_t seqlen ){ 
     
     this->file_name_ = file_name;
     this->nsam_ = nsam;
+    this->seqlen_ = seqlen;
     this->segment_start_ = 1;
     this->current_line_index_ = 0;
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
-        this->segment_length_ = seqlen/10 ;
+        this->segment_length_ = this->seqlen_/10 ;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
         this->genetic_break_ = true; 

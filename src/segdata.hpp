@@ -49,6 +49,7 @@ class Segment{
     Segment_State segment_state() const { return this->segment_state_; }
     //bool variant_state() const { return this->variant_state_; }
     bool genetic_break() const { return this->genetic_break_; }
+    size_t seqlen_;
     // Important stuff
     size_t segment_start_;
     size_t segment_length_;
@@ -99,7 +100,7 @@ public:
         this->segment_start_ = 1;
         this->segment_length_ = 0;
         if ( this->empty_file ){
-            this->segment_length_ = 1000000;
+            this->segment_length_ = this->seqlen_/10 ;
             this->segment_state_ = SEGMENT_MISSING;
             //this->variant_state_ = false;
             this->genetic_break_ = true; 
