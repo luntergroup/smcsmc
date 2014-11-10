@@ -149,19 +149,19 @@ ForestState::~ForestState(){
     }
 
 
-void ForestState::record_all_event(TimeInterval const &ti){
+void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
     dout << endl;
     ForestStatedout << "Start Recording " << endl;
     double coal_opportunity = 0.0;
-    double recomb_opportunity = 0.0;
     double migr_opportunity = 0.0;
-    double recomb_opp_x_within_scrm = 0;
+    double recomb_opp_x_within_smcsmc = 0;
     //opportunity_y is the branch length of the conterporaries within the interval
     // if there is no events, then take the full length of this time interval
     //             otherwise, take the distance between the event and the bottom of this interval
     double opportunity_y = this->tmp_event_.isNoEvent() ? ti.length() : (this->tmp_event_.time() - ti.start_height());
     double start_base = -1;
-    size_t number_of_recomb_branch = 0; // DEBUG
+    //size_t number_of_recomb_branch = 0; // DEBUG
+    
     for (int i = 0; i < 2; i++) {
         //if ( states_[i] == 0 ) continue; //NEW Only Nodes in state 1 or 2 can do something
         if (states_[i] == 2) {
@@ -172,8 +172,15 @@ void ForestState::record_all_event(TimeInterval const &ti){
 			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
 			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
             start_base = active_node(i)->last_update();
+            
+            this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
+            //assert(start_base != -1 );
+            //assert( number_of_recomb_branch == 1);
+            recomb_opp_x_within_smcsmc += this->current_base() - start_base;
+            ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
             //recomb_opportunity += ( this->current_base() - start_base ) * opportunity_y;
-            number_of_recomb_branch++;            
+            //number_of_recomb_branch++; 
+            
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y; // jz_stable
@@ -229,19 +236,22 @@ void ForestState::record_all_event(TimeInterval const &ti){
     
     
     // Record recombination event count and opportunity separately
-    if ( this->current_base() > start_base && start_base != -1 ) {
-        // do not store the population, as the recomb_opportunity is also calculated over the full tree rather than per-population
-        this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
-        assert(start_base != -1 );
-        assert( number_of_recomb_branch == 1);
-        ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
-        if ( number_of_recomb_branch != 1 )  // DEBUG
-            throw::invalid_argument (" number_of_recomb_branch != 1 "); // DEBUG
-    }
-    assert ( recomb_opportunity == recomb_opp_x_within_scrm * opportunity_y );
-    if ( recomb_opportunity != recomb_opp_x_within_scrm * opportunity_y ){
-        throw::invalid_argument ( "recomb_opportunity != recomb_opp_x_within_scrm * opportunity_y" );
-        }
+    //if ( this->current_base() > start_base && start_base != -1 ) {
+        //// do not store the population, as the recomb_opportunity is also calculated over the full tree rather than per-population
+        //this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
+        //assert(start_base != -1 );
+        //assert( number_of_recomb_branch == 1);
+        //ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
+        //if ( number_of_recomb_branch != 1 )  // DEBUG
+            //throw::invalid_argument (" number_of_recomb_branch != 1 "); // DEBUG
+    //}
+    //cout << " this->recomb_opp_x_within_scrm = " << this->recomb_opp_x_within_scrm <<endl;
+    //cout << " this->recomb_opp_x_within_smcsmc = " << recomb_opp_x_within_smcsmc <<endl;
+    assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
+    //if ( recomb_opp_x_within_smcsmc != recomb_opp_x_within_scrm ){
+        //throw::invalid_argument ( "recomb_opp_x_within_smcsmc != recomb_opp_x_within_scrm" );
+        //}
+    dout << endl;        
     return;
 }
 

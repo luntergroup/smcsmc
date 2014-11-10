@@ -96,7 +96,7 @@ class ForestState : public Forest{
         void record_Recombevent_b4_extension ( );
         void record_Recombevent_atNewGenealogy ( double event_height );
         //void record_the_final_recomb_opportunity ( double loci_length );
-        void record_all_event(TimeInterval const &ti);
+        void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
         void record_Coalevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
@@ -115,10 +115,11 @@ class ForestState : public Forest{
                           double opportunity, 
                           eventCode event_code, size_t mig_pop, double end_base);                          
         
-        double recomb_opp_x_within_scrm; // DEBUG
-        void record_recomb_opp_within_scrm ( double recomb_rate ){
-            this->recomb_opp_x_within_scrm = recomb_rate / this->model().recombination_rate();
-        }
+        //void record_recomb_opp_within_scrm ( double recomb_rate) const {
+            //cout << "recomb_rate " << recomb_rate <<endl;
+            //recomb_opp_x_within_scrm = recomb_opp_x_within_scrm + recomb_rate / this->model().recombination_rate();
+        //}
+        void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
         
         // Setters and getters: //
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
