@@ -25,11 +25,12 @@
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
     // loop over all epochs
     for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
-
+        
         // calculate the required lagging for this epoch; don't use lagging for the final interval
         double lagging = end_data ? 0 : lags[epoch_idx];
         double x_end = current_base - lagging;
-
+        
+        cout << "current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
         // Lagging is used to update the current count with probabilities that are lagging-distanced in the future

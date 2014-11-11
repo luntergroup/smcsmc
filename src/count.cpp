@@ -85,7 +85,7 @@ void CountModel::init_lags(){
         this->counted_to.push_back( (double)0 );
         double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
         //double lag_i =  double(4) / this->recombination_rate() / top_t ; 
-        double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ; 
+        double lag_i = this->const_lag_ >= 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ; 
         cout<<"lag_i = " << lag_i<<endl;
         this->lags.push_back( lag_i );
         }    
@@ -300,11 +300,15 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
 
+    if ( RecombeventContainer_i.size() == 0 ) cout << "                        finished  RecombeventContainer_i.size() == 0 "<<endl;
     if ( RecombeventContainer_i.size() == 0 ) return;
     // First process all recombination event segments that lie fully to the left of x_end
+    
     assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_end );
+    
     //while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
-    while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
+    //while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
+    while ( RecombeventContainer_i.size() > 0 ) { // DEBUG changed "<" to "<=" ???
         Recombevent * current_Recombevent = RecombeventContainer_i[0];
         // always include the recombination event, since it lies at the right end of the segment
         total_recomb_count[current_Recombevent->pop_i()]       += weight * ( ( current_Recombevent->end_base() <= (double)x_end ) ? current_Recombevent->num_event() : 0 );
