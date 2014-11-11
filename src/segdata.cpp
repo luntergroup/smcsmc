@@ -31,6 +31,7 @@ Segment::Segment( string file_name, size_t nsam, size_t seqlen ){
     this->seqlen_ = seqlen;
     this->segment_start_ = 1;
     this->current_line_index_ = 0;
+    this->end_data_ = false;
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
@@ -48,7 +49,7 @@ Segment::Segment( string file_name, size_t nsam, size_t seqlen ){
 }
 
 void Segment::init(){
-    this->end_data_ = false;
+
     ifstream in_file;
     in_file.open( this->file_name_.c_str() );
     if ( in_file.good() ){
@@ -66,6 +67,7 @@ void Segment::init(){
     in_file.close();
     
     this->segment_length_ = 0;    
+    
     this->read_new_line ();
     
     
@@ -88,6 +90,7 @@ void Segment::read_new_line(){
      */ 
 
     this->initialize_read_newLine(); 
+    
     if ( this->empty_file ){ 
         //this->end_data_ = true; 
         return; }

@@ -303,13 +303,16 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     if ( RecombeventContainer_i.size() == 0 ) return;
     // First process all recombination event segments that lie fully to the left of x_end
     assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_end );
-    do {
+    //while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
+    while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
         Recombevent * current_Recombevent = RecombeventContainer_i[0];
         // always include the recombination event, since it lies at the right end of the segment
-        total_recomb_count[current_Recombevent->pop_i()]       += weight * ( ( current_Recombevent->end_base() < (double)x_end ) ? current_Recombevent->num_event() : 0 );
+        total_recomb_count[current_Recombevent->pop_i()]       += weight * ( ( current_Recombevent->end_base() <= (double)x_end ) ? current_Recombevent->num_event() : 0 );
         // only include the recombination opportunity that overlaps the interval [x_start, x_end]
-
-        total_recomb_opportunity[current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity_between( max( current_Recombevent->start_base(), (double)x_start ), min( current_Recombevent->end_base(), (double)x_end ) );
+        double start = max( current_Recombevent->start_base(), (double)x_start );
+        //double start = current_Recombevent->start_base();
+        double end = min( current_Recombevent->end_base(), (double)x_end );
+        total_recomb_opportunity[current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity_between( start , end );
         
         if ( current_Recombevent->end_base() > (double)x_end ) break;
         current_Recombevent->pointer_counter_ --;
@@ -318,7 +321,7 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
 
         RecombeventContainer_i.pop_front();
 
-    }  while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= (double)x_end ) ; // DEBUG changed "<" to "<=" ???
+    }  
 }
 
 void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx ) {

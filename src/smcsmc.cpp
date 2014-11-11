@@ -185,6 +185,7 @@ void pfARG_core(PfParam &pfARG_para,
             }
         /*! ESS resampling. Filtering step*/        
         current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),  model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        
         if ( Segfile->segment_end() >= model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);

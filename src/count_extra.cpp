@@ -30,15 +30,16 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         double lagging = end_data ? 0 : lags[epoch_idx];
         double x_end = current_base - lagging;
 
-//cout << "["<<epoch_idx<< "] " << this->change_times_[epoch_idx] << " x_end = " << x_end<<endl;
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
         // Lagging is used to update the current count with probabilities that are lagging-distanced in the future
         // const_minimal_lag_update_ratio is for optimise purpose, so the count will not updated as frequent
+        
         if ( (x_end - this->counted_to[epoch_idx]) <= lagging * this->const_minimal_lag_update_ratio_ ) {
             continue;
-			}	
-		// loop over all particles
+        }	
+		
+        // loop over all particles
 		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
 
 			ForestState* thisState = Endparticles.particles[i];
@@ -49,8 +50,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
             this->update_recombination_count( thisState->RecombeventContainer[ epoch_idx ], weight, this->counted_to[epoch_idx], x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );
             if (this->population_number() > 1){
                 this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
-                }
             }
-        this->counted_to[epoch_idx] = x_end;
         }
+        
+        this->counted_to[epoch_idx] = x_end;
     }
+}
