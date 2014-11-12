@@ -85,8 +85,7 @@ void CountModel::init_lags(){
         this->counted_to.push_back( (double)0 );
         double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
         //double lag_i =  double(4) / this->recombination_rate() / top_t ; 
-        double lag_i = this->const_lag_ >= 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ; 
-        cout<<"lag_i = " << lag_i<<endl;
+        double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ; 
         this->lags.push_back( lag_i );
         }    
     this->resetTime();
@@ -320,9 +319,9 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
         
         if ( current_Recombevent->end_base() > (double)x_end ) break;
         current_Recombevent->pointer_counter_ --;
-        if (current_Recombevent->pointer_counter_ == 0) 
+        if (current_Recombevent->pointer_counter_ == 0) {
             delete current_Recombevent;
-
+        }
         RecombeventContainer_i.pop_front();
 
     }  

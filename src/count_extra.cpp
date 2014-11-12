@@ -30,7 +30,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
         double lagging = end_data ? 0 : lags[epoch_idx];
         double x_end = current_base - lagging;
         
-        dout << "current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
+        if ( x_end < this->counted_to[epoch_idx] ) continue;
+
+        dout << "At epoch "<< epoch_idx<< ", and current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
         // Lagging is used to update the current count with probabilities that are lagging-distanced in the future

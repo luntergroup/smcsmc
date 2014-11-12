@@ -319,18 +319,20 @@ void ForestState::record_Recombevent_b4_extension (){
         Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base(), this->next_base_ );
         new_event->set_epoch_index ( epoch_i ) ;
         assert(new_event->print_event());
-        this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
+        this->RecombeventContainer[epoch_i].push_back(new_event);
+        dout << "this->RecombeventContainer["<<epoch_i<<"].size()="<<this->RecombeventContainer[epoch_i].size()<<endl;
     } 
 }
 
+
 void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     this->writable_model()->resetTime( event_height );
-
     recombination_counter++; // DEBUG    
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
         if ( epoch_i != this->writable_model()->current_time_idx_ )
             continue;
-        
+        dout << "current_time_idx_ =  "<<this->writable_model()->current_time_idx_<<endl;
+        assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].size() > 0 );
         this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_event_state ( EVENT );
         this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_num_event( 1 );
         assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->epoch_index() == epoch_i );
