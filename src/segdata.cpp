@@ -32,6 +32,7 @@ Segment::Segment( string file_name, size_t nsam, size_t seqlen ){
     this->segment_start_ = 1;
     this->current_line_index_ = 0;
     this->end_data_ = false;
+    this->empty_file = false;
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
