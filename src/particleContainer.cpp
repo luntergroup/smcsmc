@@ -270,7 +270,7 @@ void ParticleContainer::update_state_to_data( double mutation_rate, size_t loci_
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );
-    }
+}
 
 
 /*! 
