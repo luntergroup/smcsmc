@@ -100,7 +100,7 @@ public:
         this->segment_start_ = 1;
         this->segment_length_ = 0;
         if ( this->empty_file ){
-            this->segment_length_ = this->seqlen_/10 ;
+            this->segment_length_ = this->seqlen_/1000 ;
             this->segment_state_ = SEGMENT_MISSING;
             //this->variant_state_ = false;
             this->genetic_break_ = true; 

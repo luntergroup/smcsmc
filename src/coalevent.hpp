@@ -114,8 +114,12 @@ class Recombevent : public Coalevent{
                 opportunity_y, event_code, end_base){ 
                 this->set_start_base (start_base); 
                 };
+    
     double opportunity() const { return this->opportunity_between ( this->start_base_, this->end_base_); };
-    double opportunity_between( double start, double end ) const {return this->opportunity_y_* ( end - start); };
+    double opportunity_between( double start, double end ) const {
+        assert ( end <=  this->end_base_);
+        assert ( start >= this->start_base_);
+        return this->opportunity_y_* ( end - start); };
     bool print_event();
     double start_base() const { return this->start_base_; }
     void set_start_base ( double base ) { this->start_base_ = base; }
