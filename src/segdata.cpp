@@ -36,7 +36,7 @@ Segment::Segment( string file_name, size_t nsam, size_t seqlen ){
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
-        this->segment_length_ = this->seqlen_/10 ;
+        this->segment_length_ = this->seqlen_/1000 ;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
         this->genetic_break_ = true; 

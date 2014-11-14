@@ -310,7 +310,7 @@ void ForestState::compute_opportunity_y_s ( ){
     
     //dout << "total_bl " << total_bl<< ", this->local_tree_length() =" << this->local_tree_length()<<endl;
     assert ( (total_bl - this->local_tree_length() ) < 1e-8);
-    assert ( opportunity_y_s.size() == this->model().change_times_.size() );
+    assert ( opportunity_y_s.size() <= this->model().change_times_.size() );
 }
 
 void ForestState::record_Recombevent_b4_extension (){
@@ -328,27 +328,16 @@ void ForestState::record_Recombevent_b4_extension (){
 void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     this->writable_model()->resetTime( event_height );
     recombination_counter++; // DEBUG    
-    for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
-        if ( epoch_i != this->writable_model()->current_time_idx_ )
-            continue;
-        dout << "current_time_idx_ =  "<<this->writable_model()->current_time_idx_<<endl;
-        assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].size() > 0 );
-        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_event_state ( EVENT );
-        this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->set_num_event( 1 );
-        assert ( this->RecombeventContainer[this->writable_model()->current_time_idx_].back()->epoch_index() == epoch_i );
-    } 
+    size_t epoch_i = this->writable_model()->current_time_idx_;
+    dout << "current_time_idx_ =  " << epoch_i << endl;
+    assert ( this->RecombeventContainer[epoch_i].size() > 0 );
+    assert ( this->RecombeventContainer[epoch_i].back()->start_base() == this->current_base() );
+    // assign the recombination event to the start of this coalescent opportunity segment
+    this->RecombeventContainer[epoch_i].back()->set_event_state ( EVENT );
+    this->RecombeventContainer[epoch_i].back()->set_num_event( 1 );
+    assert ( this->RecombeventContainer[ epoch_i ].back()->epoch_index() == epoch_i );
 }
 
-//void ForestState::record_the_final_recomb_opportunity ( double loci_length ){
-    //this->compute_opportunity_y_s();
-    //for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
-        //Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base() );
-        //new_event->set_epoch_index ( epoch_i ) ;
-        //new_event->set_end_base ( loci_length ); // As this is the final recombination event, the end base is at the end of the sequence
-        //assert(new_event->print_event());
-        //this->RecombeventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
-    //} 
-//}
 
 /*! \brief Record Migration events
 * @ingroup group_count_coal

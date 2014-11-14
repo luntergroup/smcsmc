@@ -303,27 +303,29 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     if ( RecombeventContainer_i.size() == 0 ) return;
     // First process all recombination event segments that lie fully to the left of x_end
     
-    assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_end );
+    assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_start && RecombeventContainer_i[0]->end_base() > x_start );
     
-    //while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
-    //while ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->end_base() <= (double)x_end ) { // DEBUG changed "<" to "<=" ???
-    while ( RecombeventContainer_i.size() > 0 ) { // DEBUG changed "<" to "<=" ???
+    while ( RecombeventContainer_i.size() > 0 ) {
         Recombevent * current_Recombevent = RecombeventContainer_i[0];
-        // always include the recombination event, since it lies at the right end of the segment
-        total_recomb_count[current_Recombevent->pop_i()]       += weight * ( ( current_Recombevent->end_base() <= (double)x_end ) ? current_Recombevent->num_event() : 0 );
+        // test if the recombination event (at the left of the segment) needs to be included
+        if ( current_Recombevent->start_base() >= x_start && current_Recombevent->start_base() < x_end ) {
+            total_recomb_count[current_Recombevent->pop_i()] += weight * current_Recombevent->num_event();
+        }
         // only include the recombination opportunity that overlaps the interval [x_start, x_end]
         double start = max( current_Recombevent->start_base(), (double)x_start );
-        //double start = current_Recombevent->start_base();
-        double end = min( current_Recombevent->end_base(), (double)x_end );
-        total_recomb_opportunity[current_Recombevent->pop_i()] += weight * current_Recombevent->opportunity_between( start , end );
-        
-        if ( current_Recombevent->end_base() > (double)x_end ) break;
+        double end   = min( current_Recombevent->end_base(),   (double)x_end );
+        total_recomb_opportunity[ current_Recombevent->pop_i() ] += weight * current_Recombevent->opportunity_between( start , end );
+
+        // if this segment extends beyond x_end, we're done
+        if ( current_Recombevent->end_base() > (double)x_end ) 
+            break;
+
+        // we have completely processed this recombination event / opportunity, so remove it
         current_Recombevent->pointer_counter_ --;
         if (current_Recombevent->pointer_counter_ == 0) {
             delete current_Recombevent;
         }
         RecombeventContainer_i.pop_front();
-
     }  
 }
 
