@@ -34,12 +34,12 @@ generate_vcf$(EXEEXT):
 
 ## -DNDEBUG  options for not showing debug messages
 
-common_flags = -O3 -Wall -Wno-unknown-pragmas -I $(scrm_root)/
+common_flags = -O3 -Wall -Wno-unknown-pragmas -I $(SCRMROOT)/
 smcsmc_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   
 
 
 smcsmc_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -DNDEBUG   #options for not showing debug messages
-smcsmc_dbg_CXXFLAGS= -std=c++0x -I $(scrm_root)/ -I$(smcsmc_root)/ #options for showing debug messages
+smcsmc_dbg_CXXFLAGS= -std=c++0x -I $(SCRMROOT)/ -I$(SMCSMCROOT)/ #options for showing debug messages
 
 smcsmc_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG -fopenmp  #options for not showing debug messages
 #smcsmc_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   #options for not showing debug messages
@@ -52,69 +52,69 @@ smcsmc_omp_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -fopenmp -DNDEBUG   #op
 #smcsmc_dbg_CXXFLAGS= -std=c++0x -fopenmp #options for showing debug messages
 
 
-smcsmc_root = src
+SMCSMCROOT = src
 
-scrm_root = src/scrm/src
+SCRMROOT = src/scrm/src
 
-scrm_src = $(scrm_root)/node.cc \
-           $(scrm_root)/node.h \
-           $(scrm_root)/node_container.cc \
-           $(scrm_root)/node_container.h \
-           $(scrm_root)/time_interval.cc \
-           $(scrm_root)/time_interval.h \
-           $(scrm_root)/tree_point.cc $(scrm_root)/tree_point.h \
-           $(scrm_root)/forest.cc \
-           $(scrm_root)/random/mersenne_twister.h  \
-           $(scrm_root)/random/random_generator.cc \
-           $(scrm_root)/random/mersenne_twister.cc \
-           $(scrm_root)/random/random_generator.h \
-           $(scrm_root)/random/fastfunc.cc \
-           $(scrm_root)/random/fastfunc.h \
-           $(scrm_root)/param.cc \
-           $(scrm_root)/param.h \
-           $(scrm_root)/model.cc \
-           $(scrm_root)/model.h \
-           $(scrm_root)/summary_statistics/newick_tree.cc \
-           $(scrm_root)/summary_statistics/frequency_spectrum.cc \
-           $(scrm_root)/summary_statistics/seg_sites.cc \
-		   $(scrm_root)/summary_statistics/tmrca.cc \
-		   $(scrm_root)/summary_statistics/first_last_tmrca.cc 
+scrm_src = $(SCRMROOT)/node.cc \
+           $(SCRMROOT)/node.h \
+           $(SCRMROOT)/node_container.cc \
+           $(SCRMROOT)/node_container.h \
+           $(SCRMROOT)/time_interval.cc \
+           $(SCRMROOT)/time_interval.h \
+           $(SCRMROOT)/tree_point.cc $(SCRMROOT)/tree_point.h \
+           $(SCRMROOT)/forest.cc \
+           $(SCRMROOT)/random/mersenne_twister.h  \
+           $(SCRMROOT)/random/random_generator.cc \
+           $(SCRMROOT)/random/mersenne_twister.cc \
+           $(SCRMROOT)/random/random_generator.h \
+           $(SCRMROOT)/random/fastfunc.cc \
+           $(SCRMROOT)/random/fastfunc.h \
+           $(SCRMROOT)/param.cc \
+           $(SCRMROOT)/param.h \
+           $(SCRMROOT)/model.cc \
+           $(SCRMROOT)/model.h \
+           $(SCRMROOT)/summary_statistics/newick_tree.cc \
+           $(SCRMROOT)/summary_statistics/frequency_spectrum.cc \
+           $(SCRMROOT)/summary_statistics/seg_sites.cc \
+		   $(SCRMROOT)/summary_statistics/tmrca.cc \
+		   $(SCRMROOT)/summary_statistics/first_last_tmrca.cc 
         
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 
-debug_src = $(scrm_root)/random/constant_generator.cc \
-            $(scrm_root)/random/constant_generator.h \
-            $(scrm_root)/forest-debug.cc \
-            $(smcsmc_root)/debug/particle-debug.cpp \
-            $(smcsmc_root)/debug/count-debug.cpp 
+debug_src = $(SCRMROOT)/random/constant_generator.cc \
+            $(SCRMROOT)/random/constant_generator.h \
+            $(SCRMROOT)/forest-debug.cc \
+            $(SMCSMCROOT)/debug/particle-debug.cpp \
+            $(SMCSMCROOT)/debug/count-debug.cpp 
 
-smcsmc_src = $(smcsmc_root)/coalevent.cpp \
-             $(smcsmc_root)/particle.cpp \
-             $(smcsmc_root)/particleContainer.cpp \
-             $(smcsmc_root)/count.cpp \
-             $(smcsmc_root)/count-semi-debug.cpp \
-             $(smcsmc_root)/pattern.cpp \
-             $(smcsmc_root)/pfparam.cpp \
-             $(smcsmc_root)/segdata.cpp \
-             $(smcsmc_root)/rescue.cpp \
-             $(smcsmc_root)/help.cpp
+smcsmc_src = $(SMCSMCROOT)/coalevent.cpp \
+             $(SMCSMCROOT)/particle.cpp \
+             $(SMCSMCROOT)/particleContainer.cpp \
+             $(SMCSMCROOT)/count.cpp \
+             $(SMCSMCROOT)/count-semi-debug.cpp \
+             $(SMCSMCROOT)/pattern.cpp \
+             $(SMCSMCROOT)/pfparam.cpp \
+             $(SMCSMCROOT)/segdata.cpp \
+             $(SMCSMCROOT)/rescue.cpp \
+             $(SMCSMCROOT)/help.cpp
 
-series_src = $(smcsmc_root)/particleContainer_extra.cpp \
-             $(smcsmc_root)/count_extra.cpp
+series_src = $(SMCSMCROOT)/particleContainer_extra.cpp \
+             $(SMCSMCROOT)/count_extra.cpp
 
-omp_src = $(smcsmc_root)/particleContainer_extra_omp.cpp \
-          $(smcsmc_root)/count_extra_omp.cpp
+omp_src = $(SMCSMCROOT)/particleContainer_extra_omp.cpp \
+          $(SMCSMCROOT)/count_extra_omp.cpp
 
 shared_SOURCES = $(smcsmc_src) $(scrm_src)
 
-smcsmc_shared_SOURCES = $(shared_SOURCES) $(smcsmc_root)/smcsmc.cpp
+smcsmc_shared_SOURCES = $(shared_SOURCES) $(SMCSMCROOT)/smcsmc.cpp
 
-smcsmc_SOURCES = $(smcsmc_shared_SOURCES) $(smcsmc_root)/debug/usage_ghost.cpp $(series_src) 
+smcsmc_SOURCES = $(smcsmc_shared_SOURCES) $(SMCSMCROOT)/debug/usage_ghost.cpp $(series_src) 
 #smcsmc_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
 
-smcsmc_omp_SOURCES = $(smcsmc_shared_SOURCES) $(smcsmc_root)/debug/usage_ghost.cpp $(omp_src)
+smcsmc_omp_SOURCES = $(smcsmc_shared_SOURCES) $(SMCSMCROOT)/debug/usage_ghost.cpp $(omp_src)
 #smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
 #smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
 
@@ -125,36 +125,37 @@ smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
 
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src) 
 
-unittest_root = tests/unittest
+UNITTESTROOT = tests/unittest
 
-unittests_SOURCES = $(smcsmc_root)/pattern.cpp \
-					$(smcsmc_root)/pattern.hpp \
-                    $(unittest_root)/test_pattern.cpp \
-                    $(scrm_root)/model.cc \
-					$(unittest_root)/test_runner.cpp \
-					$(unittest_root)/test_Coalevent.cpp \
-					$(smcsmc_root)/particle.cpp \
-					$(smcsmc_root)/particle.hpp \
-                    $(unittest_root)/test_FroestState.cpp\
-                    $(unittest_root)/test_PfCount.cpp \
-                    $(unittest_root)/test_ParticleContainer.cpp
-			  
+test_src = $(UNITTESTROOT)/test_pattern.cpp \
+		   $(UNITTESTROOT)/test_runner.cpp \
+		   $(UNITTESTROOT)/test_Coalevent.cpp \
+           $(UNITTESTROOT)/test_FroestState.cpp\
+           $(UNITTESTROOT)/test_PfCount.cpp \
+           $(UNITTESTROOT)/test_ParticleContainer.cpp
+		
+unittests_SOURCES = $(SMCSMCROOT)/pattern.cpp \
+					$(SMCSMCROOT)/pattern.hpp \      
+                    $(SCRMROOT)/model.cc \
+					$(SMCSMCROOT)/particle.cpp \
+					$(SMCSMCROOT)/particle.hpp \
+					$(test_src)
 
-unittests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -I$(smcsmc_root)/ -I $(scrm_root)/
+unittests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -I$(SMCSMCROOT)/ -I $(SCRMROOT)/
 
 unittests_LDADD= -lcppunit -ldl
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
-#-I$(scrm_root)/ -I$(smcsmc_root)/ -Itests/unittest/
+#-I$(SCRMROOT)/ -I$(SMCSMCROOT)/ -Itests/unittest/
  #including hearders for make distribution
 #include_HEADERS = segdata.hpp pfparam.hpp particle.hpp pattern.hpp\
-                  #$(scrm_root)/forest.h $(scrm_root)/model.h $(scrm_root)/node.h $(scrm_root)/node_container.h \
-                  #$(scrm_root)/time_interval.h $(scrm_root)/tree_point.h \
-                  #$(scrm_root)/random/constant_generator.h $(scrm_root)/random/mersenne_twister.h \
-                  #$(scrm_root)/random/random_generator.h $(scrm_root)/event.h \
-                  #$(scrm_root)/summary_statistics/newick_tree.h \
-                  #$(scrm_root)/summary_statistics/frequency_spectrum.h \
-                  #$(scrm_root)/summary_statistics/seg_sites.h \
-                  #$(scrm_root)/summary_statistics/tmrca.h 
+                  #$(SCRMROOT)/forest.h $(SCRMROOT)/model.h $(SCRMROOT)/node.h $(SCRMROOT)/node_container.h \
+                  #$(SCRMROOT)/time_interval.h $(SCRMROOT)/tree_point.h \
+                  #$(SCRMROOT)/random/constant_generator.h $(SCRMROOT)/random/mersenne_twister.h \
+                  #$(SCRMROOT)/random/random_generator.h $(SCRMROOT)/event.h \
+                  #$(SCRMROOT)/summary_statistics/newick_tree.h \
+                  #$(SCRMROOT)/summary_statistics/frequency_spectrum.h \
+                  #$(SCRMROOT)/summary_statistics/seg_sites.h \
+                  #$(SCRMROOT)/summary_statistics/tmrca.h 
 
 .PHONY: clean-local                  
 clean-local: 

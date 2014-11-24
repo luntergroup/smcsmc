@@ -2,7 +2,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include <boost/lexical_cast.hpp> 
 
-#include "particle.hpp"
+#include "../../src/particle.hpp"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
