@@ -17,4 +17,5 @@ dependencies:
 test:    
   override:
     - ./bootstrap
-    - make
+    - make check
+    - tests/test_binaries.sh

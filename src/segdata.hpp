@@ -100,12 +100,16 @@ public:
         this->segment_start_ = 1;
         this->segment_length_ = 0;
         if ( this->empty_file ){
-            this->segment_length_ = this->seqlen_/1000 ;
-            this->segment_state_ = SEGMENT_MISSING;
-            //this->variant_state_ = false;
-            this->genetic_break_ = true; 
+            this->reset_empty_entry();
         }
     };
+    
+    void reset_empty_entry(){
+        this->segment_length_ = this->seqlen_/20 ;
+        this->segment_state_ = SEGMENT_MISSING;
+        //this->variant_state_ = false;
+        this->genetic_break_ = true;         
+    }
 
     bool end_data() const {return end_data_; }
     void set_end_data ( bool condition ) { this->end_data_ = condition ; }
