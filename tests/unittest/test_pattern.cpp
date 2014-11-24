@@ -2,6 +2,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 #include "pattern.hpp"
+//#include "../../src/pattern.hpp"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

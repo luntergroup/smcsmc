@@ -6,7 +6,7 @@
 #include <algorithm>    // std::equal
 
 #include "model.h"
-#include "param.h"
+//#include "param.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
