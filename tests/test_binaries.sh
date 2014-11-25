@@ -6,16 +6,16 @@ function test_smcsmc {
     echo -n "."
 
     # Test using smcsmc self-checks
-    ../smcsmc_dbg $@ -seed $i > /dev/null 
+    ./smcsmc_dbg $@ -seed $i > /dev/null 
     if [ $? -ne 0 ]; then
       echo ""
-      echo "Executing \"../smcsmc_dbg $@ -seed $i\" failed."
+      echo "Executing \"./smcsmc_dbg $@ -seed $i\" failed."
       echo "Debug Call: make -mj2 smcsmc_dbg && ./smcsmc_dbg $@ -seed $i 2>&1 | less"
       exit 1
     fi
 
     # Test for memory leaks
-    valgrind --error-exitcode=1 --leak-check=full -q ../smcsmc $@ -seed $i > /dev/null
+    valgrind --error-exitcode=1 --leak-check=full -q ./smcsmc $@ -seed $i > /dev/null
     if [ $? -ne 0 ]; then
       echo ""
       echo "Valgrind check of \"./smcsmc $@ -seed $i\" failed."
@@ -23,8 +23,8 @@ function test_smcsmc {
     fi
 
 	# Test for lagging utility
-	../smcsmc $@ -seed $i -o tmp > /dev/null
-	../smcsmc $@ -seed $i -o tmplag -lag 10000 > /dev/null
+	./smcsmc $@ -seed $i -o tmp > /dev/null
+	./smcsmc $@ -seed $i -o tmplag -lag 10000 > /dev/null
 	diff tmpNe tmplagNe
 	if [ $? -ne 0 ]; then
       echo ""

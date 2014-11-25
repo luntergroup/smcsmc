@@ -36,10 +36,7 @@ Segment::Segment( string file_name, size_t nsam, size_t seqlen ){
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
-        this->segment_length_ = this->seqlen_/1000 ;
-        this->segment_state_ = SEGMENT_MISSING;
-        //this->variant_state_ = false;
-        this->genetic_break_ = true; 
+        this->reset_empty_entry();
         for ( size_t i = 0; i < nsam_; i++){
             this->allelic_state_at_Segment_start.push_back ( -1 );
         }

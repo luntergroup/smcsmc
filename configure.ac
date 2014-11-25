@@ -1,4 +1,4 @@
-AC_INIT([smcsmc],esyscmd([sh -c "date \"+%Y%m%d\" | tr -d '\n'"]),[joezhu@well.ox.ac.uk])
+AC_INIT([smcsmc],esyscmd([sh -c "cat version | tr -d '\n'"]),[joezhu@well.ox.ac.uk])
 
 #AC_CONFIG_HEADER([config.h])
 
@@ -48,7 +48,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 
-AC_CHECK_FUNCS([pow])
+#AC_CHECK_FUNCS([pow])
 #AC_HEADER_STDBOOL
 
 m4_include([m4/ac_doxygen.m4])
@@ -62,8 +62,5 @@ DX_XML_FEATURE(OFF)
 DX_PDF_FEATURE(OFF)
 DX_PS_FEATURE(OFF)
 
-
-
-AC_CONFIG_FILES([Makefile src/Makefile ])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
-#
