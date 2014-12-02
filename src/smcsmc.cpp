@@ -106,13 +106,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Initialize prior Ne */
     countNe->init();
-countNe->print_recomb_count(); // DEBUG
+    
     /*! Go through seg data */
     bool force_update = false;
     do{
-        if ( Segfile->segment_start() >= 954501 ){
-            cout << "current base is at "<<Segfile->segment_start()<<" , Actual recombination "<<recombination_counter<<endl;// DEBUG
-        }
         getrusage(who,p);            // PROFILING
         process(p, Segfile->segment_start()); // PROFILING
 
@@ -212,10 +209,7 @@ countNe->print_recomb_count(); // DEBUG
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 
-countNe->print_recomb_count(); // DEBUG
-cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
-countNe->print_recomb_count(); // DEBUG
     countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
     bool append_to_history_file = true;

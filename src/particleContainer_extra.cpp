@@ -57,24 +57,7 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
              * Next, if we haven't reached extend_to now, add a new state and iterate
              */
             if ( updated_to < extend_to ) {
-                if ( (particle_i ==364) && (recombination_counter > 135793 )) {
-                //if ( (extend_to > (double)954001) && (recombination_counter > 227402 ) && (recombination_counter < 227546 ) && (particle_i ==364) ) {// DEBUG
-                    cout << "Before sample the next genealogy "<<endl<< "/////////////////////////////////////"<<endl;
-                    cout << "this->particles[particle_i]->local_tree_length() = "<< std::setprecision (15) << this->particles[particle_i]->local_tree_length() <<endl;
-                    //this->particles[particle_i]->printTree_cout() ;
-                    cout << "this->particles[particle_i]->next_base() = "<<this->particles[particle_i]->next_base()<<endl;
-                    cout << " updated_to = "<<updated_to<<endl;
-                    cout << " extend_to = "<<extend_to<<endl;
-                    cout <<"problem is at the particle " << particle_i << ", Actual recombination "<<recombination_counter <<endl;
-                    cout << "/////////////////////////////////////"<<endl;
-                }
                 this->particles[particle_i]->sampleNextGenealogy();
-                if ( (particle_i ==364) && (recombination_counter > 135793 )) {
-                //if ( (extend_to > (double)954001) && (recombination_counter > 227402 ) && (recombination_counter < 227546 ) && (particle_i ==364) ) { // DEBUG
-                    cout << "After sample the next genealogy "<<endl<<"########################################################################################"<<endl;
-                    cout << "this->particles[particle_i]->next_base() = "<<this->particles[particle_i]->next_base()<<endl;
-                    cout << "########################################################################################"<<endl;
-                }
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
