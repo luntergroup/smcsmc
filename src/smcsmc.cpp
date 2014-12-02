@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ){
-                    
+cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG                    
     int who = RUSAGE_SELF;     // PROFILING
     struct rusage usage;       // PROFILING
     struct rusage *p = &usage; // PROFILING
@@ -109,6 +109,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through seg data */
     bool force_update = false;
     do{
+		cout << "Actual recombination "<<recombination_counter<<", current base is at "<<Segfile->segment_start()<<endl;// DEBUG
         getrusage(who,p);            // PROFILING
         process(p, Segfile->segment_start()); // PROFILING
 
@@ -189,6 +190,7 @@ void pfARG_core(PfParam &pfARG_para,
         if ( Segfile->segment_end() >= model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);
+cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
 
             //break;
         }
@@ -209,8 +211,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 
-
+countNe->print_recomb_count(); // DEBUG
+cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
+countNe->print_recomb_count(); // DEBUG
     countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
     bool append_to_history_file = true;
@@ -222,4 +226,6 @@ void pfARG_core(PfParam &pfARG_para,
 
     current_states.clear(); // This line is sufficient to clear the memory.
     Segfile->reset_data_to_first_entry();
+    
+	cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
     } // End of void pfARG_core( ... )

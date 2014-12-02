@@ -50,7 +50,9 @@ class CountModel: public Model{
         void extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters(double current_base, Model * model, bool online = true, bool force_update = false, bool print = true);
         void log_counts( PfParam& param );
-                
+        
+        // DEBUG
+        void print_recomb_count();        
     private:
 
         //
@@ -110,7 +112,7 @@ class CountModel: public Model{
         double update_param_interval_;
 
         // DEBUG
-        void print_recomb_count();
+        
         void print_pop_size();
         void print_change_time();
         void print_coal_count();
