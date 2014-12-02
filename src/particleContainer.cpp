@@ -46,11 +46,9 @@ ParticleContainer::ParticleContainer(
 	for ( size_t i=0; i < Num_of_states ; i++ ){
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
 		RandomGenerator* new_rg = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-		//RandomGenerator* new_rg = new MersenneTwister( new_seed ); 
 
         Model * new_model =  new Model(*model);
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
-        //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );    
@@ -255,7 +253,7 @@ void ParticleContainer::normalize_probability(){
     }
 
 
-void ParticleContainer::update_state_to_data( double mutation_rate, size_t loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
+void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
     
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;

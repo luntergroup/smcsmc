@@ -71,9 +71,9 @@ class CountModel: public Model{
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
-        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
-        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, size_t x_start, size_t x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ) ;
-        void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx );
+        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
+        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ) ;
+        void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
 
         void compute_recomb_rate();
         void compute_mig_rate();

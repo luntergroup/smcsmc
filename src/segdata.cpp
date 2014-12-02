@@ -24,7 +24,7 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, size_t seqlen ){ 
+Segment::Segment( string file_name, size_t nsam, double seqlen ){ 
     
     this->file_name_ = file_name;
     this->nsam_ = nsam;

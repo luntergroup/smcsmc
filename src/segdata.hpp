@@ -49,10 +49,10 @@ class Segment{
     Segment_State segment_state() const { return this->segment_state_; }
     //bool variant_state() const { return this->variant_state_; }
     bool genetic_break() const { return this->genetic_break_; }
-    size_t seqlen_;
+    double seqlen_;
     // Important stuff
-    size_t segment_start_;
-    size_t segment_length_;
+    double segment_start_;
+    double segment_length_;
     Segment_State segment_state_;
     //bool variant_state_;                   // Variant state (given it is not missing ) at the start of the segment, True or False
     bool genetic_break_;
@@ -77,7 +77,7 @@ class Segment{
     int field_index;
     
     
-    Segment( string file_name , size_t nsam, size_t seqlen );
+    Segment( string file_name , size_t nsam, double seqlen );
     ~Segment(){};
     
     // Methods
@@ -89,9 +89,9 @@ class Segment{
     bool end_data_;
     
 public:
-    size_t segment_start() const { return this->segment_start_; }
-    size_t segment_length() const { return this->segment_length_; }
-    size_t segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
+    double segment_start() const { return this->segment_start_; }
+    double segment_length() const { return this->segment_length_; }
+    double segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
 
     void read_new_line();
     void reset_data_to_first_entry(){ 

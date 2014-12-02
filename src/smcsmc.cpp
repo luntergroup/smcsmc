@@ -80,17 +80,16 @@ int main(int argc, char *argv[]){
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ){
-	recombination_counter = 0;
-cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG                    
+	recombination_counter = 0; // DEBUG
 
     int who = RUSAGE_SELF;     // PROFILING
     struct rusage usage;       // PROFILING
     struct rusage *p = &usage; // PROFILING
 
-    Model *model = pfARG_para.model;
-    MersenneTwister *rg = pfARG_para.rg;
-    size_t Nparticles = pfARG_para.N ;
-    Segment *Segfile = pfARG_para.Segfile;
+    Model *model         = pfARG_para.model;
+    MersenneTwister *rg  = pfARG_para.rg;
+    size_t Nparticles    = pfARG_para.N ;
+    Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
 
 
@@ -111,7 +110,9 @@ countNe->print_recomb_count(); // DEBUG
     /*! Go through seg data */
     bool force_update = false;
     do{
-		cout << "Actual recombination "<<recombination_counter<<", current base is at "<<Segfile->segment_start()<<endl;// DEBUG
+        if ( Segfile->segment_start() >= 954501 ){
+            cout << "current base is at "<<Segfile->segment_start()<<" , Actual recombination "<<recombination_counter<<endl;// DEBUG
+        }
         getrusage(who,p);            // PROFILING
         process(p, Segfile->segment_start()); // PROFILING
 
@@ -170,16 +171,16 @@ countNe->print_recomb_count(); // DEBUG
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till Segfile->site() 
          */
-        current_states.update_state_to_data( mutation_rate, model->loci_length(), Segfile, weight_cum_sum);
+        current_states.update_state_to_data( mutation_rate, (double)model->loci_length(), Segfile, weight_cum_sum);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
-        current_states.appendingStuffToFile( min(Segfile->segment_end(),  model->loci_length()), pfARG_para);    
+        current_states.appendingStuffToFile( min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para);    
 
         /*! UPDATE CUM COUNT AND OPPORTUNITIES ACCORDING TO THE PARTICLE WEIGHT */ 
-        countNe->extract_and_update_count( current_states , min(Segfile->segment_end(),  model->loci_length()) );
+        countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( min(Segfile->segment_end(),  model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
+        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
 
 
         if ( pfARG_para.ESS() == 1 ){
@@ -187,9 +188,9 @@ countNe->print_recomb_count(); // DEBUG
             current_states.set_particles_with_random_weight();    
             }
         /*! ESS resampling. Filtering step*/        
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),  model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
         
-        if ( Segfile->segment_end() >= model->loci_length() ){
+        if ( Segfile->segment_end() >= (double)model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);
             //break;

@@ -108,7 +108,8 @@ void CountModel::reset_Ne ( Model *model ){
     this ->resetTime();
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j] / this->total_coal_count[epoch_idx][pop_j] /2 ,false, false);    
+            //model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j] / this->total_coal_count[epoch_idx][pop_j] /2 ,false, false);    
+            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, roundf(this->total_weighted_coal_opportunity[epoch_idx][pop_j]) / this->total_coal_count[epoch_idx][pop_j] / (double)2 ,false, false);    
             }
         }
     this->check_model_updated_Ne( model );
@@ -230,7 +231,8 @@ void CountModel::compute_recomb_rate () {
         this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0] ;
         this->recomb_count_ += this->total_recomb_count[epoch_idx][0];
         }
-    this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
+    //this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
+    this->inferred_recomb_rate = this->recomb_count_ / roundf(this->recomb_opportunity_);
     }
 
                 
@@ -279,7 +281,7 @@ void CountModel::compute_recomb_rate () {
     //}
 //void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
 
-void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ){
+void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     while (CoaleventContainer_i.size() > 0 && CoaleventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
@@ -294,7 +296,7 @@ void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContai
         }
     }
 
-void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, size_t x_start, size_t x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ){
+void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ){
      
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
@@ -329,7 +331,7 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     }  
 }
 
-void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, size_t x_end, size_t epoch_idx ) {
+void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() < x_end) {
