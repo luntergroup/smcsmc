@@ -80,7 +80,9 @@ int main(int argc, char *argv[]){
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ){
+	recombination_counter = 0;
 cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG                    
+
     int who = RUSAGE_SELF;     // PROFILING
     struct rusage usage;       // PROFILING
     struct rusage *p = &usage; // PROFILING
@@ -105,7 +107,7 @@ cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
 
     /*! Initialize prior Ne */
     countNe->init();
-
+countNe->print_recomb_count(); // DEBUG
     /*! Go through seg data */
     bool force_update = false;
     do{
@@ -190,8 +192,6 @@ cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         if ( Segfile->segment_end() >= model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);
-cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-
             //break;
         }
         
