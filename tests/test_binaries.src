@@ -1,8 +1,6 @@
-#!/bin/bash
-
 function test_smcsmc {
   echo -n " smcsmc $@ "
-  for i in `seq 1 20`; do
+  for i in `seq ${begin} ${end}`; do
     echo -n "."
 
     # Test using smcsmc self-checks
@@ -36,17 +34,3 @@ function test_smcsmc {
   done
   echo " done."
 }
-
-echo "Testing (Decide the case name later ... ) "
- test_smcsmc -nsam 2 -Np 1000 -r 130 1000000 || exit 1
- test_smcsmc -nsam 3 -Np 1000 -r 130 1000000 || exit 1
- test_smcsmc -nsam 4 -Np 1000 -r 130 1000000 || exit 1
- test_smcsmc -nsam 5 -Np 1000 -r 130 1000000 || exit 1
-echo ""
-
-echo "Testing -EM "
- test_smcsmc -nsam 2 -Np 1000 -r 130 1000000 -EM 2 || exit 1
- test_smcsmc -nsam 3 -Np 1000 -r 130 1000000 -EM 2 || exit 1
- test_smcsmc -nsam 4 -Np 1000 -r 130 1000000 -EM 2 || exit 1
- test_smcsmc -nsam 5 -Np 1000 -r 130 1000000 -EM 2 || exit 1
-echo ""
