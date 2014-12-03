@@ -105,7 +105,7 @@ public:
     };
     
     void reset_empty_entry(){
-        this->segment_length_ = this->seqlen_/2000 ;
+        this->segment_length_ = this->seqlen_/20 ;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
         this->genetic_break_ = true;         
