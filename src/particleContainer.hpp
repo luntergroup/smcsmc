@@ -48,7 +48,7 @@ class ParticleContainer{
         //
         // Methods
         //   
-        void update_state_to_data( double mutation_rate, size_t loci_length, Segment * Segfile, valarray<double> & weight_cum_sum);
+        void update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum);
         void extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state );
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state);        

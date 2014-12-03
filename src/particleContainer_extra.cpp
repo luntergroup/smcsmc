@@ -39,7 +39,9 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
         double updated_to = this->particles[particle_i]->site_where_weight_was_updated();
         dout << "Particle current base is at " << this->particles[particle_i]->current_base() << " weight is updated to " << updated_to <<endl;
         assert (updated_to >= this->particles[particle_i]->current_base());
+        
         while ( updated_to < extend_to ) {
+            
             dout << "  Now at " <<this->particles[particle_i]->current_base()<< " updated_to " << updated_to << " and extending to " << extend_to << endl;            
             /*!
              * First, update the likelihood up to either extend_to or the end of this state
@@ -59,17 +61,17 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );
-                    }
-                
                 }
-            
+                
             }
+            
+        }
         assert (updated_to == extend_to);        
         this->particles[particle_i]->setSiteWhereWeightWasUpdated( extend_to );
-        }
+    }
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
-    }
+}
 
 
 
