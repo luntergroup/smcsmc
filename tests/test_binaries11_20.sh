@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source test_binary.src
+source test_binaries.src
 
 begin=11
 end=20
