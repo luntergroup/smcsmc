@@ -23,10 +23,46 @@
 
 #include "particleContainer.hpp"
 
-
 #ifndef COUNT
 #define COUNT
 
+class Two_doubles {
+	public:
+		Two_doubles( double init = 0 ){
+			big   = init;
+			small = 0;
+			small_added_counter = 0;
+		};
+		~Two_doubles(){};
+		
+		void add ( double added ){
+			if ( added*1024 < big ){
+				small += added;
+				small_added_counter++;
+				if ( small_added_counter == 1000 ){
+					this->add_small_to_big();
+				}
+			}
+			else {
+				big += added;
+			}
+		}
+		
+		double final_answer () {
+			this->add_small_to_big( );
+			return this->big;
+		}
+		
+		void add_small_to_big( ){
+			small_added_counter = 0;
+			big += small;
+			small = 0;
+		}
+	
+	private:
+		double big, small;
+		size_t small_added_counter;
+};
 
 /*! \brief Derived class of Model, used for inference.
  */         
@@ -71,8 +107,8 @@ class CountModel: public Model{
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
-        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
-        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ) ;
+        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ) ;
+        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ) ;
         void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
 
         void compute_recomb_rate();
@@ -89,14 +125,14 @@ class CountModel: public Model{
         //   
         /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity are number_of_time_interval * number_of_population
          */ 
-        vector < vector<double> >   total_coal_count;
-        vector < vector<double> >   total_weighted_coal_opportunity;        
-        vector < vector<double> >   total_recomb_count;
-        vector < vector<double> >   total_weighted_recomb_opportunity;
+        vector < vector<Two_doubles> >   total_coal_count;
+        vector < vector<Two_doubles> >   total_weighted_coal_opportunity;        
+        vector < vector<Two_doubles> >   total_recomb_count;
+        vector < vector<Two_doubles> >   total_weighted_recomb_opportunity;
         /*! The dimension of total_mig_count is number_of_epochs * number_of_population (from) * number_of_population (to).  For total_weighted_mig_opportunity only the 'from' population is important
          */         
-        vector < vector < vector<double> > >  total_mig_count;
-        vector < vector<double> >             total_weighted_mig_opportunity;
+        vector < vector < vector<Two_doubles> > >  total_mig_count;
+        vector < vector<Two_doubles> >             total_weighted_mig_opportunity;
 
         vector < double > counted_to;
         vector < double > lags;
