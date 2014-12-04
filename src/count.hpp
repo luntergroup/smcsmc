@@ -29,17 +29,19 @@
 class Two_doubles {
 	public:
 		Two_doubles( double init = 0 ){
-			big   = init;
-			small = 0;
-			small_added_counter = 0;
+			big   = 0;
+			//middle = 0;
+			small = init;
+			//small_added_counter = 0;
 		};
 		~Two_doubles(){};
 		
 		void add ( double added ){
-			if ( added*1024 < big ){
+			
+			if ( added*1e8 < big ){
 				small += added;
-				small_added_counter++;
-				if ( small_added_counter == 1000 ){
+				//small_added_counter++;
+				if ( small*1e8 > big ){
 					this->add_small_to_big();
 				}
 			}
@@ -54,14 +56,15 @@ class Two_doubles {
 		}
 		
 		void add_small_to_big( ){
-			small_added_counter = 0;
+			//small_added_counter = 0;
 			big += small;
 			small = 0;
 		}
 	
 	private:
 		double big, small;
-		size_t small_added_counter;
+		double middle;
+		//size_t small_added_counter;
 };
 
 /*! \brief Derived class of Model, used for inference.
