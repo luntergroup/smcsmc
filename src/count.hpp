@@ -49,8 +49,8 @@ class Two_doubles {
 			//cout.precision(15);
 			//cout << "adding "<< added << " to small " << small_ <<" wheas big is "<< big_ <<endl;
 			small_ += added;
-			assert ( big_ > small_ );
-			if ( small_ * BIG_TO_SMALL_RATIO > big_){
+			//assert ( big_ > small_ );
+			if ( small_ * BIG_TO_SMALL_RATIO > big_ && big_ != 0 ){
 				add_small_to_big();
 			}
 			assert ( big_ > small_ );
