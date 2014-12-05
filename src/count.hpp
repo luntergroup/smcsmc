@@ -49,11 +49,13 @@ class Two_doubles {
 			//cout.precision(15);
 			//cout << "adding "<< added << " to small " << small_ <<" wheas big is "<< big_ <<endl;
 			small_ += added;
-			//assert ( big_ > small_ );
+			//
 			if ( small_ * BIG_TO_SMALL_RATIO > big_ && big_ != 0 ){
 				add_small_to_big();
+				assert ( big_ > small_ );
 			}
-			assert ( big_ > small_ );
+			// should not assert here, as big_ could be zero
+			//assert ( big_ > small_ );
 		}
 		
 		void add_to_big ( double added ) {
@@ -62,7 +64,7 @@ class Two_doubles {
 			big_ += added;
 			//big_added_counter_++;
 			assert ( big_ > small_ );
-			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ){
+			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO && small_ != 0 ){
 				//cout << " ok, bump up big!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 				add_big_to_cumsum( );
 				assert ( cumsum_ > big_ );
@@ -73,6 +75,7 @@ class Two_doubles {
 			if ( big_ == 0 ){
 				if ( added > BIG_TO_SMALL_RATIO * small_ ){
 					add_to_big ( added );
+					assert ( big_ > small_ );
 					return;
 				}
 				
@@ -80,7 +83,8 @@ class Two_doubles {
 					switch_big_and_small();					
 				}
 				
-				this->add_to_small ( added );	
+				this->add_to_small ( added );
+				assert ( big_ > small_ );
 				return;
 			}
 			else if ( added * BIG_TO_SMALL_RATIO < big_ ){
