@@ -111,7 +111,12 @@ void CountModel::reset_Ne ( Model *model ){
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             //model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j] / this->total_coal_count[epoch_idx][pop_j] /2 ,false, false);    
-            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer() / this->total_coal_count[epoch_idx][pop_j].final_answer() / (double)2 ,false, false);    
+            this->total_weighted_coal_opportunity[epoch_idx][pop_j].compute_final_answer();
+            this->total_coal_count[epoch_idx][pop_j].compute_final_answer();
+            double tmp_pop_size = this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer() / this->total_coal_count[epoch_idx][pop_j].final_answer() / (double)2;
+            tmp_pop_size = roundf(tmp_pop_size * (double)1e6)/(double)1e6;
+            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, tmp_pop_size ,false, false);    
+            cout << " popsize is equal to " << tmp_pop_size << " ( "<<this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer()<<" / "<< this->total_coal_count[epoch_idx][pop_j].final_answer() << "/2)" <<endl;
             }
         }
     this->check_model_updated_Ne( model );
@@ -120,6 +125,7 @@ void CountModel::reset_Ne ( Model *model ){
 
 void CountModel::reset_recomb_rate ( Model *model ){
     this->compute_recomb_rate();
+    this->inferred_recomb_rate = roundf ( this->inferred_recomb_rate * (double)1e16)/(double)1e16;
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
@@ -214,13 +220,17 @@ void CountModel::compute_mig_rate(){
     this->resetTime();
     for (size_t epoch_idx = 0; epoch_idx<change_times_.size(); epoch_idx++){
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+			
+			this->total_weighted_mig_opportunity[epoch_idx][pop_i].compute_final_answer();
+            
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
+				this->total_mig_count[epoch_idx][pop_i][pop_j].compute_final_answer();
                 this->inferred_mig_rate[epoch_idx][pop_i][pop_j] = this->total_mig_count[epoch_idx][pop_i][pop_j].final_answer() / this->total_weighted_mig_opportunity[epoch_idx][pop_i].final_answer();
                 //cout<<"this->inferred_mig_rate["<<epoch_idx<<"]["<<pop_i<<"]["<<pop_j<<"] = " << this->inferred_mig_rate[epoch_idx][pop_i][pop_j]<<endl;
-                }
             }
         }
     }
+}
 
 
 /*! 
@@ -230,12 +240,15 @@ void CountModel::compute_recomb_rate () {
     this->recomb_opportunity_ = 0;
     this->recomb_count_ = 0;
     for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ){
+		this->total_weighted_recomb_opportunity[epoch_idx][0].compute_final_answer();
+		this->total_recomb_count[epoch_idx][0].compute_final_answer();
         this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0].final_answer() ;
         this->recomb_count_ += this->total_recomb_count[epoch_idx][0].final_answer();
-        }
-    //this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
-    this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
     }
+    
+    this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
+    //cout << "Recombination rate is " << this->inferred_recomb_rate << " ( " << this->recomb_count_ << " / " << this->recomb_opportunity_ << " )"<<endl;
+}
 
                 
                     /*! \verbatim 

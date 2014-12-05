@@ -26,45 +26,110 @@
 #ifndef COUNT
 #define COUNT
 
+#ifndef BIG_TO_SMALL_RATIO
+#define BIG_TO_SMALL_RATIO 256
+//#define BIG_TO_SMALL_RATIO 1
+#endif
+
+#ifndef CUM_TO_BIG_RATIO
+#define CUM_TO_BIG_RATIO 5000
+//#define CUM_TO_BIG_RATIO 1
+#endif
+
 class Two_doubles {
 	public:
 		Two_doubles( double init = 0 ){
-			big   = 0;
-			//middle = 0;
-			small = init;
-			//small_added_counter = 0;
+			big_  = 0;
+			small_ = init;
+			//big_added_counter_ = 0;
 		};
 		~Two_doubles(){};
 		
+		void add_to_small ( double added ){
+			//cout.precision(15);
+			//cout << "adding "<< added << " to small " << small_ <<" wheas big is "<< big_ <<endl;
+			small_ += added;
+			assert ( big_ > small_ );
+			if ( small_ * BIG_TO_SMALL_RATIO > big_){
+				add_small_to_big();
+			}
+			assert ( big_ > small_ );
+		}
+		
+		void add_to_big ( double added ) {
+			//cout.precision(15);
+			//cout << "adding "<< added << " to big " << big_ <<" wheas small is "<< small_ <<endl;
+			big_ += added;
+			//big_added_counter_++;
+			assert ( big_ > small_ );
+			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ){
+				//cout << " ok, bump up big!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+				add_big_to_cumsum( );
+				assert ( cumsum_ > big_ );
+			}			
+		}
+		
 		void add ( double added ){
-			
-			if ( added*1e8 < big ){
-				small += added;
-				//small_added_counter++;
-				if ( small*1e8 > big ){
-					this->add_small_to_big();
+			if ( big_ == 0 ){
+				if ( added > BIG_TO_SMALL_RATIO * small_ ){
+					add_to_big ( added );
+					return;
 				}
+				
+				if ( added * BIG_TO_SMALL_RATIO < small_ ){
+					switch_big_and_small();					
+				}
+				
+				this->add_to_small ( added );	
+				return;
 			}
-			else {
-				big += added;
+			else if ( added * BIG_TO_SMALL_RATIO < big_ ){
+				this->add_to_small ( added );
+				return;
 			}
+			else{
+				add_to_big ( added );
+				return;
+			}
+		}
+
+		void compute_final_answer(){
+			//cout.precision(15);
+			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
+			this->add_small_to_big( );
+			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
+			this->add_big_to_cumsum();	
 		}
 		
 		double final_answer () {
-			this->add_small_to_big( );
-			return this->big;
+			return this->cumsum_;
 		}
 		
 		void add_small_to_big( ){
-			//small_added_counter = 0;
-			big += small;
-			small = 0;
+			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
+			add_to_big ( small_ );
+			small_ = 0;
+		}
+		
+		void add_big_to_cumsum () {
+			//cout.precision(15);
+			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
+			//big_added_counter_ = 0;
+			cumsum_ += big_;
+			big_ = 0;
+		}
+		
+		void switch_big_and_small ( ){
+			cout << " switching big and small !!!!!!!!!!!!!!!!!!!!!!"<<endl;
+			double tmp = big_;
+			big_ = small_;
+			small_ = tmp;
 		}
 	
 	private:
-		double big, small;
-		double middle;
-		//size_t small_added_counter;
+		double cumsum_;
+		double big_, small_;
+		//size_t big_added_counter_;
 };
 
 /*! \brief Derived class of Model, used for inference.
