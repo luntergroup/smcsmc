@@ -81,10 +81,13 @@ class Two_doubles {
 				
 				if ( added * BIG_TO_SMALL_RATIO < small_ ){
 					switch_big_and_small();					
+					assert ( big_ > small_ );
 				}
-				
+				// two cases to add to small, 
+				// 1. big was 0, now has just taken small's value, big > small
+				// 2. big is 0, added is added to small
 				this->add_to_small ( added );
-				assert ( big_ > small_ );
+				
 				return;
 			}
 			else if ( added * BIG_TO_SMALL_RATIO < big_ ){
