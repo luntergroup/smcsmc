@@ -33,8 +33,8 @@ void CountModel::print_coal_count(){
     for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
         cout << " ### " ;
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-             cout << " | " << std::setw(15) << this->total_weighted_coal_opportunity[time_layer_i][pop_i]
-                           << std::setw(15) << this->total_coal_count[time_layer_i][pop_i]
+             cout << " | " << std::setw(15) << this->total_weighted_coal_opportunity[time_layer_i][pop_i].final_answer()
+                           << std::setw(15) << this->total_coal_count[time_layer_i][pop_i].final_answer()
                            << std::setw(15) << this->population_size(pop_i);
             }  cout<<endl;
         // move the time_interval temp variable to the next level 
@@ -53,8 +53,8 @@ void CountModel::print_recomb_count(){
     for (size_t time_layer_i = 0; time_layer_i<change_times_.size(); time_layer_i++){
         cout << " ### " ;
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-             cout << " | " << std::setw(15) << this->total_weighted_recomb_opportunity[time_layer_i][pop_i]
-                           << std::setw(15) << this->total_recomb_count[time_layer_i][pop_i];
+             cout << " | " << std::setw(15) << this->total_weighted_recomb_opportunity[time_layer_i][pop_i].final_answer()
+                           << std::setw(15) << this->total_recomb_count[time_layer_i][pop_i].final_answer();
                            //<< std::setw(15) << this->population_size(pop_i);
             }  cout<<endl;
         // move the time_interval temp variable to the next level 
@@ -71,7 +71,7 @@ void CountModel::check_model_updated_Ne(Model * model){
     while (model->getNextTime() < FLT_MAX){
         cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
         for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-            cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j] <<")" ;
+            cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
         }  cout<<endl;
         model->increaseTime();
         time_i++;
@@ -79,7 +79,7 @@ void CountModel::check_model_updated_Ne(Model * model){
     
     cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
     for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-        cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j] <<")" ;
+        cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
         } cout<<endl;
     
     return ;                

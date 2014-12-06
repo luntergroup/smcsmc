@@ -42,14 +42,14 @@ void CountModel::init_coal_and_recomb(){
 
     this->resetTime();    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
-        vector <double> tmp_count(this->population_number(), 0);
+        vector <Two_doubles> tmp_count(this->population_number(), Two_doubles(0));
         this->total_coal_count.push_back(tmp_count);
         this->total_recomb_count.push_back(tmp_count);
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
             this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * population_size() );
         }
         
-        vector <double> tmp_opportunity(this->population_number(), 1);
+        vector <Two_doubles> tmp_opportunity(this->population_number(), Two_doubles(1));
         this->total_weighted_coal_opportunity.push_back(tmp_opportunity);
         this->total_weighted_recomb_opportunity.push_back(tmp_opportunity);
         }
@@ -63,16 +63,18 @@ void CountModel::init_migr(){ /*! \todo This requires more work*/
 
     this->resetTime();    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
-        vector < vector < double > > tmp_count_Time_i;
-        vector < double > tmp_opp_Time_i;
+        vector < vector < Two_doubles > > tmp_count_Time_i;
+        vector < Two_doubles > tmp_opp_Time_i;
+        vector < vector < double > > tmp_count_Time_i_double;
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-            vector <double> tmp_count(this->population_number(), 0);
+            vector <Two_doubles> tmp_count(this->population_number(), Two_doubles());
             tmp_count_Time_i.push_back(tmp_count);
-            tmp_opp_Time_i.push_back( 1 );
+            vector <double> tmp_count_Time_i_double(this->population_number(), 0);
+            tmp_opp_Time_i.push_back( Two_doubles(1) );
             }        
         this->total_mig_count.push_back(tmp_count_Time_i);
-        this->inferred_mig_rate.push_back(tmp_count_Time_i);
         this->total_weighted_mig_opportunity.push_back(tmp_opp_Time_i);
+        this->inferred_mig_rate.push_back(tmp_count_Time_i_double);
         }
     }
 
@@ -109,7 +111,12 @@ void CountModel::reset_Ne ( Model *model ){
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             //model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j] / this->total_coal_count[epoch_idx][pop_j] /2 ,false, false);    
-            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, roundf(this->total_weighted_coal_opportunity[epoch_idx][pop_j]) / this->total_coal_count[epoch_idx][pop_j] / (double)2 ,false, false);    
+            this->total_weighted_coal_opportunity[epoch_idx][pop_j].compute_final_answer();
+            this->total_coal_count[epoch_idx][pop_j].compute_final_answer();
+            double tmp_pop_size = this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer() / this->total_coal_count[epoch_idx][pop_j].final_answer() / (double)2;
+            tmp_pop_size = roundf(tmp_pop_size * (double)1e6)/(double)1e6;
+            model->addPopulationSize(this->change_times_[epoch_idx], pop_j, tmp_pop_size ,false, false);    
+            cout << " popsize is equal to " << tmp_pop_size << " ( "<<this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer()<<" / "<< this->total_coal_count[epoch_idx][pop_j].final_answer() << "/2)" <<endl;
             }
         }
     this->check_model_updated_Ne( model );
@@ -118,6 +125,7 @@ void CountModel::reset_Ne ( Model *model ){
 
 void CountModel::reset_recomb_rate ( Model *model ){
     this->compute_recomb_rate();
+    this->inferred_recomb_rate = roundf ( this->inferred_recomb_rate * (double)1e16)/(double)1e16;
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
@@ -184,22 +192,22 @@ void CountModel::log_counts( PfParam& param ) {
 	// log coalescent counts
 	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
 		for (size_t pop_idx = 0; pop_idx < this->population_number(); pop_idx++ ) {
-			param.append_to_count_file( epoch_idx, "Coal", pop_idx, -1, this->total_weighted_coal_opportunity[epoch_idx][pop_idx], 
-																	    this->total_coal_count[epoch_idx][pop_idx] );
+			param.append_to_count_file( epoch_idx, "Coal", pop_idx, -1, this->total_weighted_coal_opportunity[epoch_idx][pop_idx].final_answer(), 
+																	    this->total_coal_count[epoch_idx][pop_idx].final_answer() );
 		}
 	}
 	// log recombination counts
 	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
-		param.append_to_count_file( epoch_idx, "Recomb", -1, -1, this->total_weighted_recomb_opportunity[epoch_idx][0], 
-																 this->total_recomb_count[epoch_idx][0] );
+		param.append_to_count_file( epoch_idx, "Recomb", -1, -1, this->total_weighted_recomb_opportunity[epoch_idx][0].final_answer(), 
+																 this->total_recomb_count[epoch_idx][0].final_answer() );
 	}
 	// log migration counts
 	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
 		for (size_t from_pop_idx = 0; from_pop_idx < this->population_number(); from_pop_idx++ ) {
 			for (size_t to_pop_idx = 0; to_pop_idx < this->population_number(); to_pop_idx++ ) {
 				if (from_pop_idx != to_pop_idx) {
-					param.append_to_count_file( epoch_idx, "Migr", from_pop_idx, to_pop_idx, this->total_weighted_mig_opportunity[epoch_idx][from_pop_idx], 
-																						     this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx] );
+					param.append_to_count_file( epoch_idx, "Migr", from_pop_idx, to_pop_idx, this->total_weighted_mig_opportunity[epoch_idx][from_pop_idx].final_answer(),
+																						     this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer() );
 				}
 			}
 		}
@@ -212,13 +220,17 @@ void CountModel::compute_mig_rate(){
     this->resetTime();
     for (size_t epoch_idx = 0; epoch_idx<change_times_.size(); epoch_idx++){
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+			
+			this->total_weighted_mig_opportunity[epoch_idx][pop_i].compute_final_answer();
+            
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
-                this->inferred_mig_rate[epoch_idx][pop_i][pop_j] = this->total_mig_count[epoch_idx][pop_i][pop_j] / this->total_weighted_mig_opportunity[epoch_idx][pop_i];
+				this->total_mig_count[epoch_idx][pop_i][pop_j].compute_final_answer();
+                this->inferred_mig_rate[epoch_idx][pop_i][pop_j] = this->total_mig_count[epoch_idx][pop_i][pop_j].final_answer() / this->total_weighted_mig_opportunity[epoch_idx][pop_i].final_answer();
                 //cout<<"this->inferred_mig_rate["<<epoch_idx<<"]["<<pop_i<<"]["<<pop_j<<"] = " << this->inferred_mig_rate[epoch_idx][pop_i][pop_j]<<endl;
-                }
             }
         }
     }
+}
 
 
 /*! 
@@ -228,12 +240,15 @@ void CountModel::compute_recomb_rate () {
     this->recomb_opportunity_ = 0;
     this->recomb_count_ = 0;
     for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ){
-        this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0] ;
-        this->recomb_count_ += this->total_recomb_count[epoch_idx][0];
-        }
-    //this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
-    this->inferred_recomb_rate = this->recomb_count_ / roundf(this->recomb_opportunity_);
+		this->total_weighted_recomb_opportunity[epoch_idx][0].compute_final_answer();
+		this->total_recomb_count[epoch_idx][0].compute_final_answer();
+        this->recomb_opportunity_ += this->total_weighted_recomb_opportunity[epoch_idx][0].final_answer() ;
+        this->recomb_count_ += this->total_recomb_count[epoch_idx][0].final_answer();
     }
+    
+    this->inferred_recomb_rate = this->recomb_count_ / this->recomb_opportunity_;
+    //cout << "Recombination rate is " << this->inferred_recomb_rate << " ( " << this->recomb_count_ << " / " << this->recomb_opportunity_ << " )"<<endl;
+}
 
                 
                     /*! \verbatim 
@@ -281,13 +296,13 @@ void CountModel::compute_recomb_rate () {
     //}
 //void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, size_t x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ) ;
 
-void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<double>& total_coal_count, vector<double>& total_coal_opportunity ){
+void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     while (CoaleventContainer_i.size() > 0 && CoaleventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
         Coalevent * current_Coalevent = CoaleventContainer_i[0];
-        total_coal_count[current_Coalevent->pop_i()]       += weight * current_Coalevent->num_event();
-        total_coal_opportunity[current_Coalevent->pop_i()] += weight * current_Coalevent->opportunity();            
+        total_coal_count[current_Coalevent->pop_i()].add( weight * current_Coalevent->num_event() );
+        total_coal_opportunity[current_Coalevent->pop_i()].add( weight * current_Coalevent->opportunity() );
         current_Coalevent->pointer_counter_ --;
         if (current_Coalevent->pointer_counter_ == 0) {
             delete current_Coalevent;
@@ -296,7 +311,7 @@ void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContai
         }
     }
 
-void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<double>& total_recomb_count, vector<double>& total_recomb_opportunity ){
+void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ){
      
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
@@ -311,12 +326,12 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
         Recombevent * current_Recombevent = RecombeventContainer_i[0];
         // test if the recombination event (at the left of the segment) needs to be included
         if ( current_Recombevent->start_base() >= x_start && current_Recombevent->start_base() < x_end ) {
-            total_recomb_count[current_Recombevent->pop_i()] += weight * current_Recombevent->num_event();
+            total_recomb_count[current_Recombevent->pop_i()].add( weight * current_Recombevent->num_event() );
         }
         // only include the recombination opportunity that overlaps the interval [x_start, x_end]
         double start = max( current_Recombevent->start_base(), (double)x_start );
         double end   = min( current_Recombevent->end_base(),   (double)x_end );
-        total_recomb_opportunity[ current_Recombevent->pop_i() ] += weight * current_Recombevent->opportunity_between( start , end );
+        total_recomb_opportunity[ current_Recombevent->pop_i() ].add( weight * current_Recombevent->opportunity_between( start , end ) );
 
         // if this segment extends beyond x_end, we're done
         if ( current_Recombevent->end_base() > (double)x_end ) 
@@ -337,9 +352,9 @@ void CountModel::update_migration_count( deque < Migrevent *> & MigreventContain
     while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() < x_end) {
         Migrevent * current_Migrevent = MigreventContainer_i[0];
         if (current_Migrevent->event_state() == EVENT) {
-            total_mig_count[epoch_idx][current_Migrevent->pop_i()][current_Migrevent->mig_pop()] += weight * current_Migrevent->num_event();
+            total_mig_count[epoch_idx][current_Migrevent->pop_i()][current_Migrevent->mig_pop()].add( weight * current_Migrevent->num_event() );
         }
-        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->pop_i()] += weight * current_Migrevent->opportunity();            
+        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->pop_i()].add( weight * current_Migrevent->opportunity() );
         current_Migrevent->pointer_counter_ --;
         if (current_Migrevent->pointer_counter_ == 0) {
             delete current_Migrevent;

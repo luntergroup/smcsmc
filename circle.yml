@@ -14,9 +14,12 @@ dependencies:
     - sudo apt-get install r-base-core
     #- sudo apt-get install graphviz # this doesn't seem to work yet
     #g++ 4.6.3-1ubuntu5
+
+#New tests are added at the top
 test:    
   override:
     - ./bootstrap
     - make check
-    - cd tests; ./test_binaries1_10.sh
+    - cd tests; ./test_binary_sample_size.sh
     - cd tests; ./test_binaries11_20.sh
+    - cd tests; ./test_binaries1_10.sh
