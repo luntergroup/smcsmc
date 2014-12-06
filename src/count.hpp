@@ -70,7 +70,7 @@ class Two_doubles {
 					//}
 
 			assert ( big_ >= small_ ); // big small added could all be zeros
-			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO && ( small_ != 0 || small_ != 1 ) ){
+			if ( ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ) && ( small_ != 0 && small_ != 1 ) ){
 				add_big_to_cumsum( );
 				assert ( cumsum_ >= big_ );
 			}			
@@ -79,7 +79,13 @@ class Two_doubles {
 		void add ( double added ){
 			if ( big_ == 0 ){
 				if ( added > BIG_TO_SMALL_RATIO * small_ ){
-					add_to_big ( added );
+					this->add_to_big ( added );
+					//if ( big_ <= small_ ){
+						//cout << "big = "<<big_<<endl;
+						//cout << "added = "<< added<<endl;
+						//cout << "small_= "<< small_<<endl; 
+					//}
+
 					assert ( big_ >= small_ ); // big small added could all be zeros
 					return;
 				}
