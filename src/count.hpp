@@ -63,11 +63,16 @@ class Two_doubles {
 			//cout << "adding "<< added << " to big " << big_ <<" wheas small is "<< small_ <<endl;
 			big_ += added;
 			//big_added_counter_++;
-			assert ( big_ > small_ );
+					//if ( big_ <= small_ ){
+						//cout << "big = "<<big_<<endl;
+						//cout << "added = "<< added<<endl;
+						//cout << "small_= "<< small_<<endl; 
+					//}
+
+			assert ( big_ >= small_ ); // big small added could all be zeros
 			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO && ( small_ != 0 || small_ != 1 ) ){
-				//cout << " ok, bump up big!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 				add_big_to_cumsum( );
-				assert ( cumsum_ > big_ );
+				assert ( cumsum_ >= big_ );
 			}			
 		}
 		
@@ -75,18 +80,13 @@ class Two_doubles {
 			if ( big_ == 0 ){
 				if ( added > BIG_TO_SMALL_RATIO * small_ ){
 					add_to_big ( added );
-					if ( big_ <= small_ ){
-						cout << "big = "<<big_<<endl;
-						cout << "added = "<< added<<endl;
-						cout << "small_= "<< small_<<endl; 
-					}
-					assert ( big_ >= small_ ); // big small added could all be zero
+					assert ( big_ >= small_ ); // big small added could all be zeros
 					return;
 				}
 				
 				if ( added * BIG_TO_SMALL_RATIO < small_ ){
 					switch_big_and_small();					
-					assert ( big_ > small_ );
+					assert ( big_ >= small_ ); // big small added could all be zeros
 				}
 				// two cases to add to small, 
 				// 1. big was 0, now has just taken small's value, big > small
