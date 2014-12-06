@@ -64,7 +64,7 @@ class Two_doubles {
 			big_ += added;
 			//big_added_counter_++;
 			assert ( big_ > small_ );
-			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO && small_ != 0 ){
+			if ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO && ( small_ != 0 || small_ != 1 ) ){
 				//cout << " ok, bump up big!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 				add_big_to_cumsum( );
 				assert ( cumsum_ > big_ );
@@ -75,7 +75,12 @@ class Two_doubles {
 			if ( big_ == 0 ){
 				if ( added > BIG_TO_SMALL_RATIO * small_ ){
 					add_to_big ( added );
-					assert ( big_ > small_ );
+					if ( big_ <= small_ ){
+						cout << "big = "<<big_<<endl;
+						cout << "added = "<< added<<endl;
+						cout << "small_= "<< small_<<endl; 
+					}
+					assert ( big_ >= small_ ); // big small added could all be zero
 					return;
 				}
 				
