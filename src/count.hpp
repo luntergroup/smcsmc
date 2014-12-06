@@ -62,13 +62,11 @@ class Two_doubles {
 			//cout.precision(15);
 			//cout << "adding "<< added << " to big " << big_ <<" wheas small is "<< small_ <<endl;
 			big_ += added;
-			//big_added_counter_++;
-					//if ( big_ <= small_ ){
-						//cout << "big = "<<big_<<endl;
-						//cout << "added = "<< added<<endl;
-						//cout << "small_= "<< small_<<endl; 
-					//}
-
+			if ( big_ <= small_ ){
+				cerr << "big = "<<big_<<endl;
+				cerr << "added = "<< added<<endl;
+				cerr << "small_= "<< small_<<endl; 
+			}
 			assert ( big_ >= small_ ); // big small added could all be zeros
 			if ( ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ) && ( small_ != 0 && small_ != 1 ) ){
 				add_big_to_cumsum( );
@@ -80,11 +78,11 @@ class Two_doubles {
 			if ( big_ == 0 ){
 				if ( added > BIG_TO_SMALL_RATIO * small_ ){
 					this->add_to_big ( added );
-					//if ( big_ <= small_ ){
-						//cout << "big = "<<big_<<endl;
-						//cout << "added = "<< added<<endl;
-						//cout << "small_= "<< small_<<endl; 
-					//}
+					if ( big_ <= small_ ){
+						cerr << "big = "<<big_<<endl;
+						cerr << "added = "<< added<<endl;
+						cerr << "small_= "<< small_<<endl; 
+					}
 
 					assert ( big_ >= small_ ); // big small added could all be zeros
 					return;
@@ -138,7 +136,7 @@ class Two_doubles {
 		}
 		
 		void switch_big_and_small ( ){
-			cout << " switching big and small !!!!!!!!!!!!!!!!!!!!!!"<<endl;
+			//cerr << " switching big and small !!!!!!!!!!!!!!!!!!!!!!"<<endl;
 			double tmp = big_;
 			big_ = small_;
 			small_ = tmp;
