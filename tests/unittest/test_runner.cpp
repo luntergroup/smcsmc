@@ -15,6 +15,7 @@ using namespace CppUnit;
 int new_forest_counter = 0;
 int delete_forest_counter = 0;
 int recombination_counter = 0; // DEBUG
+double recomb_opp = 0; // DEBUG
 
 
 int main(void) {
