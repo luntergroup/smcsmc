@@ -34,7 +34,7 @@
 #define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
 #endif
 
-
+extern double recomb_opp; //DEBUG
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
@@ -113,6 +113,7 @@ class Recombevent : public Coalevent{
                 //end_time, 
                 opportunity_y, event_code, end_base){ 
                 this->set_start_base (start_base); 
+                recomb_opp += this->opportunity();
                 };
     
     double opportunity() const { return this->opportunity_between ( this->start_base_, this->end_base_); };
