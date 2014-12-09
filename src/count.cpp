@@ -331,6 +331,8 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
         // only include the recombination opportunity that overlaps the interval [x_start, x_end]
         double start = max( current_Recombevent->start_base(), (double)x_start );
         double end   = min( current_Recombevent->end_base(),   (double)x_end );
+        cerr.precision(15);
+        cerr << weight << "\t" << current_Recombevent->opportunity_between( start , end ) <<endl;
         total_recomb_opportunity[ current_Recombevent->pop_i() ].add( weight * current_Recombevent->opportunity_between( start , end ) );
 
         // if this segment extends beyond x_end, we're done
