@@ -114,7 +114,7 @@ void CountModel::reset_Ne ( Model *model ){
             this->total_weighted_coal_opportunity[epoch_idx][pop_j].compute_final_answer();
             this->total_coal_count[epoch_idx][pop_j].compute_final_answer();
             double tmp_pop_size = this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer() / this->total_coal_count[epoch_idx][pop_j].final_answer() / (double)2;
-            tmp_pop_size = roundf(tmp_pop_size * (double)1e6)/(double)1e6;
+            //tmp_pop_size = roundf(tmp_pop_size * (double)1e6)/(double)1e6; // Rounding, Gerton: this is not a good idea
             model->addPopulationSize(this->change_times_[epoch_idx], pop_j, tmp_pop_size ,false, false);    
             cout << " popsize is equal to " << tmp_pop_size << " ( "<<this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer()<<" / "<< this->total_coal_count[epoch_idx][pop_j].final_answer() << "/2)" <<endl;
             }
@@ -125,7 +125,7 @@ void CountModel::reset_Ne ( Model *model ){
 
 void CountModel::reset_recomb_rate ( Model *model ){
     this->compute_recomb_rate();
-    this->inferred_recomb_rate = roundf ( this->inferred_recomb_rate * (double)1e16)/(double)1e16;
+    //this->inferred_recomb_rate = roundf ( this->inferred_recomb_rate * (double)1e16)/(double)1e16; // Rounding, Gerton: this is not a good idea
     model->setRecombinationRate( this->inferred_recomb_rate , false, false, 0);
     cout << " set recombination rate " << model->recombination_rate(0) << "("<<this->recomb_count_<<" / "<< this->recomb_opportunity_ << ")" <<endl;
     }
