@@ -41,6 +41,7 @@ class Two_doubles {
 		Two_doubles( double init = 0 ){
 			big_  = 0;
 			small_ = init;
+			cumsum_ = 0;
 			//big_added_counter_ = 0;
 		};
 		~Two_doubles(){};

@@ -30,7 +30,7 @@
 size_t Pattern::extract_Number( ) {
     char* end_ptr;
     if (!isdigit(*expr_)) {
-        throw std::invalid_argument( "While parsing expression: expected digit as first character in number; got " + (*this->expr_) );
+        throw std::invalid_argument( "While parsing expression: expected digit as first character in number; got " + std::string(this->expr_) );
     }
     size_t res = strtol(expr_, &end_ptr, 10); // convert a string to long
     // Advance the pointer and return the result
@@ -59,7 +59,7 @@ size_t Pattern::extract_SegmentFactors( ) {
 
 	// check that the format is correct
 	if (*this->expr_ != '*') {
-		throw std::invalid_argument( "While parsing expression: expected '*' to separate factors; got " + (*this->expr_) );
+		throw std::invalid_argument( "While parsing expression: expected '*' to separate factors; got " + std::string(this->expr_) );
 	}
     this->expr_++;
 
@@ -69,7 +69,7 @@ size_t Pattern::extract_SegmentFactors( ) {
 
 	op = *this->expr_;
 	if ( op != '+' && op != '\0' ) {
-		throw std::invalid_argument( "While parsing expression: expected '+' to separate terms; got " + (*this->expr_) );
+		throw std::invalid_argument( "While parsing expression: expected '+' to separate terms; got " + std::string(this->expr_) );
 	}
 
     return seg_level1 * seg_level2;
