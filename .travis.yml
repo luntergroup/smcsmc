@@ -15,7 +15,7 @@ before_script:
   - ./bootstrap
 
 script:
-  - make 
+  - make; sudo make install
   - make check
   #- cd tests; ./test_epoch_lag.sh
   #- cd tests; ./test_binary_sample_size.sh
