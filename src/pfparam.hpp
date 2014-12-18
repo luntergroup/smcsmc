@@ -157,6 +157,6 @@ class PfParam{
         string SURVIVOR_NAME;
         int heat_seq_window;
 
-    };
+};
     
 #endif

@@ -6,8 +6,7 @@ distdir = $(PACKAGE)-$(VERSION)
 #include doxygen-include.am
 #include aminclude.am 
 
-
-bin_PROGRAMS = smcsmc smcsmc_dbg
+bin_PROGRAMS = smcsmc smcsmc_dbg smcsmcRECOMBOFF smcsmcRECOMBOFF_dbg
 #smcsmc_omp smcsmc_dbg
 #particleCountainer particle param coalevent scrm_dummy 
 #check_PROGRAMS = smcsmc_dbg smcsmc_prof smcsmc_omp_prof unittests generate_vcf smcsmc_omp_prof smcsmc_omp
@@ -32,32 +31,32 @@ generate_vcf$(EXEEXT):
 ##exec_unittests: unittests 
 	##./unittests 
 
-## -DNDEBUG  options for not showing debug messages
 
-common_flags = -O3 -Wall -Wno-unknown-pragmas -I src/scrm/src/
-smcsmc_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   
+common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/
 
+# -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
+# -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
 
-smcsmc_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -DNDEBUG   #options for not showing debug messages
-smcsmc_dbg_CXXFLAGS= -std=c++0x -I src/scrm/src/ -Isrc/ #options for showing debug messages
+# Binary flags
+smcsmc_CXXFLAGS          = -g $(common_flags) -DNDEBUG   
+smcsmcRECOMBOFF_CXXFLAGS = $(smcsmc_CXXFLAGS) -D_RecombRecordingOff
+smcsmc_omp_CXXFLAGS      = -g $(common_flags) -DNDEBUG -fopenmp 
 
-smcsmc_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG -fopenmp  #options for not showing debug messages
-#smcsmc_omp_CXXFLAGS= -std=c++0x -g $(common_flags) -DNDEBUG   #options for not showing debug messages
+# Debugger flags
+smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ 
+smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
-smcsmc_omp_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -fopenmp -DNDEBUG   #options for not showing debug messages
+# Profiler flags
+smcsmc_prof_CXXFLAGS     = -std=c++0x -pg $(common_flags) -DNDEBUG   
+smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp 
 
-
-
-#smcsmc_prof_CXXFLAGS= -std=c++0x -pg $(common_flags) -fopenmp -DNDEBUG   #options for not showing debug messages
-#smcsmc_dbg_CXXFLAGS= -std=c++0x -fopenmp #options for showing debug messages
-
+# Tester flags
+unittests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/
+unittests_LDADD= -lcppunit -ldl
 
 ##export SMCSMCROOT=src
-
 ##export SCRMROOT=src/scrm/src
-
 ##export UNITTESTROOT=tests/unittest
-
 
 scrm_src = src/scrm/src/node.cc \
            src/scrm/src/node.h \
@@ -110,25 +109,28 @@ series_src = src/particleContainer_extra.cpp \
 omp_src = src/particleContainer_extra_omp.cpp \
           src/count_extra_omp.cpp
 
-shared_SOURCES = $(smcsmc_src) $(scrm_src)
 
+shared_SOURCES = $(smcsmc_src) $(scrm_src)
 smcsmc_shared_SOURCES = $(shared_SOURCES) 
 
-smcsmc_SOURCES = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
-#smcsmc_SOURCES = $(shared_SOURCES) debug/usage_ghost.cpp $(omp_src) 
+# Binary sources
+smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
+smcsmcRECOMBOFF_SOURCES = $(smcsmc_SOURCES)
+smcsmc_omp_SOURCES      = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(omp_src)
 
-smcsmc_omp_SOURCES = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(omp_src)
-#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
-#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
+# Debugger sources
+smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src) 
+smcsmcRECOMBOFF_dbg_SOURCES = $(smcsmc_dbg_SOURCES)
 
-#smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp 
+# Profiler sources
 smcsmc_prof_SOURCES = $(smcsmc_SOURCES)  
-
 smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)  
 
-smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src) 
+#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
+#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
+#smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp 
 
-
+# Tester sources
 test_src = tests/unittest/test_pattern.cpp \
 		   tests/unittest/test_runner.cpp \
 		   tests/unittest/test_Coalevent.cpp \
@@ -138,9 +140,6 @@ test_src = tests/unittest/test_pattern.cpp \
 		
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
 
-unittests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/
-
-unittests_LDADD= -lcppunit -ldl
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
 #-Isrc/scrm/src/ -Isrc/ -Itests/unittest/
  #including hearders for make distribution

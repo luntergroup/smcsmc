@@ -269,6 +269,11 @@ void ForestState::record_Recombevent(size_t pop_i,
                           double opp_y, 
                           eventCode event_code,
                           double start_base, double end_base){
+    
+    #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
+        return;
+    #endif
+    
     Recombevent* new_event = new Recombevent( pop_i,
                           //start_time,
                           //end_time, 
@@ -314,6 +319,9 @@ void ForestState::compute_opportunity_y_s ( ){
 }
 
 void ForestState::record_Recombevent_b4_extension (){
+    #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
+        return;
+    #endif
     this->compute_opportunity_y_s ();
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
         Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base(), this->next_base_ );
@@ -326,6 +334,10 @@ void ForestState::record_Recombevent_b4_extension (){
 
 
 void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
+    #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
+        return;
+    #endif
+    
     this->writable_model()->resetTime( event_height );
     recombination_counter++; // DEBUG    
     size_t epoch_i = this->writable_model()->current_time_idx_;

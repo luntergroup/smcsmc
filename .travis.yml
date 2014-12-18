@@ -16,5 +16,6 @@ before_script:
 
 script:
   - make 
+  - make check
   #- cd tests; ./test_epoch_lag.sh
-  - cd tests; ./test_binary_sample_size.sh
+  #- cd tests; ./test_binary_sample_size.sh
