@@ -1,6 +1,5 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <boost/lexical_cast.hpp> 
 
 //#include "pfparam.hpp"
 //#include "../src/usage.hpp"
