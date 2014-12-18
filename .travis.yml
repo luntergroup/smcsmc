@@ -17,5 +17,6 @@ before_script:
 script:
   - make; sudo make install
   - make check
+  - tests/check_smcsmcRECOMBOFF.sh
   #- cd tests; ./test_epoch_lag.sh
   #- cd tests; ./test_binary_sample_size.sh
