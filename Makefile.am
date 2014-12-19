@@ -6,11 +6,11 @@ distdir = $(PACKAGE)-$(VERSION)
 #include doxygen-include.am
 #include aminclude.am 
 
-bin_PROGRAMS = smcsmc smcsmc_dbg smcsmcRECOMBOFF smcsmcRECOMBOFF_dbg
-#smcsmc_omp smcsmc_dbg
+bin_PROGRAMS = smcsmc smcsmc_dbg smcsmcRECOMBOFF smcsmcSCRM
+#smcsmc_omp smcsmc_dbg smcsmcRECOMBOFF_dbg  smcsmcSCRM
 #particleCountainer particle param coalevent scrm_dummy 
 #check_PROGRAMS = smcsmc_dbg smcsmc_prof smcsmc_omp_prof unittests generate_vcf smcsmc_omp_prof smcsmc_omp
-check_PROGRAMS = unittests  smcsmc_prof 
+check_PROGRAMS = unittests  smcsmc_prof scrm
 
 TESTS = unittests 
 
@@ -38,9 +38,11 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/
 # -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
 
 # Binary flags
-smcsmc_CXXFLAGS          = -g $(common_flags) -DNDEBUG   
+smcsmc_CXXFLAGS          = -g $(common_flags) -DNDEBUG
 smcsmcRECOMBOFF_CXXFLAGS = $(smcsmc_CXXFLAGS) -D_RecombRecordingOff
+smcsmcSCRM_CXXFLAGS      = $(smcsmcRECOMBOFF_CXXFLAGS) -D_SCRM
 smcsmc_omp_CXXFLAGS      = -g $(common_flags) -DNDEBUG -fopenmp 
+scrm_CXXFLAGS            = -g $(common_flags) -DNDEBUG
 
 # Debugger flags
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ 
@@ -116,7 +118,9 @@ smcsmc_shared_SOURCES = $(shared_SOURCES)
 # Binary sources
 smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
 smcsmcRECOMBOFF_SOURCES = $(smcsmc_SOURCES)
+smcsmcSCRM_SOURCES      = $(smcsmc_SOURCES)
 smcsmc_omp_SOURCES      = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(omp_src)
+scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
 # Debugger sources
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src) 

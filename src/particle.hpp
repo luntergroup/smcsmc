@@ -147,5 +147,6 @@ class ForestState : public Forest{
         bool print_Migrevent();
         
         //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
-    };
+		std::string newick(Node *node) ;
+};
 #endif

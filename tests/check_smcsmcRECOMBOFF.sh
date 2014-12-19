@@ -15,26 +15,26 @@ function test_smcsmc {
     #fi
 
 	# Test using smcsmc self-checks
-    smcsmcRECOMBOFF_dbg $@ -seed $i > /dev/null 
+    ../smcsmcRECOMBOFF_dbg $@ -seed $i > /dev/null 
     if [ $? -ne 0 ]; then
       echo ""
       echo "Executing \"smcsmcRECOMBOFF_dbg $@ -seed $i\" failed."
-      echo "Debug Call: make -mj2 smcsmcRECOMBOFF_dbg && smcsmcRECOMBOFF_dbg $@ -seed $i 2>&1 | less"
+      echo "Debug Call: make -mj2 smcsmcRECOMBOFF_dbg && ../smcsmcRECOMBOFF_dbg $@ -seed $i 2>&1 | less"
       exit 1
     fi
 
     # Test for memory leaks
-    valgrind --error-exitcode=1 --leak-check=full -q smcsmcRECOMBOFF $@ -seed $i > /dev/null
+    valgrind --error-exitcode=1 --leak-check=full -q ../smcsmcRECOMBOFF $@ -seed $i > /dev/null
     if [ $? -ne 0 ]; then
       echo ""
       echo "Valgrind check of \"smcsmcRECOMBOFF $@ -seed $i\" failed."
       exit 1
     fi
 	
-	# Test for updating recomb rate
-	smcsmcRECOMBOFF $@ -seed $i -EM 2 | grep "recomb rate " | sed -e "s/^.*= //g" -e "s/ //g" > rate_tmp
-	diff <(head -1 rate_tmp) <(tail -1 rate_tmp)
-	if [ $? -ne 0 ]; then
+    # Test for updating recomb rate
+    ../smcsmcRECOMBOFF $@ -seed $i -EM 2 | grep "recomb rate " | sed -e "s/^.*= //g" -e "s/ //g" > rate_tmp
+    diff <(head -1 rate_tmp) <(tail -1 rate_tmp)
+	  if [ $? -ne 0 ]; then
       echo ""
       echo "Failed at random seed: " ${i}
       echo "Testing for smcsmcRECOMBOFF updating recomb rate."
@@ -42,8 +42,8 @@ function test_smcsmc {
     fi
     
     # Test for single iteration smcsmc vs smcsmcRECOMBOFF
-    smcsmcRECOMBOFF $@ -seed $i -o recomboff > /dev/null
-    smcsmc          $@ -seed $i -o recombon  > /dev/null
+    ../smcsmcRECOMBOFF $@ -seed $i -o recomboff > /dev/null
+    ../smcsmc          $@ -seed $i -o recombon  > /dev/null
     diff <(tail -n+4  recomboff.log | sed -e "/inferred/d") <(tail -n+4  recombon.log | sed -e "/inferred/d")
     if [ $? -ne 0 ]; then
       echo ""

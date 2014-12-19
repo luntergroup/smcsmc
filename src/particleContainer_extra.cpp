@@ -58,6 +58,9 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
              */
             if ( updated_to < extend_to ) {
                 this->particles[particle_i]->sampleNextGenealogy();
+                //#ifdef _SCRM 
+                //cout << "Tree: " << this->particles[particle_i]->newick( this->particles[particle_i]->local_root() ) << ";" << endl;
+                //#endif
                 if ( this->heat_bool_ ){
                     TmrcaState tmrca( this->particles[particle_i]->site_where_weight_was_updated(), this->particles[particle_i]->local_root()->height() );
                     this->particles[particle_i]->TmrcaHistory.push_back ( tmrca );

@@ -270,9 +270,9 @@ void ForestState::record_Recombevent(size_t pop_i,
                           eventCode event_code,
                           double start_base, double end_base){
     
-    #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
-        return;
-    #endif
+    //#ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
+        //return;
+    //#endif
     
     Recombevent* new_event = new Recombevent( pop_i,
                           //start_time,
@@ -319,10 +319,11 @@ void ForestState::compute_opportunity_y_s ( ){
 }
 
 void ForestState::record_Recombevent_b4_extension (){
+    
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
-    this->compute_opportunity_y_s ();
+	this->compute_opportunity_y_s ();
     for ( size_t epoch_i = 0 ; epoch_i < this->opportunity_y_s.size() ; epoch_i ++ ){
         Recombevent* new_event = new Recombevent( 0, this->opportunity_y_s[epoch_i], NOEVENT, this->current_base(), this->next_base_ );
         new_event->set_epoch_index ( epoch_i ) ;
@@ -337,9 +338,8 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
-    
-    this->writable_model()->resetTime( event_height );
     recombination_counter++; // DEBUG    
+    this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
     dout << "current_time_idx_ =  " << epoch_i << endl;
     assert ( this->RecombeventContainer[epoch_i].size() > 0 );
@@ -502,3 +502,23 @@ double ForestState::calculate_likelihood( ) {
     return likelihood;
 }
 
+std::string ForestState::newick(Node *node) {
+  if(node->in_sample()){
+    std::ostringstream label_strm;
+    label_strm<<node->label();
+    return label_strm.str();
+  }
+  else{
+    Node *left = this->trackLocalNode(node->first_child());
+    double t1 = node->height() - left->height();
+    std::ostringstream t1_strm;
+    t1_strm << t1 / (4 * this->model().default_pop_size);
+
+    Node *right = this->trackLocalNode(node->second_child());
+    double t2 = node->height() - right->height();
+    std::ostringstream t2_strm;
+    t2_strm << t2 / (4 * this->model().default_pop_size);
+
+    return "("+this->newick(left)+":"+t1_strm.str()+","+ this->newick(right)+":"+t2_strm.str() +")";
+  }
+}

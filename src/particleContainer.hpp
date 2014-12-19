@@ -65,7 +65,7 @@ class ParticleContainer{
         //
         void print();
         bool check_state_orders();
-        
+        void print_particle_newick();
     private:
         
         // 

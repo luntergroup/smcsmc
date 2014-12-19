@@ -105,7 +105,9 @@ void pfARG_core(PfParam &pfARG_para,
                                     pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
-
+	#ifdef _SCRM    
+    current_states.print_particle_newick();
+    #endif
     /*! Initialize prior Ne */
     countNe->init();
     
@@ -220,11 +222,15 @@ void pfARG_core(PfParam &pfARG_para,
 	
     /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
     current_states.appendingStuffToFile( sequence_end, pfARG_para);    
-
+	
+	#ifdef _SCRM    
+    current_states.print_particle_newick();
+    #endif
     current_states.clear(); // This line is sufficient to clear the memory.
     Segfile->reset_data_to_first_entry();
     
 	cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-	cout.precision(15);
+	//cout.precision(15);
 	cout << "Actual recomb op is "<<recomb_opp <<endl;
-    } // End of void pfARG_core( ... )
+
+} // End of void pfARG_core( ... )

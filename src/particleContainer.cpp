@@ -44,12 +44,14 @@ ParticleContainer::ParticleContainer(
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
+        Model * new_model =  new Model(*model);
+        #ifndef _SCRM
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
 		RandomGenerator* new_rg = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-
-        Model * new_model =  new Model(*model);
+        #else
+        RandomGenerator* new_rg = new MersenneTwister( this->random_generator_->seed() , this->random_generator_->ff() ); 
+        #endif
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
-        
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );    
         new_state->buildInitialTree();
@@ -441,3 +443,11 @@ void ParticleContainer::print_particle_probabilities(){
         cout<<"weight = "<<this->particles[i]->weight()<<endl;
         }
     }
+
+
+void ParticleContainer::print_particle_newick(){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        cout << this->particles[i]->newick( this->particles[i]->local_root() ) << ";" << endl;
+    }
+}    
+
