@@ -25,7 +25,7 @@
 #include "forest.h"
 #include "coalevent.hpp"
 #include <deque>
-
+#include "segdata.hpp"
 
 #ifndef NDEBUG
 #define ForestStatedout (std::cout << "    ForestState ")
@@ -88,7 +88,8 @@ class ForestState : public Forest{
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         
-        
+        // Extend
+        double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
         vector <double> opportunity_y_s ; 
 
         // Record events
@@ -145,6 +146,9 @@ class ForestState : public Forest{
         bool print_Coalevent();
         bool print_Recombevent();
         bool print_Migrevent();
+  
+        
+
         
         //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
 		std::string newick(Node *node) ;

@@ -505,6 +505,51 @@ double ForestState::calculate_likelihood( ) {
     return likelihood;
 }
 
+
+double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight, bool recordEvents ) {
+
+    double updated_to = this->site_where_weight_was_updated();
+    dout << "Particle current base is at " << this->current_base() << " weight is updated to " << updated_to <<endl;
+    assert (updated_to >= this->current_base());
+    double likelihood = 1.0;
+    
+    while ( updated_to < extend_to ) {
+        
+        dout << "  Now at " <<this->current_base()<< " updated_to " << updated_to << " and extending to " << extend_to << endl;            
+        /*!
+         * First, update the likelihood up to either extend_to or the end of this state
+         */
+        double update_to = min( extend_to, this->next_base() );
+        double length_of_local_tree = this->getLocalTreeLength(); // in generations
+        double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
+        dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
+        dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
+        likelihood *= likelihood_of_segment;
+        updated_to = update_to;  // rescues the invariant
+        /*!
+         * Next, if we haven't reached extend_to now, add a new state and iterate
+         */
+        if ( updated_to < extend_to ) {
+            this->sampleNextGenealogy( recordEvents );
+
+            //if ( this->heat_bool_ ){
+                //TmrcaState tmrca( this->site_where_weight_was_updated(), this->local_root()->height() );
+                //this->TmrcaHistory.push_back ( tmrca );
+            //}
+            
+        }
+        
+    }
+    assert (updated_to == extend_to);        
+    if (updateWeight) {
+        this->setParticleWeight( this->weight() * likelihood );
+    }
+    this->setSiteWhereWeightWasUpdated( extend_to );
+    return likelihood;
+}
+
+
+
 std::string ForestState::newick(Node *node) {
   if(node->in_sample()){
     std::ostringstream label_strm;
