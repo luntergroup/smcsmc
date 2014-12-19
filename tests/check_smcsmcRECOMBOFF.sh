@@ -5,15 +5,6 @@ function test_smcsmc {
   for i in `seq ${begin} ${end}`; do
     echo -n "."
 
-    ## Test using smcsmc self-checks
-    #smcsmc_dbg $@ -seed $i > /dev/null 
-    #if [ $? -ne 0 ]; then
-      #echo ""
-      #echo "Executing \"smcsmc_dbg $@ -seed $i\" failed."
-      #echo "Debug Call: make -mj2 smcsmc_dbg && smcsmc_dbg $@ -seed $i 2>&1 | less"
-      #exit 1
-    #fi
-
 	# Test using smcsmc self-checks
     ../smcsmcRECOMBOFF_dbg $@ -seed $i > /dev/null 
     if [ $? -ne 0 ]; then
@@ -57,7 +48,7 @@ function test_smcsmc {
 }
 
 begin=1
-end=2
+end=20
 
 echo "Testing smcsmcRECOMBOFF "
  test_smcsmc -nsam 2 -Np 1000 -r 130 1000000 || exit 1

@@ -293,14 +293,13 @@ void ForestState::compute_opportunity_y_s ( ){
     dout << endl;
     ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
     this->opportunity_y_s.clear();
-    this->writable_model()->resetTime( 0 );
     
-    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
+    // iterate over time intervals (but do NOT prune branches at this stage)
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0), false); ti.good(); ++ti) {
         ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - "
              << (*ti).end_height() << " " ;
         // Need to consider multiple populations
         dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
-        this->writable_model()->resetTime( (*ti).start_height() );
         if ( (this->writable_model()->current_time_idx_ ) >= this->opportunity_y_s.size() ){
             this->opportunity_y_s.push_back( ti.numberOfLocalContemporaries() * ( (*ti).end_height() - (*ti).start_height() ) );
         } else{
@@ -317,6 +316,7 @@ void ForestState::compute_opportunity_y_s ( ){
     //dout << "total_bl " << total_bl<< ", this->local_tree_length() =" << this->local_tree_length()<<endl;
     assert ( (total_bl - this->local_tree_length() ) < 1e-8);
     assert ( opportunity_y_s.size() <= this->model().change_times_.size() );
+    
     this->writable_model()->current_time_idx_ = current_time_idx_cache;
 }
 
