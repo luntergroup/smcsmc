@@ -289,6 +289,7 @@ void ForestState::record_Recombevent(size_t pop_i,
 
 
 void ForestState::compute_opportunity_y_s ( ){
+    size_t current_time_idx_cache = this->writable_model()->current_time_idx_;
     dout << endl;
     ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
     this->opportunity_y_s.clear();
@@ -316,10 +317,10 @@ void ForestState::compute_opportunity_y_s ( ){
     //dout << "total_bl " << total_bl<< ", this->local_tree_length() =" << this->local_tree_length()<<endl;
     assert ( (total_bl - this->local_tree_length() ) < 1e-8);
     assert ( opportunity_y_s.size() <= this->model().change_times_.size() );
+    this->writable_model()->current_time_idx_ = current_time_idx_cache;
 }
 
-void ForestState::record_Recombevent_b4_extension (){
-    
+void ForestState::record_Recombevent_b4_extension (){ 
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
@@ -338,7 +339,8 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
-    recombination_counter++; // DEBUG    
+    recombination_counter++; // DEBUG
+    //size_t current_time_idx_cache = this->writable_model()->current_time_idx_;
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
     dout << "current_time_idx_ =  " << epoch_i << endl;
@@ -348,6 +350,7 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     this->RecombeventContainer[epoch_i].back()->set_event_state ( EVENT );
     this->RecombeventContainer[epoch_i].back()->set_num_event( 1 );
     assert ( this->RecombeventContainer[ epoch_i ].back()->epoch_index() == epoch_i );
+    //this->writable_model()->current_time_idx_ = current_time_idx_cache;
 }
 
 

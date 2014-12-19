@@ -18,6 +18,6 @@ script:
   - make; sudo make install
   - make check
   - cd tests; ./check_smcsmcSCRM_vs_scrm.sh; cd ..
-  - cd tests; check_smcsmcRECOMBOFF.sh; cd ..
+  - cd tests; ./check_smcsmcRECOMBOFF.sh; cd ..
   #- cd tests; ./test_epoch_lag.sh; cd ..
   #- cd tests; ./test_binary_sample_size.sh; cd ..
