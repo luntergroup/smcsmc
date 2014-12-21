@@ -25,8 +25,7 @@ AC_PROG_RANLIB
 #AM_PROG_CC_C_O # this is needed on cluster 3 but not rescomp
 
 #Checks for libraries
-AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/opt/local/lib)
-#AC_CHECK_LIB(cppunit,TestCase,[],LDFLAGS=-L/home/joezhu/cppunit/lib)
+AC_CHECK_LIB(cppunit,TestCase,[])
 # Checks for header files for scrm.
 AC_HEADER_STDC
 AC_LANG(C++) 
