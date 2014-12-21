@@ -19,7 +19,8 @@ script:
   - make check
   - cd tests; 
   - ./check_smcsmcSCRM_vs_scrm.sh; 
-  - ./check_smcsmcRECOMBOFF.sh; 
+  - if [ $TRAVIS_OS_NAME == linux ]; then ./check_smcsmcRECOMBOFF.sh; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then sed -e "s/end=20/end=3/g"; > check_smcsmcRECOMBOFF_osx.sh ; chmod a+x check_smcsmcRECOMBOFF_osx.sh; ./check_smcsmcRECOMBOFF_osx.sh; fi
   - cd ..
   #- cd tests; ./test_epoch_lag.sh; cd ..
   #- cd tests; ./test_binary_sample_size.sh; cd ..
