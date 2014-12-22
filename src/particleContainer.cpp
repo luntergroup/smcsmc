@@ -44,14 +44,14 @@ ParticleContainer::ParticleContainer(
     this->set_current_printing_base(0);    
 	dout << " --------------------   Particle Initial States   --------------------" << std::endl;	
 	for ( size_t i=0; i < Num_of_states ; i++ ){
+        Model * new_model =  new Model(*model);
+        #ifndef _SCRM
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
 		RandomGenerator* new_rg = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-		//RandomGenerator* new_rg = new MersenneTwister( new_seed ); 
-
-        Model * new_model =  new Model(*model);
+        #else
+        RandomGenerator* new_rg = new MersenneTwister( this->random_generator_->seed() , this->random_generator_->ff() ); 
+        #endif
 		ForestState* new_state = new ForestState( new_model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
-        //ForestState* new_state = new ForestState( model, new_rg );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
-        
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );    
         new_state->buildInitialTree();
@@ -180,8 +180,8 @@ ParticleContainer::~ParticleContainer(){
  */ 
 void ParticleContainer::clear(){
 	// When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-    // cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-    // cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
+     cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+     cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
     
     dout << "ParticleContainer clear() is called" << endl;
 	for (size_t i = 0; i < this->particles.size(); i++){
@@ -255,22 +255,23 @@ void ParticleContainer::normalize_probability(){
     }
 
 
-void ParticleContainer::update_state_to_data( double mutation_rate, size_t loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
+void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
     
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
-
+    #ifndef _REJECTION
     //Update weight for seeing mutation at the position 
     dout << " Update state weight at a SNP "<<endl;
     this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_start ); 
 
     //Extend ARGs and update weight for not seeing mutations along the equences
     this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) , Segfile->segment_state() );
-
-    
+    //#else
+    #endif
+    dout << "Extended until " << this->particles[0]->current_base() <<endl;
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );
-    }
+}
 
 
 /*! 
@@ -431,16 +432,11 @@ void ParticleContainer::set_particles_with_random_weight(){
     }
 
 //// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
-//void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double seqend ){
+//void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double loci_length ){
     //for (size_t i = 0; i < this->particles.size(); i++){
-        //double opportunity_x = seqend - this->particles[i]->current_base();
-        //double opportunity_y = this->particles[i]->getLocalTreeLength();
-        //double recomb_opportunity = opportunity_x * opportunity_y;
-        //this->particles[i]->record_Recombevent(0, 
-                                               ////0, 0, 
-                                               //recomb_opportunity, NOEVENT);
-        //}
+        //this->particles[i]->record_the_final_recomb_opportunity ( loci_length );
     //}
+//}
 
 
 void ParticleContainer::print_particle_probabilities(){
@@ -448,3 +444,11 @@ void ParticleContainer::print_particle_probabilities(){
         cout<<"weight = "<<this->particles[i]->weight()<<endl;
         }
     }
+
+
+void ParticleContainer::print_particle_newick(){
+    for (size_t i = 0; i < this->particles.size(); i++){
+        cout << this->particles[i]->newick( this->particles[i]->local_root() ) << ";" << endl;
+    }
+}    
+

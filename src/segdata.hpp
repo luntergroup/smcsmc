@@ -49,9 +49,10 @@ class Segment{
     Segment_State segment_state() const { return this->segment_state_; }
     //bool variant_state() const { return this->variant_state_; }
     bool genetic_break() const { return this->genetic_break_; }
+    double seqlen_;
     // Important stuff
-    size_t segment_start_;
-    size_t segment_length_;
+    double segment_start_;
+    double segment_length_;
     Segment_State segment_state_;
     //bool variant_state_;                   // Variant state (given it is not missing ) at the start of the segment, True or False
     bool genetic_break_;
@@ -76,7 +77,7 @@ class Segment{
     int field_index;
     
     
-    Segment( string file_name , size_t nsam );
+    Segment( string file_name , size_t nsam, double seqlen );
     ~Segment(){};
     
     // Methods
@@ -88,9 +89,9 @@ class Segment{
     bool end_data_;
     
 public:
-    size_t segment_start() const { return this->segment_start_; }
-    size_t segment_length() const { return this->segment_length_; }
-    size_t segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
+    double segment_start() const { return this->segment_start_; }
+    double segment_length() const { return this->segment_length_; }
+    double segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
 
     void read_new_line();
     void reset_data_to_first_entry(){ 
@@ -99,12 +100,16 @@ public:
         this->segment_start_ = 1;
         this->segment_length_ = 0;
         if ( this->empty_file ){
-            this->segment_length_ = 1000000;
-            this->segment_state_ = SEGMENT_MISSING;
-            //this->variant_state_ = false;
-            this->genetic_break_ = true; 
+            this->reset_empty_entry();
         }
     };
+    
+    void reset_empty_entry(){
+        this->segment_length_ = this->seqlen_/20 ;
+        this->segment_state_ = SEGMENT_MISSING;
+        //this->variant_state_ = false;
+        this->genetic_break_ = true;         
+    }
 
     bool end_data() const {return end_data_; }
     void set_end_data ( bool condition ) { this->end_data_ = condition ; }

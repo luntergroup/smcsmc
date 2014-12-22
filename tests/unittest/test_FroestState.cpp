@@ -1,8 +1,7 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <boost/lexical_cast.hpp> 
 
-#include "../src/particle.hpp"
+#include "../../src/particle.hpp"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

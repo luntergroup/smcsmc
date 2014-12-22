@@ -25,32 +25,37 @@
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
     // loop over all epochs
     for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
-
+        
         // calculate the required lagging for this epoch; don't use lagging for the final interval
         double lagging = end_data ? 0 : lags[epoch_idx];
         double x_end = current_base - lagging;
+        
+        if ( x_end < this->counted_to[epoch_idx] ) continue;
 
-//cout << "["<<epoch_idx<< "] " << this->change_times_[epoch_idx] << " x_end = " << x_end<<endl;
+        dout << "At epoch "<< epoch_idx<< ", and current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
         // Lagging is used to update the current count with probabilities that are lagging-distanced in the future
         // const_minimal_lag_update_ratio is for optimise purpose, so the count will not updated as frequent
-        if ( (x_end - this->counted_to[epoch_idx]) <= lagging * this->const_minimal_lag_update_ratio_ ) {
+        
+        if ( (x_end - this->counted_to[epoch_idx]) < lagging * this->const_minimal_lag_update_ratio_ ) {
             continue;
-			}	
-		// loop over all particles
+        }	
+		
+        // loop over all particles
 		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
 
 			ForestState* thisState = Endparticles.particles[i];
 			double weight = thisState->weight();
 
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
-            this->update_coalescent_count( thisState->CoaleventContainer[ epoch_idx ],   weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ] );
-            this->update_recombination_count( thisState->RecombeventContainer[ epoch_idx ], weight, x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );
+            this->update_coalescent_count( thisState->CoaleventContainer[ epoch_idx ], weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ] );
+            this->update_recombination_count( thisState->RecombeventContainer[ epoch_idx ], weight, this->counted_to[epoch_idx], x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ] );
             if (this->population_number() > 1){
                 this->update_migration_count( thisState->MigreventContainer[ epoch_idx ], weight, x_end, epoch_idx );
-                }
             }
-        this->counted_to[epoch_idx] = x_end;
         }
+        
+        this->counted_to[epoch_idx] = x_end;
     }
+}

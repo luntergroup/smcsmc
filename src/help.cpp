@@ -24,7 +24,7 @@
 
 void Help_option(){
     //cout << "Too few command line arguments" << endl;
-    cout << "    Options:" << endl;
+    cout << "Options:" << endl;
     cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]." << endl;
     cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Proportion of the effective sample size [ 0.6 ]." << endl;
     cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segment [ \"3*1+2*3+4\" ]." <<endl;
@@ -50,13 +50,9 @@ void Help_example(){
 };
 
 void Help_header(){
-    cout << endl;
-    cout << endl;
-    cout << "*****************************************************************" << endl;
-    cout << "*                          smcsmc                               *" << endl;
-    cout << "*              Author:  Sha Zhu, Gerton Lunter                  *" << endl;
-    cout << "*****************************************************************" << endl;
-    cout << endl<<endl;
+    cout << "smcsmc" << endl;
+    cout << "  version: " << VERSION << endl;
+    cout << "  authored by Sha (Joe) Zhu and Gerton Lunter " <<endl;
     Help_option();
     Help_example();
     exit(1);

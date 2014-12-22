@@ -1,12 +1,11 @@
 #include <cppunit/TestCase.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <boost/lexical_cast.hpp> 
 
 #include "count.hpp"
 #include <algorithm>    // std::equal
 
 #include "model.h"
-#include "param.h"
+//#include "param.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 

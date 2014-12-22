@@ -27,6 +27,14 @@
 #ifndef EventRecorder
 #define EventRecorder
 
+#ifndef NDEBUG
+#define EventRecorderdout (std::cout << "    EventRecorder ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
+#endif
+
+extern double recomb_opp; //DEBUG
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
@@ -57,9 +65,12 @@ class Coalevent{
         size_t num_event () const { return this->num_event_;}
         void  set_num_event ( size_t num ){ this->num_event_ = num; }    
         
-        double opportunity() const {return this->opportunity_;};
-        void set_opportunity( double value ) { this->opportunity_ = value;}
-                
+        //double opportunity() const {return this->opportunity_;};
+        //void set_opportunity( double value ) { this->opportunity_ = value;}
+        
+        double opportunity_y() const { return this->opportunity_y_; }
+        void set_opportunity_y ( double value ) { this->opportunity_y_ = value; }
+
         eventCode event_state() const { return this->event_state_ ;}
         void set_event_state(eventCode state){ this->event_state_ = state; }
         
@@ -73,15 +84,17 @@ class Coalevent{
         Coalevent(size_t pop_i, 
                   //double start_time,
                   //double end_time, 
-                  double opportunity, eventCode event_code );
-
+                  double opportunity_y, eventCode event_code, double end_base );
+                  
+        double opportunity() const {return this->opportunity_y_; };
         bool print_event();
         // Members
         size_t epoch_index_;
         size_t pop_i_;                
         //double start_height_;
         double end_height_;
-        double opportunity_;        
+        //double opportunity_;
+        double opportunity_y_;
         size_t num_event_;        
         eventCode event_state_; 
         double end_base_;
@@ -94,14 +107,20 @@ class Recombevent : public Coalevent{
     friend class CountModel;
     friend class ForestState;
     //public:
-    Recombevent( size_t pop_i, double opportunity, eventCode event_code, double start_base )
+    Recombevent( size_t pop_i, double opportunity_y, eventCode event_code, double start_base, double end_base)
              : Coalevent ( pop_i, 
                 //start_time, 
                 //end_time, 
-                opportunity, event_code ){ 
-                    this->set_start_base (start_base); 
-                    };
-
+                opportunity_y, event_code, end_base){ 
+                this->set_start_base (start_base); 
+                recomb_opp += this->opportunity();
+                };
+    
+    double opportunity() const { return this->opportunity_between ( this->start_base_, this->end_base_); };
+    double opportunity_between( double start, double end ) const {
+        assert ( end <=  this->end_base_);
+        assert ( start >= this->start_base_);
+        return this->opportunity_y_* ( end - start); };
     bool print_event();
     double start_base() const { return this->start_base_; }
     void set_start_base ( double base ) { this->start_base_ = base; }
@@ -115,11 +134,11 @@ class Recombevent : public Coalevent{
 class Migrevent : public Coalevent{
     friend class CountModel;
     friend class ForestState;
-    Migrevent( size_t pop_i, double opportunity, eventCode event_code, size_t mig_pop )
+    Migrevent( size_t pop_i, double opportunity_y, eventCode event_code, size_t mig_pop, double end_base )
              : Coalevent ( pop_i, 
                 //start_time, 
                 //end_time, 
-                opportunity, event_code ){ 
+                opportunity_y, event_code, end_base ){ 
                     this->set_mig_pop_i (mig_pop); 
                     };
 
@@ -128,6 +147,7 @@ class Migrevent : public Coalevent{
         };
     ~Migrevent(){};
     
+    double opportunity() const {return this->opportunity_y_; };
     bool print_event();
     size_t mig_pop() const {return this->mig_pop_; } 
     void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }    

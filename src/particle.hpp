@@ -25,21 +25,23 @@
 #include "forest.h"
 #include "coalevent.hpp"
 #include <deque>
+#include "segdata.hpp"
 
+#ifndef NDEBUG
+#define ForestStatedout (std::cout << "    ForestState ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define ForestStatedout 0 && (std::cout << "    ForestState ")
+#endif
 
-//#ifndef NDEBUG
-//#define dout std::cout
-//#else
-//#define dout 0 && std::cout
-//#endif
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE
 #define PARTICLE
 
-//extern int new_forest_counter;
-//extern int delete_forest_counter;
-//extern int recombination_counter; //DEBUG
+extern int new_forest_counter;
+extern int delete_forest_counter;
+extern int recombination_counter; //DEBUG
 
 struct TmrcaState {
     TmrcaState (double base, double tmrca) { 
@@ -86,30 +88,39 @@ class ForestState : public Forest{
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         
-        
+        // Extend
+        double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
         vector <double> opportunity_y_s ; 
 
         // Record events
         void compute_opportunity_y_s ();
-        void record_Recombevent_atNewGenealogy ( double recomb_opportunity_x, bool record_event );
-        void record_all_event(TimeInterval const &ti);
+        void record_Recombevent_b4_extension ( );
+        void record_Recombevent_atNewGenealogy ( double event_height );
+        //void record_the_final_recomb_opportunity ( double loci_length );
+        void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
         void record_Coalevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code);
+                          eventCode event_code, double end_base);
                                   
         void record_Recombevent(size_t pop_i,
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code, double start_base);
+                          eventCode event_code, double start_base, double end_base);
 
         void record_Migrevent(size_t pop_i,                          
                           //double start_time, 
                           //double end_time, 
                           double opportunity, 
-                          eventCode event_code, size_t mig_pop);                          
+                          eventCode event_code, size_t mig_pop, double end_base);                          
+        
+        //void record_recomb_opp_within_scrm ( double recomb_rate) const {
+            //cout << "recomb_rate " << recomb_rate <<endl;
+            //recomb_opp_x_within_scrm = recomb_opp_x_within_scrm + recomb_rate / this->model().recombination_rate();
+        //}
+        void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
         
         // Setters and getters: //
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
@@ -135,8 +146,11 @@ class ForestState : public Forest{
         bool print_Coalevent();
         bool print_Recombevent();
         bool print_Migrevent();
+  
         
+
         
         //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
-    };
+		std::string newick(Node *node) ;
+};
 #endif

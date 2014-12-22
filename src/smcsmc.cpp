@@ -27,9 +27,10 @@
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */
-//int new_forest_counter    = 0; // DEBUG
-//int delete_forest_counter = 0; // DEBUG
-//int recombination_counter = 0; // DEBUG
+int new_forest_counter    = 0; // DEBUG
+int delete_forest_counter = 0; // DEBUG
+int recombination_counter = 0; // DEBUG
+double recomb_opp = 0; // DEBUG
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]){
         
         /*! Clean up */
         delete countNe;
-        //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+        cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 
     catch (const exception &e) {
@@ -80,20 +81,22 @@ int main(int argc, char *argv[]){
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ){
-                    
+	recombination_counter = 0; // DEBUG
+	recomb_opp = 0;// DEBUG
+	
     int who = RUSAGE_SELF;     // PROFILING
     struct rusage usage;       // PROFILING
     struct rusage *p = &usage; // PROFILING
 
-    Model *model = pfARG_para.model;
-    MersenneTwister *rg = pfARG_para.rg;
-    size_t Nparticles = pfARG_para.N ;
-    Segment *Segfile = pfARG_para.Segfile;
+    Model *model         = pfARG_para.model;
+    MersenneTwister *rg  = pfARG_para.rg;
+    size_t Nparticles    = pfARG_para.N ;
+    Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
 
-    Segfile->read_new_line();
-    cout<< "############# starting seg file at base " <<Segfile->segment_start()<<endl;
-    
+
+    cout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
+    Segfile->read_new_line();    
     /*! Initial particles */ 
     //double initial_position = 0;
     ParticleContainer current_states(model, rg, Nparticles, 
@@ -102,10 +105,12 @@ void pfARG_core(PfParam &pfARG_para,
                                     pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
-
+	#ifdef _SCRM    
+    current_states.print_particle_newick();
+    #endif
     /*! Initialize prior Ne */
     countNe->init();
-
+    
     /*! Go through seg data */
     bool force_update = false;
     do{
@@ -167,16 +172,16 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles 
          *      In this case, we will be update till Segfile->site() 
          */
-        current_states.update_state_to_data( mutation_rate, model->loci_length(), Segfile, weight_cum_sum);
+        current_states.update_state_to_data( mutation_rate, (double)model->loci_length(), Segfile, weight_cum_sum);
                 
         /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
-        current_states.appendingStuffToFile( min(Segfile->segment_end(),  model->loci_length()), pfARG_para);    
+        current_states.appendingStuffToFile( min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para);    
 
         /*! UPDATE CUM COUNT AND OPPORTUNITIES ACCORDING TO THE PARTICLE WEIGHT */ 
-        countNe->extract_and_update_count( current_states , min(Segfile->segment_end(),  model->loci_length()) );
+        countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
         
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( min(Segfile->segment_end(),  model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
+        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
 
 
         if ( pfARG_para.ESS() == 1 ){
@@ -184,11 +189,11 @@ void pfARG_core(PfParam &pfARG_para,
             current_states.set_particles_with_random_weight();    
             }
         /*! ESS resampling. Filtering step*/        
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),  model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
-        if ( Segfile->segment_end() >= model->loci_length() ){
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        
+        if ( Segfile->segment_end() >= (double)model->loci_length() ){
             cout<<" Segment data is beyond loci length"<<endl;
             Segfile->set_end_data (true);
-
             //break;
         }
         
@@ -202,12 +207,12 @@ void pfARG_core(PfParam &pfARG_para,
     //current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
     // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
     // should include coalescent events as well ...
+    
     //current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
-    //dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
+    dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 
-
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
@@ -217,7 +222,15 @@ void pfARG_core(PfParam &pfARG_para,
 	
     /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */         
     current_states.appendingStuffToFile( sequence_end, pfARG_para);    
-
+	
+	#ifdef _SCRM    
+    current_states.print_particle_newick();
+    #endif
     current_states.clear(); // This line is sufficient to clear the memory.
     Segfile->reset_data_to_first_entry();
-    } // End of void pfARG_core( ... )
+    
+	cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+	//cout.precision(15);
+	cout << "Actual recomb op is "<<recomb_opp <<endl;
+
+} // End of void pfARG_core( ... )

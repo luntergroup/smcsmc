@@ -24,19 +24,19 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam) { 
+Segment::Segment( string file_name, size_t nsam, double seqlen ){ 
     
     this->file_name_ = file_name;
     this->nsam_ = nsam;
+    this->seqlen_ = seqlen;
     this->segment_start_ = 1;
     this->current_line_index_ = 0;
+    this->end_data_ = false;
+    this->empty_file = false;
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
-        this->segment_length_ = 1000000;
-        this->segment_state_ = SEGMENT_MISSING;
-        //this->variant_state_ = false;
-        this->genetic_break_ = true; 
+        this->reset_empty_entry();
         for ( size_t i = 0; i < nsam_; i++){
             this->allelic_state_at_Segment_start.push_back ( -1 );
         }
@@ -47,7 +47,7 @@ Segment::Segment( string file_name, size_t nsam) {
 }
 
 void Segment::init(){
-    this->end_data_ = false;
+
     ifstream in_file;
     in_file.open( this->file_name_.c_str() );
     if ( in_file.good() ){
@@ -65,6 +65,7 @@ void Segment::init(){
     in_file.close();
     
     this->segment_length_ = 0;    
+    
     this->read_new_line ();
     
     
@@ -87,6 +88,7 @@ void Segment::read_new_line(){
      */ 
 
     this->initialize_read_newLine(); 
+    
     if ( this->empty_file ){ 
         //this->end_data_ = true; 
         return; }
