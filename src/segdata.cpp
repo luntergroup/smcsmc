@@ -53,8 +53,10 @@ void Segment::init(){
     if ( in_file.good() ){
         getline ( in_file, this->tmp_line ); 
         //dout << this->tmp_line <<endl;
-        while ( this->tmp_line.size()>0 ){
-            buffer_lines.push_back ( this->tmp_line );
+        while ( this->tmp_line.size() > 0 ){
+            if ( this->tmp_line[0] != '#' ){
+                buffer_lines.push_back ( this->tmp_line );
+            }
             getline ( in_file, this->tmp_line );
         }    
     
