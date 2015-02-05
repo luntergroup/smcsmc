@@ -108,8 +108,8 @@ public:
     void reset_empty_entry(){
         // Round segment_length_ to an integer
         this->segment_length_ = (size_t)this->seqlen_ / this->num_of_expected_mutations_ ;
-        dout << "this->num_of_expected_mutations_ = "<<this->num_of_expected_mutations_<<endl;
-        dout << "this->segment_length_ = "<<this->segment_length_<<endl;
+        //dout << "this->num_of_expected_mutations_ = "<<this->num_of_expected_mutations_<<endl;
+        //dout << "this->segment_length_ = "<<this->segment_length_<<endl;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
         this->genetic_break_ = true;         
