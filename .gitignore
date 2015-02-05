@@ -50,3 +50,9 @@ src/pf-ARG_dbg
 *.pyc
 
 *_exp
+smcsmc_dbg
+smcsmc
+smcsmcRECOMBOFF
+smcsmcRECOMBOFF_dbg
+src/.dirstamp
+smcsmcSCRM
