@@ -24,7 +24,7 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, double seqlen ){ 
+Segment::Segment( string file_name, size_t nsam, double seqlen, size_t num_of_mut ){
     
     this->file_name_ = file_name;
     this->nsam_ = nsam;
@@ -33,9 +33,11 @@ Segment::Segment( string file_name, size_t nsam, double seqlen ){
     this->current_line_index_ = 0;
     this->end_data_ = false;
     this->empty_file = false;
+    this->num_of_expected_mutations_ = 0;
     
     if ( this->file_name_.size() == 0 ){
         this->empty_file = true;
+        this->calculate_num_of_expected_mutations( nsam, num_of_mut );
         this->reset_empty_entry();
         for ( size_t i = 0; i < nsam_; i++){
             this->allelic_state_at_Segment_start.push_back ( -1 );
@@ -45,6 +47,7 @@ Segment::Segment( string file_name, size_t nsam, double seqlen ){
      
     this->init();
 }
+
 
 void Segment::init(){
 
@@ -75,6 +78,7 @@ void Segment::init(){
     this->segment_length_ = 0;
     this->current_line_index_ = 0;
 }
+
 
 void Segment::initialize_read_newLine(){
     this->feild_start = 0;
@@ -134,3 +138,12 @@ void Segment::extract_field_VARIANT ( ){
     //cout<<endl;
 }    
 
+
+void Segment::calculate_num_of_expected_mutations ( size_t nsam, size_t theta ){
+    double sum_of_one_over = 0;
+    for ( double i = 1; i < (double)nsam ; i++ ){
+        sum_of_one_over += 1 / i;
+    }
+    sum_of_one_over *= (double)theta;
+    this->num_of_expected_mutations_ = (size_t) sum_of_one_over;
+}
