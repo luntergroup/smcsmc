@@ -126,10 +126,10 @@ class PfParam{
         // ------------------------------------------------------------------
         // Default values 
         // ------------------------------------------------------------------        
-        int    default_nsam;
+        size_t default_nsam;
         double default_mut_rate; 
         double default_recomb_rate; 
-        size_t default_num_mut;
+        double default_num_mut;
 
         // ------------------------------------------------------------------
         // Input 

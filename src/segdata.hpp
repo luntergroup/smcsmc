@@ -77,16 +77,16 @@ class Segment{
     int field_index;
     
     
-    Segment( string file_name , size_t nsam, double seqlen, size_t num_of_mut );
+    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut );
     ~Segment(){};
     
     // Methods
     void init();
     void initialize_read_newLine();
     void extract_field_VARIANT();
-    void calculate_num_of_expected_mutations ( size_t nsam, size_t theta );
+    void calculate_num_of_expected_mutations ( size_t nsam, double theta );
 
-    size_t num_of_expected_mutations_;
+    double num_of_expected_mutations_;
     bool end_data_;
     
 public:

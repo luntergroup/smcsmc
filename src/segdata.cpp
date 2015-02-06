@@ -24,7 +24,7 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, double seqlen, size_t num_of_mut ){
+Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut ){
     
     this->file_name_ = file_name;
     this->nsam_ = nsam;
@@ -139,11 +139,11 @@ void Segment::extract_field_VARIANT ( ){
 }    
 
 
-void Segment::calculate_num_of_expected_mutations ( size_t nsam, size_t theta ){
-    double sum_of_one_over = 0;
-    for ( double i = 1; i < (double)nsam ; i++ ){
-        sum_of_one_over += 1 / i;
+void Segment::calculate_num_of_expected_mutations ( size_t nsam, double theta ){
+    double sum_of_one_over = 0.0;
+    for ( size_t i = 1; i < nsam ; i++ ){
+        sum_of_one_over += 1.0 / i;
     }
-    sum_of_one_over *= (double)theta;
-    this->num_of_expected_mutations_ = (size_t) sum_of_one_over;
+    sum_of_one_over *= theta;
+    this->num_of_expected_mutations_ = sum_of_one_over;
 }
