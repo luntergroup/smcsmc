@@ -77,15 +77,16 @@ class Segment{
     int field_index;
     
     
-    Segment( string file_name , size_t nsam, double seqlen );
+    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut );
     ~Segment(){};
     
     // Methods
     void init();
     void initialize_read_newLine();
     void extract_field_VARIANT();
+    void calculate_num_of_expected_mutations ( size_t nsam, double theta );
 
-    size_t num_of_entries_;
+    double num_of_expected_mutations_;
     bool end_data_;
     
 public:
@@ -105,7 +106,10 @@ public:
     };
     
     void reset_empty_entry(){
-        this->segment_length_ = this->seqlen_/20 ;
+        // Round segment_length_ to an integer
+        this->segment_length_ = (size_t)this->seqlen_ / this->num_of_expected_mutations_ ;
+        //dout << "this->num_of_expected_mutations_ = "<<this->num_of_expected_mutations_<<endl;
+        //dout << "this->segment_length_ = "<<this->segment_length_<<endl;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
         this->genetic_break_ = true;         

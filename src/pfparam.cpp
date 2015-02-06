@@ -253,7 +253,7 @@ void PfParam::finalize(  ){
     this->finalize_scrm_input ( );
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
-    this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length() );
+    this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );
     //this->VCFfile->filter_window_ = this->filter_window_;
     //this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
 }
