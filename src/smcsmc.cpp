@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
         
         /*! EM step */                 
         for (int I = 0; I <= pfARG_para.EM_steps; I++){
-            cout << "Now starting EM_step " << I << endl;
+            cout << "EM step " << I << endl;
             pfARG_core( pfARG_para, 
                         countNe, 
                         print_update_count);
@@ -95,7 +95,7 @@ void pfARG_core(PfParam &pfARG_para,
     double mutation_rate = model->mutation_rate();
 
 
-    cout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
+    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
     Segfile->read_new_line();    
     /*! Initial particles */ 
     //double initial_position = 0;
@@ -192,7 +192,10 @@ void pfARG_core(PfParam &pfARG_para,
         current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
         
         if ( Segfile->segment_end() >= (double)model->loci_length() ){
-            cout<<" Segment data is beyond loci length"<<endl;
+            cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
+            if ( Segfile->segment_end() > (double)model->loci_length() ){
+                cout << "  Segment data is beyond loci length" << endl;
+            }
             Segfile->set_end_data (true);
             //break;
         }
@@ -213,7 +216,9 @@ void pfARG_core(PfParam &pfARG_para,
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones. 
     current_states.normalize_probability(); 
+    
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
+    cout << " Inference step completed." << endl;
     countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
     
     bool append_to_history_file = true;

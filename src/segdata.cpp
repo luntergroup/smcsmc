@@ -21,6 +21,7 @@
 
 */
 
+#include <iomanip>      // std::setw
 #include "segdata.hpp"
 using namespace std;
 
@@ -120,7 +121,10 @@ void Segment::read_new_line(){
         field_index++;
         }
         
-    if ( current_line_index_%300 == 0 ){ cout << " Reading the " << current_line_index_ << "th entry"<<endl; }
+    if ( current_line_index_ > 0 && current_line_index_%300 == 0 ){ 
+        //cout << "\r" << " Reading the " << current_line_index_ << "th entry"<<flush; 
+        cout << "\r" << " Particle filtering step" << setw(4) << int(segment_end() * 100 / this->seqlen_) << "% completed."<<flush; 
+        }
     this->current_line_index_++;
 }
     
