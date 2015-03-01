@@ -41,7 +41,7 @@ Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mu
         this->calculate_num_of_expected_mutations( nsam, num_of_mut );
         this->reset_empty_entry();
         for ( size_t i = 0; i < nsam_; i++){
-            this->allelic_state_at_Segment_start.push_back ( -1 );
+            this->allelic_state_at_Segment_end.push_back ( -1 );
         }
         return;
     }
@@ -130,12 +130,12 @@ void Segment::read_new_line(){
     
     
 void Segment::extract_field_VARIANT ( ){
-    allelic_state_at_Segment_start.clear();
+    allelic_state_at_Segment_end.clear();
 
     assert( nsam_ == this->tmp_str.size() );
     for ( size_t i = 0; i < nsam_; i++){
         int seg_contant = ( this->tmp_str[i] == '.' ) ? -1 : strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0);
-        this->allelic_state_at_Segment_start.push_back ( seg_contant );
+        this->allelic_state_at_Segment_end.push_back ( seg_contant );
         //this->allelic_state_at_Segment_start.push_back ( strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0) );
         //cout << this->allelic_state_at_Segment_start.back();
     }
