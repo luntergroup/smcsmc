@@ -99,22 +99,27 @@ class ForestState : public Forest{
         //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
         void record_Coalevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
+                          double start_time, 
+                          double end_time, 
                           double opportunity, 
-                          eventCode event_code, double end_base);
+                          eventCode event_code, 
+                          double end_base);
                                   
         void record_Recombevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
+                          double start_time, 
+                          double end_time, 
                           double opportunity, 
-                          eventCode event_code, double start_base, double end_base);
+                          eventCode event_code, 
+                          double start_base, 
+                          double end_base);
 
         void record_Migrevent(size_t pop_i,                          
-                          //double start_time, 
-                          //double end_time, 
+                          double start_time, 
+                          double end_time, 
                           double opportunity, 
-                          eventCode event_code, size_t mig_pop, double end_base);                          
+                          eventCode event_code, 
+                          size_t mig_pop, 
+                          double end_base);                          
         
         //void record_recomb_opp_within_scrm ( double recomb_rate) const {
             //cout << "recomb_rate " << recomb_rate <<endl;
@@ -146,10 +151,7 @@ class ForestState : public Forest{
         bool print_Coalevent();
         bool print_Recombevent();
         bool print_Migrevent();
-  
-        
-
-        
+ 
         //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
 		std::string newick(Node *node) ;
 };
