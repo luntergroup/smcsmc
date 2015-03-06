@@ -34,7 +34,7 @@
 #define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
 #endif
 
-
+extern double recomb_opp; //DEBUG
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
@@ -46,64 +46,60 @@ class Coalevent{
     
     public:
         ~Coalevent(){ };
-
+    //
     protected:
         // Methods
-        //void init();
-        
-        //void clear();
+        void init();
+        void clear();
 
         // Getters and setters
         size_t pop_i() const {return this->pop_i_; } 
         void set_pop_i( size_t i ){ this->pop_i_ = i; }
                  
-        double start_height() const { return this->start_height_; };
-        void set_start_height(double start_height) { this->start_height_ = start_height; };
+        //double start_height() const { return this->start_height_; };
+        //void set_start_height(double start_height) { this->start_height_ = start_height; };
         
-        double end_height() const { return this->end_height_; };
-        void set_end_height(double end_height) { this->end_height_ = end_height; };
+        //double end_height() const { return this->end_height_; };
+        //void set_end_height(double end_height) { this->end_height_ = end_height; };
         
         size_t num_event () const { return this->num_event_;}
         void  set_num_event ( size_t num ){ this->num_event_ = num; }    
         
+        //double opportunity() const {return this->opportunity_;};
+        //void set_opportunity( double value ) { this->opportunity_ = value;}
+        
+        double opportunity_y() const { return this->opportunity_y_; }
+        void set_opportunity_y ( double value ) { this->opportunity_y_ = value; }
+
         eventCode event_state() const { return this->event_state_ ;}
         void set_event_state(eventCode state){ this->event_state_ = state; }
         
-        //size_t epoch_index() const { return this->epoch_index_; }
-        //void set_epoch_index( size_t i ){ this->epoch_index_ = i ; }
+        size_t epoch_index() const { return this->epoch_index_; }
+        void set_epoch_index( size_t i ){ this->epoch_index_ = i ; }
                 
         double end_base() const { return this->end_base_; }
         void set_end_base ( double base ) { this->end_base_ = base; }        
         
     private:
         Coalevent(size_t pop_i, 
-                  double start_time,
-                  double end_time, 
-                  double opportunity_y, 
-                  eventCode event_code, 
-                  double end_base ) :
-          pop_i_(pop_i), 
-          start_height_(start_time),
-          end_height_(end_time),
-          opportunity_y_(opportunity_y),
-          num_event_( event_code == EVENT ? 1 : 0 ),
-          event_state_(event_code),
-          end_base_(end_base),
-          pointer_counter_(1) {};
+                  //double start_time,
+                  //double end_time, 
+                  double opportunity_y, eventCode event_code, double end_base );
                   
         double opportunity() const {return this->opportunity_y_; };
         bool print_event();
-
         // Members
-        //size_t epoch_index_;
+        size_t epoch_index_;
         size_t pop_i_;                
-        double start_height_;
+        //double start_height_;
         double end_height_;
+        //double opportunity_;
         double opportunity_y_;
         size_t num_event_;        
         eventCode event_state_; 
         double end_base_;
-        int pointer_counter_;      // Number of ForestStates are pointing at this event
+
+        int pointer_counter_; // Number of ForestStates are pointing at this event
     };
 
 
@@ -111,9 +107,14 @@ class Recombevent : public Coalevent{
     friend class CountModel;
     friend class ForestState;
     //public:
-    Recombevent( size_t pop_i, double start_time, double end_time, double opportunity_y, eventCode event_code, double start_base, double end_base) :
-        Coalevent ( pop_i, start_time, end_time, opportunity_y, event_code, end_base ),
-        start_base_( start_base) {};
+    Recombevent( size_t pop_i, double opportunity_y, eventCode event_code, double start_base, double end_base)
+             : Coalevent ( pop_i, 
+                //start_time, 
+                //end_time, 
+                opportunity_y, event_code, end_base){ 
+                this->set_start_base (start_base); 
+                recomb_opp += this->opportunity();
+                };
     
     double opportunity() const { return this->opportunity_between ( this->start_base_, this->end_base_); };
     double opportunity_between( double start, double end ) const {
@@ -122,8 +123,8 @@ class Recombevent : public Coalevent{
         return this->opportunity_y_* ( end - start); };
     bool print_event();
     double start_base() const { return this->start_base_; }
+    void set_start_base ( double base ) { this->start_base_ = base; }
 
-	// Additional members
     double start_base_;
 };
 
@@ -133,20 +134,24 @@ class Recombevent : public Coalevent{
 class Migrevent : public Coalevent{
     friend class CountModel;
     friend class ForestState;
-    Migrevent( size_t pop_i, double start_time, double end_time, double opportunity_y, eventCode event_code, size_t mig_pop, double end_base ) :
-        Coalevent ( pop_i, start_time, end_time, opportunity_y, event_code, end_base ),
-        mig_pop_( mig_pop ) {};
-        
-    Migrevent(const Migrevent & previous_Migrevent) : 
-        Coalevent (previous_Migrevent),
-        mig_pop_( previous_Migrevent.mig_pop() ) {};
+    Migrevent( size_t pop_i, double opportunity_y, eventCode event_code, size_t mig_pop, double end_base )
+             : Coalevent ( pop_i, 
+                //start_time, 
+                //end_time, 
+                opportunity_y, event_code, end_base ){ 
+                    this->set_mig_pop_i (mig_pop); 
+                    };
+
+    Migrevent(const Migrevent & previous_Coalevent) : Coalevent (previous_Coalevent) { 
+        this->set_mig_pop_i ( previous_Coalevent.mig_pop() ); 
+        };
     ~Migrevent(){};
     
     double opportunity() const {return this->opportunity_y_; };
     bool print_event();
     size_t mig_pop() const {return this->mig_pop_; } 
-
-	// Additional members
+    void set_mig_pop_i( size_t i ){ this->mig_pop_ = i; }    
+    
     size_t mig_pop_;
 };
 
