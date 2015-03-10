@@ -151,7 +151,7 @@ class Two_doubles {
 
 /*! \brief Derived class of Model, used for inference.
  */         
-class CountModel: public Model{
+class CountModel: public Model {
 
     public:    
         //
@@ -208,20 +208,22 @@ class CountModel: public Model{
         //
         // Members
         //   
-        /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity are number_of_time_interval * number_of_population
+        /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity is 
+         *      number_of_time_interval * number_of_population
+         *  The dimension of total_mig_count is 
+         *      number_of_epochs * number_of_population (from) * number_of_population (to).  
+         *  For total_weighted_mig_opportunity only the 'from' population is important
          */ 
         vector < vector<Two_doubles> >   total_coal_count;
         vector < vector<Two_doubles> >   total_weighted_coal_opportunity;        
         vector < vector<Two_doubles> >   total_recomb_count;
         vector < vector<Two_doubles> >   total_weighted_recomb_opportunity;
-        /*! The dimension of total_mig_count is number_of_epochs * number_of_population (from) * number_of_population (to).  For total_weighted_mig_opportunity only the 'from' population is important
-         */         
         vector < vector < vector<Two_doubles> > >  total_mig_count;
         vector < vector<Two_doubles> >             total_weighted_mig_opportunity;
 
         vector < double > counted_to;
         vector < double > lags;
-        vector < vector < vector<double> > > inferred_mig_rate; // This should be a 3-D vector 
+        vector < vector < vector<double> > > inferred_mig_rate;  // This is a 3D vector, indexed by epoch, from_population, to_population
         
         double recomb_count_;
         double recomb_opportunity_;

@@ -23,61 +23,70 @@
 
 #include"count.hpp"
 
-void CountModel::init(){
+void CountModel::init() {
+
     this->init_coal_and_recomb();
     this->init_migr();
     this->init_lags();
         
     this->update_param_interval_  = 5e6; // ONLINE EM
     this->update_param_threshold_ = 1e7; // ONLINE EM
-    return ;
-    }
+
+}
 
 
-void CountModel::init_coal_and_recomb(){
+void CountModel::init_coal_and_recomb() {
+
     this->total_coal_count.clear();
     this->total_weighted_coal_opportunity.clear();
     this->total_recomb_count.clear();
     this->total_weighted_recomb_opportunity.clear();
 
-    this->resetTime();    
-    for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
+    this->resetTime();   // is this necessary? 
+    
+    for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
+		// populate coalescent and recombination event counters
         vector <Two_doubles> tmp_count(this->population_number(), Two_doubles(0));
         this->total_coal_count.push_back(tmp_count);
         this->total_recomb_count.push_back(tmp_count);
-        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+        // enter initial value
+        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ) {
             this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * population_size() );
         }
-        
+        // populate and enter initial value for opportunity
+        /*! \todo Need to populate initial count for recombination with correct value */
         vector <Two_doubles> tmp_opportunity(this->population_number(), Two_doubles(1));
         this->total_weighted_coal_opportunity.push_back(tmp_opportunity);
         this->total_weighted_recomb_opportunity.push_back(tmp_opportunity);
-        }
-    this->resetTime();        
     }
+}
 
 
-void CountModel::init_migr(){ /*! \todo This requires more work*/
+void CountModel::init_migr() {
+
     this->total_mig_count.clear();
     this->total_weighted_mig_opportunity.clear();    
 
-    this->resetTime();    
-    for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
-        vector < vector < Two_doubles > > tmp_count_Time_i;
-        vector < Two_doubles > tmp_opp_Time_i;
-        vector < vector < double > > tmp_count_Time_i_double;
-        for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-            vector <Two_doubles> tmp_count(this->population_number(), Two_doubles());
-            tmp_count_Time_i.push_back(tmp_count);
-            vector <double> tmp_count_Time_i_double(this->population_number(), 0);
-            tmp_opp_Time_i.push_back( Two_doubles(1) );
-            }        
-        this->total_mig_count.push_back(tmp_count_Time_i);
-        this->total_weighted_mig_opportunity.push_back(tmp_opp_Time_i);
-        this->inferred_mig_rate.push_back(tmp_count_Time_i_double);
-        }
+    this->resetTime();     // is this necessary?
+    
+	// populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
+	/*! \todo Need to populate with correct initial values */
+	vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
+	vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
+	vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
+	for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+		tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
+		tmp_opp_Time_i.        push_back( Two_doubles(1) );
+		tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
+	}
+    
+	// set initial counts/rates for all epochs
+    for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
+        this->total_mig_count.                push_back(tmp_count_Time_i);
+        this->total_weighted_mig_opportunity. push_back(tmp_opp_Time_i);
+        this->inferred_mig_rate.              push_back(tmp_rate_Time_i_double);
     }
-
+}
 
 void CountModel::init_lags(){
     this->counted_to.clear();
@@ -135,7 +144,10 @@ void CountModel::reset_recomb_rate ( Model *model ){
 
 
 void CountModel::reset_mig_rate ( Model *model ) {
-    if (this->has_migration() == false) return;
+
+    if (!this->has_migration()) 
+		return;
+		
     this->compute_mig_rate();
     
     assert( this->print_mig_rate (model->mig_rates_list_) );
@@ -143,6 +155,7 @@ void CountModel::reset_mig_rate ( Model *model ) {
 
     this->initialize_mig_rate ( model->mig_rates_list_ );
     this->initialize_mig_rate ( model->total_mig_rates_list_ );
+
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
 
@@ -156,6 +169,7 @@ void CountModel::reset_mig_rate ( Model *model ) {
                 }
             }
         }
+
     this->check_model_updated_mig (model);
     
     assert( this->print_mig_rate (model->mig_rates_list_) );
@@ -228,7 +242,9 @@ void CountModel::compute_mig_rate(){
             
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
 				this->total_mig_count[epoch_idx][pop_i][pop_j].compute_final_answer();
-                this->inferred_mig_rate[epoch_idx][pop_i][pop_j] = this->total_mig_count[epoch_idx][pop_i][pop_j].final_answer() / this->total_weighted_mig_opportunity[epoch_idx][pop_i].final_answer();
+                this->inferred_mig_rate                 [epoch_idx][pop_i][pop_j] = 
+					this->total_mig_count               [epoch_idx][pop_i][pop_j].final_answer() / 
+					this->total_weighted_mig_opportunity[epoch_idx][pop_i].final_answer();
                 //cout<<"this->inferred_mig_rate["<<epoch_idx<<"]["<<pop_i<<"]["<<pop_j<<"] = " << this->inferred_mig_rate[epoch_idx][pop_i][pop_j]<<endl;
             }
         }
