@@ -1,0 +1,120 @@
+scrm 2 1 -t 1000 -r 200 1000000 -I 2 1 1 -ej 0.6 1 2 -eM 0 0.1 -seed 1 1 1  -eN 0.000000 1 -eN 0.009672 1 -eN 0.025538 1 -eN 0.045624 1 -eN 0.071050 1 -eN 0.103238 1 -eN 0.143983 1 -eN 0.195563 1 -eN 0.260858 1 -eN 0.343515 1 -eN 0.448150 1 -eN 0.580607 1 -eN 0.748285 1 -eN 0.960548 1 -eN 1.229251 1 -eN 1.569403 1 -eN 2.000000 1
+Indirectly called
+EM step 0
+
+  Segment data is beyond loci length
+ Inference step completed.
+ MODEL IS RESET at base 1e+06
+ set recombination rate 4.86461e-09(347.591 / 7.14531e+10)
+ popsize is equal to 3.97572e+06 ( 397.572 / 5e-05/2)
+ popsize is equal to 4807.88 ( 308.185 / 0.03205/2)
+ popsize is equal to 2780.29 ( 2188.4 / 0.393556/2)
+ popsize is equal to 71957.7 ( 2309.84 / 0.01605/2)
+ popsize is equal to 206006 ( 6200.77 / 0.01505/2)
+ popsize is equal to 23526.1 ( 5410.55 / 0.11499/2)
+ popsize is equal to 8135.31 ( 12313.5 / 0.756795/2)
+ popsize is equal to 34693.8 ( 10774 / 0.155273/2)
+ popsize is equal to 11985 ( 23024.2 / 0.960542/2)
+ popsize is equal to 11416.6 ( 22097.3 / 0.967773/2)
+ popsize is equal to 8790.66 ( 36117 / 2.05428/2)
+ popsize is equal to 8730.33 ( 37893.6 / 2.17023/2)
+ popsize is equal to 10440.4 ( 58873.6 / 2.81952/2)
+ popsize is equal to 10904.2 ( 62485.7 / 2.86521/2)
+ popsize is equal to 10947.8 ( 95668.6 / 4.36931/2)
+ popsize is equal to 11442 ( 100333 / 4.38442/2)
+ popsize is equal to 9243.1 ( 147222 / 7.96387/2)
+ popsize is equal to 9755.14 ( 147383 / 7.55411/2)
+ popsize is equal to 9118.77 ( 220695 / 12.1011/2)
+ popsize is equal to 9330.96 ( 217503 / 11.6549/2)
+ popsize is equal to 9580.17 ( 319202 / 16.6595/2)
+ popsize is equal to 9144.17 ( 313241 / 17.1279/2)
+ popsize is equal to 8245.46 ( 48934.4 / 2.96735/2)
+ popsize is equal to 8729.28 ( 48040.6 / 2.75169/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 8056.22 ( 1.18893e+06 / 73.7897/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 8331.12 ( 1.02689e+06 / 61.6298/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 8395.28 ( 752932 / 44.8426/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 9022.14 ( 525449 / 29.1199/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 9652.51 ( 329624 / 17.0745/2)
+ popsize is equal to 10000 ( 1 / 5e-05/2)
+ popsize is equal to 10972.6 ( 336471 / 15.3323/2)
+ check_model_updated_Ne 
+Updated Ne at time        0 :  |  3.97572e+06 (       5e-05) |      4807.88 (     0.03205)
+Updated Ne at time   386.88 :  |      2780.29 (    0.393556) |      71957.7 (     0.01605)
+Updated Ne at time  1021.52 :  |       206006 (     0.01505) |      23526.1 (     0.11499)
+Updated Ne at time  1824.96 :  |      8135.31 (    0.756795) |      34693.8 (    0.155273)
+Updated Ne at time     2842 :  |        11985 (    0.960542) |      11416.6 (    0.967773)
+Updated Ne at time  4129.52 :  |      8790.66 (     2.05428) |      8730.33 (     2.17023)
+Updated Ne at time  5759.32 :  |      10440.4 (     2.81952) |      10904.2 (     2.86521)
+Updated Ne at time  7822.52 :  |      10947.8 (     4.36931) |        11442 (     4.38442)
+Updated Ne at time  10434.3 :  |       9243.1 (     7.96387) |      9755.14 (     7.55411)
+Updated Ne at time  13740.6 :  |      9118.77 (     12.1011) |      9330.96 (     11.6549)
+Updated Ne at time    17926 :  |      9580.17 (     16.6595) |      9144.17 (     17.1279)
+Updated Ne at time  23224.3 :  |      8245.46 (     2.96735) |      8729.28 (     2.75169)
+Updated Ne at time    24000 :  |        10000 (       5e-05) |      8056.22 (     73.7897)
+Updated Ne at time  29931.4 :  |        10000 (       5e-05) |      8331.12 (     61.6298)
+Updated Ne at time  38421.9 :  |        10000 (       5e-05) |      8395.28 (     44.8426)
+Updated Ne at time    49170 :  |        10000 (       5e-05) |      9022.14 (     29.1199)
+Updated Ne at time  62776.1 :  |        10000 (       5e-05) |      9652.51 (     17.0745)
+Updated Ne at time    80000 :  |        10000 (       5e-05) |      10972.6 (     15.3323)
+Updated Mij @ time        0: (0->1)            0 (1->0)            0
+Updated Mij @ time   386.88: (0->1)            0 (1->0)            0
+Updated Mij @ time  1021.52: (0->1)            0 (1->0)            0
+Updated Mij @ time  1824.96: (0->1)  4.06058e-07 (1->0)  1.56153e-07
+Updated Mij @ time     2842: (0->1)            0 (1->0)  1.18944e-06
+Updated Mij @ time  4129.52: (0->1)  1.91571e-06 (1->0)   3.9068e-07
+Updated Mij @ time  5759.32: (0->1)  4.19266e-06 (1->0)  1.89512e-07
+Updated Mij @ time  7822.52: (0->1)  2.25269e-06 (1->0)  2.12553e-06
+Updated Mij @ time  10434.3: (0->1)  2.25017e-06 (1->0)  2.81224e-06
+Updated Mij @ time  13740.6: (0->1)  2.70348e-06 (1->0)  2.25113e-06
+Updated Mij @ time    17926: (0->1)   2.5296e-06 (1->0)  3.11719e-06
+Updated Mij @ time  23224.3: (0->1)  2.39746e-06 (1->0)  2.60882e-06
+Updated Mij @ time    24000: (0->1)            0 (1->0)            0
+Updated Mij @ time  29931.4: (0->1)            0 (1->0)            0
+Updated Mij @ time  38421.9: (0->1)            0 (1->0)            0
+Updated Mij @ time    49170: (0->1)            0 (1->0)            0
+Updated Mij @ time  62776.1: (0->1)            0 (1->0)            0
+Forest state was created 66923 times
+Forest state destructor was called 65923 times
+Actual recombination 432887
+Actual recomb op is 8.65615e+13
+End of EM_step 0
+smcsmc parameters: 
+HIST saved in file: pfARGHIST
+Ne saved in file: pfARGNe
+Segment Data file: sim-1-migrationSamples2msdata1.seg
+     EM steps =         0
+            N =      1000
+          ESS =       0.5 (by default)
+scrm model parameters: 
+ Extract window =         0
+    Random seed =3647837471
+    Sample size =         2
+     Seq length =   1000000
+  mutation rate =   2.5e-08
+    recomb rate =5.00001e-09
+inferred recomb rate = 4.86461e-09
+Pop size (at Generation):
+  (       0 ) | 3.97572e+06 |    4807.88
+  (  386.88 ) |    2780.29 |    71957.7
+  ( 1021.52 ) |     206006 |    23526.1
+  ( 1824.96 ) |    8135.31 |    34693.8
+  (    2842 ) |      11985 |    11416.6
+  ( 4129.52 ) |    8790.66 |    8730.33
+  ( 5759.32 ) |    10440.4 |    10904.2
+  ( 7822.52 ) |    10947.8 |      11442
+  ( 10434.3 ) |     9243.1 |    9755.14
+  ( 13740.6 ) |    9118.77 |    9330.96
+  (   17926 ) |    9580.17 |    9144.17
+  ( 23224.3 ) |    8245.46 |    8729.28
+  (   24000 ) |      10000 |    8056.22
+  ( 29931.4 ) |      10000 |    8331.12
+  ( 38421.9 ) |      10000 |    8395.28
+  (   49170 ) |      10000 |    9022.14
+  ( 62776.1 ) |      10000 |    9652.51
+  (   80000 ) |      10000 |    10972.6
+Actual recombination 432887
