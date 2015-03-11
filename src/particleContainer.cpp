@@ -28,17 +28,12 @@
  * 
  * \ingroup group_pf_init
  */ 
-ParticleContainer::ParticleContainer(
-                    Model* model, 
-                    //size_t random_seed,
-                    MersenneTwister *rg,
-                    size_t Num_of_states, 
-                    //vector <bool> data_for_init_states, 
-                    //bool withdata,
-                    double initial_position,
-                    bool heat_bool ){
+ParticleContainer::ParticleContainer(Model* model,                     
+									 MersenneTwister *rg,
+									 size_t Num_of_states, 
+									 double initial_position,
+									 bool heat_bool ) {
     this->heat_bool_ = heat_bool;
-    //this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
     this->random_generator_ = rg;
     this->set_ESS(0);
     this->set_current_printing_base(0);    
@@ -62,8 +57,8 @@ ParticleContainer::ParticleContainer(
             new_state->TmrcaHistory.push_back ( tmrca );
             }
         this->push(new_state, 1.0/Num_of_states );        
-	    }	    
-    }
+	}	    
+}
 
 
 /*! \brief Resampling step
