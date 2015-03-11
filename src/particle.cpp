@@ -150,93 +150,75 @@ ForestState::~ForestState(){
 
 
 void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
+
     dout << endl;
     ForestStatedout << "Start Recording " << endl;
-    double coal_opportunity = 0.0;
-    double migr_opportunity = 0.0;
-    double recomb_opp_x_within_smcsmc = 0;
-    //opportunity_y is the branch length of the conterporaries within the interval
-    // if there is no events, then take the full length of this time interval
-    //             otherwise, take the distance between the event and the bottom of this interval
-    double opportunity_y = this->tmp_event_.isNoEvent() ? ti.length() : (this->tmp_event_.time() - ti.start_height());
-    double start_base = -1;
-    //size_t number_of_recomb_branch = 0; // DEBUG
-    
-    for (int i = 0; i < 2; i++) {
-        //if ( states_[i] == 0 ) continue; //NEW Only Nodes in state 1 or 2 can do something
-        if (states_[i] == 2) {
-            // node i is tracing a non-local branch; opportunities for recombination
-            assert(active_node(i)->last_update() >= model().getCurrentSequencePosition());
-			// If the interval [ active_node(i)->last_update(), this->current_base() ] straddles one (or more) recombination rate changes,
-			// we should do something more complicated:
-			// 1. sample a recombination point somewhere along the interval (adjust rates for the changing recombination rates)
-			// 2. generate appropriate "no event" and "event" recombination events, with appropriate opportunities.
+
+    double recomb_opp_x_within_smcsmc = 0; // DEBUG
+	double start_base, end_base;
+	double start_height, end_height;
+    eventCode event;
+    int migrate_to_pop;
+
+    // find extent of time interval where events may have, or has, occurred
+    start_height = ti.start_height();
+    if (this->tmp_event_.isNoEvent()) {
+		end_height = start_height + ti.length();
+	} else {
+		end_height = this->tmp_event_.time();
+		assert (end_height > start_height);
+	}
+
+	// loop over the two nodes
+	for (int i=0; i<2; i++) {
+		
+		if (states_[i] == 2) {
+            // node i is tracing an existing non-local branch; opportunities for recombination
             start_base = active_node(i)->last_update();
-            
-            if (this->current_base() == start_base) continue; // if they are the same, do not record
-            
-            this->record_Recombevent( 0, opportunity_y, tmp_event_.isRecombination() ? EVENT : NOEVENT, start_base, this->current_base() );
+            end_base = this->current_base();
+			if (end_base == start_base) continue;
+			event = (tmp_event_.isRecombination()) ? EVENT : NOEVENT; 
+			double opportunity_y = end_height - start_height;
+			this->record_Recombevent( 0, opportunity_y, event, start_base, end_base ); 
             recomb_opp_x_within_smcsmc += this->current_base() - start_base;
             ForestStatedout << "Tracing non-local branch along " << opportunity_y << " generations, from " << start_base << " to " << this->current_base() << endl;
-            //recomb_opportunity += ( this->current_base() - start_base ) * opportunity_y;
-        } else if (states_[i] == 1) {
+		} else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
-            coal_opportunity += ti.numberOfContemporaries( active_node(i)->population() ) * opportunity_y; // jz_stable
-            //coal_opportunity += contemporaries_.size( active_node(i)->population() ) * opportunity_y; // jz
-            migr_opportunity += opportunity_y;
-        }
-    }
-    
-    assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
+            start_base = this->current_base();
+            int weight = ti.numberOfContemporaries( active_node(i)->population() );
+			double opportunity_y = end_height - start_height;
+			double coal_opportunity = opportunity_y * weight;
+			// consider only normal (not pairwise) coalescences that occurred on this node
+	        event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i) ? EVENT : NOEVENT;
+			this->record_Coalevent( active_node(i)->population(), coal_opportunity, event, start_base );
+			// consider migration opportunity and events
+			if (this->model().population_number()>1) {
+				migrate_to_pop = 0;
+				event = NOEVENT;
+				if (tmp_event_.isMigration()) {
+					event = EVENT;
+					migrate_to_pop = tmp_event_.mig_pop();
+				}
+				this->record_Migrevent( active_node(i)->population(), opportunity_y, event, migrate_to_pop, start_base );
+			}
+		}
+	}
+	
+	assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
     
     // only coalescences into contemporaries were considered; pairwise coalescence between active nodes could also occur
     if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
-        coal_opportunity += opportunity_y;
-        }
-        
-    if (coal_opportunity > 0) {
-        //this->record_event(active_node(0)->population(), size_t(-1), ti.start_height(), ti.start_height() + opportunity_y, coal_opportunity, (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? COAL_EVENT : COAL_NOEVENT );
-        //// check: do we need to consider different cases? is it possible to coalesce in active_node(1)->population() ???? Joe: I dont think so ...
-        if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
-            this->record_Coalevent(active_node(0)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
-                                    coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() );
-            } 
-        else if (states_[0] == 1){
-            this->record_Coalevent(active_node(0)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
-                                    coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() ); 
-            } 
-        else if (states_[1] == 1){
-            this->record_Coalevent(active_node(1)->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
-                                    coal_opportunity, 
-                                    (tmp_event_.isCoalescence() || tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT, this->current_base() );
-            }
-        }
-    if (migr_opportunity > 0 && this->model().population_number()>1) {
-        if ( tmp_event_.isMigration() ){
-            this->record_Migrevent(tmp_event_.node()->population(), 
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, EVENT , tmp_event_.mig_pop(), this->current_base() );
-            } 
-        else {
-            this->record_Migrevent(active_node(0)->population(),                                    
-                                    //ti.start_height(), 
-                                    //ti.start_height() + opportunity_y, 
-                                    migr_opportunity, NOEVENT, size_t(-1), this->current_base() );
-            }
-        }
+		start_base = this->current_base();
+		int weight = 1;
+		double opportunity_y = end_height - start_height;
+		double coal_opportunity = opportunity_y * weight;
+	    event = (tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT;
+		this->record_Coalevent( active_node(0)->population(), coal_opportunity, event, start_base );
+	}
+
     dout << endl;        
     return;
 }
-
 
 /*! \brief Record Coalescent events
 * @ingroup group_count_coal
