@@ -34,7 +34,106 @@
 #define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
 #endif
 
+
 extern double recomb_opp; //DEBUG
+
+
+class EvolutionaryEvent {
+	// Constructors
+	EvolutionaryEvent( double start_height, double end_height, double start_base, double end_base, int weight ) :
+	                   start_height(start_height),
+	                   end_height(end_height),
+	                   start_base(start_base),
+	                   end_base(end_base),
+	                   weight(weight) {  // signal recombination opportunity
+	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
+	                   };
+	EvolutionaryEvent( double start_height, double end_height, double end_base, int population_index, int weight ) :
+			   start_height(start_height),
+			   end_height(end_height),
+			   start_base(-1),        // signal coalescent/migration opportunity
+			   end_base(end_base),
+			   weight(weight),
+			   a( population_index ) { 
+                              assert(start_height <= end_height); 
+                           };
+
+	// Methods
+	void set_recomb_event_pos( double recomb_x_position ) {
+		assert( this->is_recomb() );
+		assert( this->no_event() );
+		assert( recomb_x_position <= end_base );
+		assert( start_base <= recomb_x_position );
+		event_data = -1;
+		a.recomb_pos = recomb_x_position; }
+	void set_recomb_event_time( double recomb_t_position ) {
+		assert( this->is_recomb() );
+		assert( this->no_event() );
+		assert( recomb_t_position <= end_height );
+		assert( start_height <= recomb_t_position );
+		event_data = 0;
+		a.recomb_pos = recomb_t_position; }
+	void set_coal_event() {
+		assert( this->is_coalmigr() );
+		assert( this->no_event() );
+		event_data = -1; }
+	void set_migr_event( int to_population ) {
+		assert( this->is_coalmigr() );
+		assert( this->no_event() );
+		assert( to_population != a.coal_migr_population );
+		assert( to_population >= 0 );
+		event_data = to_population; }
+	bool is_recomb() const { return start_base >= 0; }
+	bool is_coalmigr() const { return start_base < 0; }
+	bool no_event() const { return event_data == -2; }
+	bool is_recomb_event() const { assert(is_recomb()); return event_data > -2; }
+	bool is_coal_event() const { assert(is_coalmigr()); return event_data == -1; }
+	bool is_migr_event() const { assert(is_coalmigr()); return event_data >= 0; }
+	double coalescence_opportunity() const {
+		assert (is_coalmigr());
+		return weight * (end_height - start_height); }
+	double migration_opportunity() const {
+		assert (is_coalmigr());
+		return end_height - start_height; }
+	double recombination_opportunity() const {
+		assert (is_recomb());
+		return (end_height - start_height) * (end_base - start_base); }
+	int get_population() const {
+		assert (is_coalmigr());
+		return a.coal_migr_population; }
+	int get_migr_to_population() {
+		assert (is_coalmigr());
+		assert (event_data >= 0);
+		return event_data; }
+	bool decrease_refcount_is_zero() {
+		assert( ref_counter-- > 0 );
+		return (ref_counter == 0); }
+	void increase_refcount() { ref_counter++; }
+	bool print_event();
+        bool append_event( const EvolutionaryEvent& e );
+	              
+	// Members
+private:
+	double start_height;
+	double end_height;
+        double start_base;     // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
+	double end_base;
+        int event_data {-2};   // -2 == no event; otherwise type-specific meaning:
+	                       // recomb:    -1 == event at top edge (time-wise sampling)
+	                       //             0 == event at right-hand edge (sequence-wise sampling)
+	                       // coal/migr: -1 == coalescent event;
+	                       //             0..: migration to this population index
+	int weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
+        int ref_counter {1};
+	union A {
+	  int    coal_migr_population; // index of population of branch that is migrating or coalescing
+	  double recomb_pos;           // position of recombination event, along right-hand (end_base) or top (end_height) edge
+	  A( int p ): coal_migr_population( p ) {}
+	  A(): coal_migr_population( 0 ) {}
+	} a;
+};
+
+
 /*!
  * \brief Used for recording the number and the time intervals of events between two ForestState 
  */
@@ -79,7 +178,6 @@ class Coalevent{
                 
         double end_base() const { return this->end_base_; }
         void set_end_base ( double base ) { this->end_base_ = base; }        
-        
     private:
         Coalevent(size_t pop_i, 
                   //double start_time,

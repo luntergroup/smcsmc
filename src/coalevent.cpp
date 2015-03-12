@@ -23,6 +23,50 @@
 
 
 #include"coalevent.hpp"
+
+
+bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
+{
+  assert (e.ref_counter == 1);
+  if (ref_counter != 1) return false;             // can't add to record that's in multiple use
+  if (!no_event()) return false;                  // this must not have event (can't have 2 events in single object)
+  if (is_recomb() != e.is_recomb()) return false; // type of records must match
+  if (is_recomb()) {
+    if (start_height == e.start_height &&
+	end_height == e.end_height &&
+	end_base == e.start_base &&
+	weight == e.weight) { // add sequence-wise
+      end_base = e.end_base;
+      event_data = e.event_data;
+      a.recomb_pos = e.a.recomb_pos;
+      return true;
+    }
+    if (start_base == e.start_base &&
+	end_base == e.end_base &&
+	end_height == e.start_height &&
+	weight == e.weight) { // add time-wise
+      end_height = e.end_height;
+      event_data = e.event_data;
+      a.recomb_pos = e.a.recomb_pos;
+      return true;
+    }
+  } else { // is_coalmigr
+    if (end_base == e.end_base &&
+	end_height == e.start_height &&
+	a.coal_migr_population == e.a.coal_migr_population &&
+	weight == e.weight) {
+      end_height = e.end_height;
+      event_data = e.event_data;
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+
 /*!
  * \class Coalevent
  *  another constructor for rec_point, to be called from sample the next genealogy
