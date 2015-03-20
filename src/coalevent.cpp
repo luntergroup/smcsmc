@@ -34,14 +34,14 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
   if (is_recomb()) {
     if (start_height == e.start_height &&
 	    end_height == e.end_height &&
-	    end_base_ == e.start_base &&
+	    end_base_ == e.start_base_ &&
 	    weight == e.weight) { // add sequence-wise
       end_base_ = e.end_base_;
       event_data = e.event_data;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
-    if (start_base == e.start_base &&
+    if (start_base_ == e.start_base_ &&
 	    end_base_ == e.end_base_ &&
 	    end_height == e.start_height &&
 	    weight == e.weight) { // add time-wise
@@ -64,6 +64,23 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 }
 
 
+bool EvolutionaryEvent::print_event() {
+	EventRecorderdout << "";
+	if (is_recomb()) {
+		dout << "Recombination ";
+		if (is_recomb_event()) 
+			dout << "(event) ";
+	} else {
+		dout << "Coal/migration ";
+		if (is_coal_event()) 
+			dout << "(coal) ";
+		else if (is_migr_event())
+			dout << "(migr) ";
+	}
+	dout << setw(10) << this->start_height  << " to ";
+    dout << setw(10) << this->end_height    << endl;
+    return true;
+}
 
 
 

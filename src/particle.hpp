@@ -99,17 +99,25 @@ class ForestState : public Forest{
         //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
         void record_Coalevent(size_t pop_i,
-                          double start_time, 
-                          double end_time, 
-                          int weight,
-                          bool event,
-                          double end_base);
+                              double start_time, 
+                              double end_time, 
+                              int weight,
+                              bool event,
+                              double end_base);
                                   
-        void record_Recombevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, double start_base, double end_base);
+        void record_Recombevent_pos(double start_time, 
+                                    double end_time, 
+                                    double recomb_base,
+                                    int weight, 
+                                    double start_base, 
+                                    double end_base);
+
+        void record_Recombevent_time(double start_time, 
+                                     double end_time, 
+                                     double recomb_time,
+                                     int weight, 
+                                     double start_base, 
+                                     double end_base);
 
         void record_Migrevent(size_t pop_i,                          
                           //double start_time, 
@@ -133,7 +141,7 @@ class ForestState : public Forest{
 
         // Members //
         vector < deque < EvolutionaryEvent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < deque < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
+        vector < deque < EvolutionaryEvent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
                 
         double site_where_weight_was_updated_;

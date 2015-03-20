@@ -27,126 +27,29 @@
 #define COUNT
 
 #ifndef BIG_TO_SMALL_RATIO
-#define BIG_TO_SMALL_RATIO 256
-//#define BIG_TO_SMALL_RATIO 1
-#endif
-
-#ifndef CUM_TO_BIG_RATIO
-#define CUM_TO_BIG_RATIO 5000
-//#define CUM_TO_BIG_RATIO 1
+#define BIG_TO_SMALL_RATIO 67108864
 #endif
 
 class Two_doubles {
 	public:
-		Two_doubles( double init = 0 ){
-			big_  = 0;
-			small_ = init;
-			cumsum_ = 0;
-			//big_added_counter_ = 0;
-		};
+		Two_doubles( double init = 0 ) : big_(0), small_(init) {}
+
 		~Two_doubles(){};
-		
-		void add_to_small ( double added ){
-			//cout.precision(15);
-			//cout << "adding "<< added << " to small " << small_ <<" wheas big is "<< big_ <<endl;
-			small_ += added;
-			//
-			if ( small_ * BIG_TO_SMALL_RATIO > big_ && big_ != 0 ){
-				add_small_to_big();
-				assert ( big_ > small_ );
-			}
-			// should not assert here, as big_ could be zero
-			//assert ( big_ > small_ );
-		}
-		
-		void add_to_big ( double added ) {
-			//cout.precision(15);
-			//cout << "adding "<< added << " to big " << big_ <<" wheas small is "<< small_ <<endl;
-			big_ += added;
-			//if ( big_ <= small_ ){
-				//cerr << "big = "<<big_<<endl;
-				//cerr << "added = "<< added<<endl;
-				//cerr << "small_= "<< small_<<endl; 
-			//}
-			assert ( big_ >= small_ ); // big small added could all be zeros
-			if ( ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ) && ( small_ != 0 && small_ != 1 ) ){
-				add_big_to_cumsum( );
-				assert ( cumsum_ >= big_ );
-			}			
-		}
-		
-		void add ( double added ){
-			if ( big_ == 0 ){
-				if ( added > BIG_TO_SMALL_RATIO * small_ ){
-					this->add_to_big ( added );
-					//if ( big_ <= small_ ){
-						//cerr << "big = "<<big_<<endl;
-						//cerr << "added = "<< added<<endl;
-						//cerr << "small_= "<< small_<<endl; 
-					//}
 
-					assert ( big_ >= small_ ); // big small added could all be zeros
-					return;
-				}
-				
-				if ( added * BIG_TO_SMALL_RATIO < small_ ){
-					switch_big_and_small();					
-					assert ( big_ >= small_ ); // big small added could all be zeros
-				}
-				// two cases to add to small, 
-				// 1. big was 0, now has just taken small's value, big > small
-				// 2. big is 0, added is added to small
-				this->add_to_small ( added );
-				
-				return;
-			}
-			else if ( added * BIG_TO_SMALL_RATIO < big_ ){
-				this->add_to_small ( added );
-				return;
-			}
-			else{
-				add_to_big ( added );
-				return;
+		void add( double x ) {						
+			small_ += x;
+			if (fabs(small_ * BIG_TO_SMALL_RATIO) > fabs(big_)) {
+				big_ += small_;
+				small_ = 0;
 			}
 		}
-
-		void compute_final_answer(){
-			//cout.precision(15);
-			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
-			this->add_small_to_big( );
-			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
-			this->add_big_to_cumsum();	
-		}
 		
-		double final_answer () {
-			return this->cumsum_;
-		}
+		void compute_final_answer() {}
 		
-		void add_small_to_big( ){
-			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
-			add_to_big ( small_ );
-			small_ = 0;
-		}
-		
-		void add_big_to_cumsum () {
-			//cout.precision(15);
-			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
-			//big_added_counter_ = 0;
-			cumsum_ += big_;
-			big_ = 0;
-		}
-		
-		void switch_big_and_small ( ){
-			//cerr << " switching big and small !!!!!!!!!!!!!!!!!!!!!!"<<endl;
-			double tmp = big_;
-			big_ = small_;
-			small_ = tmp;
-		}
-	
+		double final_answer () { return this->small_ + this->big_; }
+			
 	private:
-		double cumsum_;
 		double big_, small_;
-		//size_t big_added_counter_;
 };
 
 /*! \brief Derived class of Model, used for inference.
@@ -193,7 +96,7 @@ class CountModel: public Model {
 
 
         void update_coalescent_count( deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ) ;
-        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ) ;
+        void update_recombination_count( deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ) ;
         void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
 
         void compute_recomb_rate();

@@ -176,9 +176,6 @@ void CountModel::reset_mig_rate ( Model *model ) {
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
     }
 
-//void CountModel::reset_single_mig_rate ( Model * model ){
-    //this->print_mig_rate (model->single_mig_probs_list_) ;// DEBUG
-    //}
 
 void CountModel::reset_model_parameters(double current_base, Model * model, bool online, bool force_update, bool print){
     
@@ -313,7 +310,7 @@ void CountModel::update_coalescent_count( deque < EvolutionaryEvent *> & Coaleve
         }
     }
 
-void CountModel::update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ){
+void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ){
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
@@ -321,35 +318,35 @@ void CountModel::update_recombination_count( deque < Recombevent *> & Recombeven
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
 
-    //if ( RecombeventContainer_i.size() == 0 ) cout << "                        finished  RecombeventContainer_i.size() == 0 "<<endl;
     if ( RecombeventContainer_i.size() == 0 ) return;
+
     // First process all recombination event segments that lie fully to the left of x_end
-    
     assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_start && RecombeventContainer_i[0]->end_base() > x_start );
     
-    while ( RecombeventContainer_i.size() > 0 ) {
-        Recombevent * current_Recombevent = RecombeventContainer_i[0];
+    int idx = 0;
+    while ( idx < RecombeventContainer_i.size() ) {
+        EvolutionaryEvent * current_Recombevent = RecombeventContainer_i[idx];
+		// we're done if the start of the event is beyond x_end (although subsequent recombination records could have an earlier start)
+		if (current_Recombevent->start_base() > x_end)
+			break;
+		 
         // test if the recombination event (at the left of the segment) needs to be included
         if ( current_Recombevent->start_base() >= x_start && current_Recombevent->start_base() < x_end ) {
-            total_recomb_count[current_Recombevent->pop_i()].add( weight * current_Recombevent->num_event() );
+            total_recomb_count[0].add( weight * current_Recombevent->recomb_event_count() );
         }
-        // only include the recombination opportunity that overlaps the interval [x_start, x_end]
-        double start = max( current_Recombevent->start_base(), (double)x_start );
-        double end   = min( current_Recombevent->end_base(),   (double)x_end );
-        //cerr.precision(15);
-        //cerr << weight << "\t" << current_Recombevent->opportunity_between( start , end ) <<endl;
-        total_recomb_opportunity[ current_Recombevent->pop_i() ].add( weight * current_Recombevent->opportunity_between( start , end ) );
+        double t_start = current_Recombevent->start_height;
+        double t_end = current_Recombevent->end_height;
+        total_recomb_opportunity[0].add( weight * current_Recombevent->recomb_opportunity_between( t_start, t_end, x_start, x_end ) );
 
-        // if this segment extends beyond x_end, we're done
-        if ( current_Recombevent->end_base() > (double)x_end ) 
-            break;
-
-        // we have completely processed this recombination event / opportunity, so remove it
-        current_Recombevent->pointer_counter_ --;
-        if (current_Recombevent->pointer_counter_ == 0) {
-            delete current_Recombevent;
-        }
-        RecombeventContainer_i.pop_front();
+        // remove event if we've completely processed it
+        if (idx == 0 && current_Recombevent->end_base() <= x_end) {
+			if (current_Recombevent->decrease_refcount_is_zero()) {
+				delete current_Recombevent;
+			}
+			RecombeventContainer_i.pop_front();
+		} else {
+			++idx;
+		}
     }  
 }
 

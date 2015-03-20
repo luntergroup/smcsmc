@@ -70,16 +70,17 @@ public:
 	explicit EvolutionaryEvent( double start_height, double end_height, double start_base, double end_base, int weight ) :
 	                   start_height(start_height),
 	                   end_height(end_height),
-	                   start_base(start_base),
+	                   start_base_(start_base),
 	                   end_base_(end_base),
-	                   weight(weight) {
+	                   weight(weight),
+	                   a( 0 ) {
 	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
 	                   };
 	// Constructor for migration/coalescence opportunity
 	explicit EvolutionaryEvent( double start_height, double end_height, double end_base, size_t population_index, int weight ) :
 			           start_height(start_height),
 			           end_height(end_height),
-			           start_base(-1),
+			           start_base_(-1),
 			           end_base_(end_base),
 			           weight(weight),
 			           a( population_index ) { 
@@ -87,8 +88,8 @@ public:
                        };
 
 	// Methods
-	bool is_recomb() const       { return start_base >= 0; }
-	bool is_coalmigr() const     { return start_base < 0; }
+	bool is_recomb() const       { return start_base_ >= 0; }
+	bool is_coalmigr() const     { return start_base_ < 0; }
 	bool is_no_event() const     { return event_data == -2; }
 	bool is_recomb_event() const { assert(is_recomb()); return event_data > -2; }
 	bool is_coal_event() const   { assert(is_coalmigr()); return event_data == -1; }
@@ -96,17 +97,19 @@ public:
 	int recomb_event_count() const { return is_recomb_event(); }
 	int coal_event_count() const   { return is_coal_event(); }
 	int migr_event_count() const   { return is_migr_event(); }
+	double start_base() const      { return start_base_; }
 	double end_base() const        { return end_base_; }
 	void set_recomb_event_pos( double recomb_x_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
 		assert( recomb_x_position <= end_base_ );
-		assert( start_base <= recomb_x_position );
+		assert( start_base_ <= recomb_x_position );
 		event_data = -1;
 		a.recomb_pos = recomb_x_position; }
 	void set_recomb_event_time( double recomb_t_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
+		dout << "About to record a timewise recomb event; interval " << start_height << " to " << end_height << "; event time " << recomb_t_position << endl;
 		assert( recomb_t_position <= end_height );
 		assert( start_height <= recomb_t_position );
 		event_data = 0;
@@ -129,7 +132,9 @@ public:
 		return end_height - start_height; }
 	double recomb_opportunity() const {
 		assert (is_recomb());
-		return (end_height - start_height) * (end_base_ - start_base); }
+		return weight * (end_height - start_height) * (end_base_ - start_base_); }
+	double recomb_opportunity_between( double height0, double height1, double base0, double base1) const {
+		return weight * max(0.0, min(height1,end_height) - max(height0,start_height)) * max(0.0, min(base1,end_base_) - max(base0,start_base_)); }
 	size_t get_population() const {
 		assert (is_coalmigr());
 		return a.coal_migr_population; }
@@ -146,9 +151,11 @@ public:
 	              
 	// Members
 private:
+public: // for CountModel::update_recombination_count; temporarily
 	double start_height;
 	double end_height;
-    double start_base;     // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
+private:
+    double start_base_;    // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
 	double end_base_;
     int event_data {-2};   // -2 == no event; otherwise type-specific meaning:
 	                       // recomb:    -1 == event at top edge (time-wise sampling)
