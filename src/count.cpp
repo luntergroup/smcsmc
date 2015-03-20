@@ -350,17 +350,16 @@ void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & Reco
     }  
 }
 
-void CountModel::update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
+void CountModel::update_migration_count( deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() < x_end) {
-        Migrevent * current_Migrevent = MigreventContainer_i[0];
-        if (current_Migrevent->event_state() == EVENT) {
-            total_mig_count[epoch_idx][current_Migrevent->pop_i()][current_Migrevent->mig_pop()].add( weight * current_Migrevent->num_event() );
+    while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() <= x_end) {
+        EvolutionaryEvent * current_Migrevent = MigreventContainer_i[0];
+        if (current_Migrevent->is_migr_event()) {
+            total_mig_count[epoch_idx][current_Migrevent->get_population()][current_Migrevent->get_migr_to_population()].add( weight * current_Migrevent->migr_event_count() );
         }
-        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->pop_i()].add( weight * current_Migrevent->opportunity() );
-        current_Migrevent->pointer_counter_ --;
-        if (current_Migrevent->pointer_counter_ == 0) {
+        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->get_population()].add( weight * current_Migrevent->migr_opportunity() );
+        if (current_Migrevent->decrease_refcount_is_zero()) {
             delete current_Migrevent;
             }
         MigreventContainer_i.pop_front();

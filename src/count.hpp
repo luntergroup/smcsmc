@@ -60,7 +60,6 @@ class CountModel: public Model {
         //
         // Constructors and Destructors
         //    
-        //CountModel():Model(){};     
         CountModel(const Model& model, double lag = 0, double minimal_lag_update_ratio = 0.10 ) : Model( model ){ 
 			this->const_lag_ = lag;
 			this->const_minimal_lag_update_ratio_ = minimal_lag_update_ratio; 
@@ -91,22 +90,15 @@ class CountModel: public Model {
         void reset_recomb_rate ( Model *model );
         void reset_Ne ( Model *model );
         void reset_mig_rate ( Model *model );
-        //void reset_single_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
         void update_coalescent_count( deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ) ;
         void update_recombination_count( deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ) ;
-        void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
+        void update_migration_count( deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
 
         void compute_recomb_rate();
         void compute_mig_rate();
-
-        void resize_Starevent ( deque < Coalevent *> & CoaleventContainer_i , int index) ;
-        void resize_Starevent ( deque < Recombevent *> & RecombeventContainer_i , int index) ;
-        void resize_Migrevent ( deque < Migrevent *> & MigreventContainer_i , int index) ;
-
-        //void check_CountModel_Ne();
 
         //
         // Members

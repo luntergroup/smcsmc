@@ -120,10 +120,11 @@ class ForestState : public Forest{
                                      double end_base);
 
         void record_Migrevent(size_t pop_i,                          
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, size_t mig_pop, double end_base);                          
+							  double start_time, 
+							  double end_time,
+							  bool event, 
+							  size_t mig_pop, 
+							  double end_base);                          
         
         //void record_recomb_opp_within_scrm ( double recomb_rate) const {
             //cout << "recomb_rate " << recomb_rate <<endl;
@@ -142,7 +143,7 @@ class ForestState : public Forest{
         // Members //
         vector < deque < EvolutionaryEvent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < deque < EvolutionaryEvent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
-        vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
+        vector < deque < EvolutionaryEvent* > > MigreventContainer;   /*!< \brief Migration events recorder */
                 
         double site_where_weight_was_updated_;
         double particle_weight_;
