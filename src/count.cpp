@@ -88,6 +88,7 @@ void CountModel::init_migr() {
     }
 }
 
+
 void CountModel::init_lags(){
     this->counted_to.clear();
     this->lags.clear();        
@@ -129,7 +130,7 @@ void CountModel::reset_Ne ( Model *model ){
             }
         }
     this->check_model_updated_Ne( model );
-    }
+}
 
 
 void CountModel::reset_recomb_rate ( Model *model ){
@@ -296,21 +297,121 @@ void CountModel::compute_recomb_rate () {
                      */ 
                     
 
-void CountModel::update_coalescent_count( deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ){
+void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (CoaleventContainer_i.size() > 0 && CoaleventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
-        EvolutionaryEvent * current_Coalevent = CoaleventContainer_i[0];
+    int idx = 0;
+    double opp = 0.0, events = 0.0;
+    while ( idx < CoaleventContainer_i.size() ) {
+
+        EvolutionaryEvent * current_Coalevent = CoaleventContainer_i[idx];
+
+		// we're done if the start of the event is beyond x_end.  Note -- we're looking at the END field, start field isn't used
+		if (current_Coalevent->end_base() > x_end)
+			break;
+
+		events += current_Coalevent->coal_event_count();
+		opp += current_Coalevent->coal_opportunity();
+		
         total_coal_count[current_Coalevent->get_population()].add( weight * current_Coalevent->coal_event_count() );
         total_coal_opportunity[current_Coalevent->get_population()].add( weight * current_Coalevent->coal_opportunity() );
-        if (current_Coalevent->decrease_refcount_is_zero()) {
-            delete current_Coalevent;
-            }
-        CoaleventContainer_i.pop_front();
-        }
-    }
 
-void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ){
+        // remove event if we've completely processed it
+        if (idx == 0 && current_Coalevent->end_base() <= x_end) {
+			if (current_Coalevent->decrease_refcount_is_zero()) {
+				delete current_Coalevent;
+			}
+			CoaleventContainer_i.pop_front();
+		} else {
+			++idx;
+		}
+	}
+	
+	// same for generic events
+    double opp2 = 0.0, events2 = 0.0;
+	for (idx=0; idx < eventContainer_i.size(); ) {
+		
+		EvolutionaryEvent* event = eventContainer_i[idx];
+		if (event->end_base() > x_end) break;
+		if (!event->is_coalmigr()) {
+			++idx;
+			continue;
+		}
+		events2 += event->coal_event_count();
+		opp2 += event->coal_opportunity();
+		++idx;
+	}
+	
+	if (events + events2 > 0.0) 
+		assert (fabs(events - events2) / (events + events2) < 1e-8);
+	if (opp + opp2 > 0.0)
+		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+}
+
+void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
+    // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
+    // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
+    int idx = 0;
+    double opp = 0.0, events = 0.0;
+    
+    while (idx < MigreventContainer_i.size() ) {
+
+        EvolutionaryEvent * current_Migrevent = MigreventContainer_i[idx];
+
+        if (current_Migrevent->end_base() > x_end) 
+			break;
+			
+        if (current_Migrevent->is_migr_event()) {
+			events += current_Migrevent->migr_event_count();
+            total_mig_count[epoch_idx][current_Migrevent->get_population()][current_Migrevent->get_migr_to_population()].add( weight * current_Migrevent->migr_event_count() );
+        }
+        opp += current_Migrevent->migr_opportunity();
+        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->get_population()].add( weight * current_Migrevent->migr_opportunity() );
+        
+        if (idx == 0 && current_Migrevent->end_base() <= x_end) {
+			if (current_Migrevent->decrease_refcount_is_zero()) {
+				delete current_Migrevent;
+			}
+			MigreventContainer_i.pop_front();
+        } else {
+			++idx;
+		}
+    }
+    
+	// same for generic events
+    double opp2 = 0.0, events2 = 0.0;
+	for (idx=0; idx < eventContainer_i.size(); ) {
+		
+		EvolutionaryEvent* event = eventContainer_i[idx];
+		if (event->end_base() > x_end) break;
+		if (!event->is_coalmigr()) {
+			++idx;
+			continue;
+		}
+		events2 += event->migr_event_count();
+		opp2 += event->migr_opportunity();
+		++idx;
+		// this should really be done once all types are processed
+        if (idx == 0 && event->end_base() <= x_end) {
+			if (event->decrease_refcount_is_zero()) {
+				delete event;
+			}
+			eventContainer_i.pop_front();
+		} else {
+			++idx;
+		}
+	}
+	
+	if (events + events2 > 0.0) 
+		assert (fabs(events - events2) / (events + events2) < 1e-8);
+	if (opp + opp2 > 0.0)
+		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+    
+}
+
+
+
+void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ){
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
     #endif
@@ -322,6 +423,8 @@ void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & Reco
 
     // First process all recombination event segments that lie fully to the left of x_end
     assert ( RecombeventContainer_i.size() > 0 && RecombeventContainer_i[0]->start_base() <= x_start && RecombeventContainer_i[0]->end_base() > x_start );
+
+    double opp = 0.0, events = 0.0;
     
     int idx = 0;
     while ( idx < RecombeventContainer_i.size() ) {
@@ -332,11 +435,13 @@ void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & Reco
 		 
         // test if the recombination event (at the left of the segment) needs to be included
         if ( current_Recombevent->start_base() >= x_start && current_Recombevent->start_base() < x_end ) {
+			events += current_Recombevent->recomb_event_count();
             total_recomb_count[0].add( weight * current_Recombevent->recomb_event_count() );
         }
         double t_start = current_Recombevent->start_height;
         double t_end = current_Recombevent->end_height;
         total_recomb_opportunity[0].add( weight * current_Recombevent->recomb_opportunity_between( t_start, t_end, x_start, x_end ) );
+        opp += current_Recombevent->recomb_opportunity_between( t_start, t_end, x_start, x_end );
 
         // remove event if we've completely processed it
         if (idx == 0 && current_Recombevent->end_base() <= x_end) {
@@ -348,21 +453,38 @@ void CountModel::update_recombination_count( deque < EvolutionaryEvent *> & Reco
 			++idx;
 		}
     }  
+    
+	// same for generic events
+    double opp2 = 0.0, events2 = 0.0;
+	for (idx=0; idx < eventContainer_i.size(); ) {
+		
+		EvolutionaryEvent* event = eventContainer_i[idx];
+		if (event->end_base() > x_end) break;
+		if (event->is_recomb()) {
+			if ( event->start_base() >= x_start && event->start_base() < x_end ) {
+				events2 += event->recomb_event_count();
+			}
+			double t_start = event->start_height;
+			double t_end = event->end_height;
+			opp2 += event->recomb_opportunity_between( t_start, t_end, x_start, x_end );
+		}
+
+		// now, all types are processed, so remove events that are completely done.
+        if (idx == 0 && event->end_base() <= x_end) {
+			if (event->decrease_refcount_is_zero()) {
+				delete event;
+			}
+			eventContainer_i.pop_front();
+		} else {
+			++idx;
+		}
+	}
+	
+	if (events + events2 > 0.0) 
+		assert (fabs(events - events2) / (events + events2) < 1e-8);
+	if (opp + opp2 > 0.0)
+		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+
 }
 
-void CountModel::update_migration_count( deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
-    // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
-    // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    while (MigreventContainer_i.size() > 0 && MigreventContainer_i[0]->end_base() <= x_end) {
-        EvolutionaryEvent * current_Migrevent = MigreventContainer_i[0];
-        if (current_Migrevent->is_migr_event()) {
-            total_mig_count[epoch_idx][current_Migrevent->get_population()][current_Migrevent->get_migr_to_population()].add( weight * current_Migrevent->migr_event_count() );
-        }
-        total_weighted_mig_opportunity[epoch_idx][current_Migrevent->get_population()].add( weight * current_Migrevent->migr_opportunity() );
-        if (current_Migrevent->decrease_refcount_is_zero()) {
-            delete current_Migrevent;
-            }
-        MigreventContainer_i.pop_front();
-        }
-    }
 

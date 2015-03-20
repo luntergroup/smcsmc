@@ -109,7 +109,6 @@ public:
 	void set_recomb_event_time( double recomb_t_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
-		dout << "About to record a timewise recomb event; interval " << start_height << " to " << end_height << "; event time " << recomb_t_position << endl;
 		assert( recomb_t_position <= end_height );
 		assert( start_height <= recomb_t_position );
 		event_data = 0;
