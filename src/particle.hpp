@@ -99,10 +99,11 @@ class ForestState : public Forest{
         //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
         void record_Coalevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, double end_base);
+                          double start_time, 
+                          double end_time, 
+                          int weight,
+                          bool event,
+                          double end_base);
                                   
         void record_Recombevent(size_t pop_i,
                           //double start_time, 
@@ -131,7 +132,7 @@ class ForestState : public Forest{
         size_t ancestor() const { return this->ancestor_; }
 
         // Members //
-        vector < deque < Coalevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
+        vector < deque < EvolutionaryEvent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
         vector < deque < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
         vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
                 

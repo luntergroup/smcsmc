@@ -299,15 +299,14 @@ void CountModel::compute_recomb_rate () {
                      */ 
                     
 
-void CountModel::update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ){
+void CountModel::update_coalescent_count( deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     while (CoaleventContainer_i.size() > 0 && CoaleventContainer_i[0]->end_base() <= x_end) { // DEBUG changed "<" to "<=" ???
-        Coalevent * current_Coalevent = CoaleventContainer_i[0];
-        total_coal_count[current_Coalevent->pop_i()].add( weight * current_Coalevent->num_event() );
-        total_coal_opportunity[current_Coalevent->pop_i()].add( weight * current_Coalevent->opportunity() );
-        current_Coalevent->pointer_counter_ --;
-        if (current_Coalevent->pointer_counter_ == 0) {
+        EvolutionaryEvent * current_Coalevent = CoaleventContainer_i[0];
+        total_coal_count[current_Coalevent->get_population()].add( weight * current_Coalevent->coal_event_count() );
+        total_coal_opportunity[current_Coalevent->get_population()].add( weight * current_Coalevent->coal_opportunity() );
+        if (current_Coalevent->decrease_refcount_is_zero()) {
             delete current_Coalevent;
             }
         CoaleventContainer_i.pop_front();

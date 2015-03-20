@@ -90,10 +90,10 @@ ForestState::ForestState( const ForestState & copied_state )
 void ForestState::copyEventContainers(const ForestState & copied_state ){
     // Copy Coalescent events
     for (size_t i = 0 ; i < copied_state.CoaleventContainer.size() ; i++ ){ 
-        deque < Coalevent* > CoaleventContainer_i;   
+        deque < EvolutionaryEvent* > CoaleventContainer_i;   
         for (size_t ii = 0 ; ii < copied_state.CoaleventContainer[i].size(); ii++){
-            Coalevent* new_coalevent = copied_state.CoaleventContainer[i][ii];
-            new_coalevent->pointer_counter_++;
+            EvolutionaryEvent* new_coalevent = copied_state.CoaleventContainer[i][ii];
+            new_coalevent->increase_refcount();
             CoaleventContainer_i.push_back ( new_coalevent ) ;
             }
         CoaleventContainer.push_back( CoaleventContainer_i );        
@@ -124,7 +124,7 @@ void ForestState::copyEventContainers(const ForestState & copied_state ){
 
 void ForestState::init_EventContainers( Model * model ){
     for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
-        deque < Coalevent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
+        deque < EvolutionaryEvent*  > CoaleventContainer_i;   /*!< \brief Coalescent events recorder */
         CoaleventContainer.push_back( CoaleventContainer_i );        
         deque < Recombevent* > RecombeventContainer_i; /*!< \brief Recombination events recorder */
         RecombeventContainer.push_back( RecombeventContainer_i );
@@ -160,7 +160,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     eventCode event;
     int migrate_to_pop;
 
-    // find extent of time interval where events may have, or has, occurred
+    // find extent of time interval where an event may have occurred
     start_height = ti.start_height();
     if (this->tmp_event_.isNoEvent()) {
 		end_height = start_height + ti.length();
@@ -186,12 +186,12 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             // node i is tracing out a new branch; opportunities for coalescences and migration
             start_base = this->current_base();
             int weight = ti.numberOfContemporaries( active_node(i)->population() );
-			double opportunity_y = end_height - start_height;
-			double coal_opportunity = opportunity_y * weight;
+			//double coal_opportunity = opportunity_y * weight;
 			// consider only normal (not pairwise) coalescences that occurred on this node
-	        event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i) ? EVENT : NOEVENT;
-			this->record_Coalevent( active_node(i)->population(), coal_opportunity, event, start_base );
+	        bool coal_event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i);
+			this->record_Coalevent( active_node(i)->population(), start_height, end_height, weight, coal_event, start_base );
 			// consider migration opportunity and events
+			double opportunity_y = end_height - start_height;
 			if (this->model().population_number()>1) {
 				migrate_to_pop = 0;
 				event = NOEVENT;
@@ -210,10 +210,10 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     if ((states_[0] == 1) && (states_[1] == 1) && (active_node(0)->population() == active_node(1)->population() ) ) {
 		start_base = this->current_base();
 		int weight = 1;
-		double opportunity_y = end_height - start_height;
-		double coal_opportunity = opportunity_y * weight;
-	    event = (tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT;
-		this->record_Coalevent( active_node(0)->population(), coal_opportunity, event, start_base );
+		//double opportunity_y = end_height - start_height;
+		//double coal_opportunity = opportunity_y * weight;
+	    //event = (tmp_event_.isPwCoalescence()) ? EVENT : NOEVENT;
+		this->record_Coalevent( active_node(0)->population(), start_height, end_height, weight, tmp_event_.isPwCoalescence(), start_base );
 	}
 
     dout << endl;        
@@ -225,18 +225,24 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 */
 void ForestState::record_Coalevent(
                   size_t pop_i,
-                  //double start_time, 
-                  //double end_time, 
-                  double opp_y, 
-                  eventCode event_code,
+                  double start_time, 
+                  double end_time, 
+                  int weight, 
+                  bool event,
                   double end_base ) {
     //cout<<"current_time_index = " << this->writable_model()->current_time_idx_<<endl;
+    EvolutionaryEvent * new_event = new EvolutionaryEvent(start_time, end_time, end_base, pop_i, weight);
+    if (event) {
+		new_event->set_coal_event();
+	}
+	/*
     Coalevent * new_event = new Coalevent( pop_i,
                           //start_time,
                           //end_time, 
                           opp_y,
                           event_code, end_base);
 	new_event->set_epoch_index ( this->writable_model()->current_time_idx_ ) ;
+	*/
     assert(new_event->print_event());
     this->CoaleventContainer[this->writable_model()->current_time_idx_].push_back(new_event);
 }
@@ -359,8 +365,7 @@ void ForestState::clear_CoaleventContainer(){
     for (size_t time_i = 0; time_i < this->CoaleventContainer.size(); time_i++ ){
         //cout << "            this->CoaleventContainer[time_i].size() = " << this->CoaleventContainer[time_i].size() <<endl;
         for (size_t i=0; i < this->CoaleventContainer[time_i].size(); i++){
-            CoaleventContainer[time_i][i]->pointer_counter_ --;
-            if (CoaleventContainer[time_i][i]->pointer_counter_ == 0){
+            if (CoaleventContainer[time_i][i]->decrease_refcount_is_zero()) {
                 delete CoaleventContainer[time_i][i];
                 }
             }
