@@ -187,7 +187,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 			if (end_base == start_base) continue;
 			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, end_height, start_base, end_base, 1 );
 			double recomb_pos = -1;
-			if (tmp_event_.isRecombination()) {
+			if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
 				recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
 				recomb_event->set_recomb_event_pos( recomb_pos );
 			}
@@ -200,6 +200,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             int weight = ti.numberOfContemporaries( active_node(i)->population() );
 			// consider normal (not pairwise) coalescences that occurred on this node
 	        bool coal_event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i);
+	        bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
 	        // account for potential pairwise coalescence opportunity and event
 	        if (i==0 && states_[1]==1 && active_node(0)->population() == active_node(1)->population()) {
 				weight += 1;
@@ -208,14 +209,11 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 			// Record coalescence and migration opportunity
 			EvolutionaryEvent * migrcoal_event = new EvolutionaryEvent(start_height, end_height, start_base, active_node(i)->population(), weight);
 			// Record any events
-			if (coal_event)               migrcoal_event->set_coal_event();
-			if (tmp_event_.isMigration()) {
-				dout << "found migration event from " << active_node(i)->population() << " to " << tmp_event_.mig_pop() << endl;
-				migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
-			}
+			if (coal_event) migrcoal_event->set_coal_event();
+			if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
 			this->eventContainer[this->writable_model()->current_time_idx_].push_back(migrcoal_event);
 			if (this->model().population_number()>1) {
-				this->record_Migrevent( active_node(i)->population(), start_height, end_height, tmp_event_.isMigration(), tmp_event_.mig_pop(), start_base );
+				this->record_Migrevent( active_node(i)->population(), start_height, end_height, migr_event , tmp_event_.mig_pop(), start_base );
 			}			
 			this->record_Coalevent( active_node(i)->population(), start_height, end_height, weight, coal_event, start_base );
 		}

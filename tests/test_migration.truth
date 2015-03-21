@@ -69,10 +69,10 @@ Updated Mij @ time     2842: (0->1)            0 (1->0)  1.25493e-06
 Updated Mij @ time  4129.52: (0->1)  1.83108e-06 (1->0)   4.0718e-07
 Updated Mij @ time  5759.32: (0->1)  4.05071e-06 (1->0)  1.95629e-07
 Updated Mij @ time  7822.52: (0->1)  2.19415e-06 (1->0)  2.17924e-06
-Updated Mij @ time  10434.3: (0->1)  2.23293e-06 (1->0)  2.87558e-06
+Updated Mij @ time  10434.3: (0->1)  2.19991e-06 (1->0)  2.87558e-06
 Updated Mij @ time  13740.6: (0->1)  2.65328e-06 (1->0)  2.29368e-06
-Updated Mij @ time    17926: (0->1)  2.49584e-06 (1->0)  3.30448e-06
-Updated Mij @ time  23224.3: (0->1)  2.46438e-06 (1->0)  3.20795e-06
+Updated Mij @ time    17926: (0->1)  2.49251e-06 (1->0)  3.16373e-06
+Updated Mij @ time  23224.3: (0->1)  2.36134e-06 (1->0)  2.64905e-06
 Updated Mij @ time    24000: (0->1)            0 (1->0)            0
 Updated Mij @ time  29931.4: (0->1)            0 (1->0)            0
 Updated Mij @ time  38421.9: (0->1)            0 (1->0)            0
@@ -81,7 +81,7 @@ Updated Mij @ time  62776.1: (0->1)            0 (1->0)            0
 Forest state was created 66923 times
 Forest state destructor was called 65923 times
 Actual recombination 432887
-Actual recomb op is 8.65615e+13
+Actual recomb op is 0
 End of EM_step 0
 smcsmc parameters: 
 HIST saved in file: pfARGHIST
