@@ -332,20 +332,20 @@ void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContai
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
-		if (event->end_base() > x_end) break;
-		if (!event->is_coalmigr()) {
-			++idx;
-			continue;
+		if (event->is_coalmigr()) {
+			if (event->end_base() > x_end) break;
+			events2 += event->coal_event_count();
+			opp2 += event->coal_opportunity();
 		}
-		events2 += event->coal_event_count();
-		opp2 += event->coal_opportunity();
 		++idx;
 	}
 	
 	if (events + events2 > 0.0) 
-		assert (fabs(events - events2) / (events + events2) < 1e-8);
+		if (!(fabs(events - events2) / (events + events2) < 1e-8))
+			cout << "fail assertion coal event" << endl;
 	if (opp + opp2 > 0.0)
-		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+		if (!(fabs(opp - opp2) / (opp + opp2) < 1e-8)) 
+			cout << "fail assertion coal opp" << endl;
 }
 
 void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx ) {
@@ -383,29 +383,20 @@ void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContain
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
-		if (event->end_base() > x_end) break;
-		if (!event->is_coalmigr()) {
-			++idx;
-			continue;
+		if (event->is_coalmigr()) {
+			if (event->end_base() > x_end) break;
+			events2 += event->migr_event_count();
+			opp2 += event->migr_opportunity();
 		}
-		events2 += event->migr_event_count();
-		opp2 += event->migr_opportunity();
 		++idx;
-		// this should really be done once all types are processed
-        if (idx == 0 && event->end_base() <= x_end) {
-			if (event->decrease_refcount_is_zero()) {
-				delete event;
-			}
-			eventContainer_i.pop_front();
-		} else {
-			++idx;
-		}
 	}
 	
 	if (events + events2 > 0.0) 
-		assert (fabs(events - events2) / (events + events2) < 1e-8);
+		if (!(fabs(events - events2) / (events + events2) < 1e-8))
+			cout << "fail assertion migr event" << endl;
 	if (opp + opp2 > 0.0)
-		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+		if (!(fabs(opp - opp2) / (opp + opp2) < 1e-8)) 
+			cout << "fail assertion migr opp" << endl;
     
 }
 
@@ -459,8 +450,8 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
-		if (event->end_base() > x_end) break;
 		if (event->is_recomb()) {
+			if (event->start_base() > x_end) break;
 			if ( event->start_base() >= x_start && event->start_base() < x_end ) {
 				events2 += event->recomb_event_count();
 			}
@@ -469,7 +460,7 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 			opp2 += event->recomb_opportunity_between( t_start, t_end, x_start, x_end );
 		}
 
-		// now, all types are processed, so remove events that are completely done.
+		// now, all types are processed, so remove events (of any type) that are completely done.
         if (idx == 0 && event->end_base() <= x_end) {
 			if (event->decrease_refcount_is_zero()) {
 				delete event;
@@ -481,9 +472,11 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 	}
 	
 	if (events + events2 > 0.0) 
-		assert (fabs(events - events2) / (events + events2) < 1e-8);
+		if (!(fabs(events - events2) / (events + events2) < 1e-8))
+			cout << "fail assertion recomb event" << endl;
 	if (opp + opp2 > 0.0)
-		assert (fabs(opp - opp2) / (opp + opp2) < 1e-8);
+		if (!(fabs(opp - opp2) / (opp + opp2) < 1e-8)) 
+			cout << "fail assertion recomb opp" << endl;
 
 }
 
