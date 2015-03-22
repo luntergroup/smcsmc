@@ -93,9 +93,9 @@ class CountModel: public Model {
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
-        void update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ) ;
-        void update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ) ;
-        void update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, deque < EvolutionaryEvent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
+        void update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ) ;
+        void update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ) ;
+        void update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx );
 
         void compute_recomb_rate();
         void compute_mig_rate();

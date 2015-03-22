@@ -74,9 +74,6 @@ class ForestState : public Forest{
         // Destructors //
         ~ForestState();
         void clear_eventContainer();
-        void clear_CoaleventContainer();
-        void clear_RecombeventContainer();
-        void clear_MigreventContainer();
 
         // Resampling //
         void init_EventContainers( Model * model );
@@ -96,34 +93,6 @@ class ForestState : public Forest{
         void record_Recombevent_b4_extension ( );
         void record_Recombevent_atNewGenealogy ( double event_height );
         void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
-        void record_Coalevent(size_t pop_i,
-                              double start_time, 
-                              double end_time, 
-                              int weight,
-                              bool event,
-                              double end_base);
-                                  
-        void record_Recombevent_pos(double start_time, 
-                                    double end_time, 
-                                    double recomb_base,
-                                    int weight, 
-                                    double start_base, 
-                                    double end_base);
-
-        void record_Recombevent_time(double start_time, 
-                                     double end_time, 
-                                     double recomb_time,
-                                     int weight, 
-                                     double start_base, 
-                                     double end_base);
-
-        void record_Migrevent(size_t pop_i,                          
-							  double start_time, 
-							  double end_time,
-							  bool event, 
-							  size_t mig_pop, 
-							  double end_base);                          
-        
         void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
         
         // Setters and getters: 
@@ -135,9 +104,6 @@ class ForestState : public Forest{
         size_t ancestor() const { return this->ancestor_; }
 
         // Members 
-        vector < deque < EvolutionaryEvent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < deque < EvolutionaryEvent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
-        vector < deque < EvolutionaryEvent* > > MigreventContainer;   /*!< \brief Migration events recorder */
         vector < deque < EvolutionaryEvent* > > eventContainer; 
                 
         double site_where_weight_was_updated_;
@@ -146,11 +112,7 @@ class ForestState : public Forest{
         vector < TmrcaState > TmrcaHistory;        
         vector < ForestState* > ForestState_copies;        
 
-        // Debugging tools 
-        bool print_Coalevent();
-        bool print_Recombevent();
-        bool print_Migrevent();
-  
+        // Debugging tools   
 		std::string newick(Node *node) ;
 };
 #endif
