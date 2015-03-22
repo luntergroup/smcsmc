@@ -146,7 +146,7 @@ public:
 		return (ref_counter == 0); }
 	void increase_refcount() { ref_counter++; }
 	bool print_event();
-        bool append_event( const EvolutionaryEvent& e );
+    bool append_event( const EvolutionaryEvent& e );
 	              
 	// Members
 private:

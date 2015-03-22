@@ -476,7 +476,7 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 			cout << "fail assertion recomb event" << endl;
 	if (opp + opp2 > 0.0)
 		if (!(fabs(opp - opp2) / (opp + opp2) < 1e-8)) 
-			cout << "fail assertion recomb opp" << endl;
+			cout << "fail assertion recomb opp " << opp << " generic: " << opp2 << endl;
 
 }
 

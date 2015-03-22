@@ -322,7 +322,7 @@ void ForestState::record_Recombevent_b4_extension (){
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         record_Recombevent_time( (*ti).start_height(), (*ti).end_height(), -1, ti.numberOfLocalContemporaries(), this->current_base(), this->next_base_ );
 
-		EvolutionaryEvent* recomb_event = new EvolutionaryEvent( (*ti).start_height(), (*ti).end_height(), this->current_base(), this->next_base_, 1 );  // no event for now
+		EvolutionaryEvent* recomb_event = new EvolutionaryEvent( (*ti).start_height(), (*ti).end_height(), this->current_base(), this->next_base_, ti.numberOfLocalContemporaries() );  // no event for now
 		this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
     }
 }
