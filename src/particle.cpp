@@ -197,11 +197,10 @@ void ForestState::record_Recombevent_b4_extension (){
         dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.numberOfLocalContemporaries();
-//        if (contemporaries > 0) {
-// If I do this, I get an error when freeing event eventually.  Why??
-			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( (*ti).start_height(), (*ti).end_height(), this->current_base(), this->next_base_, ti.numberOfLocalContemporaries() );  // no event for now
+        if (contemporaries > 0) {
+			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( (*ti).start_height(), (*ti).end_height(), this->current_base(), this->next_base_, contemporaries );  // no event for now
 			this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
-//		}
+		}
     }
 }
 

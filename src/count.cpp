@@ -306,10 +306,8 @@ void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContai
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_coalmigr()) {
 			if (event->end_base() > x_end) break;
-
-			total_coal_count[event->get_population()].add( weight * event->coal_event_count() );
 			total_coal_opportunity[event->get_population()].add( weight * event->coal_opportunity() );
-
+			total_coal_count[event->get_population()].add( weight * event->coal_event_count() );
 		}
 		++idx;
 	}
@@ -318,19 +316,19 @@ void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContai
 void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx ) {
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
-    int idx = 0;    
-    double opp2 = 0.0, events2 = 0.0;
-	for (idx=0; idx < eventContainer_i.size(); ) {
+	for (int idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_coalmigr()) {
 			if (event->end_base() > x_end) break;
-            total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
 			total_weighted_mig_opportunity[epoch_idx][event->get_population()].add( weight * event->migr_opportunity() );
-			events2 += event->migr_event_count();
-			opp2 += event->migr_opportunity();
+			if (event->is_migr_event()) {
+				// This is not just an efficiency measure: if !is_migr_event(), event->get_migr_to_population() isn't valid
+				total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
+			}
 		}
 		++idx;
+
 	}    
 }
 

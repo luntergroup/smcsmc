@@ -49,7 +49,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 			double weight = thisState->weight();
 
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
-            this->update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
+			this->update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
             if (this->population_number() > 1){
                 this->update_migration_count( thisState->eventContainer[ epoch_idx ], weight, x_end, epoch_idx );
             }
