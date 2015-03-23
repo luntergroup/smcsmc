@@ -142,8 +142,8 @@ public:
 		assert (is_migr_event());
 		return (size_t)event_data; }
 	bool decrease_refcount_is_zero() {
-		ref_counter--;
 		assert( ref_counter > 0 );
+		ref_counter--;
 		return (ref_counter == 0); }
 	void increase_refcount() { ref_counter++; }
 	bool print_event();

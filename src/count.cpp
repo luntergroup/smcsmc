@@ -42,8 +42,6 @@ void CountModel::init_coal_and_recomb() {
     this->total_recomb_count.clear();
     this->total_weighted_recomb_opportunity.clear();
 
-    this->resetTime();   // is this necessary? 
-    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
 		// populate coalescent and recombination event counters
         vector <Two_doubles> tmp_count(this->population_number(), Two_doubles(0));
@@ -67,8 +65,6 @@ void CountModel::init_migr() {
     this->total_mig_count.clear();
     this->total_weighted_mig_opportunity.clear();    
 
-    this->resetTime();     // is this necessary?
-    
 	// populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
 	/*! \todo Need to populate with correct initial values */
 	vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
@@ -90,18 +86,17 @@ void CountModel::init_migr() {
 
 
 void CountModel::init_lags(){
+
     this->counted_to.clear();
     this->lags.clear();        
-    this->resetTime();    
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
         this->counted_to.push_back( (double)0 );
         double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
         //double lag_i =  double(4) / this->recombination_rate() / top_t ; 
         double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ; 
         this->lags.push_back( lag_i );
-        }    
-    this->resetTime();
-    }
+    }    
+}
 
 
 void CountModel::initialize_mig_rate ( vector <vector<double>*> & rates_list ){
@@ -109,15 +104,14 @@ void CountModel::initialize_mig_rate ( vector <vector<double>*> & rates_list ){
         if (rates_list[i]){
             for (size_t j = 0; j < rates_list[i]->size() ; j++){
                 rates_list[i]->at(j) = 0;
-                }
-            }    
-        }
+            }
+        }    
     }
+}
     
     
 void CountModel::reset_Ne ( Model *model ){
-    model->resetTime();
-    this ->resetTime();
+
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             //model->addPopulationSize(this->change_times_[epoch_idx], pop_j, this->total_weighted_coal_opportunity[epoch_idx][pop_j] / this->total_coal_count[epoch_idx][pop_j] /2 ,false, false);    
@@ -127,8 +121,8 @@ void CountModel::reset_Ne ( Model *model ){
             //tmp_pop_size = roundf(tmp_pop_size * (double)1e6)/(double)1e6; // Rounding, Gerton: this is not a good idea
             model->addPopulationSize(this->change_times_[epoch_idx], pop_j, tmp_pop_size ,false, false);    
             cout << " popsize is equal to " << tmp_pop_size << " ( "<<this->total_weighted_coal_opportunity[epoch_idx][pop_j].final_answer()<<" / "<< this->total_coal_count[epoch_idx][pop_j].final_answer() << "/2)" <<endl;
-            }
         }
+    }
     this->check_model_updated_Ne( model );
 }
 
@@ -160,22 +154,20 @@ void CountModel::reset_mig_rate ( Model *model ) {
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
 
-    model->resetTime();
-    this ->resetTime();
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++){
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ){
             for (size_t pop_k = 0 ; pop_k < this->population_number(); pop_k++ ) {
                 if ( pop_j == pop_k) continue;
                 model->addMigrationRate(this->change_times_[epoch_idx], pop_j, pop_k, this->inferred_mig_rate[epoch_idx][pop_j][pop_k], false, false);
-                }
             }
         }
+    }
 
     this->check_model_updated_mig (model);
     
     assert( this->print_mig_rate (model->mig_rates_list_) );
     assert( this->print_mig_rate (model->total_mig_rates_list_) );
-    }
+}
 
 
 void CountModel::reset_model_parameters(double current_base, Model * model, bool online, bool force_update, bool print){
@@ -232,7 +224,7 @@ void CountModel::log_counts( PfParam& param ) {
     
 
 void CountModel::compute_mig_rate(){
-    this->resetTime();
+
     for (size_t epoch_idx = 0; epoch_idx<change_times_.size(); epoch_idx++){
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
 			
