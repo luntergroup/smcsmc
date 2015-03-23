@@ -234,7 +234,7 @@ void ForestState::clear_eventContainer(){
     for (size_t time_i = 0; time_i < this->eventContainer.size(); time_i++ ) {
         for (size_t i=0; i < this->eventContainer[time_i].size(); i++) {
             if (eventContainer[time_i][i]->decrease_refcount_is_zero()) {
-                delete eventContainer[time_i][i];
+				delete eventContainer[time_i][i];
             }
         }
         this->eventContainer[time_i].clear();
