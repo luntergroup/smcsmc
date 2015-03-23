@@ -69,9 +69,9 @@ public:
 	// Constructor for a recombination opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight ) :
 	                   start_height(start_height),
-	                   start_height_epoch(start_height_epoch),
+	                   start_height_epoch_(start_height_epoch),
 	                   end_height(end_height),
-	                   end_height_epoch(end_height_epoch),
+	                   end_height_epoch_(end_height_epoch),
 	                   start_base_(start_base),
 	                   end_base_(end_base),
 	                   weight(weight),
@@ -81,9 +81,9 @@ public:
 	// Constructor for migration/coalescence opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight ) :
 			           start_height(start_height),
-	                   start_height_epoch(start_height_epoch),
+	                   start_height_epoch_(start_height_epoch),
 			           end_height(end_height),
-	                   end_height_epoch(end_height_epoch),
+	                   end_height_epoch_(end_height_epoch),
 			           start_base_(-1),
 			           end_base_(end_base),
 			           weight(weight),
@@ -101,8 +101,10 @@ public:
 	int recomb_event_count() const { return is_recomb_event(); }
 	int coal_event_count() const   { return is_coal_event(); }
 	int migr_event_count() const   { return is_migr_event(); }
-	double start_base() const      { return start_base_; }
+	double start_base() const      { return is_recomb() ? start_base_ : end_base_; }
 	double end_base() const        { return end_base_; }
+	size_t start_height_epoch() const { return start_height_epoch_; }
+	size_t end_height_epoch() const   { return end_height_epoch_; }
 	void set_recomb_event_pos( double recomb_x_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
@@ -130,9 +132,15 @@ public:
 	double coal_opportunity() const {
 		assert (is_coalmigr());
 		return weight * (end_height - start_height); }
+	double coal_opportunity_between( double height0, double height1 ) const {
+		assert (is_coalmigr());
+		return weight * max(0.0, (min(height1,end_height) - max(height0,start_height))); }
 	double migr_opportunity() const {
 		assert (is_coalmigr());
 		return end_height - start_height; }
+	double migr_opportunity_between( double height0, double height1 ) const {
+		assert (is_coalmigr());
+		return max(0.0, (min(height1,end_height) - max(height0,start_height))); }
 	double recomb_opportunity() const {
 		assert (is_recomb());
 		return weight * (end_height - start_height) * (end_base_ - start_base_); }
@@ -157,9 +165,9 @@ public:
 private:
 public: // for CountModel::update_recombination_count; temporarily
 	double start_height;
-	size_t start_height_epoch;
+	size_t start_height_epoch_;
 	double end_height;
-	size_t end_height_epoch;
+	size_t end_height_epoch_;
 private:
     double start_base_;    // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
 	double end_base_;
