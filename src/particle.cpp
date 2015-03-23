@@ -128,16 +128,22 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
 	double start_base, end_base;
 	double start_height, end_height;
+	size_t start_height_epoch, end_height_epoch;
 
     // find extent of time interval where an event may have occurred
     start_height = ti.start_height();
+    start_height_epoch = ti.forest().model().current_time_idx_;
+    assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
     if (this->tmp_event_.isNoEvent()) {
 		end_height = start_height + ti.length();
 	} else {
 		end_height = this->tmp_event_.time();
 		assert (end_height > start_height);
 	}
-
+	// interval either runs to event, or to change point; in both cases the end_height has the
+	// same epoch as start_height (but call to getTimeIdx will return epoch+1 if end_height ran to end of interval)
+	end_height_epoch = start_height_epoch;   
+		
 	// loop over the two nodes
 	for (int i=0; i<2; i++) {
 		
@@ -146,7 +152,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             start_base = active_node(i)->last_update();
             end_base = this->current_base();
 			if (end_base == start_base) continue;
-			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, end_height, start_base, end_base, 1 );
+			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
 			double recomb_pos = -1;
 			if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
 				recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
@@ -167,7 +173,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 				coal_event |= tmp_event_.isPwCoalescence();
 			}
 			// Record coalescence and migration opportunity
-			EvolutionaryEvent * migrcoal_event = new EvolutionaryEvent(start_height, end_height, start_base, active_node(i)->population(), weight);
+			EvolutionaryEvent * migrcoal_event = new EvolutionaryEvent(start_height, start_height_epoch, end_height, end_height_epoch, start_base, active_node(i)->population(), weight);
 			// Record any events
 			if (coal_event) migrcoal_event->set_coal_event();
 			if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
@@ -198,7 +204,12 @@ void ForestState::record_Recombevent_b4_extension (){
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.numberOfLocalContemporaries();
         if (contemporaries > 0) {
-			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( (*ti).start_height(), (*ti).end_height(), this->current_base(), this->next_base_, contemporaries );  // no event for now
+			double start_height = (*ti).start_height();
+			double end_height = (*ti).end_height();
+			size_t start_height_epoch = ti.forest().model().current_time_idx_;
+		    assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
+		    size_t end_height_epoch = start_height_epoch;
+			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
 			this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
 		}
     }

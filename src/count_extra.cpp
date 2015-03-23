@@ -23,39 +23,117 @@
 
 #include"count.hpp"
 void CountModel::extract_and_update_count(ParticleContainer &Endparticles, double current_base, bool end_data ) {
-    // loop over all epochs
-    for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
-        
-        // calculate the required lagging for this epoch; don't use lagging for the final interval
-        double lagging = end_data ? 0 : lags[epoch_idx];
-        double x_end = current_base - lagging;
-        
-        if ( x_end < this->counted_to[epoch_idx] ) continue;
 
-        dout << "At epoch "<< epoch_idx<< ", and current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
-		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
-		// (If this is the last update, lagging will be 0, and we will do the update)
-        // Lagging is used to update the current count with probabilities that are lagging-distanced in the future
-        // const_minimal_lag_update_ratio is for optimise purpose, so the count will not updated as frequent
+    // loop over all particles
+	for (size_t i = 0; i < Endparticles.particles.size(); i++) {
+
+		ForestState* thisState = Endparticles.particles[i];
+		double weight = thisState->weight();
+
+		// loop over all epochs
+		for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
         
-        if ( (x_end - this->counted_to[epoch_idx]) < lagging * this->const_minimal_lag_update_ratio_ ) {
-            continue;
-        }	
+			// calculate the required lagging for this epoch; don't use lagging for the final interval
+			double lagging = end_data ? 0 : lags[epoch_idx];
+			double x_end = current_base - lagging;
+			if ( x_end < this->counted_to[epoch_idx] ) continue;
+			// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
+			// (If this is the last update, lagging will be 0, and we will do the update)
+			// Lagging is used to update the current count with probabilities that are lagging-distanced in the future
+			// const_minimal_lag_update_ratio is for optimise purpose, so the count will not updated as frequent
+			if ( (x_end - this->counted_to[epoch_idx]) < lagging * this->const_minimal_lag_update_ratio_ ) {
+				continue;
+			}
+
+			dout << "At epoch "<< epoch_idx<< ", and current_base is at "<< current_base << ", and counting between "<< this->counted_to[epoch_idx] << " to "<< x_end <<endl;
 		
-        // loop over all particles
-		for (size_t i = 0; i < Endparticles.particles.size(); i++) {
-
-			ForestState* thisState = Endparticles.particles[i];
-			double weight = thisState->weight();
-
             // update counts, remove pointers to events that are processed, and remove events when reference count goes to 0
 			this->update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, this->total_coal_count[ epoch_idx ],   this->total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
-            if (this->population_number() > 1){
+            if (this->population_number() > 1) {
                 this->update_migration_count( thisState->eventContainer[ epoch_idx ], weight, x_end, epoch_idx );
             }
             this->update_recombination_count( thisState->eventContainer[ epoch_idx ], weight, this->counted_to[epoch_idx], x_end, this->total_recomb_count[ epoch_idx ], this->total_weighted_recomb_opportunity[ epoch_idx ], epoch_idx );
+
+            // update counted_to pointers, after we're done with the last particle (and we decided to update this epoch)
+            if (i == Endparticles.particles.size() - 1) {
+				this->counted_to[epoch_idx] = x_end;
+			}
         }
-        
-        this->counted_to[epoch_idx] = x_end;
-    }
+	}
 }
+
+/*
+void CountModel::extract_and_update_count_1(ParticleContainer &Endparticles, double current_base, bool end_data ) {
+
+	//
+	// calculate update positions per epoch, and identify first epoch to update
+	//
+	vector<double> update_to();
+	size_t first_epoch_to_update = this->change_times_.size();
+	
+	for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
+
+		// calculate the required lagging for this epoch; don't use lagging for the final interval
+		double lagging = end_data ? 0 : lags[epoch_idx];
+		
+		// calculate position to which to update
+		double x_end = current_base - lagging;
+
+		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
+		// (If this is the last update, lagging will be 0, and we will do the update)
+		// (If x_end <= counted_to[epoch_idx], the first term will be <= 0 and we will skip this update)
+		// Always update if earlier epochs are updating, to ensure that the update boundary is convex.
+		// (Note to self: this may cause inferences to be slightly different.  We can in the first instance remove this.)
+		if ( (x_end - this->counted_to[epoch_idx]) < lagging * this->const_minimal_lag_update_ratio_  && 
+		      epoch_idx < first_epoch_to_update ) {
+			// no update
+			update_to.push_back( current_base );
+		} else {		
+			// update
+			update_to.push_back( x_end );
+			first_epoch_to_update = min( first_epoch_to_update, epoch_idx );
+		}
+	}
+	
+	//
+	// update counts for all particles
+	//
+	for (size_t i = 0; i < Endparticles.particles.size(); i++) {
+
+		ForestState* thisState = Endparticles.particles[i];
+		double weight = thisState->weight();
+		
+		// loop over the per-epoch containers; this will go in time
+		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < this->change_times_.size(); epoch_idx++) {
+
+			update_all_counts( thisState->eventContainer[ epoch_idx ], weight, update_to, first_epoch_to_update );
+			
+		}
+	}
+	
+	//
+    // update counted_to pointers, after we're done with the last particle
+    //
+    for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
+		
+		this->counted_to[epoch_idx] = update_to[ epoch_idx ];
+		
+	}
+}
+
+
+void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
+
+	// Update the relevant counts for all events within the lagging window
+	// Consider all epochs; not relevant for current version, but will work later when actual large events are used
+	
+	for (int idx=0; idx < eventContainer.size(); ) {
+		
+		EvolutionaryEvent* event = eventContainer_i[idx];
+		
+		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < this->change_times_.size(); epoch_idx++) {
+			
+		}	
+	}
+}
+*/

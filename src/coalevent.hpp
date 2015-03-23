@@ -67,9 +67,11 @@ extern double recomb_opp; //DEBUG
 class EvolutionaryEvent {
 public:
 	// Constructor for a recombination opportunity
-	explicit EvolutionaryEvent( double start_height, double end_height, double start_base, double end_base, int weight ) :
+	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight ) :
 	                   start_height(start_height),
+	                   start_height_epoch(start_height_epoch),
 	                   end_height(end_height),
+	                   end_height_epoch(end_height_epoch),
 	                   start_base_(start_base),
 	                   end_base_(end_base),
 	                   weight(weight),
@@ -77,9 +79,11 @@ public:
 	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
 	                   };
 	// Constructor for migration/coalescence opportunity
-	explicit EvolutionaryEvent( double start_height, double end_height, double end_base, size_t population_index, int weight ) :
+	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight ) :
 			           start_height(start_height),
+	                   start_height_epoch(start_height_epoch),
 			           end_height(end_height),
+	                   end_height_epoch(end_height_epoch),
 			           start_base_(-1),
 			           end_base_(end_base),
 			           weight(weight),
@@ -153,7 +157,9 @@ public:
 private:
 public: // for CountModel::update_recombination_count; temporarily
 	double start_height;
+	size_t start_height_epoch;
 	double end_height;
+	size_t end_height_epoch;
 private:
     double start_base_;    // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
 	double end_base_;
