@@ -80,7 +80,13 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         else if (argv_i == "-h" || argv_i == "-help") {
             Help_header();            
             }
-            
+
+        #ifdef SMCSMCVERSION
+        else if (argv_i == "-v") {
+            Help_version(this->smcsmcVersion, this->scrmVersion);
+            }
+        #endif
+
         else {
             scrm_input += argv_i + " ";
             }        
@@ -110,8 +116,20 @@ void PfParam::init(){
     this->default_loci_length = 2e7;
     this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
     //this->ghost = 10;
+
+    #ifdef SMCSMCVERSION
+        smcsmcVersion = SMCSMCVERSION;
+    #else
+        smcsmcVersion = "";
+    #endif
     
-    
+
+    #ifdef SCRMVERSION
+        scrmVersion = SCRMVERSION;
+    #else
+        scrmVersion = "";
+    #endif
+
     this->original_recombination_rate_ = 0;
     this->N                = 100;
     //this->buff_length      = 200;

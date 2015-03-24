@@ -1,10 +1,9 @@
 EXTRA_DIST = Doxyfile bootstrap pfpsmc/R/*r pfpsmc/R/ms_vcf.py #acinclude.m4
+SMCSMCVERSION = $(shell git show HEAD | head -1 | sed -e "s/commit //g" | cat)
+SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/src.*//" | cat)
 distdir = $(PACKAGE)-$(VERSION)
 #CXXFLAGS= -I/opt/local/include
 #LDFLAGS= -L/opt/local/lib # this is used to link to the unittest library
-
-#include doxygen-include.am
-#include aminclude.am 
 
 bin_PROGRAMS = smcsmc smcsmc_dbg smcsmcRECOMBOFF smcsmcSCRM smcsmcRECOMBOFF_dbg
 #smcsmc_omp smcsmc_dbg smcsmcRECOMBOFF_dbg  smcsmcSCRM
@@ -31,8 +30,7 @@ generate_vcf$(EXEEXT):
 ##exec_unittests: unittests 
 	##./unittests 
 
-
-common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/
+common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\"
 
 # -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
 # -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
