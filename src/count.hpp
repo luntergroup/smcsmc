@@ -96,6 +96,8 @@ class CountModel: public Model {
         void update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ) ;
         void update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ) ;
         void update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx );
+		void update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update );
+		void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
 
         void compute_recomb_rate();
         void compute_mig_rate();
@@ -104,7 +106,7 @@ class CountModel: public Model {
         // Members
         //   
         /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity is 
-         *      number_of_time_interval * number_of_population
+         *      number_of_epochs * number_of_population
          *  The dimension of total_mig_count is 
          *      number_of_epochs * number_of_population (from) * number_of_population (to).  
          *  For total_weighted_mig_opportunity only the 'from' population is important

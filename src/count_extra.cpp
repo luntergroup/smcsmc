@@ -71,9 +71,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 	// calculate update positions per epoch, and identify first epoch to update
 	//
 	vector<double> update_to;
-	size_t first_epoch_to_update = this->change_times_.size();
+	size_t first_epoch_to_update = change_times_.size();
 	
-	for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
+	for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++) {
 
 		// calculate the required lagging for this epoch; don't use lagging for the final interval
 		double lagging = end_data ? 0 : lags[epoch_idx];
@@ -86,16 +86,18 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 		// (If x_end <= counted_to[epoch_idx], the first term will be <= 0 and we will skip this update)
 		// Always update if earlier epochs are updating, to ensure that the update boundary is convex.
 		// (Note to self: this may cause inferences to be slightly different.  We can in the first instance remove this.)
-		if ( (x_end - this->counted_to[epoch_idx]) < lagging * this->const_minimal_lag_update_ratio_  && 
+		if ( (x_end - counted_to[epoch_idx]) < lagging * const_minimal_lag_update_ratio_  && 
 		      epoch_idx < first_epoch_to_update ) {
 			// no update
-			update_to.push_back( current_base );
+			update_to.push_back( counted_to[epoch_idx] );
 		} else {		
 			// update
 			update_to.push_back( x_end );
 			first_epoch_to_update = min( first_epoch_to_update, epoch_idx );
 		}
 	}
+
+	first_epoch_to_update = 0;
 	
 	//
 	// update counts for all particles
@@ -105,7 +107,12 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 		ForestState* thisState = Endparticles.particles[i];
 		double weight = thisState->weight();
 		// loop over the per-epoch containers; this will go in time
-		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < this->change_times_.size(); epoch_idx++) {
+		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < change_times_.size(); epoch_idx++) {
+			
+			//DEBUG -- use original code to evaluate coalescent opp and counts
+			double x_end = update_to[ epoch_idx ];
+			update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, total_coal_count[ epoch_idx ], total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
+			
 			update_all_counts( thisState->eventContainer[ epoch_idx ], weight, update_to, first_epoch_to_update );
 		}
 	}
@@ -113,8 +120,8 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 	//
     // update counted_to pointers, after we're done with the last particle
     //
-    for (size_t epoch_idx = 0; epoch_idx < this->change_times_.size(); epoch_idx++) {
-		this->counted_to[epoch_idx] = update_to[ epoch_idx ];
+    for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++) {
+		counted_to[epoch_idx] = update_to[ epoch_idx ];
 	}
 }
 
@@ -123,56 +130,89 @@ void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, d
 
 	// Update the relevant counts for all events within the lagging window
 	// Consider all epochs; not relevant for current version, but will work later when actual large events are used
-	for (int idx=0; idx < eventContainer.size(); ) {		
+    cout << "update_all_counts" << endl;
+
+	for (int idx=0; idx < eventContainer.size(); idx++) {
+
 		EvolutionaryEvent* event = eventContainer[idx];
+		cout << "  "; event->print_event();
+
 		// consider updating counts for this event.  This is necessary iff the top-left corner is in the update region, since the update region is convex
 		if ( event->end_height_epoch() >= first_epoch_to_update && event->start_base() < update_to[ event->end_height_epoch() ] ) {
-			// loop over all the relevant epochs
-			for (size_t epoch_idx = max( first_epoch_to_update, event->start_height_epoch() );
-				        epoch_idx <= event->end_height_epoch();
-				        epoch_idx++ ) {
-				double x_start = counted_to[ epoch_idx ];  // counts have been updated to here
-				double x_end = update_to[ epoch_idx ];     // and should be updated to here							
-				// do counts in this epoch require updating?
-				if ( event->start_base() < x_end )  {						
-					double epoch_start = change_times_[ epoch_idx ];
-					double epoch_end = epoch_idx < change_times_.size() ? change_times_[ epoch_idx + 1 ] : DBL_MAX;	
-					// consider coalescences and migration
-					if (event->is_coalmigr()) {
-						// any events occur always at the top of the time segment (which cannot be the top of the epoch segment)
-						// also ensure that events are not counted twice, i.e. they fall in [x_start,x_end).  Note start_base == end_base
-						if ( event->end_height < epoch_end && x_start <= event->end_base() ) {
-							if (event->is_coal_event())
-								total_coal_count[ epoch_idx ][event->get_population()].add( weight * event->coal_event_count() );
-							if (event->is_migr_event())   // if !is_migr_event(), event->get_migr_to_population() isn't valid								
-								total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
-						}
-						// account for the opportunity in the segment [epoch_start, epoch_end)
-						total_weighted_coal_opportunity[ epoch_idx ][event->get_population()].add( weight * event->coal_opportunity_between( epoch_start, epoch_end ) );
-						total_weighted_mig_opportunity[epoch_idx][event->get_population()].add( weight * event->migr_opportunity_between( epoch_start, epoch_end ) );
-					}											
-					// consider recombinations
-					if (event->is_recomb()) {
-						// the recombination event is considered to be at the top-right corner (arbitrarily -- we don't keep track of recombination locations)
-						// also, the recombination event (and opportunity) is arbitrarily assigned to population 0
-						if ( x_start <= event->end_base() && event->end_base() < x_end && event->end_height < epoch_end )
-							total_recomb_count[epoch_idx][0].add( weight * event->recomb_event_count() );
-						// account for the opportunity in the appriopriate overlapping rectangle
-						total_weighted_recomb_opportunity[epoch_idx][0].add( weight * event->recomb_opportunity_between( epoch_start, epoch_end, x_start, x_end ) );
-					}
-				} // counts need updating
-			} // loop over epochs								
+
+			update_all_counts_single_evolevent( event, weight, update_to, first_epoch_to_update );
+			
 			// if the bottom-right corner has contributed its count, the whole event has, and it can be deleted
-			if ( idx == 0 && event->start_height_epoch() >= first_epoch_to_update && event->end_base() < update_to[ event->start_height_epoch() ] ) {
-				if (event->decrease_refcount_is_zero())
+			if ( idx == 0 && 
+				 event->start_height_epoch() >= first_epoch_to_update && 
+				 event->end_base() <= update_to[ event->start_height_epoch() ] ) {
+
+				if (event->decrease_refcount_is_zero()) {
+
 					delete event;
+					
+				}
+
 				eventContainer.pop_front();
-			} else {
-				++idx;
+				idx--;  // account for increment in for loop
 			}
-		} else { // event contributes counts
-			++idx;
-		}
-	} // loop over events
+
+		} // evolevent contributes
+
+	} // loop over evolevents
 }
 
+
+void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
+			
+	// loop over all the relevant epochs
+	for (size_t epoch_idx = max( first_epoch_to_update, event->start_height_epoch() );
+		        epoch_idx <= event->end_height_epoch();
+		        epoch_idx++ ) {
+
+		double x_start = counted_to[ epoch_idx ];  // counts have been updated to here
+		double x_end = update_to[ epoch_idx ];     // and should be updated to here							
+
+		cout << "  -- update to " << update_to[epoch_idx] << " (and counted to " << counted_to[epoch_idx] << ")" << endl;		
+
+		// do counts in this epoch require updating?
+		if ( event->start_base() < x_end )  {						
+
+			double epoch_start = change_times_[ epoch_idx ];
+			double epoch_end = epoch_idx+1 < change_times_.size() ? change_times_[ epoch_idx + 1 ] : DBL_MAX;	
+
+			cout << "  considerig epoch " << epoch_idx << ":  " << epoch_start << " - " << epoch_end << endl;
+
+			// consider coalescences and migration
+			if (event->is_coalmigr()) {
+
+				// any events occur always at the top of the time segment (which cannot be the top of the epoch segment)
+				// also ensure that events are not counted twice, i.e. they fall in [x_start,x_end).
+				if ( event->end_height < epoch_end && x_start <= event->start_base() ) {
+					if (event->is_coal_event()) {
+						total_coal_count[ epoch_idx ][event->get_population()].add( weight * event->coal_event_count() );
+						cout << "    count = " << weight * event->coal_event_count();
+					}
+					if (event->is_migr_event())   // if !is_migr_event(), event->get_migr_to_population() isn't valid								
+						total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
+				}
+				// account for the opportunity in the segment [epoch_start, epoch_end)
+				total_weighted_coal_opportunity[ epoch_idx ][event->get_population()].add( weight * event->coal_opportunity_between( epoch_start, epoch_end ) );
+				cout << "    opp = " << weight * event->coal_opportunity_between( epoch_start, epoch_end ) << endl;
+				total_weighted_mig_opportunity[ epoch_idx ][event->get_population()].add( weight * event->migr_opportunity_between( epoch_start, epoch_end ) );
+			}											
+
+			// consider recombinations
+			if (event->is_recomb()) {
+
+				// the recombination event is considered to be at the top-right corner (arbitrarily -- we don't keep track of recombination locations)
+				// also, the recombination event (and opportunity) is arbitrarily assigned to population 0
+				if ( x_start <= event->end_base() && event->end_base() < x_end && event->end_height < epoch_end )
+					total_recomb_count[epoch_idx][0].add( weight * event->recomb_event_count() );
+				// account for the opportunity in the appriopriate overlapping rectangle
+				total_weighted_recomb_opportunity[epoch_idx][0].add( weight * event->recomb_opportunity_between( epoch_start, epoch_end, x_start, x_end ) );
+
+			}
+		} // counts need updating
+	} // loop over epochs								
+}

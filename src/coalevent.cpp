@@ -68,13 +68,13 @@ bool EvolutionaryEvent::print_event() {
 	EventRecorderdout << "";
 #define outstream cout
 //#define outstream cout
-	outstream << "Event w=" << setw(3) << weight << " " << setw(10) << start_height << "-" << setw(10) << end_height;
+	outstream << "Event wght=" << setw(3) << weight << " " << setw(10) << start_height << "-" << setw(10) << end_height;
 	if (is_recomb()) {
-		outstream << " Recombination @" << start_base_ << "-" << end_base_;
+		outstream << " Recombination @ " << start_base_ << "-" << end_base_;
 		if (is_recomb_event()) 
 			outstream << "(event) ";
 	} else {
-		outstream << "Coal/migr @" << end_base_ << " p=" << a.coal_migr_population;
+		outstream << " Coal/migr @ " << end_base_ << " pop=" << a.coal_migr_population;
 		if (is_coal_event()) 
 			outstream << " (coal) ";
 		else if (is_migr_event())
