@@ -289,10 +289,11 @@ void CountModel::compute_recomb_rate () {
                      */ 
                     
 
-void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ){
+double CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     int idx = 0;
+    double total_opp = 0.0;
     //cout << "update_coalescent_count -- update to " << x_end << " (and counted to " << counted_to[epoch_idx] << ")" << endl;
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
@@ -301,11 +302,13 @@ void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContai
 			if (event->end_base() >= x_end) break;
 			//cout << "  "; event->print_event();
 			//cout << "-CNT = " << weight * event->coal_event_count() << " -OPP = " << weight * event->coal_opportunity() << endl;
+			total_opp += weight * event->coal_opportunity();
 			total_coal_opportunity[event->get_population()].add( weight * event->coal_opportunity() );
 			total_coal_count[event->get_population()].add( weight * event->coal_event_count() );
 		}
 		++idx;
 	}
+	return total_opp;
 }
 
 void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx ) {
@@ -353,11 +356,12 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 		}
 
 		// now, all types are processed, so remove events (of any type) that are completely done.
-        if (idx == 0 && event->end_base() <= x_end) {
+        if (idx == 0 && event->end_base() < x_end) {
 			if (event->decrease_refcount_is_zero()) {
 				delete event;
 			}
 			eventContainer_i.pop_front();
+			//cout << " - WOULD now remove event " << (long long)event << " at (consecutive..?!) index " << idx << endl; ++idx;
 		} else {
 			++idx;
 		}

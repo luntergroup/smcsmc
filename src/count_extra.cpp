@@ -113,9 +113,11 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 			
 			//DEBUG -- use original code to evaluate coalescent opp and counts
 			double x_end = update_to[ epoch_idx ];
-			update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, total_coal_count[ epoch_idx ], total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
-			
-			update_all_counts( thisState->eventContainer[ epoch_idx ], weight, update_to, first_epoch_to_update );
+			//double opp1 = update_coalescent_count( thisState->eventContainer[ epoch_idx ], weight, x_end, total_coal_count[ epoch_idx ], total_weighted_coal_opportunity[ epoch_idx ], epoch_idx );
+			//update_recombination_count( thisState->eventContainer[ epoch_idx ], weight, counted_to[epoch_idx], x_end, total_recomb_count[ epoch_idx ], total_weighted_recomb_opportunity[ epoch_idx ], epoch_idx );	
+
+			double opp2 = update_all_counts( thisState->eventContainer[ epoch_idx ], weight, update_to, first_epoch_to_update );
+			//cout << "Difference " << opp1 - opp2 << endl;
 		}
 	}
 	
@@ -128,12 +130,14 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 }
 
 
-void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
+double CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
 
 	// Update the relevant counts for all events within the lagging window
 	// Consider all epochs; not relevant for current version, but will work later when actual large events are used
     
     //cout << "update_all_counts" << endl;
+
+	double total_opp = 0.0;
 
 	for (int idx=0; idx < eventContainer.size(); idx++) {
 
@@ -145,19 +149,17 @@ void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, d
 
 			//cout << "Considering to update from x=" << event->start_base() << " because this is < update_to = " << update_to[ event->end_height_epoch() ] << endl;
 
-			update_all_counts_single_evolevent( event, weight, update_to, first_epoch_to_update );
+			total_opp += update_all_counts_single_evolevent( event, weight, update_to, first_epoch_to_update );
 			
 			// if the bottom-right corner has contributed its count, the whole event has, and it can be deleted
 			if ( idx == 0 && 
 				 event->start_height_epoch() >= first_epoch_to_update && 
-				 event->end_base() <= update_to[ event->start_height_epoch() ] ) {
+				 event->end_base() < update_to[ event->start_height_epoch() ] ) {
 
+				//cout << " -  WILL now remove event " << (long long)event << endl;
 				if (event->decrease_refcount_is_zero()) {
-
-					delete event;
-					
+					delete event;					
 				}
-
 				eventContainer.pop_front();
 				idx--;  // account for increment in for loop
 			}
@@ -165,10 +167,13 @@ void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, d
 		} // evolevent contributes
 
 	} // loop over evolevents
+	return total_opp;
 }
 
 
-void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
+double CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update ) {
+		
+	double total_opp = 0.0;
 			
 	// loop over all the relevant epochs
 	for (size_t epoch_idx = max( first_epoch_to_update, event->start_height_epoch() );
@@ -200,14 +205,16 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 					} else { 
 						//cout << "+CNT = 0";
 					}
-					if (event->is_migr_event())   // if !is_migr_event(), event->get_migr_to_population() isn't valid								
+					if (event->is_migr_event()) {   // if !is_migr_event(), event->get_migr_to_population() isn't valid								
 						total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
+					}
 				} else {
 					//cout << "+CNT = 0";
 				}
 				// account for the opportunity in the segment [epoch_start, epoch_end)
 				total_weighted_coal_opportunity[ epoch_idx ][event->get_population()].add( weight * event->coal_opportunity_between( epoch_start, epoch_end ) );
 				//cout << " +OPP = " << weight * event->coal_opportunity_between( epoch_start, epoch_end ) << endl;
+				//total_opp += weight * event->coal_opportunity_between( epoch_start, epoch_end );
 				total_weighted_mig_opportunity[ epoch_idx ][event->get_population()].add( weight * event->migr_opportunity_between( epoch_start, epoch_end ) );
 			}											
 
@@ -216,12 +223,15 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 
 				// the recombination event is considered to be at the top-right corner (arbitrarily -- we don't keep track of recombination locations)
 				// also, the recombination event (and opportunity) is arbitrarily assigned to population 0
-				if ( x_start <= event->end_base() && event->end_base() < x_end && event->end_height < epoch_end )
+				if ( x_start <= event->end_base() && event->end_base() < x_end && event->end_height < epoch_end ) {
 					total_recomb_count[epoch_idx][0].add( weight * event->recomb_event_count() );
+				}
 				// account for the opportunity in the appriopriate overlapping rectangle
 				total_weighted_recomb_opportunity[epoch_idx][0].add( weight * event->recomb_opportunity_between( epoch_start, epoch_end, x_start, x_end ) );
 
 			}
 		} // counts need updating
 	} // loop over epochs								
+	return total_opp;
 }
+
