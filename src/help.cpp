@@ -55,5 +55,11 @@ void Help_header(){
     cout << "  authored by Sha (Joe) Zhu and Gerton Lunter " <<endl;
     Help_option();
     Help_example();
-    exit(1);
+    exit(0);
 };
+
+void Help_version(string smcsmc, string scrm){
+    cout << "smcsmc: " << smcsmc << endl;
+    cout << "scrm: "   << scrm   << endl;
+    exit(0);
+}

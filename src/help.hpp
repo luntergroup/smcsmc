@@ -29,3 +29,4 @@ using namespace std;
 void Help_option();
 void Help_example();
 void Help_header();
+void Help_version(string smcsmc, string scrm);
