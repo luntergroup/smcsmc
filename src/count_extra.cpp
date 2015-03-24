@@ -90,14 +90,16 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 		      epoch_idx < first_epoch_to_update ) {
 			// no update
 			update_to.push_back( counted_to[epoch_idx] );
+			//cout << " no update; first_epoch_to_update=" << first_epoch_to_update << endl;
 		} else {		
 			// update
 			update_to.push_back( x_end );
 			first_epoch_to_update = min( first_epoch_to_update, epoch_idx );
+			//cout << " update to " << x_end << "; first_epoch_to_update=" << first_epoch_to_update << endl;
 		}
 	}
 
-	first_epoch_to_update = 0;
+	first_epoch_to_update = 0;  // update all; for debugging, to make sure the codes are comparable
 	
 	//
 	// update counts for all particles
@@ -130,15 +132,18 @@ void CountModel::update_all_counts( deque<EvolutionaryEvent*>& eventContainer, d
 
 	// Update the relevant counts for all events within the lagging window
 	// Consider all epochs; not relevant for current version, but will work later when actual large events are used
-    cout << "update_all_counts" << endl;
+    
+    //cout << "update_all_counts" << endl;
 
 	for (int idx=0; idx < eventContainer.size(); idx++) {
 
 		EvolutionaryEvent* event = eventContainer[idx];
-		cout << "  "; event->print_event();
+		//cout << "  "; event->print_event();
 
 		// consider updating counts for this event.  This is necessary iff the top-left corner is in the update region, since the update region is convex
 		if ( event->end_height_epoch() >= first_epoch_to_update && event->start_base() < update_to[ event->end_height_epoch() ] ) {
+
+			//cout << "Considering to update from x=" << event->start_base() << " because this is < update_to = " << update_to[ event->end_height_epoch() ] << endl;
 
 			update_all_counts_single_evolevent( event, weight, update_to, first_epoch_to_update );
 			
@@ -173,7 +178,7 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 		double x_start = counted_to[ epoch_idx ];  // counts have been updated to here
 		double x_end = update_to[ epoch_idx ];     // and should be updated to here							
 
-		cout << "  -- update to " << update_to[epoch_idx] << " (and counted to " << counted_to[epoch_idx] << ")" << endl;		
+		//cout << "  -- update to " << update_to[epoch_idx] << " (and counted to " << counted_to[epoch_idx] << ")" << endl;		
 
 		// do counts in this epoch require updating?
 		if ( event->start_base() < x_end )  {						
@@ -181,7 +186,7 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 			double epoch_start = change_times_[ epoch_idx ];
 			double epoch_end = epoch_idx+1 < change_times_.size() ? change_times_[ epoch_idx + 1 ] : DBL_MAX;	
 
-			cout << "  considerig epoch " << epoch_idx << ":  " << epoch_start << " - " << epoch_end << endl;
+			//cout << "  considerig epoch " << epoch_idx << ":  " << epoch_start << " - " << epoch_end << endl;
 
 			// consider coalescences and migration
 			if (event->is_coalmigr()) {
@@ -191,14 +196,18 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 				if ( event->end_height < epoch_end && x_start <= event->start_base() ) {
 					if (event->is_coal_event()) {
 						total_coal_count[ epoch_idx ][event->get_population()].add( weight * event->coal_event_count() );
-						cout << "    count = " << weight * event->coal_event_count();
+						//cout << "+CNT = " << weight * event->coal_event_count();
+					} else { 
+						//cout << "+CNT = 0";
 					}
 					if (event->is_migr_event())   // if !is_migr_event(), event->get_migr_to_population() isn't valid								
 						total_mig_count[epoch_idx][event->get_population()][event->get_migr_to_population()].add( weight * event->migr_event_count() );
+				} else {
+					//cout << "+CNT = 0";
 				}
 				// account for the opportunity in the segment [epoch_start, epoch_end)
 				total_weighted_coal_opportunity[ epoch_idx ][event->get_population()].add( weight * event->coal_opportunity_between( epoch_start, epoch_end ) );
-				cout << "    opp = " << weight * event->coal_opportunity_between( epoch_start, epoch_end ) << endl;
+				//cout << " +OPP = " << weight * event->coal_opportunity_between( epoch_start, epoch_end ) << endl;
 				total_weighted_mig_opportunity[ epoch_idx ][event->get_population()].add( weight * event->migr_opportunity_between( epoch_start, epoch_end ) );
 			}											
 

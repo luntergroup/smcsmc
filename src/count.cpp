@@ -293,14 +293,14 @@ void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContai
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     int idx = 0;
-    cout << "update_coalescent_count -- update to " << x_end << " (and counted to " << counted_to[epoch_idx] << ")" << endl;
+    //cout << "update_coalescent_count -- update to " << x_end << " (and counted to " << counted_to[epoch_idx] << ")" << endl;
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_coalmigr()) {
-			if (event->end_base() > x_end) break;
-			cout << "  "; event->print_event();
-			cout << "  Orig opp = " << weight * event->coal_opportunity() << " count = " << weight * event->coal_event_count() << endl;
+			if (event->end_base() >= x_end) break;
+			//cout << "  "; event->print_event();
+			//cout << "-CNT = " << weight * event->coal_event_count() << " -OPP = " << weight * event->coal_opportunity() << endl;
 			total_coal_opportunity[event->get_population()].add( weight * event->coal_opportunity() );
 			total_coal_count[event->get_population()].add( weight * event->coal_event_count() );
 		}
@@ -315,7 +315,7 @@ void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContain
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_coalmigr()) {
-			if (event->end_base() > x_end) break;
+			if (event->end_base() >= x_end) break;
 			total_weighted_mig_opportunity[epoch_idx][event->get_population()].add( weight * event->migr_opportunity() );
 			if (event->is_migr_event()) {
 				// This is not just an efficiency measure: if !is_migr_event(), event->get_migr_to_population() isn't valid
@@ -343,7 +343,7 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_recomb()) {
-			if (event->start_base() > x_end) break;
+			if (event->start_base() >= x_end) break;
 			if ( event->start_base() >= x_start && event->start_base() < x_end ) {
 				total_recomb_count[0].add( weight * event->recomb_event_count() );
 			}
