@@ -5,7 +5,7 @@ EM step 0
   Segment data is beyond loci length
  Inference step completed.
  MODEL IS RESET at base 1e+06
- set recombination rate 4.86461e-09(347.591 / 7.14531e+10)
+ set recombination rate 4.85594e-09(346.972 / 7.14531e+10)
  popsize is equal to 3.97572e+06 ( 397.572 / 5e-05/2)
  popsize is equal to 4807.88 ( 308.185 / 0.03205/2)
  popsize is equal to 2780.29 ( 2188.4 / 0.393556/2)
@@ -97,7 +97,7 @@ scrm model parameters:
      Seq length =   1000000
   mutation rate =   2.5e-08
     recomb rate =5.00001e-09
-inferred recomb rate = 4.86461e-09
+inferred recomb rate = 4.85594e-09
 Pop size (at Generation):
   (       0 ) | 3.97572e+06 |    4807.88
   (  386.88 ) |    2780.29 |    71957.7
