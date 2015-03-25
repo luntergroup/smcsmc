@@ -289,26 +289,20 @@ void CountModel::compute_recomb_rate () {
                      */ 
                     
 
-double CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ){
+void CountModel::update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ){
     // Go through the events, starting from the leftmost and going up to x_end, and add events (weighted by weight) to the appropriate counters
     // When processed remove the event pointer from the deque; remove the event itself if its reference count becomes 0
     int idx = 0;
-    double total_opp = 0.0;
-    //cout << "update_coalescent_count -- update to " << x_end << " (and counted to " << counted_to[epoch_idx] << ")" << endl;
 	for (idx=0; idx < eventContainer_i.size(); ) {
 		
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_coalmigr()) {
 			if (event->end_base() >= x_end) break;
-			//cout << "  "; event->print_event();
-			//cout << "-CNT = " << weight * event->coal_event_count() << " -OPP = " << weight * event->coal_opportunity() << endl;
-			total_opp += weight * event->coal_opportunity();
 			total_coal_opportunity[event->get_population()].add( weight * event->coal_opportunity() );
 			total_coal_count[event->get_population()].add( weight * event->coal_event_count() );
 		}
 		++idx;
 	}
-	return total_opp;
 }
 
 void CountModel::update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx ) {
@@ -347,11 +341,10 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 		EvolutionaryEvent* event = eventContainer_i[idx];
 		if (event->is_recomb()) {
 			if (event->start_base() >= x_end) break;
-			if ( event->start_base() >= x_start && event->start_base() < x_end ) {
-				total_recomb_count[0].add( weight * event->recomb_event_count() );
-			}
 			double t_start = event->start_height;
 			double t_end = event->end_height;
+			//cout << "Epoch " << epoch_idx << " update " << x_start << "-" << x_end << " opp=" << event->recomb_opportunity_between(t_start,t_end,x_start,x_end) << " cnt=" << event->recomb_event_count_between( t_start, t_end, x_start, x_end ) << " ";event->print_event();
+			total_recomb_count[0].add( weight * event->recomb_event_count_between( t_start, t_end, x_start, x_end ) );
 			total_recomb_opportunity[0].add( weight * event->recomb_opportunity_between( t_start, t_end, x_start, x_end ) );
 		}
 
@@ -361,7 +354,6 @@ void CountModel::update_recombination_count( deque<EvolutionaryEvent*>& eventCon
 				delete event;
 			}
 			eventContainer_i.pop_front();
-			//cout << " - WOULD now remove event " << (long long)event << " at (consecutive..?!) index " << idx << endl; ++idx;
 		} else {
 			++idx;
 		}
