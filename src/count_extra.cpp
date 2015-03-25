@@ -23,7 +23,7 @@
 
 #include"count.hpp"
 
-//#define USE_NEW 1
+#define USE_NEW 1
 
 #ifndef USE_NEW
 
@@ -86,10 +86,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 		// Check that we're updating over more than minimal_lag_update_ratio * lagging nucleotides.
 		// (If this is the last update, lagging will be 0, and we will do the update)
 		// (If x_end <= counted_to[epoch_idx], the first term will be <= 0 and we will skip this update)
-		// Always update if earlier epochs are updating, to ensure that the update boundary is convex.
-		// (Note to self: this may cause inferences to be slightly different.  We can in the first instance remove this.)
+		// Always update if earlier epochs are updating, to ensure that the update boundary is nondecreasing.
 		if ( (x_end - counted_to[epoch_idx]) < lagging * const_minimal_lag_update_ratio_  && 
-		      (true || epoch_idx < first_epoch_to_update ) ) { // DEBUG -- this makes the new code behave identically to the old one (but should change once we're happy)
+		     (first_epoch_to_update > epoch_idx ) ) {
 			// no update
 			update_to.push_back( counted_to[epoch_idx] );
 		} else {		
@@ -99,8 +98,6 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 		}
 	}
 
-	first_epoch_to_update = 0;  // update all; for debugging, to make sure the codes are comparable
-	
 	//
 	// update counts for all particles
 	//

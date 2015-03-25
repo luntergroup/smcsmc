@@ -90,6 +90,7 @@ public:
 			           a( population_index ) { 
                           assert(start_height <= end_height); 
                        };
+    // Use default copy constructor
 
 	// Methods
 	bool is_recomb() const       { return start_base_ >= 0; }

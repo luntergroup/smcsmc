@@ -143,7 +143,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 	// interval either runs to event, or to change point; in both cases the end_height has the
 	// same epoch as start_height (but call to getTimeIdx will return epoch+1 if end_height ran to end of interval)
 	end_height_epoch = start_height_epoch;   
-		
+
 	// loop over the two nodes
 	for (int i=0; i<2; i++) {
 		
@@ -152,13 +152,19 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             start_base = active_node(i)->last_update();
             end_base = this->current_base();
 			if (end_base == start_base) continue;
-			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
+			//EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
+			// create event
+			EvolutionaryEvent recomb_event( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
 			double recomb_pos = -1;
 			if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
 				recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
-				recomb_event->set_recomb_event_pos( recomb_pos );
+				recomb_event.set_recomb_event_pos( recomb_pos );
 			}
-			this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
+			// try to append to last event in container
+			if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( recomb_event ) ) ) {
+				// no luck; add a copy
+				eventContainer[writable_model()->current_time_idx_].push_back( new EvolutionaryEvent(recomb_event) );
+			}
             recomb_opp_x_within_smcsmc += end_base - start_base;
 		} else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -173,11 +179,15 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 				coal_event |= tmp_event_.isPwCoalescence();
 			}
 			// Record coalescence and migration opportunity
-			EvolutionaryEvent * migrcoal_event = new EvolutionaryEvent(start_height, start_height_epoch, end_height, end_height_epoch, start_base, active_node(i)->population(), weight);
+			EvolutionaryEvent migrcoal_event(start_height, start_height_epoch, end_height, end_height_epoch, start_base, active_node(i)->population(), weight);
 			// Record any events
-			if (coal_event) migrcoal_event->set_coal_event();
-			if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
-			this->eventContainer[this->writable_model()->current_time_idx_].push_back(migrcoal_event);
+			if (coal_event) migrcoal_event.set_coal_event();
+			if (migr_event) migrcoal_event.set_migr_event( tmp_event_.mig_pop() );
+			// try to append to last event in container
+			if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( migrcoal_event ) ) ) {
+				// no luck; add a copy
+				eventContainer[writable_model()->current_time_idx_].push_back( new EvolutionaryEvent( migrcoal_event ) );
+			}
 		}
 	}
 	
