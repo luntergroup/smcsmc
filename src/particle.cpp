@@ -21,8 +21,10 @@
 
 */
 
-#include"particle.hpp"
 #include <climits> // INT_MAX
+
+#include"particle.hpp"
+
 
 void ForestState::making_copies( int number_of_copies ){
     for ( size_t i = 0; i < this->ForestState_copies.size(); i++){
@@ -38,11 +40,9 @@ void ForestState::making_copies( int number_of_copies ){
         // Give the new particle its own random generator (for multithreading)
         size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
         new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-        //new_copy_state->random_generator_ = new MersenneTwister( new_seed ); 
         new_copy_state->model_ = new Model( *this->model_);
-        //dout << "new random seed is " << this->particles[old_state_index]->random_generator_->seed() + this->particles.size() << endl;
         this->ForestState_copies.push_back(new_copy_state);
-        }
+    }
     assert( this->ForestState_copies.size() == (size_t)number_of_copies ); 
 }
 
@@ -54,12 +54,6 @@ void ForestState::making_copies( int number_of_copies ){
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model, random_generator ) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
-    //this->init_EventContainers( model );    
-	//this->buildInitialTree();    
-    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
-    // Initialize the initial particles at base 0, with equal weights
-  	//this->setParticleWeight( 1.0 );
-	//this->setSiteWhereWeightWasUpdated(0.0);
     new_forest_counter++; // DEBUG
 }
 
@@ -77,7 +71,7 @@ ForestState::ForestState( const ForestState & copied_state )
     
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
-        }        
+    }        
 	dout << "current particle's weight is " << this->weight()<<endl;
     new_forest_counter++;  // DEBUG
 }
@@ -86,24 +80,34 @@ ForestState::ForestState( const ForestState & copied_state )
 
 void ForestState::copyEventContainers(const ForestState & copied_state ){
 	// Copy generic events
-    for (size_t i = 0 ; i < copied_state.eventContainer.size() ; i++ ){ 
+    for (size_t i = 0 ; i < copied_state.eventContainer.size() ; i++ ) { 
         deque < EvolutionaryEvent* > eventContainer_i;   
-        for (size_t ii = 0 ; ii < copied_state.eventContainer[i].size(); ii++){
+        for (size_t ii = 0 ; ii < copied_state.eventContainer[i].size(); ii++) {
             EvolutionaryEvent* new_event = copied_state.eventContainer[i][ii];
             new_event->increase_refcount();
             eventContainer_i.push_back ( new_event ) ;
         }
         eventContainer.push_back( eventContainer_i );
 	}
+	// Copy trees
+	for (size_t i=0; i < copied_state.eventTrees.size() ; i++) {
+		EvolutionaryEvent* new_event = copied_state.eventTrees[i];
+		eventTrees.push_back( new_event );
+		if (new_event) 
+			new_event->increase_refcount();
+	}
 }
 
 
 
-void ForestState::init_EventContainers( Model * model ){
-    for (size_t i = 0 ; i < model->change_times_.size() ; i++ ){ 
+void ForestState::init_EventContainers( Model * model ) {
+    for (size_t i = 0 ; i < model->change_times_.size() ; i++ ) { 
         deque < EvolutionaryEvent*  > eventContainer_i;   /*!< \brief generic events recorder */
         eventContainer.push_back( eventContainer_i );        
     }
+    for (size_t i=0; i < model->change_times_.size(); i++) {
+		eventTrees.push_back( NULL );
+	}
 }
 
 
@@ -120,6 +124,28 @@ ForestState::~ForestState(){
 }
 
 
+/*! Clear coalescent and recombination events recorded between two states.*/
+void ForestState::clear_eventContainer(){ 
+    for (size_t time_i = 0; time_i < this->eventContainer.size(); time_i++ ) {
+        for (size_t i=0; i < this->eventContainer[time_i].size(); i++) {
+            if (eventContainer[time_i][i]->decrease_refcount_is_zero()) {
+				delete eventContainer[time_i][i];
+            }
+        }
+        this->eventContainer[time_i].clear();
+    }
+    for (size_t i = 0; i < this->eventTrees.size(); i++) {
+		if (eventTrees[i]) {
+			if (eventTrees[i]->decrease_refcount_is_zero()) {
+				delete eventTrees[i];  // this recursively deletes its parents
+			}
+		}
+	}
+	eventTrees.clear();
+}
+
+
+
 void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
 
     dout << endl;
@@ -133,7 +159,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     // find extent of time interval where an event may have occurred
     start_height = ti.start_height();
     start_height_epoch = ti.forest().model().current_time_idx_;
-    assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
+    //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
     if (this->tmp_event_.isNoEvent()) {
 		end_height = start_height + ti.length();
 	} else {
@@ -153,7 +179,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             end_base = this->current_base();
 			if (end_base == start_base) continue;
 			//EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
-			// create event
+			// create event (on stack), so that we can append events to existing ones.  (Only done for recombinations; should check whether it happens at any frequency)
 			EvolutionaryEvent recomb_event( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
 			double recomb_pos = -1;
 			if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
@@ -161,10 +187,12 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 				recomb_event.set_recomb_event_pos( recomb_pos );
 			}
 			// try to append to last event in container
-			if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( recomb_event ) ) ) {
+			//if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( recomb_event ) ) ) {
 				// no luck; add a copy
 				eventContainer[writable_model()->current_time_idx_].push_back( new EvolutionaryEvent(recomb_event) );
-			}
+			//}
+			// (also) add event in tree data structure
+			(new EvolutionaryEvent(recomb_event))->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             recomb_opp_x_within_smcsmc += end_base - start_base;
 		} else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -184,10 +212,12 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 			if (coal_event) migrcoal_event.set_coal_event();
 			if (migr_event) migrcoal_event.set_migr_event( tmp_event_.mig_pop() );
 			// try to append to last event in container
-			if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( migrcoal_event ) ) ) {
+			//if (eventContainer[writable_model()->current_time_idx_].size() == 0 || (!eventContainer[writable_model()->current_time_idx_].back()->append_event( migrcoal_event ) ) ) {
 				// no luck; add a copy
 				eventContainer[writable_model()->current_time_idx_].push_back( new EvolutionaryEvent( migrcoal_event ) );
-			}
+			//}
+			// (also) add event in tree data structure
+			(new EvolutionaryEvent(migrcoal_event))->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
 		}
 	}
 	
@@ -217,7 +247,7 @@ void ForestState::record_Recombevent_b4_extension (){
 			double start_height = (*ti).start_height();
 			double end_height = (*ti).end_height();
 			size_t start_height_epoch = ti.forest().model().current_time_idx_;
-		    assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
+		    //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
 		    size_t end_height_epoch = start_height_epoch;
 			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
 			this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
@@ -234,33 +264,19 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
     dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
-    // find the EvolutionaryEvent to add this event to.  This is (now) necessary because the events have been split within an epoch
+    // find the EvolutionaryEvent to add this event to.
+    // (Actually we went back to per-epoch data structures, so it's no longer necessary?  Can coalescences be recorded between recording recomb opp and event?)
     int idx = this->eventContainer[epoch_i].size();
     while (true) {
 		--idx;
 		assert (idx >= 0);
 		if (!this->eventContainer[epoch_i][idx]->is_recomb()) continue;
-		if (this->eventContainer[epoch_i][idx]->start_height > event_height) continue;
-		if (this->eventContainer[epoch_i][idx]->end_height < event_height) continue;
 		assert (this->eventContainer[epoch_i][idx]->start_base() == this->current_base());
 		break;
 	}
 	this->eventContainer[epoch_i][idx]->set_recomb_event_time( event_height );
 }
 
-
-
-/*! Clear coalescent and recombination events recorded between two states.*/
-void ForestState::clear_eventContainer(){ 
-    for (size_t time_i = 0; time_i < this->eventContainer.size(); time_i++ ) {
-        for (size_t i=0; i < this->eventContainer[time_i].size(); i++) {
-            if (eventContainer[time_i][i]->decrease_refcount_is_zero()) {
-				delete eventContainer[time_i][i];
-            }
-        }
-        this->eventContainer[time_i].clear();
-    }
-}
 
 
 

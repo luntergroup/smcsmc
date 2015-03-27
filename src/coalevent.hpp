@@ -67,7 +67,7 @@ extern double recomb_opp; //DEBUG
 class EvolutionaryEvent {
 public:
 	// Constructor for a recombination opportunity
-	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight ) :
+	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight, EvolutionaryEvent* parent = NULL ) :
 	                   start_height(start_height),
 	                   start_height_epoch_(start_height_epoch),
 	                   end_height(end_height),
@@ -75,11 +75,12 @@ public:
 	                   start_base_(start_base),
 	                   end_base_(end_base),
 	                   weight(weight),
+	                   parent(parent),  // steals the pointer, i.e. refcount remains the same
 	                   a( 0 ) {
 	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
 	                   };
 	// Constructor for migration/coalescence opportunity
-	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight ) :
+	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight, EvolutionaryEvent* parent = NULL ) :
 			           start_height(start_height),
 	                   start_height_epoch_(start_height_epoch),
 			           end_height(end_height),
@@ -87,10 +88,30 @@ public:
 			           start_base_(-1),
 			           end_base_(end_base),
 			           weight(weight),
+			           parent(parent),  // steals the pointer, i.e. refcount remains the same
 			           a( population_index ) { 
                           assert(start_height <= end_height); 
                        };
-    // Use default copy constructor
+    // Copy constructor
+    EvolutionaryEvent( const EvolutionaryEvent& obj ) :
+			           start_height(obj.start_height),
+	                   start_height_epoch_(obj.start_height_epoch_),
+	                   end_height(obj.end_height),
+	                   end_height_epoch_(obj.end_height_epoch_),
+	                   start_base_(obj.start_base_),
+	                   end_base_(obj.end_base_),
+	                   event_data(obj.event_data),
+	                   weight(obj.weight),
+	                   ref_counter(obj.ref_counter),
+	                   parent(obj.parent),
+	                   a( obj.a.coal_migr_population ) {
+						   if(parent) parent->increase_refcount();
+					   }
+	// Destructor
+	~EvolutionaryEvent() {
+		if (parent && parent->decrease_refcount_is_zero())
+			delete parent;
+	}
 
 	// Methods
 	bool is_recomb() const       { return start_base_ >= 0; }
@@ -166,15 +187,43 @@ public:
 	void increase_refcount() { ref_counter++; }
 	bool print_event();
     bool append_event( const EvolutionaryEvent& e );
+
+	// methods for the update algorithm	
+	bool is_removed() { return children_updated < 0; }
+	/* Adds (newly made, refcount==1) this to tree */
+	void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
+		parent = *eventptr_location;
+		*eventptr_location = this; }
+	/* Removes event after we're done updating the relevant counters */
+	EvolutionaryEvent* remove_event( EvolutionaryEvent** eventptr_location ) {
+		assert (eventptr_location != NULL);
+		assert (*eventptr_location == this);               // ensures that 'this' is being removed
+		assert (children_updated <= 0);                    // ensure events are not removed in mid-flow
+		children_updated = -1;                             // mark as removed (we don't have access to all its children, so actual delete is postponed)
+		*eventptr_location = parent;                       // (1) overwrite ptr to *this with (2) ptr to parent, so...		
+		parent->increase_refcount();                       // ...(2) increase parent's refcount and
+		if (decrease_refcount_is_zero()) {                 // ...(1) decrease refcount of *this
+			delete this;                                   // ...which may decrease parent's refcount again
+		}
+		return *eventptr_location; }                       // not: parent (as this may have been deleted)
+	/* Purges previously removed events, and returns first active parent (or NULL) */
+	EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location ) {
+		if (!is_removed()) return this;
+		if (remove_event( eventptr_location ) == NULL)     // check if we reached the root. 
+			return NULL;                                   // Note: call to remove_event may invalidate *this
+		return (*eventptr_location)->purge_events( eventptr_location ); }   // remove events recursively
+	bool add_likelihood_is_done( double additional_likelihood ) {
+		assert (!is_removed());
+		likelihood += additional_likelihood;
+		children_updated = (children_updated + 1) % ref_counter;
+		return (children_updated == 0); }
 	              
 	// Members
 private:
-public: // for CountModel::update_recombination_count; temporarily
 	double start_height;
 	size_t start_height_epoch_;
 	double end_height;
 	size_t end_height_epoch_;
-private:
     double start_base_;    // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
 	double end_base_;
     int event_data {-2};   // -2 == no event; otherwise type-specific meaning:
@@ -184,12 +233,16 @@ private:
 	                       //             0..: migration to this population index
 	int weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
     int ref_counter {1};
+    EvolutionaryEvent* parent;
 	union A {
 	  size_t coal_migr_population; // index of population of branch that is migrating or coalescing
 	  double recomb_pos;           // position of recombination event, along right-hand (end_base) or top (end_height) edge
-	  A( int p ): coal_migr_population( p ) {}
+	  A( size_t p ): coal_migr_population( p ) {}
 	  A(): coal_migr_population( 0 ) {}
 	} a;
+	// helper variables for the update algorithm
+	double likelihood { 0.0 };
+	int children_updated { 0 };
 };
 
 
