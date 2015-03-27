@@ -79,21 +79,20 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         
         else if (argv_i == "-h" || argv_i == "-help") {
             Help_header();            
-            }
+        }
 
-        #ifdef SMCSMCVERSION
         else if (argv_i == "-v") {
-            Help_version(this->smcsmcVersion, this->scrmVersion);
-            }
-        #endif
+            Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion);
+            exit(0);
+        }
 
         else {
             scrm_input += argv_i + " ";
-            }        
-        argc_i++;
         }        
-        this->finalize( );
+        argc_i++;
     }
+    this->finalize( );
+}
 
 
 PfParam::~PfParam(){ 
@@ -117,12 +116,17 @@ void PfParam::init(){
     this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
     //this->ghost = 10;
 
+    #ifdef COMPILEDATE
+        compileTime = COMPILEDATE;
+    #else
+        compileTime = "";
+    #endif
+
     #ifdef SMCSMCVERSION
         smcsmcVersion = SMCSMCVERSION;
     #else
         smcsmcVersion = "";
     #endif
-    
 
     #ifdef SCRMVERSION
         scrmVersion = SCRMVERSION;
@@ -291,11 +295,13 @@ int PfParam::log( ){
 
 void PfParam::log_param( ){
     ofstream log_file;
-
     log_file.open (log_NAME.c_str(), ios::out | ios::app | ios::binary); 
-    
+
+    log_file << "###########################\n";
+    log_file << "#        smcsmc log       #\n";
+    log_file << "###########################\n";
+    Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion, log_file);
     log_file << "smcsmc parameters: \n";
-    
     if (this->heat_bool){
         log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
         log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
