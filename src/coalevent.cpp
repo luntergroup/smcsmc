@@ -29,32 +29,32 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 {
   assert (e.ref_counter == 1);
   if (ref_counter != 1) return false;             // can't add to record that's in multiple use
-  if (!no_event()) return false;                  // this must not have event (can't have 2 events in single object)
+  if (!is_no_event()) return false;               // this must not have event (can't have 2 events in single object)
   if (is_recomb() != e.is_recomb()) return false; // type of records must match
   if (is_recomb()) {
     if (start_height == e.start_height &&
-	end_height == e.end_height &&
-	end_base == e.start_base &&
-	weight == e.weight) { // add sequence-wise
-      end_base = e.end_base;
+	    end_height == e.end_height &&
+	    end_base_ == e.start_base_ &&
+	    weight == e.weight) { // add sequence-wise
+      end_base_ = e.end_base_;
       event_data = e.event_data;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
-    if (start_base == e.start_base &&
-	end_base == e.end_base &&
-	end_height == e.start_height &&
-	weight == e.weight) { // add time-wise
+    if (start_base_ == e.start_base_ &&
+	    end_base_ == e.end_base_ &&
+	    end_height == e.start_height &&
+	    weight == e.weight) { // add time-wise
       end_height = e.end_height;
       event_data = e.event_data;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
   } else { // is_coalmigr
-    if (end_base == e.end_base &&
-	end_height == e.start_height &&
-	a.coal_migr_population == e.a.coal_migr_population &&
-	weight == e.weight) {
+    if (end_base_ == e.end_base_ &&
+	    end_height == e.start_height &&
+	    a.coal_migr_population == e.a.coal_migr_population &&
+	    weight == e.weight) {
       end_height = e.end_height;
       event_data = e.event_data;
       return true;
@@ -64,86 +64,26 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 }
 
 
-
-
-
-/*!
- * \class Coalevent
- *  another constructor for rec_point, to be called from sample the next genealogy
- */ 
-
-
-/*! \brief  Initialize Starevent */    
-Coalevent::Coalevent( 
-           size_t pop_i,
-           //double start_time,
-           //double end_time, 
-           double opportunity_y,
-           eventCode event_code, 
-           double end_base) {
-    this->init();    
-    this->set_pop_i(pop_i);
-    //this->set_start_height( start_time );
-    //this->set_end_height ( end_time );
-    this->set_opportunity_y( opportunity_y );
-    this->set_event_state(event_code);
-    this->set_end_base ( end_base );
-    this->set_num_event ( this->event_state() == EVENT ? 1 : 0);
-    }
-
-
-void Coalevent::init(){
-    this->set_pop_i(0);
-    //this->set_start_height(0);
-    //this->set_end_height(0);    
-    this->set_num_event(0);
-    this->set_opportunity_y(0);
-    this->set_event_state( INIT_NULL );
-    
-    this->set_epoch_index ( 0 );
-    this->set_end_base ( 0 );
-    this->pointer_counter_ = 1;
-    }
-
-
-bool Coalevent::print_event(){
-    EventRecorderdout << "";
-    //<< setw(10) << this->start_height()  << " to " 
-    //<< setw(10) << this->end_height()    << ", " 
-    dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential" : to_string(this->num_event()) ) << " Coalescent, ";
-    dout << " at base "<< this->end_base() ;
-    dout << " at epoch "<< this->epoch_index() << endl;
-    return true;
-    }
-
-bool Recombevent::print_event(){
-    EventRecorderdout << "";
-    //<< setw(10) << this->start_height()  << " to " 
-    //<< setw(10) << this->end_height()    << ", " 
-    dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential" : to_string(this->num_event()) ) << " Recombination, ";
-    dout << "from base "<< this->start_base() ;
-    dout << " to base "<< this->end_base() ;
-    dout << " at epoch "<< this->epoch_index() << endl;
-    return true;
-    }
-
-bool Migrevent::print_event(){
+bool EvolutionaryEvent::print_event() {
 	EventRecorderdout << "";
-        //<< setw(10) << this->start_height()  << " to " 
-             //<< setw(10) << this->end_height()    << ", " 
-    dout << setw(13) << this->opportunity()   << " opportunity for ";
-    dout << ( ( this->event_state() == NOEVENT ) ? "potential": to_string(this->num_event()) ) << " Migration, ";
-    dout << "from pop " << this->pop_i() << " to " << ( ( this->event_state() == NOEVENT ) ? "some other population" : to_string ( this->mig_pop() ) );
-    //dout << setw(2)  << this->num_event()     << " migration, ";
-        //if ( this->event_state() == NOEVENT ){
-            //dout << "potetial migration, from pop " << this->pop_i() << " to some other population "; 
-            //}
-        //else {
-            //dout << "from pop " << this->pop_i() << " to pop " << this->mig_pop(); 
-            //}
-    dout << endl;
+#define outstream cout
+//#define outstream cout
+	if (is_recomb()) {
+		outstream << "Event Recomb w=" << weight << " [" << start_base_ << "-" << end_base_ << ")  t=" << setw(5) << start_height << "-" << setw(5) << end_height;
+		if (is_recomb_event()) {
+			outstream << " (**EVENT**";
+			if (event_data == -1) outstream << " xpos=" << a.recomb_pos << ")";
+			if (event_data == 0) outstream << " tpos=" << a.recomb_pos << ")";
+		}
+	} else {
+		outstream << "Event CoalMigr w=" << weight << " [" << end_base_ << "] pop=" << a.coal_migr_population << " t=" << setw(5) << start_height << "-" << setw(5) << end_height;
+		if (is_coal_event()) 
+			outstream << " (**COAL**) ";
+		else if (is_migr_event())
+			outstream << " (**MIGR** " << event_data << ") ";
+	}
+	outstream << endl;
     return true;
-    }
+}
+
 

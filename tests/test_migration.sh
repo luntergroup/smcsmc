@@ -10,8 +10,5 @@ echo "Running migration test..."
 echo "Command line:"
 echo ${cmd}
 ${cmd} | sed 's/..Particle[^\n]*completed.//g' > test_migration.output
+rm sim-1-migrationSamples2msdata1*
 diff test_migration.output test_migration.truth
-
-
-
-

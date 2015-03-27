@@ -27,126 +27,29 @@
 #define COUNT
 
 #ifndef BIG_TO_SMALL_RATIO
-#define BIG_TO_SMALL_RATIO 256
-//#define BIG_TO_SMALL_RATIO 1
-#endif
-
-#ifndef CUM_TO_BIG_RATIO
-#define CUM_TO_BIG_RATIO 5000
-//#define CUM_TO_BIG_RATIO 1
+#define BIG_TO_SMALL_RATIO 67108864
 #endif
 
 class Two_doubles {
 	public:
-		Two_doubles( double init = 0 ){
-			big_  = 0;
-			small_ = init;
-			cumsum_ = 0;
-			//big_added_counter_ = 0;
-		};
+		Two_doubles( double init = 0 ) : big_(0), small_(init) {}
+
 		~Two_doubles(){};
-		
-		void add_to_small ( double added ){
-			//cout.precision(15);
-			//cout << "adding "<< added << " to small " << small_ <<" wheas big is "<< big_ <<endl;
-			small_ += added;
-			//
-			if ( small_ * BIG_TO_SMALL_RATIO > big_ && big_ != 0 ){
-				add_small_to_big();
-				assert ( big_ > small_ );
-			}
-			// should not assert here, as big_ could be zero
-			//assert ( big_ > small_ );
-		}
-		
-		void add_to_big ( double added ) {
-			//cout.precision(15);
-			//cout << "adding "<< added << " to big " << big_ <<" wheas small is "<< small_ <<endl;
-			big_ += added;
-			//if ( big_ <= small_ ){
-				//cerr << "big = "<<big_<<endl;
-				//cerr << "added = "<< added<<endl;
-				//cerr << "small_= "<< small_<<endl; 
-			//}
-			assert ( big_ >= small_ ); // big small added could all be zeros
-			if ( ( big_ > small_ * BIG_TO_SMALL_RATIO * CUM_TO_BIG_RATIO ) && ( small_ != 0 && small_ != 1 ) ){
-				add_big_to_cumsum( );
-				assert ( cumsum_ >= big_ );
-			}			
-		}
-		
-		void add ( double added ){
-			if ( big_ == 0 ){
-				if ( added > BIG_TO_SMALL_RATIO * small_ ){
-					this->add_to_big ( added );
-					//if ( big_ <= small_ ){
-						//cerr << "big = "<<big_<<endl;
-						//cerr << "added = "<< added<<endl;
-						//cerr << "small_= "<< small_<<endl; 
-					//}
 
-					assert ( big_ >= small_ ); // big small added could all be zeros
-					return;
-				}
-				
-				if ( added * BIG_TO_SMALL_RATIO < small_ ){
-					switch_big_and_small();					
-					assert ( big_ >= small_ ); // big small added could all be zeros
-				}
-				// two cases to add to small, 
-				// 1. big was 0, now has just taken small's value, big > small
-				// 2. big is 0, added is added to small
-				this->add_to_small ( added );
-				
-				return;
-			}
-			else if ( added * BIG_TO_SMALL_RATIO < big_ ){
-				this->add_to_small ( added );
-				return;
-			}
-			else{
-				add_to_big ( added );
-				return;
+		void add( double x ) {						
+			small_ += x;
+			if (fabs(small_ * BIG_TO_SMALL_RATIO) > fabs(big_)) {
+				big_ += small_;
+				small_ = 0;
 			}
 		}
-
-		void compute_final_answer(){
-			//cout.precision(15);
-			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
-			this->add_small_to_big( );
-			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
-			this->add_big_to_cumsum();	
-		}
 		
-		double final_answer () {
-			return this->cumsum_;
-		}
+		void compute_final_answer() {}
 		
-		void add_small_to_big( ){
-			//cout << "adding small "<< small_ << " to big " << big_ <<endl;
-			add_to_big ( small_ );
-			small_ = 0;
-		}
-		
-		void add_big_to_cumsum () {
-			//cout.precision(15);
-			//cout << "adding big "<< big_ << " to cumsum " << cumsum_ <<endl;
-			//big_added_counter_ = 0;
-			cumsum_ += big_;
-			big_ = 0;
-		}
-		
-		void switch_big_and_small ( ){
-			//cerr << " switching big and small !!!!!!!!!!!!!!!!!!!!!!"<<endl;
-			double tmp = big_;
-			big_ = small_;
-			small_ = tmp;
-		}
-	
+		double final_answer () { return this->small_ + this->big_; }
+			
 	private:
-		double cumsum_;
 		double big_, small_;
-		//size_t big_added_counter_;
 };
 
 /*! \brief Derived class of Model, used for inference.
@@ -157,7 +60,6 @@ class CountModel: public Model {
         //
         // Constructors and Destructors
         //    
-        //CountModel():Model(){};     
         CountModel(const Model& model, double lag = 0, double minimal_lag_update_ratio = 0.10 ) : Model( model ){ 
 			this->const_lag_ = lag;
 			this->const_minimal_lag_update_ratio_ = minimal_lag_update_ratio; 
@@ -188,28 +90,23 @@ class CountModel: public Model {
         void reset_recomb_rate ( Model *model );
         void reset_Ne ( Model *model );
         void reset_mig_rate ( Model *model );
-        //void reset_single_mig_rate ( Model *model );
         void initialize_mig_rate ( vector <vector<double>*> & rates_list );
 
 
-        void update_coalescent_count( deque < Coalevent *> & CoaleventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity ) ;
-        void update_recombination_count( deque < Recombevent *> & RecombeventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity ) ;
-        void update_migration_count( deque < Migrevent *> & MigreventContainer_i, double weight, double x_end, size_t epoch_idx );
+        void update_coalescent_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, vector<Two_doubles>& total_coal_count, vector<Two_doubles>& total_coal_opportunity, size_t epoch_idx ) ;
+        void update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ) ;
+        void update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx );
+		void update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update );
+		void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
 
         void compute_recomb_rate();
         void compute_mig_rate();
-
-        void resize_Starevent ( deque < Coalevent *> & CoaleventContainer_i , int index) ;
-        void resize_Starevent ( deque < Recombevent *> & RecombeventContainer_i , int index) ;
-        void resize_Migrevent ( deque < Migrevent *> & MigreventContainer_i , int index) ;
-
-        //void check_CountModel_Ne();
 
         //
         // Members
         //   
         /*! The dimension of total_coal_count, total_weighted_coal_opportunity, total_recomb_count, total_weighted_recomb_opportunity is 
-         *      number_of_time_interval * number_of_population
+         *      number_of_epochs * number_of_population
          *  The dimension of total_mig_count is 
          *      number_of_epochs * number_of_population (from) * number_of_population (to).  
          *  For total_weighted_mig_opportunity only the 'from' population is important
