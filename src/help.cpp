@@ -37,6 +37,7 @@ void Help_option(){
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
+    cout << setw(10)<<"-v"      << setw(5) << " "   << "  --  " << "Display program compiled time and git versions." << endl;
 };
 
 
@@ -58,8 +59,8 @@ void Help_header(){
     exit(0);
 };
 
-void Help_version(string smcsmc, string scrm){
-    cout << "smcsmc: " << smcsmc << endl;
-    cout << "scrm: "   << scrm   << endl;
-    exit(0);
+void Help_version(string date, string smcsmc, string scrm, std::ostream &output){
+    output << "Program was compiled on: " << date << endl;
+    output << "smcsmc version: " << smcsmc << endl;
+    output << "scrm version: "   << scrm   << endl;
 }

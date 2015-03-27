@@ -24,9 +24,10 @@
 #include <iostream>     /* cout */
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
 #include <iomanip>      // std::setw
+
 using namespace std;
 
 void Help_option();
 void Help_example();
 void Help_header();
-void Help_version(string smcsmc, string scrm);
+void Help_version(string date, string smcsmc, string scrm, std::ostream &output = std::cout);
