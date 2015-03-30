@@ -104,7 +104,6 @@ class ForestState : public Forest{
         size_t ancestor() const { return this->ancestor_; }
 
         // Members 
-        vector < deque < EvolutionaryEvent* > > eventContainer; 
         vector < EvolutionaryEvent* > eventTrees;
                 
         double site_where_weight_was_updated_;
