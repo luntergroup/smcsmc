@@ -75,8 +75,9 @@ public:
 	                   start_base_(start_base),
 	                   end_base_(end_base),
 	                   weight(weight),
-	                   parent(parent),  // steals the pointer, i.e. refcount remains the same
-	                   a( 0 ) {
+	                   a( 0 ),
+	                   parent_(parent) {  // steals the pointer
+						  if (parent_) parent_->increase_refcount();
 	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
 	                   };
 	// Constructor for migration/coalescence opportunity
@@ -88,8 +89,9 @@ public:
 			           start_base_(-1),
 			           end_base_(end_base),
 			           weight(weight),
-			           parent(parent),  // steals the pointer, i.e. refcount remains the same
-			           a( population_index ) { 
+			           a( population_index ),
+					   parent_(parent) {  // steals the pointer
+						  if (parent_) parent_->increase_refcount();
                           assert(start_height <= end_height); 
                        };
     // Copy constructor
@@ -103,28 +105,27 @@ public:
 	                   event_data(obj.event_data),
 	                   weight(obj.weight),
 	                   ref_counter(obj.ref_counter),
-	                   parent(obj.parent),
-	                   a( obj.a.coal_migr_population ) {
-						   if(parent) parent->increase_refcount();
+	                   a( obj.a.coal_migr_population ),
+	                   parent_(obj.parent_) {
+						   if(parent_) parent_->increase_refcount();
 					   }
 	// Destructor
 	~EvolutionaryEvent() {
-		if (parent && parent->decrease_refcount_is_zero())
-			delete parent;
+		if (parent_ && parent_->decrease_refcount_is_zero()) delete parent_;
 	}
 
 	// Methods
-	bool is_recomb() const       { return start_base_ >= 0; }
-	bool is_coalmigr() const     { return start_base_ < 0; }
-	bool is_no_event() const     { return event_data == -2; }
-	bool is_recomb_event() const { assert(is_recomb()); return event_data > -2; }
-	bool is_coal_event() const   { assert(is_coalmigr()); return event_data == -1; }
-	bool is_migr_event() const   { assert(is_coalmigr()); return event_data >= 0; }
-	int recomb_event_count() const { return is_recomb_event(); }
-	int coal_event_count() const   { return is_coal_event(); }
-	int migr_event_count() const   { return is_migr_event(); }
-	double start_base() const      { return is_recomb() ? start_base_ : end_base_; }
-	double end_base() const        { return end_base_; }
+	bool is_recomb() const            { return start_base_ >= 0; }
+	bool is_coalmigr() const          { return start_base_ < 0; }
+	bool is_no_event() const          { return event_data == -2; }
+	bool is_recomb_event() const      { assert(is_recomb()); return event_data > -2; }
+	bool is_coal_event() const        { assert(is_coalmigr()); return event_data == -1; }
+	bool is_migr_event() const        { assert(is_coalmigr()); return event_data >= 0; }
+	int recomb_event_count() const    { return is_recomb_event(); }
+	int coal_event_count() const      { return is_coal_event(); }
+	int migr_event_count() const      { return is_migr_event(); }
+	double start_base() const         { return is_recomb() ? start_base_ : end_base_; }
+	double end_base() const           { return end_base_; }
 	size_t start_height_epoch() const { return start_height_epoch_; }
 	size_t end_height_epoch() const   { return end_height_epoch_; }
 	void set_recomb_event_pos( double recomb_x_position ) {
@@ -185,39 +186,41 @@ public:
 		ref_counter--;
 		return (ref_counter == 0); }
 	void increase_refcount() { ref_counter++; }
-	bool print_event();
+	bool print_event() const;
     bool append_event( const EvolutionaryEvent& e );
+    EvolutionaryEvent* parent() const { return parent_; }
+    EvolutionaryEvent*& parent() { return parent_; }
 
 	// methods for the update algorithm	
-	bool is_removed() { return children_updated < 0; }
+
+	/* check whether this event is marked as 'removed' (and should subsequently be spliced out of the tree whenever it's encountered) */
+	bool is_removed() const { return children_updated < 0; }
+	/* marks as deleted; actual deletion is done by calling purge_events */
+	void mark_as_removed() {
+		assert (children_updated <= 0); // ensure events are not removed in mid-flow
+		children_updated = -1; }
 	/* Adds (newly made, refcount==1) this to tree */
 	void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
-		parent = *eventptr_location;
+		parent_ = *eventptr_location;
 		*eventptr_location = this; }
-	/* Removes event after we're done updating the relevant counters */
-	EvolutionaryEvent* remove_event( EvolutionaryEvent** eventptr_location ) {
-		assert (eventptr_location != NULL);
-		assert (*eventptr_location == this);               // ensures that 'this' is being removed
-		assert (children_updated <= 0);                    // ensure events are not removed in mid-flow
-		children_updated = -1;                             // mark as removed (we don't have access to all its children, so actual delete is postponed)
-		*eventptr_location = parent;                       // (1) overwrite ptr to *this with (2) ptr to parent, so...		
-		parent->increase_refcount();                       // ...(2) increase parent's refcount and
-		if (decrease_refcount_is_zero()) {                 // ...(1) decrease refcount of *this
-			delete this;                                   // ...which may decrease parent's refcount again
-		}
-		return *eventptr_location; }                       // not: parent (as this may have been deleted)
-	/* Purges previously removed events, and returns first active parent (or NULL) */
-	EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location ) {
-		if (!is_removed()) return this;
-		if (remove_event( eventptr_location ) == NULL)     // check if we reached the root. 
-			return NULL;                                   // Note: call to remove_event may invalidate *this
-		return (*eventptr_location)->purge_events( eventptr_location ); }   // remove events recursively
-	bool add_likelihood_is_done( double additional_likelihood ) {
+	/* update posterior, and checks whether the posterior is now complete */
+	bool update_posterior_is_done( double additional_posterior ) {
 		assert (!is_removed());
-		likelihood += additional_likelihood;
+		posterior += additional_posterior;
 		children_updated = (children_updated + 1) % ref_counter;
 		return (children_updated == 0); }
-	              
+	double get_and_reset_posterior() {
+		assert (!is_removed());
+		assert (children_updated == 0);
+		double p = posterior;
+		posterior = 0.0;
+		return p;
+	}
+
+	// friend functions, for managing the tree
+	friend EvolutionaryEvent* remove_event( EvolutionaryEvent** eventptr_location );  /* Removes event after we're done updating the relevant counters */
+	friend EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location );  /* Purges previously removed events, and returns first active parent (or NULL) */
+
 	// Members
 private:
 	double start_height;
@@ -233,7 +236,6 @@ private:
 	                       //             0..: migration to this population index
 	int weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
     int ref_counter {1};
-    EvolutionaryEvent* parent;
 	union A {
 	  size_t coal_migr_population; // index of population of branch that is migrating or coalescing
 	  double recomb_pos;           // position of recombination event, along right-hand (end_base) or top (end_height) edge
@@ -241,7 +243,8 @@ private:
 	  A(): coal_migr_population( 0 ) {}
 	} a;
 	// helper variables for the update algorithm
-	double likelihood { 0.0 };
+    EvolutionaryEvent* parent_;
+	double posterior { 0.0 };
 	int children_updated { 0 };
 };
 

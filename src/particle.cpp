@@ -206,7 +206,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 				weight += 1;
 				coal_event |= tmp_event_.isPwCoalescence();
 			}
-			// Record coalescence and migration opportunity
+			// Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
 			EvolutionaryEvent migrcoal_event(start_height, start_height_epoch, end_height, end_height_epoch, start_base, active_node(i)->population(), weight);
 			// Record any events
 			if (coal_event) migrcoal_event.set_coal_event();
@@ -251,6 +251,7 @@ void ForestState::record_Recombevent_b4_extension (){
 		    size_t end_height_epoch = start_height_epoch;
 			EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
 			this->eventContainer[this->writable_model()->current_time_idx_].push_back(recomb_event);
+			(new EvolutionaryEvent(*recomb_event))->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
 		}
     }
 }
@@ -275,6 +276,15 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
 		break;
 	}
 	this->eventContainer[epoch_i][idx]->set_recomb_event_time( event_height );
+
+	// now for the tree
+	EvolutionaryEvent* event = eventTrees[ epoch_i ];
+	while ( !event->is_recomb() ) {
+		event = event->parent();
+	}
+	assert (event->start_base() == this->current_base());
+	event->set_recomb_event_time( event_height );
+
 }
 
 

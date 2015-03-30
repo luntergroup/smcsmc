@@ -97,6 +97,7 @@ class CountModel: public Model {
         void update_recombination_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_start, double x_end, vector<Two_doubles>& total_recomb_count, vector<Two_doubles>& total_recomb_opportunity, size_t epoch_idx ) ;
         void update_migration_count( deque<EvolutionaryEvent*>& eventContainer_i, double weight, double x_end, size_t epoch_idx );
 		void update_all_counts( deque<EvolutionaryEvent*>& eventContainer, double weight, vector<double>& update_to, size_t first_epoch_to_update );
+		void update_all_counts( EvolutionaryEvent** event_ptr, double weight, vector<double>& update_to, size_t epoch_idx );
 		void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
 
         void compute_recomb_rate();

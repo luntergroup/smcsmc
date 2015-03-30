@@ -64,7 +64,7 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 }
 
 
-bool EvolutionaryEvent::print_event() {
+bool EvolutionaryEvent::print_event() const {
 	EventRecorderdout << "";
 #define outstream cout
 //#define outstream cout
@@ -87,3 +87,32 @@ bool EvolutionaryEvent::print_event() {
 }
 
 
+// friend functions
+
+/* Removes event after we're done updating the relevant counters; return parent (if any) */
+EvolutionaryEvent* remove_event( EvolutionaryEvent** eventptr_location ) {
+
+	assert (eventptr_location != NULL);
+	EvolutionaryEvent* event = *eventptr_location;
+	assert (event->children_updated < 0);
+	*eventptr_location = event->parent();              // (1) overwrite ptr to event with (2) ptr to parent, so...
+	if (event->parent() != NULL) {
+		event->parent()->increase_refcount();          // ...(2) increase parent's refcount and
+	}
+	if (event->decrease_refcount_is_zero()) {          // ...(1) decrease refcount of event
+        delete event;                                  // ...which may decrease parent's refcount again (but not to 0)
+	}
+	return *eventptr_location;                         // not: event->parent (as this may have been deleted)
+}
+
+/* Purges previously removed events, and returns first active event (if any) */
+EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location ) {
+
+	assert (*eventptr_location != NULL);
+	EvolutionaryEvent* event = *eventptr_location;
+	while (1) {
+		if (event == NULL || !event->is_removed())
+			return event;
+		event = remove_event( eventptr_location );
+	}
+}
