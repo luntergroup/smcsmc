@@ -116,14 +116,12 @@ ForestState::~ForestState(){
 /*! Clear coalescent and recombination events recorded between two states.*/
 void ForestState::clear_eventContainer(){ 
 
-    for (size_t i = 0; i < this->eventTrees.size(); i++) {
-		if (eventTrees[i]) {
-			if (eventTrees[i]->decrease_refcount_is_zero()) {
-				delete eventTrees[i];  // this recursively deletes its parents
-			}
+    for (int i = eventTrees.size()-1 ; i>=0 ; --i) {
+		if (eventTrees[i] && eventTrees[i]->decrease_refcount_is_zero()) {
+			delete eventTrees[i];  // this recursively deletes its parents
 		}
 	}
-	eventTrees.clear();
+	//eventTrees.clear();
 }
 
 

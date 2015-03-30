@@ -69,44 +69,44 @@ public:
 	// Constructor for a recombination opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight, EvolutionaryEvent* parent = NULL ) :
 	                   start_height(start_height),
-	                   start_height_epoch_(start_height_epoch),
+					   //start_height_epoch_(start_height_epoch),
 	                   end_height(end_height),
-	                   end_height_epoch_(end_height_epoch),
+	                   //end_height_epoch_(end_height_epoch),
 	                   start_base_(start_base),
 	                   end_base_(end_base),
-	                   weight(weight),
 	                   a( 0 ),
-	                   parent_(parent) {  // steals the pointer
+	                   parent_(parent),
+	                   weight(weight) {
 						  if (parent_) parent_->increase_refcount();
 	                      assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) ); 
 	                   };
 	// Constructor for migration/coalescence opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight, EvolutionaryEvent* parent = NULL ) :
 			           start_height(start_height),
-	                   start_height_epoch_(start_height_epoch),
+	                   //start_height_epoch_(start_height_epoch),
 			           end_height(end_height),
-	                   end_height_epoch_(end_height_epoch),
+	                   //end_height_epoch_(end_height_epoch),
 			           start_base_(-1),
 			           end_base_(end_base),
-			           weight(weight),
 			           a( population_index ),
-					   parent_(parent) {  // steals the pointer
+					   parent_(parent),
+			           weight(weight) {
 						  if (parent_) parent_->increase_refcount();
                           assert(start_height <= end_height); 
                        };
     // Copy constructor
     EvolutionaryEvent( const EvolutionaryEvent& obj ) :
 			           start_height(obj.start_height),
-	                   start_height_epoch_(obj.start_height_epoch_),
+	                   //start_height_epoch_(obj.start_height_epoch_),
 	                   end_height(obj.end_height),
-	                   end_height_epoch_(obj.end_height_epoch_),
+	                   //end_height_epoch_(obj.end_height_epoch_),
 	                   start_base_(obj.start_base_),
 	                   end_base_(obj.end_base_),
-	                   event_data(obj.event_data),
-	                   weight(obj.weight),
-	                   ref_counter(obj.ref_counter),
 	                   a( obj.a.coal_migr_population ),
-	                   parent_(obj.parent_) {
+	                   parent_(obj.parent_),
+	                   weight(obj.weight),
+	                   event_data(obj.event_data),
+	                   ref_counter(obj.ref_counter) {
 						   if(parent_) parent_->increase_refcount();
 					   }
 	// Destructor
@@ -126,8 +126,8 @@ public:
 	int migr_event_count() const      { return is_migr_event(); }
 	double start_base() const         { return is_recomb() ? start_base_ : end_base_; }
 	double end_base() const           { return end_base_; }
-	size_t start_height_epoch() const { return start_height_epoch_; }
-	size_t end_height_epoch() const   { return end_height_epoch_; }
+	//size_t start_height_epoch() const { return start_height_epoch_; }
+	//size_t end_height_epoch() const   { return end_height_epoch_; }
 	void set_recomb_event_pos( double recomb_x_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
@@ -218,34 +218,34 @@ public:
 	}
 
 	// friend functions, for managing the tree
-	friend EvolutionaryEvent* remove_event( EvolutionaryEvent** eventptr_location );  /* Removes event after we're done updating the relevant counters */
+	friend bool remove_event( EvolutionaryEvent** eventptr_location );                /* Removes event after we're done updating the relevant counters */
 	friend EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location );  /* Purges previously removed events, and returns first active parent (or NULL) */
 
 	// Members
 private:
 	double start_height;
-	size_t start_height_epoch_;
 	double end_height;
-	size_t end_height_epoch_;
     double start_base_;    // Recombinations: determines (w/end_base) the x-extent of recomb. opportunity.  For coal/migr, <0
 	double end_base_;
-    int event_data {-2};   // -2 == no event; otherwise type-specific meaning:
-	                       // recomb:    -1 == event at top edge (time-wise sampling)
-	                       //             0 == event at right-hand edge (sequence-wise sampling)
-	                       // coal/migr: -1 == coalescent event;
-	                       //             0..: migration to this population index
-	int weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
-    int ref_counter {1};
 	union A {
 	  size_t coal_migr_population; // index of population of branch that is migrating or coalescing
 	  double recomb_pos;           // position of recombination event, along right-hand (end_base) or top (end_height) edge
 	  A( size_t p ): coal_migr_population( p ) {}
 	  A(): coal_migr_population( 0 ) {}
 	} a;
-	// helper variables for the update algorithm
+	// helper variables for the update algorithm (put here for packing / alignment)
     EvolutionaryEvent* parent_;
 	double posterior { 0.0 };
-	int children_updated { 0 };
+public:
+	short children_updated { 0 };
+	// remainder of core variables
+	short weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
+    short event_data {-2};   // -2 == no event; otherwise type-specific meaning:
+	                       // recomb:    -1 == event at top edge (time-wise sampling)
+	                       //             0 == event at right-hand edge (sequence-wise sampling)
+	                       // coal/migr: -1 == coalescent event;
+	                       //             0..: migration to this population index
+    short ref_counter {1};
 };
 
 

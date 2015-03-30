@@ -60,14 +60,11 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 	//
 	for (size_t i = 0; i < Endparticles.particles.size(); i++) {
 
-		//cout << "Updating particle " << i << endl;
-
 		ForestState* thisState = Endparticles.particles[i];
-		double weight = thisState->weight();
-		// loop over the per-epoch containers; this will go in time
+
 		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < change_times_.size(); epoch_idx++) {
 
-			update_all_counts( &thisState->eventTrees[ epoch_idx ], weight, update_to, epoch_idx );
+			update_all_counts( &thisState->eventTrees[ epoch_idx ], thisState->weight(), update_to, epoch_idx );
 
 		}
 	}
@@ -128,17 +125,25 @@ void CountModel::update_all_counts( EvolutionaryEvent** event_ptr, double poster
 		posterior_weight = event->get_and_reset_posterior();
 
 		// update counters if top-left corner is in update region
-		if ( event->end_height_epoch() >= epoch_idx && event->start_base() < update_to[ event->end_height_epoch() ] ) {
+		if ( /* event->end_height_epoch() >= epoch_idx && */ event->start_base() < update_to[ /* event->end_height_epoch() */ epoch_idx ] ) {
 
-			/* don't for now */
 			update_all_counts_single_evolevent( event, posterior_weight, update_to, epoch_idx );
 
 			// if the bottom-right corner has contributed its count, the whole event has, and it can be deleted
-			if ( event->start_height_epoch() >= epoch_idx &&
-				 event->end_base() < update_to[ event->start_height_epoch() ] ) {
+			if ( /* event->start_height_epoch() >= epoch_idx && */
+				 event->end_base() < update_to[ /* event->start_height_epoch() */ epoch_idx ] ) {
 
 				event->mark_as_removed();
-
+				if (!remove_event( event_ptr )) {
+					// event was not removed, but a new pointer now points to the parent, from an event
+					// that has already been updated and therefore will not update the parent.
+					// Do an empty update on the parent to account for this
+					event = *event_ptr;
+					if (event && !event->is_removed()) {
+						event->update_posterior_is_done( 0.0 );
+					}
+				}
+				continue;
 			}
 		}
 

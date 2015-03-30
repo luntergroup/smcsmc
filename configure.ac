@@ -1,7 +1,8 @@
 AC_INIT([smcsmc],esyscmd([sh -c "cat version | tr -d '\n'"]),[joezhu@well.ox.ac.uk])
 
 # remove default -O2; we will set this by hand (or not) later
-${CXXFLAGS="-g"}
+# also include -fno-omit-frame-pointer for better debugging/profiling
+${CXXFLAGS="-g -fno-omit-frame-pointer"}
 
 #AC_CONFIG_HEADER([config.h])
 
