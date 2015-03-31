@@ -22,8 +22,10 @@
 */
 
 #include "count.hpp" 
+#include "arena.hpp"
 #include "debug/usage.hpp"
 #include "help.hpp"
+
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */
@@ -32,9 +34,16 @@ int delete_forest_counter = 0; // DEBUG
 int recombination_counter = 0; // DEBUG
 double recomb_opp = 0; // DEBUG
 
+/*!
+ * Global variable for the memory arena
+ */
+class Arena* Arena::globalArena;
+
+
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count);
+
 
 int main(int argc, char *argv[]){   
     
@@ -47,6 +56,9 @@ int main(int argc, char *argv[]){
     try {//else, proceed
         /*! Extract pfARG parameters */
         PfParam pfARG_para( argc, argv );
+
+		/*! Initialize memory arena */
+		Arena* arena = new Arena( pfARG_para.model->getNumEpochs(), 1000000 );
         
         /*!  INITIALIZE CountModel */
         CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
@@ -67,6 +79,7 @@ int main(int argc, char *argv[]){
         
         /*! Clean up */
         delete countNe;
+        delete arena;
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
         } 

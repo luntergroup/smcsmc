@@ -82,8 +82,8 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/summary_statistics/newick_tree.cc \
            src/scrm/src/summary_statistics/frequency_spectrum.cc \
            src/scrm/src/summary_statistics/seg_sites.cc \
-		   src/scrm/src/summary_statistics/tmrca.cc \
-		   src/scrm/src/summary_statistics/first_last_tmrca.cc 
+           src/scrm/src/summary_statistics/tmrca.cc \
+           src/scrm/src/summary_statistics/first_last_tmrca.cc
 
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
@@ -103,7 +103,8 @@ smcsmc_src = src/coalevent.cpp \
              src/pfparam.cpp \
              src/segdata.cpp \
              src/rescue.cpp \
-             src/help.cpp
+             src/help.cpp \
+             src/arena.cpp
 
 series_src = src/particleContainer_extra.cpp \
              src/count_extra.cpp

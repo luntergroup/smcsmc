@@ -23,6 +23,8 @@
 
 
 #include "forest.h"
+#include "arena.hpp"
+
 
 #ifndef EventRecorder
 #define EventRecorder
@@ -69,9 +71,7 @@ public:
 	// Constructor for a recombination opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight, EvolutionaryEvent* parent = NULL ) :
 	                   start_height(start_height),
-					   //start_height_epoch_(start_height_epoch),
 	                   end_height(end_height),
-	                   //end_height_epoch_(end_height_epoch),
 	                   start_base_(start_base),
 	                   end_base_(end_base),
 	                   a( 0 ),
@@ -83,9 +83,7 @@ public:
 	// Constructor for migration/coalescence opportunity
 	explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight, EvolutionaryEvent* parent = NULL ) :
 			           start_height(start_height),
-	                   //start_height_epoch_(start_height_epoch),
 			           end_height(end_height),
-	                   //end_height_epoch_(end_height_epoch),
 			           start_base_(-1),
 			           end_base_(end_base),
 			           a( population_index ),
@@ -97,9 +95,7 @@ public:
     // Copy constructor
     EvolutionaryEvent( const EvolutionaryEvent& obj ) :
 			           start_height(obj.start_height),
-	                   //start_height_epoch_(obj.start_height_epoch_),
 	                   end_height(obj.end_height),
-	                   //end_height_epoch_(obj.end_height_epoch_),
 	                   start_base_(obj.start_base_),
 	                   end_base_(obj.end_base_),
 	                   a( obj.a.coal_migr_population ),
@@ -109,9 +105,16 @@ public:
 	                   ref_counter(obj.ref_counter) {
 						   if(parent_) parent_->increase_refcount();
 					   }
-	// Destructor
+	// Destructor.  Should not be used when Arena and placement new is used for allocation
 	~EvolutionaryEvent() {
+		cout << "Destructor is called -- problem!" << endl;
 		if (parent_ && parent_->decrease_refcount_is_zero()) delete parent_;
+	}
+	// Delete function for use with Arena
+	void deletethis( size_t epoch_idx ) {
+		if (parent_ && parent_->decrease_refcount_is_zero()) parent_->deletethis( epoch_idx );
+		// don't call destructor -- no need to, since class only contains simple types
+		Arena::deallocate( (void*)this, epoch_idx );
 	}
 
 	// Methods
@@ -126,8 +129,6 @@ public:
 	int migr_event_count() const      { return is_migr_event(); }
 	double start_base() const         { return is_recomb() ? start_base_ : end_base_; }
 	double end_base() const           { return end_base_; }
-	//size_t start_height_epoch() const { return start_height_epoch_; }
-	//size_t end_height_epoch() const   { return end_height_epoch_; }
 	void set_recomb_event_pos( double recomb_x_position ) {
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
@@ -218,8 +219,8 @@ public:
 	}
 
 	// friend functions, for managing the tree
-	friend bool remove_event( EvolutionaryEvent** eventptr_location );                /* Removes event after we're done updating the relevant counters */
-	friend EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location );  /* Purges previously removed events, and returns first active parent (or NULL) */
+	friend bool remove_event( EvolutionaryEvent** eventptr_location, size_t epoch_idx );               /* Removes event after we're done updating the relevant counters */
+	friend EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location, size_t epoch_idx ); /* Purges previously removed events, and returns first active parent (or NULL) */
 
 	// Members
 private:
@@ -241,10 +242,10 @@ public:
 	// remainder of core variables
 	short weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
     short event_data {-2};   // -2 == no event; otherwise type-specific meaning:
-	                       // recomb:    -1 == event at top edge (time-wise sampling)
-	                       //             0 == event at right-hand edge (sequence-wise sampling)
-	                       // coal/migr: -1 == coalescent event;
-	                       //             0..: migration to this population index
+	                         // recomb:    -1 == event at top edge (time-wise sampling)
+	                         //             0 == event at right-hand edge (sequence-wise sampling)
+	                         // coal/migr: -1 == coalescent event;
+	                         //             0..: migration to this population index
     short ref_counter {1};
 };
 

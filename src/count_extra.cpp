@@ -112,9 +112,9 @@ void CountModel::update_all_counts( EvolutionaryEvent** event_ptr, double poster
 
 	// Recursively traverse the tree, updating complete nodes, until an incomplete node or the root is found
 
-	// Find first non-deleted event, updating *event_ptr (but not event_ptr) as necessary; exit if root was found
 	EvolutionaryEvent* event;
-	while ((event = purge_events( event_ptr ))) {
+	// Find first non-deleted event, updating *event_ptr (but not event_ptr) as necessary; exit if root was found
+	while ((event = purge_events( event_ptr, epoch_idx ))) {
 
 		if (!event->update_posterior_is_done( posterior_weight )) {
 			// incomplete node encountered -- stop, and wait until other updates complete this node
@@ -125,19 +125,20 @@ void CountModel::update_all_counts( EvolutionaryEvent** event_ptr, double poster
 		posterior_weight = event->get_and_reset_posterior();
 
 		// update counters if top-left corner is in update region
-		if ( /* event->end_height_epoch() >= epoch_idx && */ event->start_base() < update_to[ /* event->end_height_epoch() */ epoch_idx ] ) {
+		if ( event->start_base() < update_to[ epoch_idx ] ) {
 
 			update_all_counts_single_evolevent( event, posterior_weight, update_to, epoch_idx );
 
 			// if the bottom-right corner has contributed its count, the whole event has, and it can be deleted
-			if ( /* event->start_height_epoch() >= epoch_idx && */
-				 event->end_base() < update_to[ /* event->start_height_epoch() */ epoch_idx ] ) {
+			if ( event->end_base() < update_to[ epoch_idx ] ) {
 
 				event->mark_as_removed();
-				if (!remove_event( event_ptr )) {
+				if (!remove_event( event_ptr, epoch_idx )) {
 					// event was not removed, but a new pointer now points to the parent, from an event
 					// that has already been updated and therefore will not update the parent.
-					// Do an empty update on the parent to account for this
+					// Do an empty update on the parent to account for this.  (The alternative is to mark event
+					//  as 'removed' and purge it on the next iteration, which is more straightforward and easier
+					//  to understand; however the event is in the cache so might as well make use of that.)
 					event = *event_ptr;
 					if (event && !event->is_removed()) {
 						event->update_posterior_is_done( 0.0 );
@@ -172,7 +173,7 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 			// any events occur always at the top of the time segment (which cannot be the top of the epoch segment)
 			// also ensure that events are not counted twice, i.e. they fall in [x_start,x_end).
 			if ( x_start <= event->start_base() ) {
-				if (event->is_coal_event()) {
+				if (event->is_coal_event()) {   // not stricly necessary, as if !is_coal_event, coal_event_count()==0
 					total_coal_count[ epoch_idx ][event->get_population()].add( weight * event->coal_event_count() );
 				}
 				if (event->is_migr_event()) {   // if !is_migr_event(), event->get_migr_to_population() isn't valid

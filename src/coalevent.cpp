@@ -22,7 +22,7 @@
 */
 
 
-#include"coalevent.hpp"
+#include "coalevent.hpp"
 
 
 bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
@@ -90,7 +90,7 @@ bool EvolutionaryEvent::print_event() const {
 // friend functions
 
 /* Removes event after we're done updating the relevant counters; return true if event was actually deleted */
-bool remove_event( EvolutionaryEvent** eventptr_location ) {
+bool remove_event( EvolutionaryEvent** eventptr_location, size_t epoch_idx ) {
 
 	assert (eventptr_location != NULL);
 	EvolutionaryEvent* event = *eventptr_location;
@@ -100,20 +100,21 @@ bool remove_event( EvolutionaryEvent** eventptr_location ) {
 		event->parent()->increase_refcount();          // ...(2) increase parent's refcount and
 	}
 	if (event->decrease_refcount_is_zero()) {          // ...(1) decrease refcount of event
-        delete event;                                  // ...which may decrease parent's refcount again (but not to 0)
+        //delete event;                                  // ...which may decrease parent's refcount again (but not to 0)
+        event->deletethis( epoch_idx );                // use special delete function, to deallocate memory back into arena
         return true;                                   // signal: even has been deleted
 	}
 	return false;									   // signal: even has not been deleted
 }
 
 /* Purges previously removed events, and returns first active event (if any) */
-EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location ) {
+EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location, size_t epoch_idx ) {
 
 	assert (*eventptr_location != NULL);
 	while (1) {
 		EvolutionaryEvent* event = *eventptr_location;
 		if (event == NULL || !event->is_removed())
 			return event;
-		remove_event( eventptr_location );
+		remove_event( eventptr_location, epoch_idx );
 	}
 }
