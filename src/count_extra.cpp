@@ -58,11 +58,11 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 	//
 	// update counts for all particles
 	//
-	for (size_t i = 0; i < Endparticles.particles.size(); i++) {
+	for (int i = Endparticles.particles.size()-1; i>=0; i--) {
 
 		ForestState* thisState = Endparticles.particles[i];
 
-		for (size_t epoch_idx = first_epoch_to_update; epoch_idx < change_times_.size(); epoch_idx++) {
+		for (int epoch_idx = change_times_.size()-1; epoch_idx >= (int)first_epoch_to_update; epoch_idx--) {
 
 			update_all_counts( &thisState->eventTrees[ epoch_idx ], thisState->weight(), update_to, epoch_idx );
 

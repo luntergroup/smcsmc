@@ -37,15 +37,27 @@ void Arena::init_arena() {
 
 	alloc_block();
 		
-	block_in_use = 0;    // point to block currently being filled
-	block_idx = 0;       // first (likely) empty slot in block
+	block_in_use = 0;          // point to block currently being filled
+	block_idx = block_size-1;  // first (likely) empty slot in block
 
 }
+
+
+Arena::~Arena() {
+
+	std::cout << "Arena: allocated " << numAllocs << " blocks, deallocated " << numDeallocs << " blocks, max in use " << maxInUse << " blocks, num skips " << numSkips << std::endl;
+	for (int i=0; i<blocks.size(); i++)
+		free( allocblocks[i] );
+
+}
+
+
 
 void Arena::alloc_block() {
 
 	try {
 		void* ptr = malloc( 64 + block_size * sizeof( EvolutionaryEvent ) );
+		allocblocks.push_back( ptr );
 		ptr = (void*)(64L + ((uintptr_t)ptr & -64L));
 		blocks.push_back( ptr );
 	} catch ( std::bad_alloc &ba ) {
@@ -85,15 +97,15 @@ void* Arena::allocate( size_t epoch_idx ) {
 	// find first empty spot
 	while ( *(double*)(&block[idx]) >= 0.0 ) {
 		ths->numSkips++;
-		idx++;
-		if (idx == block_size) {
+		idx--;
+		if (idx < 0) {
 			ths->set_next_block();
 			block = (EvolutionaryEvent*)(ths->blocks[ ths->block_in_use ]);
-			idx = 0;
+			idx = block_size - 1;
 		}
 	}
-	ths->block_idx = (idx + 1) % block_size;
-	if (ths->block_idx == 0)
+	ths->block_idx = (idx - 1 + block_size) % block_size;
+	if (ths->block_idx == block_size-1)
 		ths->set_next_block();
 	return (void*)(&block[idx]);	
 }

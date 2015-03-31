@@ -41,7 +41,7 @@ class Arena {
 public:
 	Arena( size_t num_epochs, size_t block_size ) : num_epochs(num_epochs), block_size(block_size) { init_arena(); }
 	
-	~Arena() { std::cout << "Arena: allocated " << numAllocs << " blocks, deallocated " << numDeallocs << " blocks, max in use " << maxInUse << " blocks, num skips " << numSkips << std::endl; }
+	~Arena();
 	
 	static void* allocate( size_t epoch_idx );
 	static void deallocate( void* memptr, size_t epoch_idx );
@@ -58,6 +58,7 @@ private:
 	int maxInUse;
 	int numSkips;
 	
+	vector<void*> allocblocks;
 	vector<void*> blocks;
 	int block_idx;
 	int block_in_use;
