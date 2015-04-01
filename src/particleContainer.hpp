@@ -29,20 +29,19 @@
 #define PARTICLECONTAINER
 
 /*! \brief ForestState Container, particle filters*/
-class ParticleContainer{
+class ParticleContainer {
+
     friend class CountModel;
 
     public:
-
         //
         // Constructors and Destructors
         //        
         ParticleContainer(Model* model, 
-                  //size_t random_seed,
-                  MersenneTwister *rg,
-                  size_t Num_of_states, 
-                  double initial_position,
-                  bool heat_bool );// this is used to create the particle initial states
+						  MersenneTwister *rg,
+                          size_t Num_of_states, 
+                          double initial_position,
+                          bool heat_bool );  // this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
 
         //
@@ -55,9 +54,7 @@ class ParticleContainer{
         bool appendingStuffToFile(double x_end, PfParam &pfparam);
         void cumulate_recomb_opportunity_at_seq_end( double seqend );
         void normalize_probability();    
-
         void clear();
-
         void print_particle_probabilities();
 
         //
@@ -66,40 +63,28 @@ class ParticleContainer{
         void print();
         bool check_state_orders();
         void print_particle_newick();
-    private:
-        
+
+    private:        
         // 
         // Methods
         //   
-       
         void update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips);
         void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */        
-
         // Resampling
         void resample(valarray<int> & sample_count);
         void duplicate_particles ( valarray<int> & sample_count );
-        
         void resample_for_check(valarray<int> & sample_count);
-        
         void shifting(int number_of_particles);
         void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
-
         void systemetic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
         void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
-        
-        
-        
-        
-        
-        
         
         //
         // Setters and getters:
         //
         double ESS() const {return this->ESS_;};
         void set_ESS(double ess){this->ESS_ = ess;};
-        RandomGenerator* random_generator() const { return this->random_generator_; }
-        //void set_random_generator(RandomGenerator *rg) { this->random_generator_ = rg; }        
+        RandomGenerator* random_generator() const { return this->random_generator_; }  
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 
@@ -111,6 +96,6 @@ class ParticleContainer{
         RandomGenerator* random_generator_; // This is for particle filter only, 
         double current_printing_base_;
         bool heat_bool_ ;
-    };
+};
 
 #endif

@@ -73,14 +73,11 @@ class ForestState : public Forest{
         ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         // Destructors //
         ~ForestState();
-        void clear_CoaleventContainer();
-        void clear_RecombeventContainer();
-        void clear_MigreventContainer();
+        void clear_eventContainer();
 
         // Resampling //
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
-
         void making_copies( int number_of_copies );
 
         // Update weight
@@ -93,36 +90,12 @@ class ForestState : public Forest{
         vector <double> opportunity_y_s ; 
 
         // Record events
-        void compute_opportunity_y_s ();
         void record_Recombevent_b4_extension ( );
         void record_Recombevent_atNewGenealogy ( double event_height );
-        //void record_the_final_recomb_opportunity ( double loci_length );
         void record_all_event(TimeInterval const &ti, double & recomb_opp_x_within_scrm);
-        void record_Coalevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, double end_base);
-                                  
-        void record_Recombevent(size_t pop_i,
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, double start_base, double end_base);
-
-        void record_Migrevent(size_t pop_i,                          
-                          //double start_time, 
-                          //double end_time, 
-                          double opportunity, 
-                          eventCode event_code, size_t mig_pop, double end_base);                          
-        
-        //void record_recomb_opp_within_scrm ( double recomb_rate) const {
-            //cout << "recomb_rate " << recomb_rate <<endl;
-            //recomb_opp_x_within_scrm = recomb_opp_x_within_scrm + recomb_rate / this->model().recombination_rate();
-        //}
         void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
         
-        // Setters and getters: //
+        // Setters and getters: 
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
         void setParticleWeight(double weight) { this->particle_weight_ = weight; }
@@ -130,27 +103,16 @@ class ForestState : public Forest{
         void setAncestor ( size_t ancestor ){ this->ancestor_ = ancestor; }
         size_t ancestor() const { return this->ancestor_; }
 
-        // Members //
-        vector < deque < Coalevent* > > CoaleventContainer;   /*!< \brief Coalescent events recorder */
-        vector < deque < Recombevent* > > RecombeventContainer; /*!< \brief Recombination events recorder */
-        vector < deque < Migrevent* > > MigreventContainer;   /*!< \brief Migration events recorder */
+        // Members 
+        vector < EvolutionaryEvent* > eventTrees;
                 
         double site_where_weight_was_updated_;
         double particle_weight_;
         size_t ancestor_;
-        vector < TmrcaState > TmrcaHistory;
-        
-        vector < ForestState* > ForestState_copies; // NEW        
+        vector < TmrcaState > TmrcaHistory;        
+        vector < ForestState* > ForestState_copies;        
 
-        // Debugging tools //
-        bool print_Coalevent();
-        bool print_Recombevent();
-        bool print_Migrevent();
-  
-        
-
-        
-        //valarray<double> cal_marginal_likelihood_finite(Node * node); /*!< Calculate the marginal likelihood of each node */
+        // Debugging tools   
 		std::string newick(Node *node) ;
 };
 #endif

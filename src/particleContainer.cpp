@@ -28,17 +28,12 @@
  * 
  * \ingroup group_pf_init
  */ 
-ParticleContainer::ParticleContainer(
-                    Model* model, 
-                    //size_t random_seed,
-                    MersenneTwister *rg,
-                    size_t Num_of_states, 
-                    //vector <bool> data_for_init_states, 
-                    //bool withdata,
-                    double initial_position,
-                    bool heat_bool ){
+ParticleContainer::ParticleContainer(Model* model,                     
+									 MersenneTwister *rg,
+									 size_t Num_of_states, 
+									 double initial_position,
+									 bool heat_bool ) {
     this->heat_bool_ = heat_bool;
-    //this->random_generator_ = new MersenneTwister( random_seed );  /*! Initialize random generator for particle filter */
     this->random_generator_ = rg;
     this->set_ESS(0);
     this->set_current_printing_base(0);    
@@ -62,8 +57,8 @@ ParticleContainer::ParticleContainer(
             new_state->TmrcaHistory.push_back ( tmrca );
             }
         this->push(new_state, 1.0/Num_of_states );        
-	    }	    
-    }
+	}	    
+}
 
 
 /*! \brief Resampling step
@@ -77,31 +72,10 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
         dout<<"ESS_diff = " << ESS_diff<<endl;
         dout << " ### PROGRESS: ESS resampling" << endl;
         this->systemetic_resampling( weight_cum_sum, sample_count, num_state);
-        //this->trivial_resampling ( sample_count, num_state );
         this->resample(sample_count);  
         }    
     }
 
-
-void ParticleContainer::resample_for_check(valarray<int> & sample_count){	
-    this->duplicate_particles ( sample_count );
-    size_t Num_of_states = this->particles.size();
-    
-    for ( size_t i = 0 ;  i < Num_of_states; i++ ){
-        if ( this->particles[i]->ForestState_copies.size() == 0 ){
-            delete this->particles[i];
-            this->particles[i]=NULL;
-            continue;
-            }
-        for ( size_t j = 0; j < this->particles[i]->ForestState_copies.size(); j++){
-            this->push( this->particles[i]->ForestState_copies[j] );
-            }
-        this->particles[i] = NULL;
-        }
-            
-    this->shifting(sample_count.sum());
-    assert(sample_count.sum() == int(this->particles.size()));
-    }
 
 
 /*! \brief Particle filtering Resampling step
@@ -111,68 +85,50 @@ void ParticleContainer::resample_for_check(valarray<int> & sample_count){
  * \ingroup group_resample
  */ 
 void ParticleContainer::resample(valarray<int> & sample_count){	
+    dout << "Resampling is called" << endl;
     dout << " ****************************** Start making list of new states ****************************** " << std::endl;
 	dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
-    dout<<"resampling is called"<<endl;
-	for (size_t old_state_index = 0; old_state_index < sample_count.size(); old_state_index++){
+	size_t number_of_particles = sample_count.size();
+	for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
 			// we need at least one copy of this particle; it keeps its own random generator
+			dout << " Keeping the " << old_state_index << "th particle" << endl;
             this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle 
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) { 
-			  	dout << "       Make a copy of the " << old_state_index << "th particle" << endl;                
+				dout << " Making a copy of the " << old_state_index << "th particle" << endl;
 				ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
 				// Give the new particle its own random generator (for multithreading)
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
                 new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
                 new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
 				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
-                }
-            } 
-        else {
+            }
+        } else {
+			dout << " Deleting the " << old_state_index << "th particle" << endl;
             delete this->particles[old_state_index]; 
         }
         
         this->particles[old_state_index]=NULL;
-        }
-    
-    this->shifting(sample_count.sum());
-    
-    dout<<"sample_count.sum() = "<<sample_count.sum()<<endl;
-    assert(sample_count.sum() == int(this->particles.size()));
+    }
+
+    for (int i = 0; i < number_of_particles; i++) {
+        this->particles[i] = this->particles[i + number_of_particles];
+    }
+    this -> particles.resize(number_of_particles);
+
     dout<<this->particles.size()<<endl;
 	dout << " ****************************** End of making list of new particles ****************************** " << std::endl;
 	assert(this->check_state_orders());
     }
 
 
-/*!
- * The current implementation append ForestState to the end of the particleContatiner during the resampling step, and the pointers to the ForestState
- * in the previous iteration have been removed. This is house keeping.
- */ 
-void ParticleContainer::shifting(int number_of_particles){	
-    /*! \todo SHIFTING */
-    // SHIFTING AND RESIZING THE PARTICLE ARRAY
-    // SHIFTING, this is not pretty, there must be some other ways to do this ...
-    for (int i = 0; i < number_of_particles; i++){
-        this->particles[i] = this->particles[i+number_of_particles];
-    }
-    this -> particles.resize(number_of_particles);
-    this -> particles.shrink_to_fit();
-    // SHIFTING AND RESIZING THE PARTICLE ARRAY FINISHED    
-}
-
-
 
 /*!
  * ParticleContatiner destructor
  */ 
-ParticleContainer::~ParticleContainer(){
-    //delete random_generator_;
-    // The following message may show up very often if it is passed by reference ...
-    // dout << "ParticleContainer destructor is called" << endl;
-    }
+ParticleContainer::~ParticleContainer() {}
 
 
 /*!

@@ -29,7 +29,7 @@ generate_vcf$(EXEEXT):
 
 ##.PHONY: exec_unittests
 ##exec_unittests: unittests 
-	##./unittests 
+##./unittests 
 
 common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
 
@@ -37,23 +37,23 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -DSMCSM
 # -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
 
 # Binary flags
-smcsmc_CXXFLAGS          = -g $(common_flags) -DNDEBUG
+smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
 smcsmcRECOMBOFF_CXXFLAGS = $(smcsmc_CXXFLAGS) -D_RecombRecordingOff
 smcsmcSCRM_CXXFLAGS      = $(smcsmcRECOMBOFF_CXXFLAGS) -D_SCRM
-smcsmc_omp_CXXFLAGS      = -g $(common_flags) -DNDEBUG -fopenmp 
-scrm_CXXFLAGS            = -g $(common_flags) -DNDEBUG
+smcsmc_omp_CXXFLAGS      = $(common_flags) -DNDEBUG -fopenmp -O3
+scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 
 # Debugger flags
-smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ 
+smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -fno-omit-frame-pointer -O2
 smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
 # Profiler flags
-smcsmc_prof_CXXFLAGS     = -std=c++0x -pg $(common_flags) -DNDEBUG   
+smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
 smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp 
 
 # Tester flags
-unittests_CXXFLAGS = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/
-unittests_LDADD= -lcppunit -ldl
+unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/
+unittests_LDADD          = -lcppunit -ldl
 
 ##export SMCSMCROOT=src
 ##export SCRMROOT=src/scrm/src
@@ -67,7 +67,7 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/time_interval.h \
            src/scrm/src/tree_point.cc src/scrm/src/tree_point.h \
            src/scrm/src/forest.cc \
-		   src/scrm/src/forest-debug.cc \
+	   src/scrm/src/forest-debug.cc \
            src/scrm/src/random/mersenne_twister.h  \
            src/scrm/src/random/random_generator.cc \
            src/scrm/src/random/mersenne_twister.cc \
@@ -81,9 +81,9 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/summary_statistics/newick_tree.cc \
            src/scrm/src/summary_statistics/frequency_spectrum.cc \
            src/scrm/src/summary_statistics/seg_sites.cc \
-		   src/scrm/src/summary_statistics/tmrca.cc \
-		   src/scrm/src/summary_statistics/first_last_tmrca.cc 
-        
+           src/scrm/src/summary_statistics/tmrca.cc \
+           src/scrm/src/summary_statistics/first_last_tmrca.cc
+
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
@@ -102,7 +102,8 @@ smcsmc_src = src/coalevent.cpp \
              src/pfparam.cpp \
              src/segdata.cpp \
              src/rescue.cpp \
-             src/help.cpp
+             src/help.cpp \
+             src/arena.cpp
 
 series_src = src/particleContainer_extra.cpp \
              src/count_extra.cpp
@@ -135,12 +136,12 @@ smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
 
 # Tester sources
 test_src = tests/unittest/test_pattern.cpp \
-		   tests/unittest/test_runner.cpp \
-		   tests/unittest/test_Coalevent.cpp \
+	   tests/unittest/test_runner.cpp \
+	   tests/unittest/test_Coalevent.cpp \
            tests/unittest/test_FroestState.cpp\
            tests/unittest/test_PfCount.cpp \
            tests/unittest/test_ParticleContainer.cpp
-		
+
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
 
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
