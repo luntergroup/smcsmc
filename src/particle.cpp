@@ -54,6 +54,12 @@ void ForestState::making_copies( int number_of_copies ){
 ForestState::ForestState( Model* model, RandomGenerator* random_generator )
             :Forest( model, random_generator ) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
+    //this->init_EventContainers( model );    
+	//this->buildInitialTree();    
+    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
+    // Initialize the initial particles at base 0, with equal weights
+    this->setParticleWeight( 1.0 );
+    this->setSiteWhereWeightWasUpdated(0.0);
     new_forest_counter++; // DEBUG
 }
 
@@ -312,7 +318,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
 	  return x;
     }
 
-        // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitude of 10 to the power of negative 8.
+    // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitude of 10 to the power of negative 8.
 	double mutation_rate = this->model().mutation_rate();
 	Node *left = trackLocalNode(node->first_child());   // jz_stable
 	Node *right = trackLocalNode(node->second_child()); // jz_stable
@@ -323,7 +329,7 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
     double ut1 = 1 - exp(-t1 * mutation_rate); // assume infinite site
 	double ut2 = 1 - exp(-t2 * mutation_rate); // assume infinite site
 	assert (ut1>=0 && ut1<=1);
-        assert (ut2>=0 && ut2<=1);
+    assert (ut2>=0 && ut2<=1);
 	valarray<double> y = cal_marginal_likelihood_infinite(left);
 	valarray<double> z = cal_marginal_likelihood_infinite(right);		
 	x[0] = (y[0] * ut1 + y[1] * (1-ut1) ) * (z[0] * ut2 + z[1] * (1-ut2) );
@@ -340,12 +346,67 @@ inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * nod
  */
 double ForestState::calculate_likelihood( ) {
     //dout << "calculate_likelihood function, root is " << this->local_root() << endl;
-    valarray<double> marginal_likelihood = cal_marginal_likelihood_infinite(this->local_root());
-    dout << "marginal likelihood is " << marginal_likelihood[0] <<  "," << marginal_likelihood[1] << endl;
+    valarray<double> marginalLikelihood = cal_marginal_likelihood_infinite(this->local_root());
+    dout << "marginal likelihood is " << marginalLikelihood[0] <<  "," << marginalLikelihood[1] << endl;
     double prior[2] = {0.5,0.5};
-    double likelihood = marginal_likelihood[0]*prior[0] + marginal_likelihood[1]*prior[1];
+    double likelihood = marginalLikelihood[0]*prior[0] + marginalLikelihood[1]*prior[1];
     dout << "ForestState::calculate_likelihood( ) likelihood is " << likelihood << endl;
     return likelihood;
+}
+
+double ForestState::trackLocalTreeBranchLength(){
+    // first create a map for the nodecontainer.
+    std::map<Node const*, bool> nodeMap;
+    nodeMap[NULL] = NULL;
+    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
+        nodeMap[*it] = false;
+    }
+
+    for ( auto tipI = 0 ; tipI < this->sample_size() ; tipI++ ){
+        Node *currentNode = this->nodes()->at(tipI);
+        nodeMap[currentNode] = currentNode->mutation_state() >=0 ;
+        //cout << currentNode << " "<<currentNode->mutation_state() << endl;
+        bool stateHaveNotSet = true;
+
+        while ( stateHaveNotSet ){
+            Node *cameFrom = currentNode;
+            // Move on to the next tip if cameFrom is not labelled, i.e. missing data
+            if ( !nodeMap[cameFrom] ){
+                break;
+            }
+            currentNode = currentNode->parent();
+            // Move on to the next tip if the current node is already lablled
+            if ( nodeMap[currentNode] ){
+                break;
+            }
+            nodeMap[currentNode] = true;
+            // Stop when hit the root
+            if ( currentNode -> is_root() ){
+                break;
+            }
+        }
+    }
+
+    double aliveBL = 0;
+    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
+        Node *currentNode = *it;
+        if ( currentNode-> is_root() ){
+            if ( nodeMap[currentNode->first_child()] && !nodeMap[currentNode->second_child()]){
+                aliveBL -= (currentNode->height() - currentNode->first_child()->height());
+            }
+            else if (!nodeMap[currentNode->first_child()] && nodeMap[currentNode->second_child()]){
+                aliveBL -= (currentNode->height() - currentNode->second_child()->height());
+            }
+        }
+        if ( currentNode->in_sample() ){
+            aliveBL += nodeMap[currentNode] ? currentNode->height_above():0;
+        }
+        else if ( nodeMap[currentNode->parent()] && nodeMap[currentNode] ){
+            aliveBL += currentNode->height_above();
+        }
+    }
+    // then check if the the node label is -1, if it is not, the tip node has data, otherwise it does not
+    return aliveBL;
 }
 
 
@@ -363,8 +424,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          * First, update the likelihood up to either extend_to or the end of this state
          */
         double update_to = min( extend_to, this->next_base() );
-        double length_of_local_tree = this->getLocalTreeLength(); // in generations
-        double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * length_of_local_tree * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
+        double localTreeBranchLength = this->trackLocalTreeBranchLength();
+        double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
         likelihood *= likelihood_of_segment;
@@ -390,7 +451,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     this->setSiteWhereWeightWasUpdated( extend_to );
     return likelihood;
 }
-
 
 
 std::string ForestState::newick(Node *node) {

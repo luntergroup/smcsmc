@@ -19,7 +19,7 @@ dependencies:
 test:    
   override:
     - ./bootstrap
-    - make check
+    - sudo make install check
     - cd tests; ./test_binary_sample_size.sh
     - cd tests; ./test_binaries11_20.sh
     - cd tests; ./test_binaries1_10.sh

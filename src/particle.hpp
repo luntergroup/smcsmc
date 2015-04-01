@@ -84,6 +84,7 @@ class ForestState : public Forest{
         void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */        
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
+        double trackLocalTreeBranchLength();
         
         // Extend
         double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
@@ -113,6 +114,6 @@ class ForestState : public Forest{
         vector < ForestState* > ForestState_copies;        
 
         // Debugging tools   
-		std::string newick(Node *node) ;
+        std::string newick(Node *node) ;
 };
 #endif
