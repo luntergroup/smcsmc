@@ -135,13 +135,16 @@ smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
 #smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp 
 
 # Tester sources
-test_src = tests/unittest/test_pattern.cpp \
-	   tests/unittest/test_runner.cpp \
-	   tests/unittest/test_Coalevent.cpp \
-           tests/unittest/test_FroestState.cpp\
-           tests/unittest/test_PfCount.cpp \
-           tests/unittest/test_ParticleContainer.cpp
+#test_src = tests/unittest/test_pattern.cpp \
+		   #tests/unittest/test_runner.cpp \
+		   #tests/unittest/test_Coalevent.cpp \
+           #tests/unittest/test_FroestState.cpp\
+           #tests/unittest/test_PfCount.cpp \
+           #tests/unittest/test_ParticleContainer.cpp
 
+test_src = tests/unittest/test_runner.cpp \
+		   tests/unittest/test_FroestState.cpp
+		
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
 
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
