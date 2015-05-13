@@ -67,7 +67,7 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/time_interval.h \
            src/scrm/src/tree_point.cc src/scrm/src/tree_point.h \
            src/scrm/src/forest.cc \
-	   src/scrm/src/forest-debug.cc \
+           src/scrm/src/forest-debug.cc \
            src/scrm/src/random/mersenne_twister.h  \
            src/scrm/src/random/random_generator.cc \
            src/scrm/src/random/mersenne_twister.cc \
