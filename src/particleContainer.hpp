@@ -39,6 +39,7 @@ class ParticleContainer {
         //        
         ParticleContainer(Model* model, 
 						  MersenneTwister *rg,
+						  const vector<int>& record_event_in_epoch,
                           size_t Num_of_states, 
                           double initial_position,
                           bool heat_bool );  // this is used to create the particle initial states
