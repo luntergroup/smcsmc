@@ -69,6 +69,10 @@ class PfParam{
         Param *SCRMparam;
         Model *model;
         MersenneTwister *rg ;
+        vector<int> record_event_in_epoch;
+
+        static const int RECORD_RECOMB_EVENT = 1;
+        static const int RECORD_COALMIGR_EVENT = 2;
 
         double default_loci_length;
 

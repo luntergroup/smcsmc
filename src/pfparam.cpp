@@ -273,6 +273,11 @@ void PfParam::finalize(  ){
         }
     
     this->finalize_scrm_input ( );
+    
+    // initialize the vector specifying what epochs to collect events for
+    for (int epoch=0; epoch < this->model->change_times_.size(); epoch++) {
+        record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+    }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );

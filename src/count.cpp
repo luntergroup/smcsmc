@@ -49,10 +49,11 @@ void CountModel::init_coal_and_recomb() {
         this->total_recomb_count.push_back(tmp_count);
         // enter initial value
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ) {
-            this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * population_size() );
+            this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * this->population_size() );
+            /*! Note that this uses recombination rate at position -1 */
+            this->total_recomb_count[epoch_idx][pop_i] = this->recombination_rate();   
         }
         // populate and enter initial value for opportunity
-        /*! \todo Need to populate initial count for recombination with correct value */
         vector <Two_doubles> tmp_opportunity(this->population_number(), Two_doubles(1));
         this->total_weighted_coal_opportunity.push_back(tmp_opportunity);
         this->total_weighted_recomb_opportunity.push_back(tmp_opportunity);
@@ -67,14 +68,18 @@ void CountModel::init_migr() {
 
 	// populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
 	/*! \todo Need to populate with correct initial values */
-	vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
-	vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
-	vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
-	for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-		tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
-		tmp_opp_Time_i.        push_back( Two_doubles(1) );
-		tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
-	}
+    vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
+    vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
+    vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
+    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+        tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
+        tmp_opp_Time_i.        push_back( Two_doubles(1) );
+        tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
+        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
+            tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
+            tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
+        }
+    }
     
 	// set initial counts/rates for all epochs
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {

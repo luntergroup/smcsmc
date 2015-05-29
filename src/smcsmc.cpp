@@ -112,10 +112,10 @@ void pfARG_core(PfParam &pfARG_para,
     Segfile->read_new_line();    
     /*! Initial particles */ 
     //double initial_position = 0;
-    ParticleContainer current_states(model, rg, Nparticles, 
-                                    //Segfile->int_vec_of_sample_alt, Segfile->withdata(), 
-                                    Segfile->segment_start(),
-                                    pfARG_para.heat_bool);             
+    ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch, 
+                                     Nparticles, 
+                                     Segfile->segment_start(),
+                                     pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 	#ifdef _SCRM    
