@@ -79,7 +79,7 @@ void CountModel::init_migr() {
             tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
             tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
         }
-	}
+    }
     
 	// set initial counts/rates for all epochs
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
