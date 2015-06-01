@@ -43,7 +43,22 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
                                        this->ESS_default_bool = false; }
         else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
-                                       this->EM_bool = true; }        
+                                       this->EM_bool = true; }
+        else if ( argv_i == "-xr" || argv_i == "-xc" ) {
+									   int last_epoch;
+									   int first_epoch = readRange(last_epoch);   // obtain 0-based closed interval
+									   for (int i=0; i<=last_epoch; i++) {         // note: <= as closed interval
+										   if (record_event_in_epoch.size() <= i) {
+											   // extend vector, and set default: record both recomb and coal/migr events
+											   record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+										   }
+										   if (i >= first_epoch) {
+											   // reset bit signifying recording of either recombination or coal/migr events
+											   // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
+											   record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+										   }
+									   }
+								   }
         else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }        
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }
@@ -274,10 +289,15 @@ void PfParam::finalize(  ){
     
     this->finalize_scrm_input ( );
     
-    // initialize the vector specifying what epochs to collect events for
-    for (int epoch=0; epoch < this->model->change_times_.size(); epoch++) {
+    // if necessary, extend the vector specifying what epochs to collect events for,
+    // and check it hasn't been made too large (which wouldn't strictly be a problem,
+	// but clearly the user specified something that's silly and should hear that.)
+	while (record_event_in_epoch.size() < this->model->change_times_.size()) {
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
     }
+    if (record_event_in_epoch.size() > this->model->change_times_.size()) {
+		throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+	}
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );
