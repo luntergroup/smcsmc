@@ -235,15 +235,15 @@ void ForestState::record_Recombevent_b4_extension (){
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.numberOfLocalContemporaries();
         if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
-			double start_height = (*ti).start_height();
-			double end_height = (*ti).end_height();
-			size_t start_height_epoch = ti.forest().model().current_time_idx_;
-		    //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
-		    size_t end_height_epoch = start_height_epoch;
-			void* event_mem = Arena::allocate( start_height_epoch );
-			EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
-			recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-		}
+            double start_height = (*ti).start_height();
+            double end_height = (*ti).end_height();
+            size_t start_height_epoch = ti.forest().model().current_time_idx_;
+            //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
+            size_t end_height_epoch = start_height_epoch;
+            void* event_mem = Arena::allocate( start_height_epoch );
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
+            recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+        }
     }
 }
 
