@@ -29,11 +29,11 @@
  * \ingroup group_pf_init
  */ 
 ParticleContainer::ParticleContainer(Model* model,                     
-									 MersenneTwister *rg,
-									 const vector<int>& record_event_in_epoch,
-									 size_t Num_of_states, 
-									 double initial_position,
-									 bool heat_bool ) {
+                                     MersenneTwister *rg,
+                                     const vector<int>& record_event_in_epoch,
+                                     size_t Num_of_states, 
+                                     double initial_position,
+                                     bool heat_bool ) {
     this->heat_bool_ = heat_bool;
     this->random_generator_ = rg;
     this->set_ESS(0);
@@ -47,7 +47,7 @@ ParticleContainer::ParticleContainer(Model* model,
         #else
         RandomGenerator* new_rg = new MersenneTwister( this->random_generator_->seed() , this->random_generator_->ff() ); 
         #endif
-		ForestState* new_state = new ForestState( new_model, new_rg, record_event_in_epoch );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
+        ForestState* new_state = new ForestState( new_model, new_rg, record_event_in_epoch );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );    
         new_state->buildInitialTree();
