@@ -114,6 +114,21 @@ class PfParam{
             return input;
             }
             
+        int readRange(int& second) {
+			this->nextArg();
+			char c;
+			double input;
+			std::stringstream ss(argv_[argc_i]);
+			ss >> input;
+			second = input;
+			if (ss.fail() || input < 1) throw std::invalid_argument(std::string("Failed to parse int (e.g. '1') or int range (e.g. '1-10'): ") + argv_[argc_i]);
+			if (!ss.get(c)) return input;
+			if (c != '-') throw std::invalid_argument(std::string("Parsing failure: expected '-' after int in range expression: ") + argv_[argc_i]);
+			ss >> second;
+			if (ss.fail() || second <= input || ss.get(c)) throw std::invalid_argument(std::string("Failed to parse int or int range: ") + argv_[argc_i]);
+			return input;
+		}
+
         // Members
         const int argc_;
         int argc_i;
