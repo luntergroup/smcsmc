@@ -357,7 +357,7 @@ double ForestState::calculate_likelihood( ) {
 double ForestState::trackLocalTreeBranchLength(){
     // first create a map for the nodecontainer.
     std::map<Node const*, bool> nodeMap;
-    nodeMap[NULL] = NULL;
+    nodeMap[NULL] = false;
     for (auto it = this->nodes()->iterator(); it.good(); ++it) {
         nodeMap[*it] = false;
     }

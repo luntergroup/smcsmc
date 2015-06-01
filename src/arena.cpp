@@ -33,7 +33,7 @@ void Arena::init_arena() {
 	numAllocs = 0;
 	numDeallocs = 0;
 	maxInUse = 0;
-	numSkips = 0;
+	numSkips = num_epochs * 0; // avoid 'variable not used' warning
 
 	alloc_block();
 		
