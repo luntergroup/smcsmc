@@ -113,8 +113,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initial particles */ 
     //double initial_position = 0;
     ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch, 
-								     Nparticles, 
-                                     //Segfile->int_vec_of_sample_alt, Segfile->withdata(), 
+                                     Nparticles, 
                                      Segfile->segment_start(),
                                      pfARG_para.heat_bool);             
     dout<<"######### finished initial particle building"<<endl;

@@ -73,7 +73,7 @@ ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
     this->setParticleWeight( copied_state.weight() );
-	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
+    this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
     this->segment_count_ = copied_state.segment_count_;
@@ -256,7 +256,7 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
     if (!(record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT)) 
-		return;
+        return;
     dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
     // find the EvolutionaryEvent to add this event to.
 	EvolutionaryEvent* event = eventTrees[ epoch_i ];

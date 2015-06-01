@@ -76,8 +76,8 @@ void CountModel::init_migr() {
 		tmp_opp_Time_i.        push_back( Two_doubles(1) );
 		tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
 		for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
-			tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
-			tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
+            tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
+            tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
 		}
 	}
     
