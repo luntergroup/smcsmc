@@ -44,21 +44,23 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                                        this->ESS_default_bool = false; }
         else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
                                        this->EM_bool = true; }
-        else if ( argv_i == "-xr" || argv_i == "-xc" ) {
-									   int last_epoch;
-									   int first_epoch = readRange(last_epoch);   // obtain 0-based closed interval
-									   for (int i=0; i<=last_epoch; i++) {         // note: <= as closed interval
-										   if (record_event_in_epoch.size() <= i) {
-											   // extend vector, and set default: record both recomb and coal/migr events
-											   record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
-										   }
-										   if (i >= first_epoch) {
-											   // reset bit signifying recording of either recombination or coal/migr events
-											   // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-											   record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
-										   }
-									   }
-								   }
+        else if ( argv_i == "-xr" || argv_i == "-xc" ) 
+	{
+            int last_epoch;
+            int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
+	    first_epoch--;                                  // turn into 0-based half-open
+            for (int i=0; i<last_epoch; i++) {
+                if (record_event_in_epoch.size() <= i) {
+		    // extend vector, and set default: record both recomb and coal/migr events
+		    record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+		}
+		if (i >= first_epoch) {
+		    // reset bit signifying recording of either recombination or coal/migr events
+		    // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
+		    record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+		}
+	    }
+	}
         else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }        
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }
