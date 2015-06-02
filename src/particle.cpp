@@ -23,7 +23,8 @@
 
 #include <climits> // INT_MAX
 
-#include"particle.hpp"
+#include "particle.hpp"
+#include "pfparam.hpp"
 
 
 void ForestState::making_copies( int number_of_copies ){
@@ -51,8 +52,9 @@ void ForestState::making_copies( int number_of_copies ){
 /*! \brief Initialize a new ForestState 
  * @ingroup group_pf_init
  * */
-ForestState::ForestState( Model* model, RandomGenerator* random_generator )
-            :Forest( model, random_generator ) {
+ForestState::ForestState( Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch)
+            :Forest( model, random_generator ),
+             record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     //this->init_EventContainers( model );    
 	//this->buildInitialTree();    
@@ -68,9 +70,10 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator )
     @ingroup group_pf_resample 
 */
 ForestState::ForestState( const ForestState & copied_state )
-            :Forest( copied_state ) {
+            :Forest( copied_state ),
+             record_event_in_epoch( copied_state.record_event_in_epoch ) {
     this->setParticleWeight( copied_state.weight() );
-	this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
+    this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );    
     this->setAncestor ( copied_state.ancestor() );
     this->copyEventContainers ( copied_state );
     this->segment_count_ = copied_state.segment_count_;
@@ -169,6 +172,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 		
 		if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
+            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
             start_base = active_node(i)->last_update();
             end_base = this->current_base();
 			if (end_base == start_base) continue;
@@ -186,6 +190,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             recomb_opp_x_within_smcsmc += end_base - start_base;
 		} else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
+            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             start_base = this->current_base();
             int weight = ti.numberOfContemporaries( active_node(i)->population() );
 			// consider normal (not pairwise) coalescences that occurred on this node
@@ -229,16 +234,16 @@ void ForestState::record_Recombevent_b4_extension (){
         dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.numberOfLocalContemporaries();
-        if (contemporaries > 0) {
-			double start_height = (*ti).start_height();
-			double end_height = (*ti).end_height();
-			size_t start_height_epoch = ti.forest().model().current_time_idx_;
-		    //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
-		    size_t end_height_epoch = start_height_epoch;
-			void* event_mem = Arena::allocate( start_height_epoch );
-			EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
-			recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-		}
+        if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
+            double start_height = (*ti).start_height();
+            double end_height = (*ti).end_height();
+            size_t start_height_epoch = ti.forest().model().current_time_idx_;
+            //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
+            size_t end_height_epoch = start_height_epoch;
+            void* event_mem = Arena::allocate( start_height_epoch );
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
+            recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+        }
     }
 }
 
@@ -250,6 +255,8 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     recombination_counter++; // DEBUG
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
+    if (!(record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT)) 
+        return;
     dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
     // find the EvolutionaryEvent to add this event to.
 	EvolutionaryEvent* event = eventTrees[ epoch_i ];

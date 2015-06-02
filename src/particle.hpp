@@ -68,7 +68,7 @@ class ForestState : public Forest{
     // All members and methods are private
     private:
         // Constructor, called at initial stage //
-        ForestState(Model* model, RandomGenerator* random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
+        ForestState(Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */    
         // Constructor, called when resampling, making new copy of a particle
         ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
         // Destructors //
@@ -111,7 +111,8 @@ class ForestState : public Forest{
         double particle_weight_;
         size_t ancestor_;
         vector < TmrcaState > TmrcaHistory;        
-        vector < ForestState* > ForestState_copies;        
+        vector < ForestState* > ForestState_copies;  
+        const vector < int >& record_event_in_epoch;
 
         // Debugging tools   
         std::string newick(Node *node) ;
