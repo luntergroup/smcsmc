@@ -361,59 +361,32 @@ double ForestState::calculate_likelihood( ) {
     return likelihood;
 }
 
+
+LocalBlAtNode ForestState::trackLocalBLbelowNode ( Node * currentNode ){
+    if ( currentNode->in_sample() ){
+        //double tmpRoot = currentNode->mutation_state() > 0 ? 0.0: -1.0;
+        return LocalBlAtNode(0.0, currentNode->mutation_state() >= 0 ? 0.0: -1.0);
+    }
+
+    LocalBlAtNode Left = this->trackLocalBLbelowNode( currentNode->first_child() );
+    LocalBlAtNode Right = this->trackLocalBLbelowNode( currentNode->second_child() );
+    double LeftBL = Left.BL + currentNode->first_child()->height_above();
+    double RightBL = Right.BL + currentNode->second_child()->height_above();
+
+    if (Left.root >= 0 && Right.root >= 0)
+        return LocalBlAtNode(LeftBL+RightBL, LeftBL+RightBL);
+    if (Left.root >= 0)
+        return LocalBlAtNode(LeftBL, Left.root);
+    if (Right.root >= 0)
+        return LocalBlAtNode(RightBL, Right.root);
+
+    return LocalBlAtNode();
+}
+
+
 double ForestState::trackLocalTreeBranchLength(){
-    // first create a map for the nodecontainer.
-    std::map<Node const*, bool> nodeMap;
-    nodeMap[NULL] = false;
-    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
-        nodeMap[*it] = false;
-    }
-
-    for ( auto tipI = 0 ; tipI < this->sample_size() ; tipI++ ){
-        Node *currentNode = this->nodes()->at(tipI);
-        nodeMap[currentNode] = currentNode->mutation_state() >=0 ;
-        //cout << currentNode << " "<<currentNode->mutation_state() << endl;
-        bool stateHaveNotSet = true;
-
-        while ( stateHaveNotSet ){
-            Node *cameFrom = currentNode;
-            // Move on to the next tip if cameFrom is not labelled, i.e. missing data
-            if ( !nodeMap[cameFrom] ){
-                break;
-            }
-            currentNode = currentNode->parent();
-            // Move on to the next tip if the current node is already lablled
-            if ( nodeMap[currentNode] ){
-                break;
-            }
-            nodeMap[currentNode] = true;
-            // Stop when hit the root
-            if ( currentNode -> is_root() ){
-                break;
-            }
-        }
-    }
-
-    double aliveBL = 0;
-    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
-        Node *currentNode = *it;
-        if ( currentNode-> is_root() ){
-            if ( nodeMap[currentNode->first_child()] && !nodeMap[currentNode->second_child()]){
-                aliveBL -= (currentNode->height() - currentNode->first_child()->height());
-            }
-            else if (!nodeMap[currentNode->first_child()] && nodeMap[currentNode->second_child()]){
-                aliveBL -= (currentNode->height() - currentNode->second_child()->height());
-            }
-        }
-        if ( currentNode->in_sample() ){
-            aliveBL += nodeMap[currentNode] ? currentNode->height_above():0;
-        }
-        else if ( nodeMap[currentNode->parent()] && nodeMap[currentNode] ){
-            aliveBL += currentNode->height_above();
-        }
-    }
-    // then check if the the node label is -1, if it is not, the tip node has data, otherwise it does not
-    return aliveBL;
+    LocalBlAtNode localBL = trackLocalBLbelowNode( this->local_root() );
+    return localBL.root == -1 ? 0:localBL.root;
 }
 
 

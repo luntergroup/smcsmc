@@ -53,6 +53,15 @@ struct TmrcaState {
     double tmrca;    
     };
 
+struct LocalBlAtNode {
+    LocalBlAtNode (double BL = 0, double root = -1) {
+        this->BL = BL;
+        this->root = root;
+    }
+    ~LocalBlAtNode(){};
+    double BL;
+    double root;
+};
 
 /*! 
  * \brief Derived class from Forest.
@@ -85,7 +94,8 @@ class ForestState : public Forest{
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         double trackLocalTreeBranchLength();
-        
+        LocalBlAtNode trackLocalBLbelowNode ( Node *);
+
         // Extend
         double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
         vector <double> opportunity_y_s ; 
