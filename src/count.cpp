@@ -42,14 +42,18 @@ void CountModel::init_coal_and_recomb() {
     this->total_recomb_count.clear();
     this->total_weighted_recomb_opportunity.clear();
 
+	resetTime();
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
+        // move to the next epoch
+        if (epoch_idx > 0)
+			increaseTime();
 		// populate coalescent and recombination event counters
         vector <Two_doubles> tmp_count(this->population_number(), Two_doubles(0));
         this->total_coal_count.push_back(tmp_count);
         this->total_recomb_count.push_back(tmp_count);
         // enter initial value
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ) {
-            this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * this->population_size() );
+            this->total_coal_count[epoch_idx][pop_i] = 1 / ( 2 * this->population_size( pop_i ) );
             /*! Note that this uses recombination rate at position -1 */
             this->total_recomb_count[epoch_idx][pop_i] = this->recombination_rate();   
         }
@@ -66,23 +70,28 @@ void CountModel::init_migr() {
     this->total_mig_count.clear();
     this->total_weighted_mig_opportunity.clear();    
 
-	// populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
-	/*! \todo Need to populate with correct initial values */
-    vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
-    vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
-    vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
-    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-        tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
-        tmp_opp_Time_i.        push_back( Two_doubles(1) );
-        tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
-        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
-            tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
-            tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
-        }
-    }
-    
 	// set initial counts/rates for all epochs
+	resetTime();
     for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++) {
+
+        // move to the next epoch
+        if (epoch_idx > 0)
+			increaseTime();
+
+		// populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
+	    vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
+	    vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
+	    vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
+	    for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
+	        tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
+	        tmp_opp_Time_i.        push_back( Two_doubles(1) );
+	        tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
+	        for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
+	            tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
+	            tmp_rate_Time_i_double[ pop_i ][ pop_j ] = this->migration_rate( pop_i, pop_j );
+	        }
+	    }
+    
         this->total_mig_count.                push_back(tmp_count_Time_i);
         this->total_weighted_mig_opportunity. push_back(tmp_opp_Time_i);
         this->inferred_mig_rate.              push_back(tmp_rate_Time_i_double);
