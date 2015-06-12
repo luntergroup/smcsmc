@@ -359,59 +359,52 @@ double ForestState::calculate_likelihood( ) {
 }
 
 
-double ForestState::trackLocalTreeBranchLength(){
-    // first create a map for the nodecontainer.
-    std::map<Node const*, bool> nodeMap;
-    nodeMap[NULL] = false;
-    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
-        nodeMap[*it] = false;
-    }
+double ForestState::trackLocalTreeBranchLength() {
 
-    for ( auto tipI = 0 ; tipI < this->sample_size() ; tipI++ ){
-        Node *currentNode = this->nodes()->at(tipI);
-        nodeMap[currentNode] = currentNode->mutation_state() >=0 ;
-        //cout << currentNode << " "<<currentNode->mutation_state() << endl;
-        bool stateHaveNotSet = true;
+    BranchLengthData bld = trackSubtreeBranchLength( this->local_root() );
+    if (bld.subtreeBranchLength == -1) {
+		// none of the leaves carry data -- total length is 0
+		return 0;
+	}
+	// return branch length of the subtree subtending leaves carrying data
+	return bld.subtreeBranchLength;
+}
 
-        while ( stateHaveNotSet ){
-            Node *cameFrom = currentNode;
-            // Move on to the next tip if cameFrom is not labelled, i.e. missing data
-            if ( !nodeMap[cameFrom] ){
-                break;
-            }
-            currentNode = currentNode->parent();
-            // Move on to the next tip if the current node is already lablled
-            if ( nodeMap[currentNode] ){
-                break;
-            }
-            nodeMap[currentNode] = true;
-            // Stop when hit the root
-            if ( currentNode -> is_root() ){
-                break;
-            }
-        }
-    }
 
-    double aliveBL = 0;
-    for (auto it = this->nodes()->iterator(); it.good(); ++it) {
-        Node *currentNode = *it;
-        if ( currentNode-> is_root() ){
-            if ( nodeMap[currentNode->first_child()] && !nodeMap[currentNode->second_child()]){
-                aliveBL -= (currentNode->height() - currentNode->first_child()->height());
-            }
-            else if (!nodeMap[currentNode->first_child()] && nodeMap[currentNode->second_child()]){
-                aliveBL -= (currentNode->height() - currentNode->second_child()->height());
-            }
-        }
-        if ( currentNode->in_sample() ){
-            aliveBL += nodeMap[currentNode] ? currentNode->height_above():0;
-        }
-        else if ( nodeMap[currentNode->parent()] && nodeMap[currentNode] ){
-            aliveBL += currentNode->height_above();
-        }
-    }
-    // then check if the the node label is -1, if it is not, the tip node has data, otherwise it does not
-    return aliveBL;
+BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
+
+	if (currentNode->in_sample() ) {
+		// current node is a leaf node
+		if (currentNode->mutation_state() >= 0) {
+			// leaf node carries data
+			return BranchLengthData( 0, 0 );
+		} else {
+			// leaf node carries no data
+			return BranchLengthData( 0, -1 );
+		}
+	}
+
+    BranchLengthData bld_left  = this->trackSubtreeBranchLength( currentNode->first_child() );
+    BranchLengthData bld_right = this->trackSubtreeBranchLength( currentNode->second_child() );
+
+	// calculate branch length of partial tree, including the branch from this node to the child node
+    double leftBL = bld_left.partialBranchLength + currentNode->first_child()->height_above();
+    double rightBL = bld_right.partialBranchLength + currentNode->second_child()->height_above();
+
+	// return correct partial tree branch length, and subtree branch length.  The calculation depends on
+	// whether left and right subtrees carry data or not.
+    if (bld_left.subtreeBranchLength >= 0 && bld_right.subtreeBranchLength >= 0)
+		// both left and right subtrees carry data, so current node is a possible root node
+        return BranchLengthData( leftBL+rightBL, leftBL+rightBL );
+    if (bld_left.subtreeBranchLength >= 0)
+		// left subtree carries data, but right one doesn't -- keep left root as possible root node
+		return BranchLengthData( leftBL, bld_left.subtreeBranchLength );
+    if (bld_right.subtreeBranchLength >= 0)
+		// same for right subtree
+		return BranchLengthData( rightBL, bld_right.subtreeBranchLength );
+		
+	// neither subtree contains data, so just return the length data of either
+	return bld_left;
 }
 
 
@@ -429,8 +422,20 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          * First, update the likelihood up to either extend_to or the end of this state
          */
         double update_to = min( extend_to, this->next_base() );
+        // calculate the total tree length of the subtree over leaf nodes that carry data.  
         double localTreeBranchLength = this->trackLocalTreeBranchLength();
+        // for leaf nodes that carry no data, there is no evidence for presence or absence of mutations on corresponding branches.
+		// This is accounted for in the calculation of localTreeBranchLength.  In addition, a segment can be explicitly marked as
+		// having 'missing data' (segment_state != SEGMENT_INVARIANT), in which case ALL branches are considered uninformative.
+		
+		// Trying to simplify the code: if segment_state != SEGMENT_INVARIANT, localTreeBranchLength should be 0, so that the 
+		// conditional expression below is not necessary.
+		/*
         double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
+        */
+        assert ( segment_state == SEGMENT_INVARIANT || localTreeBranchLength == 0 );
+        double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
+        
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
         likelihood *= likelihood_of_segment;
@@ -440,14 +445,11 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          */
         if ( updated_to < extend_to ) {
             this->sampleNextGenealogy( recordEvents );
-
             //if ( this->heat_bool_ ){
                 //TmrcaState tmrca( this->site_where_weight_was_updated(), this->local_root()->height() );
                 //this->TmrcaHistory.push_back ( tmrca );
             //}
-            
-        }
-        
+        }        
     }
     assert (updated_to == extend_to);        
     if (updateWeight) {

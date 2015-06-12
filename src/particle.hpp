@@ -53,6 +53,21 @@ struct TmrcaState {
     double tmrca;    
     };
 
+struct BranchLengthData {
+    BranchLengthData (double partialBranchLength = 0, double subtreeBranchLength = -1) 
+    {
+        this->partialBranchLength = partialBranchLength;
+        this->subtreeBranchLength = subtreeBranchLength;
+    }
+    ~BranchLengthData(){};
+    // this holds the branch length of the partial tree consisting of all leaf nodes
+	// that carry data, up to the current node.
+    double partialBranchLength;
+    // this holds the branch length of the subtree subtending all leaf nodes that carry
+    // data, but not including the branch from the subtree's root to the current node
+    // Special case: if no descendants of the current node carry data, this is -1.
+    double subtreeBranchLength;
+};
 
 /*! 
  * \brief Derived class from Forest.
@@ -83,9 +98,10 @@ class ForestState : public Forest{
         // Update weight
         void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */        
         double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
-        valarray<double> cal_marginal_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
+        valarray<double> cal_partial_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         double trackLocalTreeBranchLength();
-        
+        BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
+
         // Extend
         double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
         vector <double> opportunity_y_s ; 
