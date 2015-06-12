@@ -433,7 +433,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 		/*
         double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
         */
-        assert ( segment_state == SEGMENT_INVARIANT || localTreeBranchLength == 0 );
+        // DEBUG, the following assertion fails
+        assert ( (segment_state == SEGMENT_INVARIANT) || (localTreeBranchLength == 0 ));
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;

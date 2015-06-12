@@ -4,7 +4,7 @@ function test_smcsmc {
     echo -n "."
 
     # Test using smcsmc self-checks
-    smcsmc_dbg $@ -seed $i > /dev/null 
+    ../smcsmc_dbg $@ -seed $i > /dev/null
     if [ $? -ne 0 ]; then
       echo ""
       echo "Executing \"smcsmc_dbg $@ -seed $i\" failed."
