@@ -310,56 +310,54 @@ void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips){
  * * */
 
 
-inline valarray<double> ForestState::cal_marginal_likelihood_infinite(Node * node) {
+inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node) {
 
-	valarray<double> x(2);
-	//dout << "subtree at " << node << " first child is " << node->first_child() <<" second child is " <<  node->second_child()<<endl;
+	valarray<double> part_lik(2);    // partial likelihood of data under this node conditional on current node being in state 0 or 1
 
 	// deal with the case that this node is a leaf node
 	if ( node->first_child() == NULL ) {
-	  assert ( node->second_child() == NULL );     // if a node has no first child, it won't have a second child
-	  assert ( node->label() > 0 );                // we only traverse the local tree, therefore the leaf node must be contemporary
-	  x[0] = node->mutation_state() == 1 ? 0.0 : 1.0;	// also encode state==-1 (missing data) as 1.0
-	  x[1] = node->mutation_state() == 0 ? 0.0 : 1.0;   // also encode state==-1 (missing data) as 1.0
-	  //dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
-	  return x;
+	  assert ( node->second_child() == NULL );          // if a node has no first child, it won't have a second child
+	  assert ( node->in_sample() );                     // we only traverse the local tree, therefore the leaf node must be in our sample
+	  part_lik[0] = node->mutation_state() == 1 ? 0.0 : 1.0;	// also encode state==-1 (missing data) as 1.0
+	  part_lik[1] = node->mutation_state() == 0 ? 0.0 : 1.0;   // also encode state==-1 (missing data) as 1.0
+	  return part_lik;
     }
 
     // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitude of 10 to the power of negative 8.
 	double mutation_rate = this->model().mutation_rate();
-	Node *left = trackLocalNode(node->first_child());   // jz_stable
-	Node *right = trackLocalNode(node->second_child()); // jz_stable
-    //Node *left = node->getLocalChild1();  // jz
-    //Node *right = node->getLocalChild2(); // jz
-	double t1 = node->height() - left->height();
-	double t2 = node->height() - right->height();
-    double ut1 = 1 - exp(-t1 * mutation_rate); // assume infinite site
-	double ut2 = 1 - exp(-t2 * mutation_rate); // assume infinite site
-	assert (ut1>=0 && ut1<=1);
-    assert (ut2>=0 && ut2<=1);
-	valarray<double> y = cal_marginal_likelihood_infinite(left);
-	valarray<double> z = cal_marginal_likelihood_infinite(right);		
-	x[0] = (y[0] * ut1 + y[1] * (1-ut1) ) * (z[0] * ut2 + z[1] * (1-ut2) );
-	x[1] = (y[0] * (1-ut1) + y[1] * ut1 ) * (z[0] * (1-ut2) + z[1] * ut2 );
-	//dout << "Marginal probability at " << node->label() << " is " << x[0] << "," << x[1] << endl;
-	return x;
+	Node *left = trackLocalNode(node->first_child());   // jz_stable; for jz use Node *left = node->getLocalChild1();
+	Node *right = trackLocalNode(node->second_child()); // jz_stable; for jz use Node *right = node->getLocalChild2();
+	double t_left = node->height() - left->height();
+	double t_right = node->height() - right->height();
+	assert (t_left >= 0 && t_right >= 0 && mutation_rate > 0);
+	double p_left = exp(-t_left * mutation_rate);   // probability that no mutation occurred along left branch.  Assume infinite sites model
+	double p_right = exp(-t_right * mutation_rate); // probability that no mutation occurred along left branch.  Assume infinite sites model
+	valarray<double> part_lik_left = cal_partial_likelihood_infinite(left);     // partial likelihoods of data under left and right children
+	valarray<double> part_lik_right = cal_partial_likelihood_infinite(right);
+
+	part_lik[0] = ( part_lik_left[0]*p_left + part_lik_left[1]*(1-p_left) ) * ( part_lik_right[0]*p_right + part_lik_right[1]*(1-p_right) );
+	part_lik[1] = ( part_lik_left[1]*p_left + part_lik_left[0]*(1-p_left) ) * ( part_lik_right[1]*p_right + part_lik_right[0]*(1-p_right) );
+
+	return part_lik;
+
 }
 
 	
 /*! 
- * \brief Calculate the likelihood of the genealogy at data site i, 
- *  If there is no data given at the site i, return likelihood as 1. Since all particles at this site are equally probable 
+ * \brief Calculate the marginal likelihood of the genealogy at data site i, 
+ *  If there is no data given at the site i, return likelihood as 1. 
  * @ingroup group_pf_resample
  */
 double ForestState::calculate_likelihood( ) {
     //dout << "calculate_likelihood function, root is " << this->local_root() << endl;
-    valarray<double> marginalLikelihood = cal_marginal_likelihood_infinite(this->local_root());
+    valarray<double> marginalLikelihood = cal_partial_likelihood_infinite(this->local_root());
     dout << "marginal likelihood is " << marginalLikelihood[0] <<  "," << marginalLikelihood[1] << endl;
     double prior[2] = {0.5,0.5};
     double likelihood = marginalLikelihood[0]*prior[0] + marginalLikelihood[1]*prior[1];
     dout << "ForestState::calculate_likelihood( ) likelihood is " << likelihood << endl;
     return likelihood;
 }
+
 
 double ForestState::trackLocalTreeBranchLength(){
     // first create a map for the nodecontainer.
