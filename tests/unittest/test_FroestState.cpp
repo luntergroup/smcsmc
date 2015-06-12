@@ -17,13 +17,11 @@ class TestForestState : public CppUnit::TestCase {
 
  private:
     MersenneTwister *topRg;
-    //ForestState *particle;
+    vector<int> record_event_in_epoch;
 
  public:
     void setUp() {
         topRg = new MersenneTwister(1234);
-        //particle = new ForestState(new Model(5), rg);
-        //particle->createExampleTree();
     }
     
     void tearDown() {
@@ -31,7 +29,7 @@ class TestForestState : public CppUnit::TestCase {
 
     void testInitialization(){
         MersenneTwister *testRg = new MersenneTwister();
-        ForestState testState = ForestState(new Model(4),testRg);
+        ForestState testState = ForestState(new Model(4),testRg, record_event_in_epoch);
         CPPUNIT_ASSERT( testState.model().sample_size() == 4 );
         CPPUNIT_ASSERT( testState.random_generator() == testRg );
         CPPUNIT_ASSERT_EQUAL(0.0, testState.site_where_weight_was_updated() );
@@ -39,7 +37,7 @@ class TestForestState : public CppUnit::TestCase {
     }
 
     void testCreateExampleTree(){
-        ForestState testState = ForestState(new Model(4), new MersenneTwister(1));
+        ForestState testState = ForestState(new Model(4), new MersenneTwister(1), record_event_in_epoch);
         CPPUNIT_ASSERT_NO_THROW( testState.createExampleTree());
         //cout<<endl;
         //CPPUNIT_ASSERT_NO_THROW(testState.printTree_cout());
@@ -51,7 +49,7 @@ class TestForestState : public CppUnit::TestCase {
     }
 
     void testIncludeHaplotypesAtTips(){
-        ForestState testState = ForestState(new Model(4), new MersenneTwister(1));
+        ForestState testState = ForestState(new Model(4), new MersenneTwister(1), record_event_in_epoch);
         CPPUNIT_ASSERT_NO_THROW( testState.createExampleTree());
         int x[] = {1,0,0,1};
         vector <int> haplotypesAtTips(begin(x), end(x));
@@ -69,7 +67,14 @@ class TestForestState : public CppUnit::TestCase {
     }
 
     void testTrackLocalTreeBranchLength(){
-        ForestState testState = ForestState(new Model(4), new MersenneTwister(1));
+        // Need to check the local branch length is the following case:
+        // (1). 0
+        // (2). 2
+        // (3). 6
+        // (4). 20
+        // (5). 21
+        // (6). 24
+        ForestState testState = ForestState(new Model(4), new MersenneTwister(1),record_event_in_epoch);
         CPPUNIT_ASSERT_NO_THROW( testState.createExampleTree());
         vector <int> haplotypesAtTips(4,1); // [1,1,1,1]
         CPPUNIT_ASSERT_NO_THROW( testState.include_haplotypes_at_tips(haplotypesAtTips) );
@@ -81,6 +86,9 @@ class TestForestState : public CppUnit::TestCase {
 
         haplotypesAtTips[0] = -1; // [-1,1,1,1]
         testState.include_haplotypes_at_tips(haplotypesAtTips);
+        cout<<endl;
+        CPPUNIT_ASSERT_NO_THROW(testState.printTree_cout());
+
         CPPUNIT_ASSERT_EQUAL( (double)21 , testState.trackLocalTreeBranchLength());
 
         haplotypesAtTips[0] = 0; // [0,1,1,1]
@@ -100,18 +108,32 @@ class TestForestState : public CppUnit::TestCase {
         haplotypesAtTips[1] = -1;
         haplotypesAtTips[2] = 0;
         haplotypesAtTips[3] = 1; // [-1,-1,0,1]
-
         testState.include_haplotypes_at_tips(haplotypesAtTips);
         CPPUNIT_ASSERT_EQUAL( (double)2, testState.trackLocalTreeBranchLength());
 
         haplotypesAtTips[3] = -1; // [-1,-1,0,-1]
         testState.include_haplotypes_at_tips(haplotypesAtTips);
-        CPPUNIT_ASSERT_EQUAL( (double)1, testState.trackLocalTreeBranchLength());
+        CPPUNIT_ASSERT_EQUAL( (double)0, testState.trackLocalTreeBranchLength());
+
+        haplotypesAtTips[1] = 1; // [-1,1,0,-1]
+        testState.include_haplotypes_at_tips(haplotypesAtTips);
+        CPPUNIT_ASSERT_EQUAL( (double)20, testState.trackLocalTreeBranchLength());
+
+        haplotypesAtTips[1] = -1;
+        haplotypesAtTips[2] = -1; // [-1,-1,-1,-1]
+        testState.include_haplotypes_at_tips(haplotypesAtTips);
+        CPPUNIT_ASSERT_EQUAL( (double)0, testState.trackLocalTreeBranchLength());
+
+        haplotypesAtTips[3] = 0;
+        haplotypesAtTips[0] = 1; // [1,-1,-1,0]
+        testState.include_haplotypes_at_tips(haplotypesAtTips);
+        CPPUNIT_ASSERT_EQUAL( (double)20, testState.trackLocalTreeBranchLength());
+
     }
 
 
     void testLikelihood(){
-        ForestState testState = ForestState(new Model(4), new MersenneTwister(1));
+        ForestState testState = ForestState(new Model(4), new MersenneTwister(1), record_event_in_epoch);
         CPPUNIT_ASSERT_NO_THROW( testState.createExampleTree());
         cout<<endl;
         vector <int> haplotypesAtTips(4,1); // [1,1,1,1]
