@@ -115,7 +115,9 @@ void pfARG_core(PfParam &pfARG_para,
     ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch, 
                                      Nparticles, 
                                      Segfile->segment_start(),
-                                     pfARG_para.heat_bool);             
+                                     pfARG_para.heat_bool,
+                                     pfARG_para.Segfile->empty_file(),
+                                     pfARG_para.Segfile->allelic_state_at_Segment_end);
     dout<<"######### finished initial particle building"<<endl;
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 	#ifdef _SCRM    

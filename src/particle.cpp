@@ -360,7 +360,6 @@ double ForestState::calculate_likelihood( ) {
 
 
 double ForestState::trackLocalTreeBranchLength() {
-
     BranchLengthData bld = trackSubtreeBranchLength( this->local_root() );
     if (bld.subtreeBranchLength == -1) {
 		// none of the leaves carry data -- total length is 0
@@ -372,7 +371,6 @@ double ForestState::trackLocalTreeBranchLength() {
 
 
 BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
-
 	if (currentNode->in_sample() ) {
 		// current node is a leaf node
 		if (currentNode->mutation_state() >= 0) {
@@ -384,8 +382,8 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 		}
 	}
 
-    BranchLengthData bld_left  = this->trackSubtreeBranchLength( currentNode->first_child() );
-    BranchLengthData bld_right = this->trackSubtreeBranchLength( currentNode->second_child() );
+    BranchLengthData bld_left  = this->trackSubtreeBranchLength( trackLocalNode(currentNode->first_child()) );
+    BranchLengthData bld_right = this->trackSubtreeBranchLength( trackLocalNode(currentNode->second_child()) );
 
 	// calculate branch length of partial tree, including the branch from this node to the child node
     double leftBL = bld_left.partialBranchLength + currentNode->first_child()->height_above();

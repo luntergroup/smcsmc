@@ -58,8 +58,7 @@ class Segment{
     bool genetic_break_;
     size_t chrom_;
     //vector <int> allelic_state_at_Segment_start; // Since missing variant can be represented here, variant can be ignored?
-    vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
-    bool empty_file;
+    bool empty_file_;
     size_t nsam_;
     
     // less important stuff
@@ -90,6 +89,8 @@ class Segment{
     bool end_data_;
     
 public:
+    vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
+    bool empty_file () const { return this->empty_file_; }
     double segment_start() const { return this->segment_start_; }
     double segment_length() const { return this->segment_length_; }
     double segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
@@ -100,7 +101,7 @@ public:
         this->set_end_data(false);
         this->segment_start_ = 1;
         this->segment_length_ = 0;
-        if ( this->empty_file ){
+        if ( this->empty_file_ ){
             this->reset_empty_entry();
         }
     };

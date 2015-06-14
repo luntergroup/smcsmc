@@ -42,7 +42,9 @@ class ParticleContainer {
                           const vector<int>& record_event_in_epoch,
                           size_t Num_of_states, 
                           double initial_position,
-                          bool heat_bool );  // this is used to create the particle initial states
+                          bool heat_bool,
+                          bool emptyFile,
+                          vector <int> first_allelic_state);  // this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
 
         //
