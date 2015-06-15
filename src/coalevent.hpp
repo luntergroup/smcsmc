@@ -141,6 +141,9 @@ public:
 		assert( this->is_no_event() );
 		assert( recomb_t_position <= end_height );
                 // DEBUG, the following assertion fails
+                cout << "start_height " << start_height << endl;
+                cout << "recomb_t_position " << recomb_t_position << endl;
+
 		assert( start_height <= recomb_t_position );
 		event_data = 0;
 		a.recomb_pos = recomb_t_position; }
@@ -171,6 +174,8 @@ public:
 		return weight * (end_height - start_height) * (end_base_ - start_base_); }
 	double recomb_opportunity_between( double height0, double height1, double base0, double base1) const {
 		return weight * max(0.0, min(height1,end_height) - max(height0,start_height)) * max(0.0, min(base1,end_base_) - max(base0,start_base_)); }
+	bool recomb_event_overlaps_opportunity( double recomb_t_position ) const {
+		return ( start_height <= recomb_t_position && recomb_t_position <= end_height ); }
 	int recomb_event_count_between( double height0, double height1, double base0, double base1) const {
 		if (!is_recomb_event()) return 0;
 		double base_ = event_data == -1 ? a.recomb_pos : end_base_;

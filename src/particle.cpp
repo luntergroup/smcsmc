@@ -147,7 +147,8 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 
     dout << endl;
     ForestStatedout << "Start Recording " << endl;
-
+    //DEBUG
+this->printTree_cout();
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
 	double start_base, end_base;
 	double start_height, end_height;
@@ -260,8 +261,9 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
     // find the EvolutionaryEvent to add this event to.
 	EvolutionaryEvent* event = eventTrees[ epoch_i ];
-	while ( !event->is_recomb() ) {
+	while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity( event_height ) ) {
 		event = event->parent();
+		assert (event != NULL);
 	}
 	assert (event->start_base() == this->current_base());
 	event->set_recomb_event_time( event_height );
