@@ -371,6 +371,7 @@ double ForestState::trackLocalTreeBranchLength() {
 
 
 BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
+
 	if (currentNode->in_sample() ) {
 		// current node is a leaf node
 		if (currentNode->mutation_state() >= 0) {
@@ -382,21 +383,26 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 		}
 	}
 
-    BranchLengthData bld_left  = this->trackSubtreeBranchLength( trackLocalNode(currentNode->first_child()) );
-    BranchLengthData bld_right = this->trackSubtreeBranchLength( trackLocalNode(currentNode->second_child()) );
+	Node* left_local_child = trackLocalNode(currentNode->first_child());
+	Node* right_local_child = trackLocalNode(currentNode->second_child());
+	
+    BranchLengthData bld_left  = this->trackSubtreeBranchLength( left_local_child );
+    BranchLengthData bld_right = this->trackSubtreeBranchLength( right_local_child );
 
 	// calculate branch length of partial tree, including the branch from this node to the child node
-    double leftBL = bld_left.partialBranchLength + currentNode->first_child()->height_above();
-    double rightBL = bld_right.partialBranchLength + currentNode->second_child()->height_above();
+    double leftBL = bld_left.partialBranchLength + (currentNode->height() - left_local_child->height());
+    double rightBL = bld_right.partialBranchLength + (currentNode->height() - right_local_child->height());
 
 	// return correct partial tree branch length, and subtree branch length.  The calculation depends on
 	// whether left and right subtrees carry data or not.
     if (bld_left.subtreeBranchLength >= 0 && bld_right.subtreeBranchLength >= 0)
 		// both left and right subtrees carry data, so current node is a possible root node
         return BranchLengthData( leftBL+rightBL, leftBL+rightBL );
+
     if (bld_left.subtreeBranchLength >= 0)
 		// left subtree carries data, but right one doesn't -- keep left root as possible root node
 		return BranchLengthData( leftBL, bld_left.subtreeBranchLength );
+
     if (bld_right.subtreeBranchLength >= 0)
 		// same for right subtree
 		return BranchLengthData( rightBL, bld_right.subtreeBranchLength );
@@ -425,13 +431,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         // for leaf nodes that carry no data, there is no evidence for presence or absence of mutations on corresponding branches.
 		// This is accounted for in the calculation of localTreeBranchLength.  In addition, a segment can be explicitly marked as
 		// having 'missing data' (segment_state != SEGMENT_INVARIANT), in which case ALL branches are considered uninformative.
-		
-		// Trying to simplify the code: if segment_state != SEGMENT_INVARIANT, localTreeBranchLength should be 0, so that the 
-		// conditional expression below is not necessary.
-		/*
-        double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
-        */
-        // DEBUG, the following assertion fails
         assert ( (segment_state == SEGMENT_INVARIANT) || (localTreeBranchLength == 0 ));
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         
@@ -444,10 +443,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          */
         if ( updated_to < extend_to ) {
             this->sampleNextGenealogy( recordEvents );
-            //if ( this->heat_bool_ ){
-                //TmrcaState tmrca( this->site_where_weight_was_updated(), this->local_root()->height() );
-                //this->TmrcaHistory.push_back ( tmrca );
-            //}
         }        
     }
     assert (updated_to == extend_to);        
