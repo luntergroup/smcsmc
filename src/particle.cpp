@@ -147,8 +147,6 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 
     dout << endl;
     ForestStatedout << "Start Recording " << endl;
-    //DEBUG
-this->printTree_cout();
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
 	double start_base, end_base;
 	double start_height, end_height;

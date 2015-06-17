@@ -140,10 +140,6 @@ public:
 		assert( this->is_recomb() );
 		assert( this->is_no_event() );
 		assert( recomb_t_position <= end_height );
-                // DEBUG, the following assertion fails
-                cout << "start_height " << start_height << endl;
-                cout << "recomb_t_position " << recomb_t_position << endl;
-
 		assert( start_height <= recomb_t_position );
 		event_data = 0;
 		a.recomb_pos = recomb_t_position; }
