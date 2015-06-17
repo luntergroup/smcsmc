@@ -33,11 +33,11 @@ Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mu
     this->segment_start_ = 1;
     this->current_line_index_ = 0;
     this->end_data_ = false;
-    this->empty_file = false;
+    this->empty_file_ = false;
     this->num_of_expected_mutations_ = 0;
     
     if ( this->file_name_.size() == 0 ){
-        this->empty_file = true;
+        this->empty_file_ = true;
         this->calculate_num_of_expected_mutations( nsam, num_of_mut );
         this->reset_empty_entry();
         for ( size_t i = 0; i < nsam_; i++){
@@ -96,7 +96,7 @@ void Segment::read_new_line(){
 
     this->initialize_read_newLine(); 
     
-    if ( this->empty_file ){ 
+    if ( this->empty_file() ){
         //this->end_data_ = true; 
         return; }
     

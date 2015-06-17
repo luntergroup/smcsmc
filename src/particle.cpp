@@ -147,7 +147,6 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 
     dout << endl;
     ForestStatedout << "Start Recording " << endl;
-
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
 	double start_base, end_base;
 	double start_height, end_height;
@@ -260,8 +259,9 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
     dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
     // find the EvolutionaryEvent to add this event to.
 	EvolutionaryEvent* event = eventTrees[ epoch_i ];
-	while ( !event->is_recomb() ) {
+	while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity( event_height ) ) {
 		event = event->parent();
+		assert (event != NULL);
 	}
 	assert (event->start_base() == this->current_base());
 	event->set_recomb_event_time( event_height );
@@ -360,7 +360,6 @@ double ForestState::calculate_likelihood( ) {
 
 
 double ForestState::trackLocalTreeBranchLength() {
-
     BranchLengthData bld = trackSubtreeBranchLength( this->local_root() );
     if (bld.subtreeBranchLength == -1) {
 		// none of the leaves carry data -- total length is 0
@@ -372,7 +371,6 @@ double ForestState::trackLocalTreeBranchLength() {
 
 
 BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
-
 	if (currentNode->in_sample() ) {
 		// current node is a leaf node
 		if (currentNode->mutation_state() >= 0) {
@@ -384,8 +382,8 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 		}
 	}
 
-    BranchLengthData bld_left  = this->trackSubtreeBranchLength( currentNode->first_child() );
-    BranchLengthData bld_right = this->trackSubtreeBranchLength( currentNode->second_child() );
+    BranchLengthData bld_left  = this->trackSubtreeBranchLength( trackLocalNode(currentNode->first_child()) );
+    BranchLengthData bld_right = this->trackSubtreeBranchLength( trackLocalNode(currentNode->second_child()) );
 
 	// calculate branch length of partial tree, including the branch from this node to the child node
     double leftBL = bld_left.partialBranchLength + currentNode->first_child()->height_above();
@@ -433,7 +431,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 		/*
         double likelihood_of_segment = ( segment_state == SEGMENT_INVARIANT ) ? exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) ) : 1.0 ;// assume infinite site model
         */
-        assert ( segment_state == SEGMENT_INVARIANT || localTreeBranchLength == 0 );
+        // DEBUG, the following assertion fails
+        assert ( (segment_state == SEGMENT_INVARIANT) || (localTreeBranchLength == 0 ));
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;

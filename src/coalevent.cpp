@@ -109,8 +109,7 @@ bool remove_event( EvolutionaryEvent** eventptr_location, size_t epoch_idx ) {
 
 /* Purges previously removed events, and returns first active event (if any) */
 EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location, size_t epoch_idx ) {
-
-	assert (*eventptr_location != NULL);
+	assert (eventptr_location != NULL);
 	while (1) {
 		EvolutionaryEvent* event = *eventptr_location;
 		if (event == NULL || !event->is_removed())

@@ -33,7 +33,9 @@ ParticleContainer::ParticleContainer(Model* model,
                                      const vector<int>& record_event_in_epoch,
                                      size_t Num_of_states, 
                                      double initial_position,
-                                     bool heat_bool ) {
+                                     bool heat_bool,
+                                     bool emptyFile,
+                                     vector <int> first_allelic_state) {
     this->heat_bool_ = heat_bool;
     this->random_generator_ = rg;
     this->set_ESS(0);
@@ -58,7 +60,11 @@ ParticleContainer::ParticleContainer(Model* model,
             new_state->TmrcaHistory.push_back ( tmrca );
             }
         this->push(new_state, 1.0/Num_of_states );        
-	}	    
+	    // If no data was given, the initial tree should not include any data
+        if ( emptyFile ){
+            new_state->include_haplotypes_at_tips(first_allelic_state);
+        }
+    }
 }
 
 
