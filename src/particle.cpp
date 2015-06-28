@@ -22,7 +22,6 @@
 */
 
 #include <climits> // INT_MAX
-
 #include "particle.hpp"
 #include "pfparam.hpp"
 
@@ -34,13 +33,9 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
             :Forest( model, random_generator ),
              record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
-    //this->init_EventContainers( model );    
-	//this->buildInitialTree();    
-    //cout << "this->TmrcaHistory.size() = "<<this->TmrcaHistory.size()<<endl;
-    // Initialize the initial particles at base 0, with equal weights
     this->setParticleWeight( 1.0 );
     this->setSiteWhereWeightWasUpdated(0.0);
-    new_forest_counter++; // DEBUG
+    //new_forest_counter++; // DEBUG
 }
 
 
@@ -60,49 +55,43 @@ ForestState::ForestState( const ForestState & copied_state )
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
     }        
 	dout << "current particle's weight is " << this->weight()<<endl;
-    new_forest_counter++;  // DEBUG
+    //new_forest_counter++;  // DEBUG
 }
     
     
-
 void ForestState::copyEventContainers(const ForestState & copied_state ){
-
 	// Copy trees
 	for (size_t i=0; i < copied_state.eventTrees.size() ; i++) {
 		EvolutionaryEvent* new_event = copied_state.eventTrees[i];
 		eventTrees.push_back( new_event );
-		if (new_event) 
+		if (new_event) {
 			new_event->increase_refcount();
+        }
 	}
 }
 
 
-
 void ForestState::init_EventContainers( Model * model ) {
-
     for (size_t i=0; i < model->change_times_.size(); i++) {
 		eventTrees.push_back( NULL );
 	}
 }
 
 
-
 /*! \brief Destructor of ForestState
  * Recursively remove all the previous states, if the pointer counter is zero
  */
 ForestState::~ForestState(){
-
 	this->clear_eventContainer();
     delete this->random_generator_;     //MULTITRHREADING
     delete this->model_;
-    delete_forest_counter++;
+    //delete_forest_counter++;
 	dout << "A Foreststate is deleted" << endl;
 }
 
 
 /*! Clear coalescent and recombination events recorded between two states.*/
 void ForestState::clear_eventContainer(){ 
-
     for (int i = eventTrees.size()-1 ; i>=0 ; --i) {
 		if (eventTrees[i] && eventTrees[i]->decrease_refcount_is_zero()) {
 			// We use placement new, so need to call destructor explicitly.
@@ -110,15 +99,10 @@ void ForestState::clear_eventContainer(){
 			// and therefore must know the epoch -- but we can't pass parameters.
 			// So, call a helper deleter, that can take a parameter and both
 			// destructs and deallocates the memory.
-			/*
-			 * delete eventTrees[i];  // this recursively deletes its parents
-			 */
 			eventTrees[i]->deletethis( i );  // this recursively deletes its parents
 		}
 	}
-	//eventTrees.clear();
 }
-
 
 
 void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
@@ -133,7 +117,6 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     // find extent of time interval where an event may have occurred
     start_height = ti.start_height();
     start_height_epoch = ti.forest().model().current_time_idx_;
-    //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
     if (this->tmp_event_.isNoEvent()) {
 		end_height = start_height + ti.length();
 	} else {
@@ -196,7 +179,6 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
 }
 
 
-
 void ForestState::record_Recombevent_b4_extension (){ 
     #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
         return;
@@ -246,6 +228,14 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height ){
 }
 
 
+void ForestState::resample_recombination_position(void) {
+    // first, obtain a fresh sequence position for the next recombination, overwriting the
+    // existing sample in next_base_
+    this->resampleNextBase();
+    // then, create private event records, in effect re-doing the work of record_Recombevent_b4_extension
+    // (need to think about this one a bit)
+    xxx
+}
 
 
 void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips){
@@ -398,7 +388,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     double likelihood = 1.0;
     
     while ( updated_to < extend_to ) {
-        
         dout << "  Now at " <<this->current_base()<< " updated_to " << updated_to << " and extending to " << extend_to << endl;            
         /*!
          * First, update the likelihood up to either extend_to or the end of this state
@@ -411,11 +400,13 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 		// having 'missing data' (segment_state != SEGMENT_INVARIANT), in which case ALL branches are considered uninformative.
         assert ( (segment_state == SEGMENT_INVARIANT) || (localTreeBranchLength == 0 ));
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
-        
+        likelihood *= likelihood_of_segment;
+                
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
-        likelihood *= likelihood_of_segment;
-        updated_to = update_to;  // rescues the invariant
+
+        updated_to = update_to;                // rescues the invariant
+        this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
         /*!
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */

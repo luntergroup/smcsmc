@@ -93,6 +93,7 @@ class ForestState : public Forest{
         // Resampling //
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
+        void resample_recombination_position(void);
 
         // Update weight
         void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */        

@@ -110,7 +110,10 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 				size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
                 new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
                 new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
-				this->push(new_copy_state); // As this pushed step, sets the particle weight to 1, by default value.
+                // Resample the recombination position, and give particle its own event history
+                new_copy_state->resample_recombination_position();
+                // The 'push' implementation sets the particle weight to 1
+				this->push(new_copy_state); 
             }
         } else {
 			dout << " Deleting the " << old_state_index << "th particle" << endl;
