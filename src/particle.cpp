@@ -27,28 +27,6 @@
 #include "pfparam.hpp"
 
 
-void ForestState::making_copies( int number_of_copies ){
-    for ( size_t i = 0; i < this->ForestState_copies.size(); i++){
-        this->ForestState_copies[i] = NULL;
-    }
-    this->ForestState_copies.clear(); // clear previous pointers to the new copies
-    if ( number_of_copies == 0 ) return;
-    this->ForestState_copies.push_back( this );
-    if ( number_of_copies == 1 ) return;
-    
-    for (int ii = 2; ii <= number_of_copies; ii++) { 
-        ForestState* new_copy_state = new ForestState( *this );
-        // Give the new particle its own random generator (for multithreading)
-        size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
-        new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() ); 
-        new_copy_state->model_ = new Model( *this->model_);
-        this->ForestState_copies.push_back(new_copy_state);
-    }
-    assert( this->ForestState_copies.size() == (size_t)number_of_copies ); 
-}
-
-
-
 /*! \brief Initialize a new ForestState 
  * @ingroup group_pf_init
  * */
