@@ -21,6 +21,7 @@
 
 */
 
+#include "general.hpp"
 #include "count.hpp"
 #include "arena.hpp"
 #include "debug/usage.hpp"
@@ -65,13 +66,13 @@ int main(int argc, char *argv[]){
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
 
         /*! EM step */
-        for (int I = 0; I <= pfARG_para.EM_steps; I++){
-            cout << "EM step " << I << endl;
+        for (int i = 0; i <= pfARG_para.EM_steps; i++) {
+            cout << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
-            cout << "End of EM_step " << I << endl;
-            }
+            cout << "End of EM step " << i << endl;
+        }
 
         pfARG_para.appending_Ne_file( );
 
@@ -82,18 +83,18 @@ int main(int argc, char *argv[]){
         delete arena;
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
-        }
+    }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         Help_option();
         return EXIT_FAILURE;
-        }
     }
+}
 
 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
-                bool print_update_count ){
+                bool print_update_count ) {
     recombination_counter = 0; // DEBUG
     recomb_opp = 0;// DEBUG
 
@@ -175,12 +176,9 @@ void pfARG_core(PfParam &pfARG_para,
           \endverbatim
          */
 
-
-
         dout <<"current base is at "<<Segfile->segment_start()<<" and it is ";
         dout << (Segfile->end_data()? "YES":"NOT");
         dout << " the end of data "<<endl;
-
 
         valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
 
@@ -198,26 +196,24 @@ void pfARG_core(PfParam &pfARG_para,
         /*! Reset population sizes in the model */
         countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
 
-
-        if ( pfARG_para.ESS() == 1 ){
+        if ( pfARG_para.ESS() == 1 ) {
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
-            }
+        }
         /*! ESS resampling. Filtering step*/
         current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
 
-        if ( Segfile->segment_end() >= (double)model->loci_length() ){
+        if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
-            if ( Segfile->segment_end() > (double)model->loci_length() ){
+            if ( Segfile->segment_end() > (double)model->loci_length() ) {
                 cout << "  Segment data is beyond loci length" << endl;
             }
             Segfile->set_end_data (true);
-            //break;
         }
 
         Segfile->read_new_line(); // Read new line from the seg file
 
-        } while( !Segfile->end_data() );
+    } while( !Segfile->end_data() );
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...

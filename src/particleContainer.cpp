@@ -73,7 +73,7 @@ ParticleContainer::ParticleContainer(Model* model,
  */
 void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state)
 {
-    dout << "ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
+    //cout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
     double ESS_diff = ESSthreshold - this->ESS();
     if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
         dout<<"ESS_diff = " << ESS_diff<<endl;
@@ -111,8 +111,6 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() );
                 new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
                 // Resample the recombination position, and give particle its own event history
-                //DEBUG
-                cout << "Resampling recomb position for particle idx " << old_state_index << " nr " << ii << endl;
                 new_copy_state->resample_recombination_position();
                 // The 'push' implementation sets the particle weight to 1
                 this->push(new_copy_state);

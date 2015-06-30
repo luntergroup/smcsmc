@@ -24,6 +24,7 @@
 
 #include "forest.h"
 #include "arena.hpp"
+#include "general.hpp"
 
 
 #ifndef EventRecorder
@@ -101,8 +102,7 @@ public:
                        a( obj.a.coal_migr_population ),
                        parent_(obj.parent_),
                        weight(obj.weight),
-                       event_data(obj.event_data),
-                       ref_counter(obj.ref_counter) {
+                       event_data(obj.event_data) {
                            if(parent_) parent_->increase_refcount();
                        }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
@@ -207,10 +207,12 @@ public:
     /* Adds (newly made, refcount==1) this to tree */
     void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
         if (parent_) {
-            // replace existing tree off *eventptr_location with new one
-            assert( !(*eventptr_location)->decrease_refcount_is_zero() );
+            // this is a tree; replace existing tree off eventptr_location with this
+            bool lost_event = !(*eventptr_location)->decrease_refcount_is_zero();
+            assert (!lost_event);  // *eventptr_location should be referenced elsewhere
+            _unused(lost_event);
         } else {
-            // splice single node into existing tree
+            // this is a single node; splice into existing tree
             parent_ = *eventptr_location;
         }
         *eventptr_location = this; }
@@ -232,6 +234,7 @@ public:
     friend bool remove_event( EvolutionaryEvent** eventptr_location, size_t epoch_idx );               /* Removes event after we're done updating the relevant counters */
     friend EvolutionaryEvent* purge_events( EvolutionaryEvent** eventptr_location, size_t epoch_idx ); /* Purges previously removed events, and returns first active parent (or NULL) */
     friend class ForestState;                                                                          /* for void ForestState::resample_recombination_position(void) */
+    friend class ParticleContainer;  // for debugging
 
     // Members
 private:

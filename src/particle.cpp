@@ -208,34 +208,29 @@ void ForestState::record_Recombevent_b4_extension (){
 
 
 void ForestState::resample_recombination_position(void) {
-    // first, obtain a fresh sequence position for the next recombination, overwriting the
-    // existing sample in next_base_
-    //cout << "Resampling next base from " << this->next_base_ << " to ";
+    // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
     this->resampleNextBase();
-    cout << this->next_base_ << ":";
     // then, create private event records, in effect re-doing the work of record_Recombevent_b4_extension
-    // (need to think about this one a bit)
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
         if (record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no (further) recombination opportunity has been recorded
-            if ( !old_event || !old_event->is_recomb() || !old_event->recomb_event_overlaps_opportunity_x( this->current_base() ) )
+            if ( !old_event || !old_event->is_recomb() || !old_event->recomb_event_overlaps_opportunity_x( this->current_base() ) ) {
                 break;
+            }
             do {
                 // make a copy of current event and modify the end_base member
                 void* event_mem = Arena::allocate( epoch );
                 EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
-                //cout << " modify at " << epoch << " " << new_event->start_height << "-" << new_event->end_height << ";";
-                new_event->end_base_ = this->next_base_;   // friend function access
+                new_event->end_base_ = this->next_base_;        // friend function access
                 // splice into event tree, and update pointers
                 new_event->add_leaf_to_tree( new_chain );
-                new_chain = &new_event->parent_;           // friend function access
+                new_chain = &(new_event->parent_);              // friend function access
                 old_event = old_event->parent();
             } while ( old_event && old_event->is_recomb() && old_event->recomb_event_overlaps_opportunity_x( this->current_base() ) );
         }
     }
-    cout << endl;
 }
 
 
