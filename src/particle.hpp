@@ -93,7 +93,7 @@ class ForestState : public Forest{
         // Resampling //
         void init_EventContainers( Model * model );
         void copyEventContainers(const ForestState & copied_state );
-        void making_copies( int number_of_copies );
+        void resample_recombination_position(void);
 
         // Update weight
         void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */        
@@ -104,7 +104,6 @@ class ForestState : public Forest{
 
         // Extend
         double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
-        vector <double> opportunity_y_s ; 
 
         // Record events
         void record_Recombevent_b4_extension ( );
@@ -122,6 +121,7 @@ class ForestState : public Forest{
 
         // Members 
         vector < EvolutionaryEvent* > eventTrees;
+        vector <double> opportunity_y_s ; 
                 
         double site_where_weight_was_updated_;
         double particle_weight_;
