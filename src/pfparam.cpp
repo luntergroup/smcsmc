@@ -43,7 +43,24 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
                                        this->ESS_default_bool = false; }
         else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
-                                       this->EM_bool = true; }        
+                                       this->EM_bool = true; }
+        else if ( argv_i == "-xr" || argv_i == "-xc" ) 
+	{
+            int last_epoch;
+            int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
+	    first_epoch--;                                  // turn into 0-based half-open
+            for (int i=0; i<last_epoch; i++) {
+                if (record_event_in_epoch.size() <= i) {
+		    // extend vector, and set default: record both recomb and coal/migr events
+		    record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+		}
+		if (i >= first_epoch) {
+		    // reset bit signifying recording of either recombination or coal/migr events
+		    // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
+		    record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+		}
+	    }
+	}
         else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }        
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }
@@ -79,15 +96,20 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         
         else if (argv_i == "-h" || argv_i == "-help") {
             Help_header();            
-            }
-            
+        }
+
+        else if (argv_i == "-v") {
+            Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion);
+            exit(0);
+        }
+
         else {
             scrm_input += argv_i + " ";
-            }        
-        argc_i++;
         }        
-        this->finalize( );
+        argc_i++;
     }
+    this->finalize( );
+}
 
 
 PfParam::~PfParam(){ 
@@ -110,8 +132,25 @@ void PfParam::init(){
     this->default_loci_length = 2e7;
     this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
     //this->ghost = 10;
-    
-    
+
+    #ifdef COMPILEDATE
+        compileTime = COMPILEDATE;
+    #else
+        compileTime = "";
+    #endif
+
+    #ifdef SMCSMCVERSION
+        smcsmcVersion = SMCSMCVERSION;
+    #else
+        smcsmcVersion = "";
+    #endif
+
+    #ifdef SCRMVERSION
+        scrmVersion = SCRMVERSION;
+    #else
+        scrmVersion = "";
+    #endif
+
     this->original_recombination_rate_ = 0;
     this->N                = 100;
     //this->buff_length      = 200;
@@ -251,6 +290,16 @@ void PfParam::finalize(  ){
         }
     
     this->finalize_scrm_input ( );
+    
+    // if necessary, extend the vector specifying what epochs to collect events for,
+    // and check it hasn't been made too large (which wouldn't strictly be a problem,
+	// but clearly the user specified something that's silly and should hear that.)
+	while (record_event_in_epoch.size() < this->model->change_times_.size()) {
+        record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+    }
+    if (record_event_in_epoch.size() > this->model->change_times_.size()) {
+		throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+	}
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );
@@ -273,11 +322,13 @@ int PfParam::log( ){
 
 void PfParam::log_param( ){
     ofstream log_file;
-
     log_file.open (log_NAME.c_str(), ios::out | ios::app | ios::binary); 
-    
+
+    log_file << "###########################\n";
+    log_file << "#        smcsmc log       #\n";
+    log_file << "###########################\n";
+    Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion, log_file);
     log_file << "smcsmc parameters: \n";
-    
     if (this->heat_bool){
         log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
         log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";

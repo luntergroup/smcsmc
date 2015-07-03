@@ -21,13 +21,50 @@
 
 */
 
-#include <iostream>     /* cout */
-#include <stdlib.h>     /* exit, EXIT_FAILURE */
-#include <iomanip>      // std::setw
+#ifndef __ARENA__
+#define __ARENA__
 
-using namespace std;
+#include <iostream>
+#include <vector>
 
-void Help_option();
-void Help_example();
-void Help_header();
-void Help_version(string date, string smcsmc, string scrm, std::ostream &output = std::cout);
+using std::vector;
+
+// forward declaration
+class Arena;
+
+// maximum occupancy
+const double _arena_max_fill_factor = 0.25;
+
+// the global memory arena
+class Arena {
+
+public:
+	Arena( size_t num_epochs, size_t block_size ) : num_epochs(num_epochs), block_size(block_size) { init_arena(); }
+	
+	~Arena();
+	
+	static void* allocate( size_t epoch_idx );
+	static void deallocate( void* memptr, size_t epoch_idx );
+	
+private:
+
+	void init_arena();
+	void alloc_block();
+	void set_next_block();
+	
+	static class Arena* globalArena;  // the global memory arena; initialized by init_arena()
+	int numAllocs;
+	int numDeallocs;
+	int maxInUse;
+	int numSkips;
+	
+	vector<void*> allocblocks;
+	vector<void*> blocks;
+	int block_idx;
+	int block_in_use;
+	size_t num_epochs;
+	size_t block_size;
+
+};
+
+#endif

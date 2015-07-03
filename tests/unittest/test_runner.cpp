@@ -9,6 +9,7 @@
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/BriefTestProgressListener.h>
 #include <cppunit/CompilerOutputter.h>
+#include "../../src/arena.hpp"
 
 using namespace CppUnit;
 
@@ -16,6 +17,11 @@ int new_forest_counter = 0;
 int delete_forest_counter = 0;
 int recombination_counter = 0; // DEBUG
 double recomb_opp = 0; // DEBUG
+
+/*!
+ * Global variable for the memory arena
+ */
+class Arena* Arena::globalArena;
 
 
 int main(void) {
