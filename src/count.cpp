@@ -179,7 +179,7 @@ void CountModel::reset_Ne ( Model *model ){
             model->addPopulationSize(change_times_[epoch_idx], pop_j, pop_size ,false, false);
             cout << " Setting size of population " << pop_j << " @ " << setw(8) << change_times_[epoch_idx] << " to "
                  << setw(8) << pop_size
-                 << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j].final_answer() << " / " << this->total_coal_count[epoch_idx][pop_j].final_answer() << "; ESS "
+                 << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j].final_answer() << " / " << this->total_coal_count[epoch_idx][pop_j].final_answer() << "; post-lag ESS "
                  << 1.0 / (coal_weight / coal_opp) << " )" << endl;
         }
     }
@@ -202,7 +202,7 @@ void CountModel::reset_recomb_rate ( Model *model ){
 
     model->setRecombinationRate( inferred_recomb_rate, false, false, 0);
     cout << " Setting recombination rate to " << model->recombination_rate(0)
-         << " ( " << recomb_count<<" / " << recomb_opportunity << "; ESS "
+         << " ( " << recomb_count<<" / " << recomb_opportunity << "; post-lag ESS "
          << 1.0 / (recomb_weight / recomb_opportunity) << " )" << endl;
 }
 
