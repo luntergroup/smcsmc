@@ -63,13 +63,15 @@ void CountModel::log_counts( PfParam& param ) {
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
         for (size_t pop_idx = 0; pop_idx < this->population_number(); pop_idx++ ) {
             param.append_to_count_file( epoch_idx, "Coal", pop_idx, -1, this->total_coal_opportunity[epoch_idx][pop_idx].final_answer(),
-                                                                        this->total_coal_count[epoch_idx][pop_idx].final_answer() );
+                                                                        this->total_coal_count[epoch_idx][pop_idx].final_answer(),
+                                                                        this->total_coal_weight[epoch_idx][pop_idx].final_answer());
         }
     }
     // log recombination counts
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
         param.append_to_count_file( epoch_idx, "Recomb", -1, -1, this->total_recomb_opportunity[epoch_idx][0].final_answer(),
-                                                                 this->total_recomb_count[epoch_idx][0].final_answer() );
+                                                                 this->total_recomb_count[epoch_idx][0].final_answer(),
+                                                                 this->total_recomb_weight[epoch_idx][0].final_answer());
     }
     // log migration counts
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
@@ -77,7 +79,8 @@ void CountModel::log_counts( PfParam& param ) {
             for (size_t to_pop_idx = 0; to_pop_idx < this->population_number(); to_pop_idx++ ) {
                 if (from_pop_idx != to_pop_idx) {
                     param.append_to_count_file( epoch_idx, "Migr", from_pop_idx, to_pop_idx, this->total_mig_opportunity[epoch_idx][from_pop_idx].final_answer(),
-                                                                                             this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer() );
+                                                                                             this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer(),
+                                                                                             this->total_mig_weight[epoch_idx][from_pop_idx].final_answer());
                 }
             }
         }

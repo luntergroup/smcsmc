@@ -293,13 +293,13 @@ void PfParam::finalize(  ){
     
     // if necessary, extend the vector specifying what epochs to collect events for,
     // and check it hasn't been made too large (which wouldn't strictly be a problem,
-	// but clearly the user specified something that's silly and should hear that.)
-	while (record_event_in_epoch.size() < this->model->change_times_.size()) {
+    // but clearly the user specified something that's silly and should hear that.)
+    while (record_event_in_epoch.size() < this->model->change_times_.size()) {
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
     }
     if (record_event_in_epoch.size() > this->model->change_times_.size()) {
-		throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
-	}
+        throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+    }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );
@@ -404,21 +404,22 @@ void PfParam::log_param( ){
     }
 
 
-void PfParam::append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count) {
-	string file_name = Count_NAME;
-	ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
-	int field_length_1 = 7;
-	int field_length_2 = 15;
-	count_file << setw(field_length_1) << epoch << " "
-	           << setw(field_length_1) << label << " "
-	           << setw(field_length_1) << from_pop << " "
-	           << setw(field_length_1) << to_pop << " "
-	           << setw(field_length_2) << opportunity << " "
-	           << setw(field_length_2) << count << " "
-	           << setw(field_length_2) << count/(opportunity+1e-10)
-	           << endl;
-	count_file.close();
-	}
+void PfParam::append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight) {
+    string file_name = Count_NAME;
+    ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    int field_length_1 = 7;
+    int field_length_2 = 15;
+    count_file << setw(field_length_1) << epoch << " "
+               << setw(field_length_1) << label << " "
+               << setw(field_length_1) << from_pop << " "
+               << setw(field_length_1) << to_pop << " "
+               << setw(field_length_2) << opportunity << " "
+               << setw(field_length_2) << count << " "
+               << setw(field_length_2) << count/(opportunity+1e-10) << " "
+               << setw(field_length_2) << 1.0 / (weight/opportunity+1e-10)
+               << endl;
+    count_file.close();
+}
 
 
 void PfParam::appending_Ne_file( bool hist ){
