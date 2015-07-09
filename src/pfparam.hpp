@@ -48,7 +48,7 @@ class PfParam{
         //
         int  log( );
         void appending_Ne_file( bool hist = false );
-        void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count );
+        void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight );
 
         // ------------------------------------------------------------------
         // PfParameters 

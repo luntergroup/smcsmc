@@ -6,10 +6,7 @@ distdir = $(PACKAGE)-$(VERSION)
 #CXXFLAGS= -I/opt/local/include
 #LDFLAGS= -L/opt/local/lib # this is used to link to the unittest library
 
-bin_PROGRAMS = smcsmc smcsmc_dbg smcsmcRECOMBOFF smcsmcSCRM smcsmcRECOMBOFF_dbg
-#smcsmc_omp smcsmc_dbg smcsmcRECOMBOFF_dbg  smcsmcSCRM
-#particleCountainer particle param coalevent scrm_dummy 
-#check_PROGRAMS = smcsmc_dbg smcsmc_prof smcsmc_omp_prof unittests generate_vcf smcsmc_omp_prof smcsmc_omp
+bin_PROGRAMS = smcsmc smcsmc_dbg
 check_PROGRAMS = unittests  smcsmc_prof scrm
 
 TESTS = unittests 
