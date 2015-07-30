@@ -107,7 +107,7 @@ void ForestState::clear_eventContainer(){
 
 void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
 
-    dout << endl;
+    //dout << endl;
     ForestStatedout << "Start Recording " << endl;
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
@@ -148,6 +148,8 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             recomb_opp_x_within_smcsmc += end_base - start_base;
+            ForestStatedout <<"";
+            recomb_event->print_event();
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
@@ -169,11 +171,13 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            ForestStatedout <<"";
+            migrcoal_event->print_event();
         }
     }
-
+    
     assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
-    dout << endl;
+    ForestStatedout << "Finish recording of event." << endl;
 
     return;
 }
