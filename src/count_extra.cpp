@@ -166,13 +166,13 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 
         double epoch_start = change_times_[ epoch_idx ];
         double epoch_end = epoch_idx+1 < change_times_.size() ? change_times_[ epoch_idx + 1 ] : DBL_MAX;
-        double pop = event->get_population();
 
         // consider coalescences and migration
         if (event->is_coalmigr()) {
 
             // any events occur always at the top of the time segment (which cannot be the top of the epoch segment)
             // also ensure that events are not counted twice, i.e. they fall in [x_start,x_end).
+            int pop = event->get_population();
             if ( x_start <= event->start_base() ) {
                 if (event->is_coal_event()) {   // not stricly necessary, as if !is_coal_event, coal_event_count()==0
                     total_coal_count[ epoch_idx ][ pop ].add( weight * event->coal_event_count() );
