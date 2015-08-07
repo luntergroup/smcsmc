@@ -149,7 +149,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             recomb_opp_x_within_smcsmc += end_base - start_base;
             ForestStatedout <<"";
-            recomb_event->print_event();
+            assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
@@ -172,7 +172,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             ForestStatedout <<"";
-            migrcoal_event->print_event();
+            assert(migrcoal_event->print_event());
         }
     }
     
