@@ -26,15 +26,22 @@
 #include "pfparam.hpp"
 
 
-/*! \brief Initialize a new ForestState
+/*! \brief Initialize a new ForestState.  A copy of model/random_generator is made if own_m_and_rg==True; either way the objects are not stolen
  * @ingroup group_pf_init
  * */
-ForestState::ForestState( Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch)
+ForestState::ForestState( Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch, bool own_model_and_random_generator)
             :Forest( model, random_generator ),
              record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     this->setParticleWeight( 1.0 );
     this->setSiteWhereWeightWasUpdated(0.0);
+    owning_model_and_random_generator = own_model_and_random_generator;
+    if (owning_model_and_random_generator) {
+        // as we're owning it, we should make copies
+        size_t new_seed = (size_t)random_generator_->sampleInt( INT_MAX );
+        random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
+        model_ = new Model( *model_ );
+    }
     //new_forest_counter++; // DEBUG
 }
 
@@ -45,11 +52,17 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
-    this->setParticleWeight( copied_state.weight() );
-    this->setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
-    this->setAncestor ( copied_state.ancestor() );
-    this->copyEventContainers ( copied_state );
-    this->segment_count_ = copied_state.segment_count_;
+    setParticleWeight( copied_state.weight() );
+    setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
+    copyEventContainers ( copied_state );
+    segment_count_ = copied_state.segment_count_;
+    owning_model_and_random_generator = copied_state.owning_model_and_random_generator;
+    if (owning_model_and_random_generator) {
+        // as we (and copied_state) own model and rg, we should make copies
+        size_t new_seed = (size_t)random_generator_->sampleInt( INT_MAX );
+        random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
+        model_ = new Model( *model_ );
+    }
 
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
@@ -81,10 +94,14 @@ void ForestState::init_EventContainers( Model * model ) {
 /*! \brief Destructor of ForestState
  * Recursively remove all the previous states, if the pointer counter is zero
  */
-ForestState::~ForestState(){
-    this->clear_eventContainer();
-    delete this->random_generator_;     //MULTITRHREADING
-    delete this->model_;
+ForestState::~ForestState() {
+    clear_eventContainer();
+    if (owning_model_and_random_generator) {
+        delete random_generator_;     //MULTITRHREADING
+        delete model_;
+        random_generator_ = NULL;
+        model_ = NULL;
+    }
     //delete_forest_counter++;
     dout << "A Foreststate is deleted" << endl;
 }
@@ -175,7 +192,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             assert(migrcoal_event->print_event());
         }
     }
-    
+
     assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
     ForestStatedout << "Finish recording of event." << endl;
 

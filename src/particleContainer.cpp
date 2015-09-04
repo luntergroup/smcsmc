@@ -40,25 +40,18 @@ ParticleContainer::ParticleContainer(Model* model,
     this->random_generator_ = rg;
     this->set_ESS(0);
     this->set_current_printing_base(0);
+    bool make_copies_of_model_and_rg = false; // Set to true to use a random generator, and model per particle for multithreading (slower!)
     dout << " --------------------   Particle Initial States   --------------------" << std::endl;
     for ( size_t i=0; i < Num_of_states ; i++ ){
-        Model * new_model =  new Model(*model);
-        #ifndef _SCRM
-        size_t new_seed = (size_t) this->random_generator_->sampleInt( INT_MAX );
-        RandomGenerator* new_rg = new MersenneTwister( new_seed , this->random_generator_->ff() );
-        #else
-        RandomGenerator* new_rg = new MersenneTwister( this->random_generator_->seed() , this->random_generator_->ff() );
-        #endif
-        ForestState* new_state = new ForestState( new_model, new_rg, record_event_in_epoch );  // create a new state, using scrm; scrm always starts at 0.  Use a random generator, and model per particle for multithreading
+        ForestState* new_state = new ForestState( model, rg, record_event_in_epoch, make_copies_of_model_and_rg );  // create a new state, using scrm; scrm always starts at 0.
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
-        new_state->setAncestor ( i );
-        if ( this->heat_bool_ ){
+        if ( this->heat_bool_ ) {
             TmrcaState tmrca( 0, new_state->local_root()->height() );
             new_state->TmrcaHistory.push_back ( tmrca );
-            }
+        }
         this->push(new_state, 1.0/Num_of_states );
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){
@@ -106,10 +99,6 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
                 dout << " Making a copy of the " << old_state_index << "th particle" << endl;
                 ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
-                // Give the new particle its own random generator (for multithreading)
-                size_t new_seed = (size_t) this->particles[old_state_index]->random_generator_->sampleInt( INT_MAX );
-                new_copy_state->random_generator_ = new MersenneTwister( new_seed , this->random_generator_->ff() );
-                new_copy_state->model_ = new Model(*this->particles[old_state_index]->model_);
                 // Resample the recombination position, and give particle its own event history
                 new_copy_state->resample_recombination_position();
                 // The 'push' implementation sets the particle weight to 1
@@ -152,8 +141,6 @@ void ParticleContainer::clear(){
     dout << "ParticleContainer clear() is called" << endl;
     for (size_t i = 0; i < this->particles.size(); i++){
         if (this->particles[i]!=NULL){
-            //delete this->particles[i]->random_generator_; //MULTITRHREADING
-            //this->particles[i]->random_generator_ = NULL;
             delete this->particles[i];
             this->particles[i]=NULL;
             }
@@ -357,7 +344,6 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
             for ( size_t i = 0; i < this->particles.size(); i++){
                 ForestState * current_state_ptr = this->particles[i];
                 WeightOfstream <<"\t" << current_state_ptr->weight();
-                SURVIVORstream <<"\t" << current_state_ptr->ancestor();
 
                 //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 double current_tmrca = current_state_ptr->local_root()->height();
