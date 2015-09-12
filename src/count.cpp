@@ -210,11 +210,11 @@ void CountModel::reset_recomb_rate ( Model *model ){
 }
 
 
-void CountModel::clear_2d_vector ( vector <vector<double>*> & rates_list ) {
+void CountModel::clear_2d_vector ( vector <vector<double>> & rates_list ) {
     for (size_t i = 0; i < rates_list.size(); i++ ) {
-        if (rates_list[i]) {
-            for (size_t j = 0; j < rates_list[i]->size() ; j++) {
-                rates_list[i]->at(j) = 0;
+        if (!rates_list[i].empty()) {
+            for (size_t j = 0; j < rates_list[i].size() ; j++) {
+                rates_list[i][j] = 0;
             }
         }
     }

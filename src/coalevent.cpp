@@ -66,23 +66,22 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 
 bool EvolutionaryEvent::print_event() const {
 	EventRecorderdout << "";
-#define outstream cout
-//#define outstream cout
+#define outstream std::cout
 	if (is_recomb()) {
-		outstream << "Event Recomb w=" << weight << " [" << start_base_ << "-" << end_base_ << ")  t=" << setw(5) << start_height << "-" << setw(5) << end_height;
+		outstream << "Event Recomb w=" << weight << " [" << start_base_ << "-" << end_base_ << ")  t=" << std::setw(5) << start_height << "-" << std::setw(5) << end_height;
 		if (is_recomb_event()) {
 			outstream << " (**EVENT**";
 			if (event_data == -1) outstream << " xpos=" << a.recomb_pos << ")";
 			if (event_data == 0) outstream << " tpos=" << a.recomb_pos << ")";
 		}
 	} else {
-		outstream << "Event CoalMigr w=" << weight << " [" << end_base_ << "] pop=" << a.coal_migr_population << " t=" << setw(5) << start_height << "-" << setw(5) << end_height;
+		outstream << "Event CoalMigr w=" << weight << " [" << end_base_ << "] pop=" << a.coal_migr_population << " t=" << std::setw(5) << start_height << "-" << std::setw(5) << end_height;
 		if (is_coal_event()) 
 			outstream << " (**COAL**) ";
 		else if (is_migr_event())
 			outstream << " (**MIGR** " << event_data << ") ";
 	}
-	outstream << endl;
+	outstream << std::endl;
     return true;
 }
 

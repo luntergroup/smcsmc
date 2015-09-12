@@ -59,10 +59,10 @@ int main(int argc, char *argv[]){
         PfParam pfARG_para( argc, argv );
 
         /*! Initialize memory arena */
-        Arena* arena = new Arena( pfARG_para.model->getNumEpochs(), 1000000 );
+        Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
 
         /*!  INITIALIZE CountModel */
-        CountModel *countNe = new CountModel( *pfARG_para.model , pfARG_para.lag);
+        CountModel *countNe = new CountModel( pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
 
         /*! EM step */
@@ -102,7 +102,7 @@ void pfARG_core(PfParam &pfARG_para,
     struct rusage usage;       // PROFILING
     struct rusage *p = &usage; // PROFILING
 
-    Model *model         = pfARG_para.model;
+    Model *model         = &pfARG_para.model;
     MersenneTwister *rg  = pfARG_para.rg;
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;

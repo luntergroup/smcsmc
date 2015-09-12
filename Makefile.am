@@ -28,7 +28,7 @@ generate_vcf$(EXEEXT):
 ##exec_unittests: unittests 
 ##./unittests 
 
-common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
+common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
 
 # -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
 # -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
@@ -41,7 +41,7 @@ smcsmc_omp_CXXFLAGS      = $(common_flags) -DNDEBUG -fopenmp -O3
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 
 # Debugger flags
-smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -fno-omit-frame-pointer -O2
+smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
 smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
 # Profiler flags
@@ -79,7 +79,7 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/summary_statistics/frequency_spectrum.cc \
            src/scrm/src/summary_statistics/seg_sites.cc \
            src/scrm/src/summary_statistics/tmrca.cc \
-           src/scrm/src/summary_statistics/first_last_tmrca.cc
+           src/scrm/src/summary_statistics/oriented_forest.cc
 
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp

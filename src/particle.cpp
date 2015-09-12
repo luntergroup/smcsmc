@@ -55,7 +55,7 @@ ForestState::ForestState( const ForestState & copied_state )
     setParticleWeight( copied_state.weight() );
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     copyEventContainers ( copied_state );
-    segment_count_ = copied_state.segment_count_;
+    this->current_rec_ = copied_state.current_rec_;
     owning_model_and_random_generator = copied_state.owning_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we (and copied_state) own model and rg, we should make copies
@@ -122,7 +122,7 @@ void ForestState::clear_eventContainer(){
 }
 
 
-void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_within_scrm){
+void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm){
 
     //dout << endl;
     ForestStatedout << "Start Recording " << endl;
@@ -132,10 +132,10 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
     size_t start_height_epoch, end_height_epoch;
 
     // find extent of time interval where an event may have occurred
-    start_height = ti.start_height();
+    start_height = (*ti).start_height();
     start_height_epoch = ti.forest().model().current_time_idx_;
     if (this->tmp_event_.isNoEvent()) {
-        end_height = start_height + ti.length();
+        end_height = start_height + (*ti).length();
     } else {
         end_height = this->tmp_event_.time();
         assert (end_height > start_height);
@@ -171,7 +171,7 @@ void ForestState::record_all_event(TimeInterval const &ti, double &recomb_opp_x_
             // node i is tracing out a new branch; opportunities for coalescences and migration
             if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             start_base = this->current_base();
-            int weight = ti.numberOfContemporaries( active_node(i)->population() );
+            int weight = ti.contemporaries_->size( active_node(i)->population() );
             // consider normal (not pairwise) coalescences that occurred on this node
             bool coal_event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i);
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
@@ -209,19 +209,19 @@ void ForestState::record_Recombevent_b4_extension (){
     ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
 
     // iterate over time intervals (but do NOT prune branches at this stage)
-    for (TimeIntervalIterator ti(this, this->nodes_.at(0), false); ti.good(); ++ti) {
-        ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
-        dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
+        //ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
+        //dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
-        int contemporaries = ti.numberOfLocalContemporaries();
+        int contemporaries = ti.contemporaries_->contemporaries_set().size();
         if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
-            size_t start_height_epoch = ti.forest().model().current_time_idx_;
+            size_t start_height_epoch = ti.forest()->model().current_time_idx_;
             //assert( start_height_epoch == ti.forest().model().getTimeIdx( start_height ) );
             size_t end_height_epoch = start_height_epoch;
             void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base_, contemporaries );  // no event for now
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base(), contemporaries );  // no event for now
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
         }
     }
@@ -244,7 +244,7 @@ void ForestState::resample_recombination_position(void) {
                 // make a copy of current event and modify the end_base member
                 void* event_mem = Arena::allocate( epoch );
                 EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
-                new_event->end_base_ = this->next_base_;        // friend function access
+                new_event->end_base_ = this->next_base();        // friend function access
                 // splice into event tree, and update pointers
                 new_event->add_leaf_to_tree( new_chain );
                 new_chain = &(new_event->parent_);              // friend function access
@@ -371,6 +371,22 @@ double ForestState::trackLocalTreeBranchLength() {
     }
     // return branch length of the subtree subtending leaves carrying data
     return bld.subtreeBranchLength;
+}
+
+
+Node* ForestState::trackLocalNode(Node *node) const { 
+  assert( node->local() );
+  if (node->countChildren() == 0) return node;
+  if (node->countChildren() == 1) return trackLocalNode(node->first_child());
+
+  assert( node->countChildren() == 2 );
+  assert( node->first_child()->local() || node->second_child()->local() );
+
+  if ( node->first_child()->local() ) {
+    if (node->second_child()->local()) return node;
+    else return trackLocalNode(node->first_child()); 
+  }
+  else return trackLocalNode(node->second_child());
 }
 
 
