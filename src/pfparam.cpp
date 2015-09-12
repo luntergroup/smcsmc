@@ -115,7 +115,7 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
 PfParam::~PfParam(){ 
     //cout<<"~PfParam() is called"<<endl;
     delete this->Segfile;
-    delete this->model;
+    //delete this->model;
     delete this->SCRMparam;
     this->rg->clearFastFunc();
     delete this->rg;
@@ -172,7 +172,6 @@ void PfParam::init(){
     //this->FileType         = EMPTY;
     this->Segfile          = NULL;
     this->SCRMparam        = NULL;
-    this->model = new Model();
     this->rg               = NULL;  
     this->scrm_input       = "";
     this->top_t_            = 2;
@@ -250,13 +249,15 @@ void PfParam::convert_scrm_input (){
         }    
     ///*! Extract scrm parameters */ 
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
-    this->SCRMparam->parse( *this->model );
+    //this->SCRMparam->parse( *this->model );
+    this->model = this->SCRMparam->parse();
     // By default, use SMC' model, check if exact window length has been set or not, if it not (i.e. exact window length is infinity, which is denoted by -1) set it to 0.
-    if ( this->model->exact_window_length() == -1 ){
-        this->model->set_exact_window_length ( 0 );
-        }
+    //if ( this->model.exact_window_length() == -1 ){
+        //this->model.set_exact_window_length ( 0 );
+        //}
+    
     this->rg = new MersenneTwister(this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
-    this->original_recombination_rate_ = model->recombination_rate();
+    this->original_recombination_rate_ = model.recombination_rate();
     }
 
 
@@ -294,15 +295,15 @@ void PfParam::finalize(  ){
     // if necessary, extend the vector specifying what epochs to collect events for,
     // and check it hasn't been made too large (which wouldn't strictly be a problem,
     // but clearly the user specified something that's silly and should hear that.)
-    while (record_event_in_epoch.size() < this->model->change_times_.size()) {
+    while (record_event_in_epoch.size() < this->model.change_times_.size()) {
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
     }
-    if (record_event_in_epoch.size() > this->model->change_times_.size()) {
+    if (record_event_in_epoch.size() > this->model.change_times_.size()) {
         throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
-    this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model->loci_length(), this->default_num_mut );
+    this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model.loci_length(), this->default_num_mut );
     //this->VCFfile->filter_window_ = this->filter_window_;
     //this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
 }
@@ -354,47 +355,47 @@ void PfParam::log_param( ){
     //log_file << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
     
     log_file<<"scrm model parameters: \n";
-    log_file << setw(17) <<"Extract window =" << setw(10) << this->model->exact_window_length()<< "\n";
+    //log_file << setw(17) <<"Extract window =" << setw(10) << this->model.exact_window_length()<< "\n";
     log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
 
-    log_file << setw(17) <<   "Sample size =" << setw(10) << this->model->sample_size()        << "\n";
-    log_file << setw(17) <<    "Seq length =" << setw(10) << this->model->loci_length()        << "\n";
-    log_file << setw(17) << "mutation rate =" << setw(10) << this->model->mutation_rate()      << "\n";
+    log_file << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";
+    log_file << setw(17) <<    "Seq length =" << setw(10) << this->model.loci_length()        << "\n";
+    log_file << setw(17) << "mutation rate =" << setw(10) << this->model.mutation_rate()      << "\n";
     log_file << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
-    //log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model->recombination_rate() << "\n";
-    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << this->model->recombination_rate()   << "\n";
+    //log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model.recombination_rate() << "\n";
+    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << this->model.recombination_rate()   << "\n";
 
-    this->model->resetTime();
+    this->model.resetTime();
     log_file<<setw(17)<<"Pop size (at Generation):\n";
-    for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
-        log_file<<setw(3)<<"(" << setw(8) << this->model->getCurrentTime() <<" )"; 
-        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            log_file << " | " << setw(10)<<this->model->population_size(pop_j);
+    for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
+        log_file<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )"; 
+        for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
+            log_file << " | " << setw(10)<<this->model.population_size(pop_j);
             }
         
         log_file<< "\n";
-        this->model->increaseTime();
+        this->model.increaseTime();
         }
-    log_file<<setw(3)<<"(" << setw(8) << this->model->getCurrentTime() <<" )" ;
-    for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-        log_file << " | " << setw(10)<<this->model->population_size(pop_j);
+    log_file<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )" ;
+    for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
+        log_file << " | " << setw(10)<<this->model.population_size(pop_j);
     }
     log_file<< "\n";
     
-    //this->model->resetTime();
+    //this->model.resetTime();
     //log_file << "Migration rate :" << "\n";
-    //for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+    //for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
         //log_file << setw(3) << " ";
-        //for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            //log_file << setw(14) << this->model->migration_rate(pop_i, pop_j)  ;
+        //for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
+            //log_file << setw(14) << this->model.migration_rate(pop_i, pop_j)  ;
             //}
         //log_file << "\n";
         //}
         
     //log_file << "Inferred Migration rate :" << "\n";
-    //for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
+    //for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
         //log_file << setw(3) << " ";
-        //for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
+        //for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
             //log_file << setw(14) << migrate[pop_i][pop_j]  ;
             //}
         //log_file << "\n";
@@ -428,46 +429,46 @@ void PfParam::appending_Ne_file( bool hist ){
     if (hist){
         Ne_file << "=========\n"; 
         }
-    Ne_file << "RE\t" << this->model->recombination_rate() << "\n";
+    Ne_file << "RE\t" << this->model.recombination_rate() << "\n";
 
-    this->model->resetTime();
-    for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
-    Ne_file << "ME\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
-        for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){
-            for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-                Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+    this->model.resetTime();
+    for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
+    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ; 
+        for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
+            for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
+                Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
                 }
-            if ( pop_i < (this->model->population_number()-1)){ 
+            if ( pop_i < (this->model.population_number()-1)){ 
                 Ne_file << "\t|";
                 }
             }
             Ne_file << "\n";
 
-            this->model->increaseTime();
+            this->model.increaseTime();
         }
-    Ne_file << "ME\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
-    for (size_t pop_i = 0 ; pop_i < this->model->population_number() ; pop_i++){        
-        for (size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++){
-            Ne_file <<  "\t" << this->model->migration_rate(pop_i, pop_j)  ;
+    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ; 
+    for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){        
+        for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
+            Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
             }
-        if ( pop_i < (this->model->population_number()-1)){ 
+        if ( pop_i < (this->model.population_number()-1)){ 
             Ne_file << "\t|";
             }
         }
         Ne_file << "\n";
     
-    this->model->resetTime();
-    for (size_t i = 0; i < this->model->change_times_.size()-1; i++){
-        Ne_file << "NE\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
-        for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
-            Ne_file << "\t" << this->model->population_size(pop_j) / this->model->default_pop_size ;
+    this->model.resetTime();
+    for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
+        Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ; 
+        for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
+            Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size ;
             }
         Ne_file << "\n" ;
-        this->model->increaseTime();
+        this->model.increaseTime();
         }
-    Ne_file << "NE\t" << this->model->getCurrentTime() / this->model->default_pop_size / 4  ; 
-    for ( size_t pop_j = 0 ; pop_j < this->model->population_number() ; pop_j++ ){
-        Ne_file << "\t" << this->model->population_size(pop_j) / this->model->default_pop_size ;
+    Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ; 
+    for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
+        Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size ;
         }
     Ne_file << "\n" ;
     Ne_file.close();

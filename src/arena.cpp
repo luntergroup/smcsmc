@@ -61,7 +61,7 @@ void Arena::alloc_block() {
 		ptr = (void*)(64L + ((uintptr_t)ptr & -64L));
 		blocks.push_back( ptr );
 	} catch ( std::bad_alloc &ba ) {
-		std::cerr << "Could not allocate memory (require block of size " << block_size * sizeof( EvolutionaryEvent ) / 1024 << " kb)" << endl;
+		std::cerr << "Could not allocate memory (require block of size " << block_size * sizeof( EvolutionaryEvent ) / 1024 << " kb)" << std::endl;
 		throw;
 	}
 
@@ -89,7 +89,7 @@ void* Arena::allocate( size_t epoch_idx ) {
 
 	Arena* ths = Arena::globalArena;
 	ths->numAllocs++;
-	ths->maxInUse = max( ths->maxInUse, ths->numAllocs - ths->numDeallocs );
+	ths->maxInUse = std::max( ths->maxInUse, ths->numAllocs - ths->numDeallocs );
 	
 	EvolutionaryEvent* block = (EvolutionaryEvent*)(ths->blocks[ ths->block_in_use ]);
 	int idx = ths->block_idx;

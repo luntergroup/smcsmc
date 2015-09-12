@@ -107,7 +107,7 @@ public:
                        }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
-        cout << "Destructor is called -- problem!" << endl;
+        std::cout << "Destructor is called -- problem!" << std::endl;
         if (parent_ && parent_->decrease_refcount_is_zero()) delete parent_;
     }
     // Delete function for use with Arena
@@ -158,18 +158,18 @@ public:
         return weight * (end_height - start_height); }
     double coal_opportunity_between( double height0, double height1 ) const {
         assert (is_coalmigr());
-        return weight * max(0.0, (min(height1,end_height) - max(height0,start_height))); }
+        return weight * std::max(0.0, (std::min(height1,end_height) - std::max(height0,start_height))); }
     double migr_opportunity() const {
         assert (is_coalmigr());
         return end_height - start_height; }
     double migr_opportunity_between( double height0, double height1 ) const {
         assert (is_coalmigr());
-        return max(0.0, (min(height1,end_height) - max(height0,start_height))); }
+        return std::max(0.0, (std::min(height1,end_height) - std::max(height0,start_height))); }
     double recomb_opportunity() const {
         assert (is_recomb());
         return weight * (end_height - start_height) * (end_base_ - start_base_); }
     double recomb_opportunity_between( double height0, double height1, double base0, double base1) const {
-        return weight * max(0.0, min(height1,end_height) - max(height0,start_height)) * max(0.0, min(base1,end_base_) - max(base0,start_base_)); }
+        return weight * std::max(0.0, std::min(height1,end_height) - std::max(height0,start_height)) * std::max(0.0, std::min(base1,end_base_) - std::max(base0,start_base_)); }
     bool recomb_event_overlaps_opportunity_t( double recomb_t_position ) const {
         return ( start_height <= recomb_t_position && recomb_t_position <= end_height ); }
     bool recomb_event_overlaps_opportunity_x( double recomb_x_position ) const {

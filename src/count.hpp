@@ -85,7 +85,7 @@ class CountModel: public Model {
         void reset_recomb_rate( Model *model );
         void reset_Ne( Model *model );
         void reset_mig_rate( Model *model );
-        void clear_2d_vector( vector <vector<double>*> & rates_list );
+        void clear_2d_vector( vector <vector<double>> & rates_list );
 
         void update_all_counts( EvolutionaryEvent** event_ptr, double weight, vector<double>& update_to, size_t epoch_idx );
         void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
@@ -122,7 +122,7 @@ class CountModel: public Model {
         void print_pop_size();
         void print_change_time();
         void print_coal_count();
-        bool print_mig_rate ( vector <vector<double>*> & rates_list );
+        bool print_mig_rate ( vector <vector<double>> & rates_list );
         void check_model_updated_mig(Model * model);
         void check_model_updated_Ne(Model * model);
     };

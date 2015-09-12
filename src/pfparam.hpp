@@ -21,6 +21,7 @@
 
 */
 
+#include "mersenne_twister.h"
 #include "param.h"
 #include "segdata.hpp"
 
@@ -67,7 +68,7 @@ class PfParam{
 
         Segment * Segfile;
         Param *SCRMparam;
-        Model *model;
+        Model model;
         MersenneTwister *rg ;
         vector<int> record_event_in_epoch;
 
