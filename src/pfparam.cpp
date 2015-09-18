@@ -255,7 +255,7 @@ void PfParam::convert_scrm_input (){
     //if ( this->model.exact_window_length() == -1 ){
         //this->model.set_exact_window_length ( 0 );
         //}
-    
+    this->model.has_window_seq_ = true;
     this->rg = new MersenneTwister(this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
     this->original_recombination_rate_ = model.recombination_rate();
     }
@@ -355,7 +355,7 @@ void PfParam::log_param( ){
     //log_file << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
     
     log_file<<"scrm model parameters: \n";
-    //log_file << setw(17) <<"Extract window =" << setw(10) << this->model.exact_window_length()<< "\n";
+    log_file << setw(17) <<"Extract window =" << setw(10) << this->model.window_length_seq()<< "\n";
     log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
 
     log_file << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";
