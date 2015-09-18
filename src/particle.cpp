@@ -210,10 +210,10 @@ void ForestState::record_Recombevent_b4_extension (){
 
     // iterate over time intervals (but do NOT prune branches at this stage)
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
-        //ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
-        //dout << ", with " << ti.numberOfLocalContemporaries() << " local Contemporaries, " << ti.numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
+        ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
+        dout << ", with " << ti.contemporaries_->contemporaries_vector().size() << " local Contemporaries, " << ti.contemporaries_->contemporaries_vector().size() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
-        int contemporaries = ti.contemporaries_->contemporaries_set().size();
+        int contemporaries = ti.contemporaries_->contemporaries_vector().size();
         if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
@@ -265,6 +265,10 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
     // find the EvolutionaryEvent to add this event to.
     EvolutionaryEvent* event = eventTrees[ epoch_i ];
     while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
+
+    //cout << "event->is_recomb() = " << event->is_recomb() <<endl; // DEBUG
+    //cout << "event->recomb_event_overlaps_opportunity_t( event_height ) " << event->recomb_event_overlaps_opportunity_t( event_height ) << endl; // DEBUG
+//event->print_event();
         event = event->parent();
         assert (event != NULL);
     }

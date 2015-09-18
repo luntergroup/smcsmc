@@ -156,7 +156,7 @@ void PfParam::init(){
     //this->buff_length      = 200;
     this->lag              = 0;
     //this->lag              = 5000000;
-    this->out_NAME_prefix  = "pfARG";
+    this->out_NAME_prefix  = string("smcsmc");
     this->ESS_              = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
