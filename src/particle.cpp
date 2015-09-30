@@ -126,7 +126,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
 
     //dout << endl;
     ForestStatedout << "Start Recording " << endl;
-    //double recomb_opp_x_within_smcsmc = 0; // DEBUG
+    double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
     double start_height, end_height;
     size_t start_height_epoch, end_height_epoch;
@@ -150,25 +150,25 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
         if (states_[i] == 2) {
             // DEBUG this part of code is taking out, to test results...
 
-            //// node i is tracing an existing non-local branch; opportunities for recombination
-            //if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
-            //start_base = active_node(i)->last_update();
-            //end_base = this->current_base();
-            //if (end_base == start_base) continue;
-            ////EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
-            //// create event (on stack), so that we can append events to existing ones.  (Only done for recombinations; should check whether it happens at any frequency)
-            //void* event_mem = Arena::allocate( start_height_epoch );
-            //EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
-            //double recomb_pos = -1;
-            //if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
-                //recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
-                //recomb_event->set_recomb_event_pos( recomb_pos );
-            //}
-            //// add event in tree data structure
-            //recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-            //recomb_opp_x_within_smcsmc += end_base - start_base;
-            //ForestStatedout <<"";
-            //assert(recomb_event->print_event());
+            // node i is tracing an existing non-local branch; opportunities for recombination
+            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            start_base = get_rec_base(active_node(i)->last_update());
+            end_base = this->current_base();
+            if (end_base == start_base) continue;
+            //EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
+            // create event (on stack), so that we can append events to existing ones.  (Only done for recombinations; should check whether it happens at any frequency)
+            void* event_mem = Arena::allocate( start_height_epoch );
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
+            double recomb_pos = -1;
+            if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
+                recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
+                recomb_event->set_recomb_event_pos( recomb_pos );
+            }
+            // add event in tree data structure
+            recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            recomb_opp_x_within_smcsmc += end_base - start_base;
+            ForestStatedout <<"";
+            assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
             if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
