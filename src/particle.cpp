@@ -380,7 +380,7 @@ double ForestState::trackLocalTreeBranchLength() {
 }
 
 
-Node* ForestState::trackLocalNode(Node *node) const { 
+Node* ForestState::trackLocalNode(Node *node) const {
   assert( node->local() );
   if (node->countChildren() == 0) return node;
   if (node->countChildren() == 1) return trackLocalNode(node->first_child());
@@ -390,7 +390,7 @@ Node* ForestState::trackLocalNode(Node *node) const {
 
   if ( node->first_child()->local() ) {
     if (node->second_child()->local()) return node;
-    else return trackLocalNode(node->first_child()); 
+    else return trackLocalNode(node->first_child());
   }
   else return trackLocalNode(node->second_child());
 }
