@@ -192,10 +192,10 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 
         // consider recombinations
         if (event->is_recomb()) {
-
+            bool isEndOfSeq = this->loci_length() == x_end;
             // the recombination event (and opportunity) is arbitrarily assigned to population 0
             double recomb_opp = event->recomb_opportunity_between( epoch_start, epoch_end, x_start, x_end );
-            total_recomb_count[epoch_idx][ 0 ].add( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end ) );
+            total_recomb_count[epoch_idx][ 0 ].add( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end, isEndOfSeq ) );
             total_recomb_opportunity[epoch_idx][ 0 ].add( weight * recomb_opp );
             total_recomb_weight[ epoch_idx ][ 0 ].add( weight * weight * recomb_opp );
 

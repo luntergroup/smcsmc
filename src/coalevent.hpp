@@ -174,11 +174,11 @@ public:
         return ( start_height <= recomb_t_position && recomb_t_position <= end_height ); }
     bool recomb_event_overlaps_opportunity_x( double recomb_x_position ) const {
         return ( start_base_ <= recomb_x_position && recomb_x_position <= end_base_ ); }
-    int recomb_event_count_between( double height0, double height1, double base0, double base1) const {
+    int recomb_event_count_between( double height0, double height1, double base0, double base1, bool isEndOfSeq ) const {
         if (!is_recomb_event()) return 0;
         double base_ = event_data == -1 ? a.recomb_pos : end_base_;
         double height = event_data == 0 ? a.recomb_pos : end_height;
-        return (base0 <= base_) && (base_ < base1) && (height0 <= height) && (height < height1); }
+        return (base0 <= base_) && ( (base_ < base1) || isEndOfSeq ) && (height0 <= height) && (height < height1); }
     size_t get_population() const {
         assert (is_coalmigr());
         return a.coal_migr_population; }
