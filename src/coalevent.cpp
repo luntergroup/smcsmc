@@ -1,11 +1,11 @@
 /*
- * smcsmc is short for particle filters for ancestral recombination graphs. 
- * This is a free software for demographic inference from genome data with particle filters. 
- * 
+ * smcsmc is short for particle filters for ancestral recombination graphs.
+ * This is a free software for demographic inference from genome data with particle filters.
+ *
  * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
- * 
+ *
  * This file is part of smcsmc.
- * 
+ *
  * smcsmc is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -33,18 +33,18 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
   if (is_recomb() != e.is_recomb()) return false; // type of records must match
   if (is_recomb()) {
     if (start_height == e.start_height &&
-	    end_height == e.end_height &&
-	    end_base_ == e.start_base_ &&
-	    weight == e.weight) { // add sequence-wise
+      end_height == e.end_height &&
+      end_base_ == e.start_base_ &&
+      weight == e.weight) { // add sequence-wise
       end_base_ = e.end_base_;
       event_data = e.event_data;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
     if (start_base_ == e.start_base_ &&
-	    end_base_ == e.end_base_ &&
-	    end_height == e.start_height &&
-	    weight == e.weight) { // add time-wise
+      end_base_ == e.end_base_ &&
+      end_height == e.start_height &&
+      weight == e.weight) { // add time-wise
       end_height = e.end_height;
       event_data = e.event_data;
       a.recomb_pos = e.a.recomb_pos;
@@ -52,9 +52,9 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
     }
   } else { // is_coalmigr
     if (end_base_ == e.end_base_ &&
-	    end_height == e.start_height &&
-	    a.coal_migr_population == e.a.coal_migr_population &&
-	    weight == e.weight) {
+      end_height == e.start_height &&
+      a.coal_migr_population == e.a.coal_migr_population &&
+      weight == e.weight) {
       end_height = e.end_height;
       event_data = e.event_data;
       return true;
@@ -76,7 +76,7 @@ bool EvolutionaryEvent::print_event() const {
 		}
 	} else {
 		outstream << "Event CoalMigr w=" << weight << " [" << end_base_ << "] pop=" << a.coal_migr_population << " t=" << std::setw(5) << start_height << "-" << std::setw(5) << end_height;
-		if (is_coal_event()) 
+		if (is_coal_event())
 			outstream << " (**COAL**) ";
 		else if (is_migr_event())
 			outstream << " (**MIGR** " << event_data << ") ";

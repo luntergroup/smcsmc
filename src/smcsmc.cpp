@@ -33,6 +33,7 @@
 int new_forest_counter    = 0; // DEBUG
 int delete_forest_counter = 0; // DEBUG
 int recombination_counter = 0; // DEBUG
+int recombination_event_called = 0;
 double recomb_opp = 0; // DEBUG
 
 /*!
@@ -246,6 +247,8 @@ void pfARG_core(PfParam &pfARG_para,
     Segfile->reset_data_to_first_entry();
 
     cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+    cout << "Actual recombination recorder called "<<recombination_event_called<<endl;// DEBUG
+
     //cout.precision(15);
     cout << "Actual recomb op is "<<recomb_opp <<endl;
 

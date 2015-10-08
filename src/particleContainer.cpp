@@ -258,7 +258,7 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
 
     sample_count[sample_i] = 0;
     while (sample_i < N) {
-        dout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization);
+        dout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization) << " ? ";
         /* invariants: */
         assert( (cum_sum[interval_j] / cumsum_normalization) < u_j );
         assert( sample_i < N );

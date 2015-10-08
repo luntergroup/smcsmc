@@ -43,6 +43,7 @@
 extern int new_forest_counter;
 extern int delete_forest_counter;
 extern int recombination_counter; //DEBUG
+extern int recombination_event_called; //DEBUG
 
 struct TmrcaState {
     TmrcaState (double base, double tmrca) {
@@ -120,7 +121,7 @@ class ForestState : public Forest{
 
         // Members
         vector < EvolutionaryEvent* > eventTrees;
-        //vector <double> opportunity_y_s ; 
+        //vector <double> opportunity_y_s ;
         Node* trackLocalNode(Node *node) const;
 
         double site_where_weight_was_updated_;

@@ -1,11 +1,11 @@
 /*
- * smcsmc is short for particle filters for ancestral recombination graphs. 
- * This is a free software for demographic inference from genome data with particle filters. 
- * 
+ * smcsmc is short for particle filters for ancestral recombination graphs.
+ * This is a free software for demographic inference from genome data with particle filters.
+ *
  * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
- * 
+ *
  * This file is part of smcsmc.
- * 
+ *
  * smcsmc is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -31,19 +31,19 @@ using namespace std;
 #define PFARGPfParam
 
 /*!
- * \brief smcsmc parameters 
- */ 
+ * \brief smcsmc parameters
+ */
 class PfParam{
     #ifdef UNITTEST
     friend class TestParam;
     #endif
     friend class ParticleContainer;
     public:
-        
+
         // Constructors and Destructors
-        PfParam(int argc, char *argv[]);            
+        PfParam(int argc, char *argv[]);
         ~PfParam();
-        
+
         //
         // Methods
         //
@@ -52,16 +52,16 @@ class PfParam{
         void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight );
 
         // ------------------------------------------------------------------
-        // PfParameters 
-        // ------------------------------------------------------------------                         
+        // PfParameters
+        // ------------------------------------------------------------------
         size_t N;            /*!< \brief Number of particles */
         int    EM_steps;     /*!< \brief Number of EM iterations */
         double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
 
         // ------------------------------------------------------------------
-        // Action 
+        // Action
         // ------------------------------------------------------------------
-        double lag;            
+        double lag;
         bool online_bool;
 
         bool heat_bool;
@@ -78,12 +78,12 @@ class PfParam{
         double default_loci_length;
 
         double ESS () const { return this-> ESS_;} // scaled between zero and one
-        
+
     private:
 
         //
         // Methods
-        //           
+        //
         void init();
         void insert_mutation_rate_in_scrm_input ( );
         void insert_recomb_rate_and_seqlen_in_scrm_input ( );
@@ -96,7 +96,7 @@ class PfParam{
 
 
         void nextArg(){
-            ++argc_i;            
+            ++argc_i;
             if (argc_i >= argc_) {
                 throw std::invalid_argument(std::string("Not enough parameters when parsing options: ") + argv_[argc_i-1]);
                 }
@@ -104,7 +104,7 @@ class PfParam{
 
         template<class T> T readNextInput() {
             this->nextArg();
-            
+
             char c;
             T input;
             std::stringstream ss(argv_[argc_i]);
@@ -114,7 +114,7 @@ class PfParam{
                 }
             return input;
             }
-            
+
         int readRange(int& second) {
 			this->nextArg();
 			char c;
@@ -136,24 +136,24 @@ class PfParam{
         char * const* argv_;
 
         // ------------------------------------------------------------------
-        // PfParameters 
-        // ------------------------------------------------------------------                         
+        // PfParameters
+        // ------------------------------------------------------------------
         bool   ESS_default_bool;
         string scrm_input;
         bool   EM_bool;
         double original_recombination_rate_;
-        
+
         // ------------------------------------------------------------------
-        // Default values 
-        // ------------------------------------------------------------------        
+        // Default values
+        // ------------------------------------------------------------------
         size_t default_nsam;
-        double default_mut_rate; 
-        double default_recomb_rate; 
+        double default_mut_rate;
+        double default_recomb_rate;
         double default_num_mut;
 
         // ------------------------------------------------------------------
-        // Input 
-        // ------------------------------------------------------------------        
+        // Input
+        // ------------------------------------------------------------------
         string pattern;     /*! population segement pattern */
         double top_t_;
         double ESS_;   // scaled between zero and one
@@ -166,7 +166,7 @@ class PfParam{
         // ------------------------------------------------------------------
         bool log_bool;
         bool rescue_bool;
-        string out_NAME_prefix;            
+        string out_NAME_prefix;
         string HIST_NAME;
         string Ne_NAME;
         string Count_NAME;
@@ -184,5 +184,5 @@ class PfParam{
         string scrmVersion;
         string compileTime;
 };
-    
+
 #endif
