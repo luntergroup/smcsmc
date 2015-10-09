@@ -69,8 +69,8 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
     //cout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
     double ESS_diff = ESSthreshold - this->ESS();
     if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
-        dout<<"ESS_diff = " << ESS_diff<<endl;
-        dout << " ### PROGRESS: ESS resampling" << endl;
+        resampledout<<" ESS_diff = " << ESS_diff<<endl;
+        resampledout << " ### PROGRESS: ESS resampling" << endl;
         this->systematic_resampling( weight_cum_sum, sample_count, num_state);
         this->resample(sample_count);
     }
@@ -85,19 +85,19 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
  * \ingroup group_resample
  */
 void ParticleContainer::resample(valarray<int> & sample_count){
-    dout << "Resampling is called" << endl;
-    dout << " ****************************** Start making list of new states ****************************** " << std::endl;
-    dout << " will make total of " << sample_count.sum()<<" particle states" << endl;
+    resampledout << "Resampling is called" << endl;
+    resampledout << " ****************************** Start making list of new states ****************************** " << std::endl;
+    resampledout << " will make total of " << sample_count.sum()<<" particle states" << endl;
     size_t number_of_particles = sample_count.size();
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
             // we need at least one copy of this particle; it keeps its own random generator
-            dout << " Keeping the " << old_state_index << "th particle" << endl;
+            resampledout << " Keeping the " << old_state_index << "th particle" << endl;
             this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
-                dout << " Making a copy of the " << old_state_index << "th particle" << endl;
+                resampledout << " Making a copy of the " << old_state_index << "th particle" << endl;
                 ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
                 // Resample the recombination position, and give particle its own event history
                 new_copy_state->resample_recombination_position();
@@ -105,7 +105,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 this->push(new_copy_state);
             }
         } else {
-            dout << " Deleting the " << old_state_index << "th particle" << endl;
+            resampledout << " Deleting the " << old_state_index << "th particle" << endl;
             delete this->particles[old_state_index];
         }
 
@@ -117,8 +117,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     }
     this -> particles.resize(number_of_particles);
 
-    dout<<this->particles.size()<<endl;
-    dout << " ****************************** End of making list of new particles ****************************** " << std::endl;
+    resampledout << "There are " << this->particles.size() << "particles in total." << endl;
+    resampledout << " ****************************** End of making list of new particles ****************************** " << std::endl;
     assert(this->check_state_orders());
     }
 

@@ -24,6 +24,12 @@
 #include"particle.hpp"
 #include"pfparam.hpp"
 
+#ifndef NDEBUG
+#define resampledout (std::cout << "    RESAMPLE ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define resampledout 0 && (std::cout << "    RESAMPLE ")
+#endif
 
 #ifndef PARTICLECONTAINER
 #define PARTICLECONTAINER
