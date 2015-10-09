@@ -35,6 +35,13 @@
 #define ForestStatedout 0 && (std::cout << "    ForestState ")
 #endif
 
+#ifndef NDEBUG
+#define newForestdout (std::cout << "    NEW FOREST ")
+#else
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define newForestdout 0 && (std::cout << "    NEW FOREST ")
+#endif
+
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
 #ifndef PARTICLE

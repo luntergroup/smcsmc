@@ -20,17 +20,6 @@ function test_smcsmc {
       exit 1
     fi
 
-	# Test for lagging utility
-	smcsmc $@ -seed $i -o tmp > /dev/null
-	smcsmc $@ -seed $i -o tmplag -lag 10000 > /dev/null
-	diff tmpHIST tmplagHIST
-	#diff tmpNe tmplagNe
-	if [ $? -ne 0 ]; then
-      echo ""
-      echo "Failed at random seed: " ${i}
-      echo "Lagging utility is not working, no data with/without lag failed."
-      exit 1
-    fi
   done
   echo " done."
 }

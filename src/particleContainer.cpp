@@ -66,7 +66,7 @@ ParticleContainer::ParticleContainer(Model* model,
  */
 void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state)
 {
-    //cout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
+    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
     double ESS_diff = ESSthreshold - this->ESS();
     if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
         resampledout<<" ESS_diff = " << ESS_diff<<endl;
@@ -85,7 +85,8 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
  * \ingroup group_resample
  */
 void ParticleContainer::resample(valarray<int> & sample_count){
-    resampledout << "Resampling is called" << endl;
+    dout << endl;
+    resampledout << " Recreate particles" << endl;
     resampledout << " ****************************** Start making list of new states ****************************** " << std::endl;
     resampledout << " will make total of " << sample_count.sum()<<" particle states" << endl;
     size_t number_of_particles = sample_count.size();
@@ -93,19 +94,30 @@ void ParticleContainer::resample(valarray<int> & sample_count){
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
             // we need at least one copy of this particle; it keeps its own random generator
-            resampledout << " Keeping the " << old_state_index << "th particle" << endl;
+            resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
             this->push(current_state); // The 'push' implementation sets the particle weight to 1
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
-                resampledout << " Making a copy of the " << old_state_index << "th particle" << endl;
+                resampledout << " Making a copy of the " << old_state_index << "th particle ... " ;
+                dout << std::endl;
+                dout << "current end position for particle current_state " << current_state->current_base() << endl;
+                for (size_t ii =0 ; ii < current_state ->rec_bases_.size(); ii++){
+                    dout << current_state ->rec_bases_[ii] << " ";
+                }
+                dout <<endl;
+
                 ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
+                dout <<"making particle finished" << endl; // DEBUG
+
                 // Resample the recombination position, and give particle its own event history
-                new_copy_state->resample_recombination_position();
+                if ( new_copy_state->current_base() < new_copy_state->next_base() ){ // Resample new recombination position if it has not hit the end of the sequence.
+                    new_copy_state->resample_recombination_position();
+                }
                 // The 'push' implementation sets the particle weight to 1
                 this->push(new_copy_state);
             }
         } else {
-            resampledout << " Deleting the " << old_state_index << "th particle" << endl;
+            resampledout << " Deleting the " << std::setw(5) << old_state_index << "th particle ... " ;
             delete this->particles[old_state_index];
         }
 
@@ -253,12 +265,13 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
     double u_j = this->random_generator()->sample() / N;
     double cumsum_normalization = cum_sum[cum_sum.size()-1];
 
-    dout << std::endl<<"systematic sampling procedure" << std::endl;
+    resampledout << "systematic sampling procedure on interval:" << std::endl;
+    resampledout << " ";
     for (size_t i=0;i<cum_sum.size();i++){dout <<  (cum_sum[i]/cumsum_normalization )<<"  ";}dout << std::endl;
 
     sample_count[sample_i] = 0;
     while (sample_i < N) {
-        dout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization) << " ? ";
+        resampledout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization) << " ? ";
         /* invariants: */
         assert( (cum_sum[interval_j] / cumsum_normalization) < u_j );
         assert( sample_i < N );
@@ -281,9 +294,10 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
         sample_count[ interval_j ] = 0;
         }
 
-    dout << "systematic sampling procedue finished with total sample count " << sample_count.sum()<<std::endl<<std::endl;
+    resampledout << "systematic sampling procedue finished with total sample count " << sample_count.sum()<<std::endl;
+    resampledout << "Sample counts: " ;
     for (size_t i=0;i<sample_count.size();i++){dout << sample_count[i]<<"  ";}  dout << std::endl;
-    assert(sample_count.sum()==sample_size);
+    assert(sample_count.sum() == sample_size);
     }
 
 

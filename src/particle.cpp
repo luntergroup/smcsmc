@@ -103,7 +103,7 @@ ForestState::~ForestState() {
         model_ = NULL;
     }
     //delete_forest_counter++;
-    dout << "A Foreststate is deleted" << endl;
+    dout << " Foreststate deleted" << endl;
 }
 
 
@@ -233,8 +233,14 @@ void ForestState::record_Recombevent_b4_extension (){
 void ForestState::resample_recombination_position(void) {
     // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
     this->resampleNextBase();
+    newForestdout << " after resampleNextBase rec_bases_ are" << endl;
+    for (size_t ii =0 ; ii < this ->rec_bases_.size(); ii++){
+        dout << this ->rec_bases_[ii] << " ";
+    }
+    newForestdout <<endl;
     // then, create private event records, in effect re-doing the work of record_Recombevent_b4_extension
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
+        newForestdout << "at epoch " << epoch <<endl;
         if (record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
@@ -243,10 +249,21 @@ void ForestState::resample_recombination_position(void) {
                 break;
             }
             do {
+                newForestdout << "make a copy of current event and modify the end_base member" <<endl;
                 // make a copy of current event and modify the end_base member
                 void* event_mem = Arena::allocate( epoch );
                 EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
+                newForestdout << " we are modifying event: " << endl;
+                //(*old_event).print_event();
+                //if ((*old_event).parent_){
+                    //dout << " whose parent is " <<endl;
+                    //(*old_event).parent_->print_event();
+                //} else {
+                    //dout << " this will start a new chain" <<endl;
+                //}
+                //cout << "new_event->end_base was at " <<new_event->end_base_ <<endl;
                 new_event->end_base_ = this->next_base();        // friend function access
+                //cout << "new_event->end_base is at " <<new_event->end_base_ <<endl;
                 // splice into event tree, and update pointers
                 new_event->add_leaf_to_tree( new_chain );
                 new_chain = &(new_event->parent_);              // friend function access
@@ -326,6 +343,7 @@ inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node
 
     // deal with the case that this node is a leaf node
     if ( node->first_child() == NULL ) {
+      assert ( node->mutation_state() != 2);
       assert ( node->second_child() == NULL );          // if a node has no first child, it won't have a second child
       assert ( node->in_sample() );                     // we only traverse the local tree, therefore the leaf node must be in our sample
       part_lik[0] = node->mutation_state() == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0

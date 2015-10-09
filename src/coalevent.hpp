@@ -189,7 +189,7 @@ public:
     bool decrease_refcount_is_zero() {
         assert( ref_counter > 0 );
         ref_counter--;
-        return (ref_counter == 0); }
+        return (ref_counter == 0); } // Return TRUE, if there is nothing pointing here.
     void increase_refcount() { ref_counter++; }
     bool print_event() const;
     bool append_event( const EvolutionaryEvent& e );
@@ -207,10 +207,19 @@ public:
     /* Adds (newly made, refcount==1) this to tree */
     void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
         if (parent_) {
+            dout <<"we are here"<<std::endl;
+            dout << "(*eventptr_location)->ref_counter " <<(*eventptr_location)->ref_counter <<std::endl;
             // this is a tree; replace existing tree off eventptr_location with this
-            bool lost_event = !(*eventptr_location)->decrease_refcount_is_zero();
-            assert (!lost_event);  // *eventptr_location should be referenced elsewhere
-            _unused(lost_event);
+            dout << "            bool lost_event = !(*eventptr_location)->decrease_refcount_is_zero(); "<< std::endl;
+            bool eventIsLost = (*eventptr_location)->decrease_refcount_is_zero();
+            // decrease_refcount_is_zero returns TRUE, when ref count is zero, in which case, eventIsLost is TRUE
+            // decrease_refcount_is_zero returns FALSE, when ref count is not zero, in which case, eventIsLost is FALSE
+
+            // eventIsLost should always be false! which means ref count should never be zero!
+            // assertion fails, when eventIsLost is TRUE, i.e. the ref_count is zero.
+            assert (!eventIsLost);  // *eventptr_location should be referenced elsewhere
+
+            _unused(eventIsLost);
         } else {
             // this is a single node; splice into existing tree
             parent_ = *eventptr_location;

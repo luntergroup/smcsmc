@@ -9,13 +9,13 @@ distdir = $(PACKAGE)-$(VERSION)
 bin_PROGRAMS = smcsmc smcsmc_dbg
 check_PROGRAMS = unittests  smcsmc_prof scrm
 
-TESTS = unittests 
+TESTS = unittests
 
-PROG = SMCSMC 
+PROG = SMCSMC
 
-.PHONY: generate_vcf$(EXEEXT) 
-generate_vcf$(EXEEXT): 
-	test -s ./sim-1Samples2msdata1.vcf  || ./unittest/pop_struct.py sim-1 2 1	
+.PHONY: generate_vcf$(EXEEXT)
+generate_vcf$(EXEEXT):
+	test -s ./sim-1Samples2msdata1.vcf  || ./unittest/pop_struct.py sim-1 2 1
 	test -s ./sim-1Samples2msdata1.rgvcf || ./unittest/gvcf2rgvcf.py -i sim-1Samples2msdata1.gvcf -seqlen 30000000
 	test -s sim-1Samples4msdata1_edited.gvcf || { ./unittest/pop_struct.py sim-1 4 1 ; \
 	head -50 sim-1Samples4msdata1.vcf > sim-1Samples4msdata1_first50_lines.vcf ; \
@@ -25,8 +25,8 @@ generate_vcf$(EXEEXT):
 
 
 ##.PHONY: exec_unittests
-##exec_unittests: unittests 
-##./unittests 
+##exec_unittests: unittests
+##./unittests
 
 common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
 
@@ -46,10 +46,10 @@ smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
 # Profiler flags
 smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
-smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp 
+smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp
 
 # Tester flags
-unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/
+unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random
 unittests_LDADD          = -lcppunit -ldl
 
 ##export SMCSMCROOT=src
@@ -88,7 +88,7 @@ scrm_src = src/scrm/src/node.cc \
 debug_src = src/scrm/src/random/constant_generator.cc \
             src/scrm/src/random/constant_generator.h \
             src/debug/particle-debug.cpp \
-            src/debug/count-debug.cpp 
+            src/debug/count-debug.cpp
 
 smcsmc_src = src/coalevent.cpp \
              src/particle.cpp \
@@ -110,7 +110,7 @@ omp_src = src/particleContainer_extra_omp.cpp \
 
 
 shared_SOURCES = $(smcsmc_src) $(scrm_src)
-smcsmc_shared_SOURCES = $(shared_SOURCES) 
+smcsmc_shared_SOURCES = $(shared_SOURCES)
 
 # Binary sources
 smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
@@ -120,16 +120,16 @@ smcsmc_omp_SOURCES      = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(o
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
 # Debugger sources
-smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src) 
+smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
 smcsmcRECOMBOFF_dbg_SOURCES = $(smcsmc_dbg_SOURCES)
 
 # Profiler sources
-smcsmc_prof_SOURCES = $(smcsmc_SOURCES)  
-smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)  
+smcsmc_prof_SOURCES = $(smcsmc_SOURCES)
+smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
 
 #smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
 #smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
-#smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp 
+#smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp
 
 # Tester sources
 #test_src = tests/unittest/test_pattern.cpp \
@@ -141,7 +141,7 @@ smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
 
 test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_FroestState.cpp
-		
+
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
 
 # -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
@@ -155,9 +155,9 @@ unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
                   #src/scrm/src/summary_statistics/newick_tree.h \
                   #src/scrm/src/summary_statistics/frequency_spectrum.h \
                   #src/scrm/src/summary_statistics/seg_sites.h \
-                  #src/scrm/src/summary_statistics/tmrca.h 
+                  #src/scrm/src/summary_statistics/tmrca.h
 
-.PHONY: clean-local                  
-clean-local: 
+.PHONY: clean-local
+clean-local:
 	test -z "unittest/sim-1Samples2msdata1.seg" || rm -f unittest/sim-1*
 
