@@ -9,7 +9,7 @@ compiler:
 before_install:
   - echo $LANG
   - echo $LC_ALL
-  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update -qq; sudo apt-get install -qq git-core libcppunit-dev graphviz valgrind r-base-core; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then sudo apt-get update -qq; sudo apt-get install -qq git-core libcppunit-dev graphviz valgrind r-base-core; GPP=g++-4.8; fi
   - if [ $TRAVIS_OS_NAME == osx ]; then brew update && brew install llvm cppunit graphviz valgrind && brew link --force llvm; fi
 before_script:
   - ./bootstrap
@@ -19,7 +19,6 @@ script:
   - make check
   - cd tests;
   - ./test_binary_sample_size.sh
-  - ./test_binaries11_20.sh
   - ./test_binaries1_10.sh
   #- ./check_smcsmcSCRM_vs_scrm.sh;
   #- if [ $TRAVIS_OS_NAME == osx ]; then sed -e "s/end=20/end=3/g" check_smcsmcRECOMBOFF.sh ; > check_smcsmcRECOMBOFF_osx.sh ; chmod a+x check_smcsmcRECOMBOFF_osx.sh; mv check_smcsmcRECOMBOFF_osx.sh ./check_smcsmcRECOMBOFF.sh; fi
