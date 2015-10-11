@@ -35,6 +35,8 @@ int delete_forest_counter = 0; // DEBUG
 int recombination_counter = 0; // DEBUG
 int recombination_event_called = 0;
 double recomb_opp = 0; // DEBUG
+int node_created = 0;
+int node_deleted = 0;
 
 /*!
  * Global variable for the memory arena
@@ -59,20 +61,21 @@ int main(int argc, char *argv[]){
         /*! Extract pfARG parameters */
         PfParam pfARG_para( argc, argv );
 
-        /*! Initialize memory arena */
-        Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
-
         /*!  INITIALIZE CountModel */
         CountModel *countNe = new CountModel( pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
 
         /*! EM step */
         for (int i = 0; i <= pfARG_para.EM_steps; i++) {
+
+        /*! Initialize memory arena */
+        Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
             cout << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             cout << "End of EM step " << i << endl;
+        delete arena;
         }
 
         pfARG_para.appending_Ne_file( );
@@ -81,7 +84,6 @@ int main(int argc, char *argv[]){
 
         /*! Clean up */
         delete countNe;
-        delete arena;
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
     }
@@ -248,7 +250,8 @@ void pfARG_core(PfParam &pfARG_para,
 
     cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
     cout << "Actual recombination recorder called "<<recombination_event_called<<endl;// DEBUG
-
+    cout << "Actual node_created "<<node_created<<endl;// DEBUG
+    cout << "Actual node_deleted "<<node_deleted<<endl;// DEBUG
     //cout.precision(15);
     cout << "Actual recomb op is "<<recomb_opp <<endl;
 

@@ -17,7 +17,8 @@ int new_forest_counter = 0;
 int delete_forest_counter = 0;
 int recombination_counter = 0; // DEBUG
 double recomb_opp = 0; // DEBUG
-
+int node_created = 0;
+int node_deleted = 0;
 /*!
  * Global variable for the memory arena
  */

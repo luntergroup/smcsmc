@@ -42,7 +42,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
         random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
         model_ = new Model( *model_ );
     }
-    //new_forest_counter++; // DEBUG
+    new_forest_counter++; // DEBUG
 }
 
 
@@ -68,7 +68,7 @@ ForestState::ForestState( const ForestState & copied_state )
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
     }
     dout << "current particle's weight is " << this->weight()<<endl;
-    //new_forest_counter++;  // DEBUG
+    new_forest_counter++;  // DEBUG
 }
 
 
@@ -102,7 +102,10 @@ ForestState::~ForestState() {
         random_generator_ = NULL;
         model_ = NULL;
     }
-    //delete_forest_counter++;
+    delete_forest_counter++;
+    TmrcaHistory.clear();
+    this->contemporaries_.clear();
+    this->rec_bases_.clear();
     dout << " Foreststate deleted" << endl;
 }
 
