@@ -9,7 +9,7 @@ begin=1
 end=1
 
 echo "Testing the program for different number of taxa  "
-for size in $(seq 2 8);do
+for size in $(seq 2 7);do
  test_smcsmc -nsam ${size} -Np 1000 -r 130 1000000 || exit 1
 done
 echo ""
