@@ -6,8 +6,11 @@ if [ $TRAVIS_OS_NAME == linux ]; then
     sudo apt-get install -qq git-core libcppunit-dev graphviz valgrind r-base-core
 
     if [ $CXX == g++ ]; then
-        sudo apt-get install -qq g++-4.8
-        export CXX="g++-4.8" CC="gcc-4.8"
+        #sudo apt-get install -qq g++-4.8
+        export CC="gcc-4.8";
+        export CXX="g++-4.8";
+        export LINK="gcc-4.8";
+        export LINKXX="g++-4.8";
     fi
 
 fi

@@ -16,7 +16,7 @@ echo ""
 
 echo "Testing -EM "
 for size in $(seq 2 6);do
- test_smcsmc -nsam ${size} -Np 1000 -r 130 1000000 -EM 2 || exit 1
+ test_smcsmc -nsam ${size} -Np 100 -r 130 1000000 -EM 2 || exit 1
 done
 echo ""
 
