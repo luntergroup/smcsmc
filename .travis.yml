@@ -1,11 +1,11 @@
 language: cpp
 os:
-  - osx
+  #- osx
   - linux
 
 compiler:
   - gcc
-  - clang
+  #- clang
 
 addons:
   apt:
@@ -17,6 +17,8 @@ addons:
 
 before_install:
   - .travis/before_install.sh
+  - echo $CXX
+  - echo $CC
 before_script:
   - ./bootstrap
 
