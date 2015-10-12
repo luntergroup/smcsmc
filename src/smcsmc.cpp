@@ -61,6 +61,9 @@ int main(int argc, char *argv[]){
         /*! Extract pfARG parameters */
         PfParam pfARG_para( argc, argv );
 
+        /*! Initialize memory arena */
+        Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
+
         /*!  INITIALIZE CountModel */
         CountModel *countNe = new CountModel( pfARG_para.model , pfARG_para.lag);
         pfARG_para.appending_Ne_file( true ); // Append initial values to History file
@@ -68,14 +71,11 @@ int main(int argc, char *argv[]){
         /*! EM step */
         for (int i = 0; i <= pfARG_para.EM_steps; i++) {
 
-        /*! Initialize memory arena */
-        Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
             cout << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             cout << "End of EM step " << i << endl;
-        delete arena;
         }
 
         pfARG_para.appending_Ne_file( );
@@ -84,6 +84,7 @@ int main(int argc, char *argv[]){
 
         /*! Clean up */
         delete countNe;
+        delete arena;
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
         return exit_success;
     }
@@ -248,11 +249,10 @@ void pfARG_core(PfParam &pfARG_para,
     current_states.clear(); // This line is sufficient to clear the memory.
     Segfile->reset_data_to_first_entry();
 
-    cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-    cout << "Actual recombination recorder called "<<recombination_event_called<<endl;// DEBUG
-    cout << "Actual node_created "<<node_created<<endl;// DEBUG
-    cout << "Actual node_deleted "<<node_deleted<<endl;// DEBUG
-    //cout.precision(15);
-    cout << "Actual recomb op is "<<recomb_opp <<endl;
+    dout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+    dout << "Actual recombination recorder called "<<recombination_event_called<<endl;// DEBUG
+    dout << "Actual node_created "<<node_created<<endl;// DEBUG
+    dout << "Actual node_deleted "<<node_deleted<<endl;// DEBUG
+    dout << "Actual recomb op is "<<recomb_opp <<endl;
 
 } // End of void pfARG_core( ... )

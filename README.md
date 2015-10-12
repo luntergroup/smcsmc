@@ -1,5 +1,13 @@
 Record recombination opportunity before extend to the new genealogy
 
+##Package status
+
+package  | Build Status
+-------- | -----------------
+smcsmc   | [![Build Status](https://magnum.travis-ci.com/luntergroup/smcsmc.svg?branch=master)](https://magnum.travis-ci.com/luntergroup/smcsmc)
+scrm     | [![Build Status](https://travis-ci.org/luntergroup/scrm_jz_stable_branch.svg?branch=smcsmcSCRM)](https://travis-ci.org/luntergroup/scrm_jz_stable_branch)
+
+
 # RECOMBINATION CALCULATION IS CURRENTLY OFF ...
 build-dep libcppunit-dev
 
@@ -14,7 +22,7 @@ make
 
 On Mac OS:
 ```bash
-port install autoconf autoconf-archive doxygen cppunit 
+port install autoconf autoconf-archive doxygen cppunit
 ./bootstrap
 make
 ```
@@ -32,7 +40,7 @@ $ git clone -b clang-omp https://github.com/clang-omp/clang llvm/tools/clang
 
 29-Jun-14
 
-clang is used by mac by default, if want to use multithreading version, should suggest to use the gcc compiler. 
+clang is used by mac by default, if want to use multithreading version, should suggest to use the gcc compiler.
 
 no longer requires boost ...
 
