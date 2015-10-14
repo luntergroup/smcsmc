@@ -117,7 +117,7 @@ PfParam::~PfParam(){
     delete this->Segfile;
     //delete this->model;
     delete this->SCRMparam;
-    this->rg->clearFastFunc();
+    //this->rg->clearFastFunc();
     delete this->rg;
     }
 

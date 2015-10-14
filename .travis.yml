@@ -1,11 +1,11 @@
 language: cpp
 os:
-  #- osx
+  - osx
   - linux
 
 compiler:
   - gcc
-  #- clang
+  - clang
 
 addons:
   apt:
@@ -28,7 +28,6 @@ script:
   - make check
   - cd tests;
   - ./test_binary_sample_size.sh
-  - ./test_binaries1_10.sh
   #- ./check_smcsmcSCRM_vs_scrm.sh;
   #- if [ $TRAVIS_OS_NAME == osx ]; then sed -e "s/end=20/end=3/g" check_smcsmcRECOMBOFF.sh ; > check_smcsmcRECOMBOFF_osx.sh ; chmod a+x check_smcsmcRECOMBOFF_osx.sh; mv check_smcsmcRECOMBOFF_osx.sh ./check_smcsmcRECOMBOFF.sh; fi
   #- ./check_smcsmcRECOMBOFF.sh;

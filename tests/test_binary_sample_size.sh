@@ -6,7 +6,7 @@
 source test_binaries.src
 
 begin=1
-end=1
+end=10
 
 echo "Testing the program for different number of taxa  "
 for size in $(seq 2 7);do
