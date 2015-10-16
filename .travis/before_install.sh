@@ -7,7 +7,7 @@ if [ $TRAVIS_OS_NAME = linux ]; then
     sudo apt-get install -qq git-core libcppunit-dev graphviz valgrind r-base-core
 fi
 
-if [ $CXX = "g++" ]; then
+if [[ $CXX = "g++" && $TRAVIS_OS_NAME = linux ]]; then
     echo "change g++"
     #sudo apt-get install -qq g++-4.8
     export CC="gcc-4.8";
