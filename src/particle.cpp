@@ -211,7 +211,7 @@ void ForestState::record_Recombevent_b4_extension (){
     ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
 
     // iterate over time intervals (but do NOT prune branches at this stage)
-    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0), false); ti.good(); ++ti) {
         ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
         dout << ", with " << ti.contemporaries_->numberOfLocalContemporaries() << " local Contemporaries, " << ti.contemporaries_->numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
