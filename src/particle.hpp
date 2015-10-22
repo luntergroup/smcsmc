@@ -139,5 +139,6 @@ class ForestState : public Forest{
 
         // Debugging tools
         std::string newick(Node *node) ;
+
 };
 #endif
