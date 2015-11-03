@@ -137,6 +137,38 @@ class ForestState : public Forest{
         bool owning_model_and_random_generator;
         const vector < int >& record_event_in_epoch;
 
+
+	//// biased sampling
+        // below should be model parameters
+	bool biased_sampling = true;
+	double bias_height_ = 20000;
+	double bias_ratio_ = 2;
+
+	double importance_weight_predata_ = 1; //incremental reset whenever weights are updated
+	double importance_weight_predata_survival_ = 1; //used for Gerton's process
+
+	double bias_height() const {return bias_height_;}
+	double bias_ratio() const {return bias_ratio_;}
+	double importance_weight_predata() const {return importance_weight_predata_;}
+	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
+	void modify_importance_weight_predata(double adjustment) {importance_weight_predata_ *= adjustment;}
+
+	void IS_positional_adjustor(double x, double rate_trans, double rate_prop);
+	void IS_TreePoint_adjustor( TreePoint tp );
+
+	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1) const;
+	void sampleBiasedRecSeqPosition(bool recordEvents);
+
+	double getWeightedLocalTreeLength() const;
+	double getWeightedLengthBelow( Node* node ) const;
+	double WeightedBranchLengthAbove( Node* node ) const;
+	double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
+
+	// below are overloaded
+	void sampleRecSeqPosition( bool recordEvents = false );
+	TreePoint samplePoint(Node* node = NULL, double length_left = -1); //removed const as iw is adjusted
+
+
         // Debugging tools
         std::string newick(Node *node) ;
 

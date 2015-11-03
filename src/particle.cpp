@@ -34,6 +34,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
              record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     this->setParticleWeight( 1.0 );
+    this->reset_importance_weight_predata();
     this->setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
@@ -53,6 +54,8 @@ ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
     setParticleWeight( copied_state.weight() );
+    this->reset_importance_weight_predata();
+    this->modify_importance_weight_predata(copied_state.importance_weight_predata());
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     copyEventContainers ( copied_state );
     this->current_rec_ = copied_state.current_rec_;
@@ -498,7 +501,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     }
     assert (updated_to == extend_to);
     if (updateWeight) {
-        this->setParticleWeight( this->weight() * likelihood );
+        this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
+        this->reset_importance_weight_predata();
     }
     this->setSiteWhereWeightWasUpdated( extend_to );
     return likelihood;
@@ -539,3 +543,313 @@ std::string ForestState::newick(Node *node) {
     //return "("+this->newick(left)+":"+t1_strm.str()+","+ this->newick(right)+":"+t2_strm.str() +")";
   //}
 }
+
+
+//// biased sampling
+
+/**
+ * Function for calculating the weighted branch length above a node.
+ * The portion of the branch below bias_height is weighted by bias_ratio,
+ * the portion of the branch above bias_height is weighted by 1.
+ * 
+ *  \return the weighted length of the branch above node.
+ */
+double ForestState::WeightedBranchLengthAbove( Node* node ) const {
+
+    if ( node->height() >= bias_height() ) {
+        return node->height_above();
+    } else if ( node->parent_height() < bias_height() ) {
+        return node->height_above() * bias_ratio();
+    } else {
+        assert( node->height() + node->height_above() >= bias_height() );
+        return (bias_height() - node->height()) * bias_ratio() +
+               (node->parent_height() - bias_height());
+    }
+}
+
+/**
+ * Function to get the weighted tree length for the purpose of 'uniformly'
+ * sampling on the tree accounting for the bias.
+ *
+ * Look through the non-root nodes and account for WeightedBranchLengthAbove
+ *
+ * \return the sum of weighted branches
+ */
+double ForestState::getWeightedLocalTreeLength() const {
+    return getWeightedLengthBelow( local_root() );
+}
+
+/**
+ * Function to recursively calculate the weighted length below a node.
+ *
+ * \return the sum of weighted branches below node
+ */
+ 
+double ForestState::getWeightedLengthBelow( Node* node ) const {
+    double weighted_length = 0;
+
+    // for all children, add length between node and child, and length below child
+
+    if ( node->first_child() != NULL && node->first_child()->samples_below() > 0 ) {
+        // add length above child
+	weighted_length += WeightedBranchLengthAbove(node->first_child());
+	// add length below child
+	weighted_length += getWeightedLengthBelow(node->first_child());
+    }
+    
+    if ( node->second_child() !=NULL && node->second_child()->samples_below() > 0 ) {
+	// add length above child
+	weighted_length += WeightedBranchLengthAbove(node->second_child());
+	// add length below child
+	weighted_length += getWeightedLengthBelow(node->second_child());
+    }
+    
+    return weighted_length;
+}
+
+/**
+ * Function for converting a node and the weighted (sampled) length above
+ * to an absolute height.
+ *
+ * \return a standardized height
+ */
+double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
+    assert( length_left <= WeightedBranchLengthAbove( node ) );
+    if ( node->height() >= bias_height() ) {
+	// entire branch is above bias_height
+	assert( node->parent_height() > bias_height() );
+        return node->height() + length_left;
+    } else if ( node->parent_height() < bias_height() ) {
+	// entire branch is below bias_height
+	assert( node->height() < bias_height() );
+	return node->height() + ( length_left/bias_ratio() );
+    } else {
+        // the branch spans the bias_height, so we need to do some standardization
+	// we measure from the node up to stay consistent with scrm TreePoints
+        if ( length_left < ((bias_height() - node->height()) * bias_ratio()) ) {
+            return node->height() + length_left/bias_ratio();
+	} else {
+            length_left -= (bias_height() - node->height()) * bias_ratio();
+	    return bias_height() + length_left;
+	}
+    }
+}
+
+
+/**
+ * Function for calculating the importance sampling adjustor once we've
+ * sampled a seq position from our biased sampler.
+ *
+ * \return the importance weight adjustor needed to correct for biased sampling along seq.
+ * 
+ */
+void ForestState::IS_positional_adjustor(double x, double rate_trans, double rate_prop) {
+    double transition_prob = rate_trans * std::exp( - rate_trans * x );
+    double proposal_prob = rate_prop * std::exp( - rate_prop * x );
+    this->modify_importance_weight_predata( transition_prob/proposal_prob );
+}
+
+void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
+
+    if (rec_point.height() <= bias_height() ) {
+        // change IWP for lower tree choice
+	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
+				( bias_ratio() * getLocalTreeLength() ));
+
+    } else {
+        // change IWP for upper tree choice
+	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
+				getLocalTreeLength() );
+    }
+}
+
+
+/**
+ * Function for sampling the sequence position of the next recombination event
+ * under a biased sampling procedure.
+ *
+ * want to change importance weight member, rather than returning below
+ * \return the importance weight adjustor needed to correct for biased sampling.
+ * 
+ */
+void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
+    double length = random_generator()->sampleExpoLimit(model().recombination_rate() * getWeightedLocalTreeLength(),
+                                                      model().getNextSequencePosition() - current_base());
+  if (length == -1) {
+    // No recombination until the model changes
+    set_next_base(model().getNextSequencePosition());
+    if (next_base() < model().loci_length()) writable_model()->increaseSequencePosition();
+  } else {
+    // Recombination in the sequence segment
+    set_next_base(current_base() + length);
+  }
+
+  assert(next_base() > current_base());
+  assert(next_base() <= model().loci_length());
+
+  this->IS_positional_adjustor(length, getLocalTreeLength() * model().recombination_rate(),
+         getWeightedLocalTreeLength() * model().recombination_rate());
+}
+
+
+/**
+ * Uniformly samples a TreePoint on the local tree.
+ *
+ * Its arguments are meant to be used only when the function iteratively calls
+ * itself. Just call it without any arguments if you want to sample a TreePoint.
+ *
+ * The function first samples a part of the total height of the tree and then
+ * goes down from the root, deciding at each node if that point is to the left
+ * or right, which should give us an O(log(#nodes)) algorithm.
+ *
+ * I checked the distribution of this function in multiple cases. -Paul
+ *
+ * \param node The current position in the tree when the functions goes down
+ *             iteratively.
+ *
+ * \param length_left The length that is left until we encounter the sampled
+ *              length.
+ *
+ * \return The sampled point on the tree.
+ */
+TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) const {
+
+    assert(biased_sampling);
+    
+  if (node == NULL) {
+    // Called without arguments => initialization
+    assert( this->checkTreeLength() );
+
+    node = this->local_root();
+    length_left = random_generator()->sample() * getWeightedLocalTreeLength();
+    assert( 0 < length_left && length_left < getWeightedLocalTreeLength() );
+  }
+
+  assert( node->local() || node == this->local_root() );
+  assert( length_left >= 0 );
+  assert( length_left < (getWeightedLengthBelow(node) + WeightedBranchLengthAbove(node)) );
+
+  if ( node != this->local_root() ) {
+    if ( length_left < WeightedBranchLengthAbove(node) ) {
+      assert( node->local() );
+      return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
+    }
+
+    length_left -= WeightedBranchLengthAbove(node);
+    assert( length_left >= 0 );
+  }
+
+  // At this point, we should have at least one local child
+  assert( node->first_child() != NULL );
+  assert( node->first_child()->local() || node->second_child()->local() );
+
+  // If we have only one local child, then give it the full length we have left.
+  if ( !node->first_child()->local() ) {
+    return sampleBiasedPoint(node->second_child(), length_left);
+  }
+  if ( node->second_child() == NULL || !node->second_child()->local() ) {
+    return sampleBiasedPoint(node->first_child(), length_left);
+  }
+
+  // If we have two local children, the look if we should go down left or right.
+  double tmp = WeightedBranchLengthAbove(node->first_child()) + getWeightedLengthBelow(node->first_child());
+  if ( length_left <= tmp )
+    return sampleBiasedPoint(node->first_child(), length_left);
+  else
+    return sampleBiasedPoint(node->second_child(), length_left - tmp);
+}
+
+/**
+ * Function for sampling the sequence position of the next recombination event 
+ * 
+ */
+ 
+void ForestState::sampleRecSeqPosition( bool recordEvents ) {
+
+  if( biased_sampling ) {
+
+    this->sampleBiasedRecSeqPosition( recordEvents );
+    return;
+  }
+
+  this->sampleNextBase();
+
+  assert( this->printTree() );
+  this->calcSegmentSumStats();
+    
+}
+
+/**
+ * Uniformly samples a TreePoint on the local tree.
+ *
+ * Its arguments are meant to be used only when the function iteratively calls
+ * itself. Just call it without any arguments if you want to sample a TreePoint.
+ *
+ * The function first samples a part of the total height of the tree and then
+ * goes down from the root, deciding at each node if that point is to the left
+ * or right, which should give us an O(log(#nodes)) algorithm.
+ *
+ * I checked the distribution of this function in multiple cases. -Paul
+ *
+ * \param node The current position in the tree when the functions goes down
+ *             iteratively.
+ *
+ * \param length_left The length that is left until we encounter the sampled
+ *              length.
+ *
+ * \return The sampled point on the tree.
+ */
+TreePoint ForestState::samplePoint(Node* node, double length_left) {
+
+  if ( biased_sampling ){
+ 
+    assert( node == NULL && length_left == -1);
+    TreePoint tp = this->sampleBiasedPoint();
+    this->IS_TreePoint_adjustor( tp ); // this is not in sampleBiasedPoint bc of recursive nature
+    return tp;
+  }
+
+    
+  if (node == NULL) {
+    // Called without arguments => initialization
+    assert( this->checkTreeLength() );
+
+    node = this->local_root();
+    length_left = random_generator()->sample() * getLocalTreeLength();
+    assert( 0 < length_left && length_left < getLocalTreeLength() );
+  }
+
+  assert( node->local() || node == this->local_root() );
+  assert( length_left >= 0 );
+  assert( length_left < (node->length_below() + node->height_above()) );
+
+  if ( node != this->local_root() ) {
+    if ( length_left < node->height_above() ) {
+      assert( node->local() );
+      return TreePoint(node, length_left, true);
+    }
+
+    length_left -= node->height_above();
+    assert( length_left >= 0 );
+  }
+
+  // At this point, we should have at least one local child
+  assert( node->first_child() != NULL );
+  assert( node->first_child()->local() || node->second_child()->local() );
+
+  // If we have only one local child, then give it the full length we have left.
+  if ( !node->first_child()->local() ) {
+    return samplePoint(node->second_child(), length_left);
+  }
+  if ( node->second_child() == NULL || !node->second_child()->local() ) {
+    return samplePoint(node->first_child(), length_left);
+  }
+
+  // If we have two local children, the look if we should go down left or right.
+  double tmp = node->first_child()->height_above() + node->first_child()->length_below();
+  if ( length_left <= tmp )
+    return samplePoint(node->first_child(), length_left);
+  else
+    return samplePoint(node->second_child(), length_left - tmp);
+}
+

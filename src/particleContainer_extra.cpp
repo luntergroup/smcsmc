@@ -55,7 +55,10 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, vector <int
         double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( );
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
-        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() * likelihood_of_haplotypes_at_tips);
+        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() 
+                                                      * likelihood_of_haplotypes_at_tips
+                                                      * this->particles[particle_i]->importance_weight_predata());
+        this->particles[particle_i]->reset_importance_weight_predata();
 		dout << "particle " <<  particle_i<<" done" << endl;
         }
     

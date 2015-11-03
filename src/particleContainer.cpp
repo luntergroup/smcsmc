@@ -170,6 +170,17 @@ void ParticleContainer::clear(){
 
 
 /*!
+ * Append new ForestState to the end of the ParticleContainer with weight.
+ */
+void ParticleContainer::push(ForestState* state, double weight){
+    state->setParticleWeight(weight);
+    assert( state->importance_weight_predata() == 1);
+    // should only be adding a particle when its iw has been factored into the weight
+    this->particles.push_back(state);
+    }
+
+
+/*!
  * @ingroup group_pf_resample
  * @ingroup group_pf_update
  * \brief Calculate the effective sample size, and update the cumulative weight of the particles
@@ -209,6 +220,7 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 void ParticleContainer::normalize_probability(){
     double total_probability = 0;
     for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ){
+        assert( this->particles[particle_i]->importance_weight_predata() == 1);
         total_probability += this->particles[particle_i]->weight();
         }
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ){
@@ -391,6 +403,7 @@ void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
         //this->particles[i]->setParticleWeight( this->random_generator()->sample() );
         this->particles[i]->setParticleWeight( this->particles[i]->random_generator()->sample() );
+        this->particles[i]->reset_importance_weight_predata();
         }
     }
 
