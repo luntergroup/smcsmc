@@ -556,14 +556,14 @@ std::string ForestState::newick(Node *node) {
  */
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
 
-    if ( node->height() >= bias_height() ) {
+    if ( node->height() >= model().bias_height() ) {
         return node->height_above();
-    } else if ( node->parent_height() < bias_height() ) {
-        return node->height_above() * bias_ratio();
+    } else if ( node->parent_height() < model().bias_height() ) {
+        return node->height_above() * model().bias_ratio();
     } else {
-        assert( node->height() + node->height_above() >= bias_height() );
-        return (bias_height() - node->height()) * bias_ratio() +
-               (node->parent_height() - bias_height());
+        assert( node->height() + node->height_above() >= model().bias_height() );
+        return (model().bias_height() - node->height()) * model().bias_ratio() +
+               (node->parent_height() - model().bias_height());
     }
 }
 
@@ -615,22 +615,22 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
  */
 double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
     assert( length_left <= WeightedBranchLengthAbove( node ) );
-    if ( node->height() >= bias_height() ) {
+    if ( node->height() >= model().bias_height() ) {
 	// entire branch is above bias_height
-	assert( node->parent_height() > bias_height() );
+	assert( node->parent_height() > model().bias_height() );
         return node->height() + length_left;
-    } else if ( node->parent_height() < bias_height() ) {
+    } else if ( node->parent_height() < model().bias_height() ) {
 	// entire branch is below bias_height
-	assert( node->height() < bias_height() );
-	return node->height() + ( length_left/bias_ratio() );
+	assert( node->height() < model().bias_height() );
+	return node->height() + ( length_left/model().bias_ratio() );
     } else {
         // the branch spans the bias_height, so we need to do some standardization
 	// we measure from the node up to stay consistent with scrm TreePoints
-        if ( length_left < ((bias_height() - node->height()) * bias_ratio()) ) {
-            return node->height() + length_left/bias_ratio();
+        if ( length_left < ((model().bias_height() - node->height()) * model().bias_ratio()) ) {
+            return node->height() + length_left/model().bias_ratio();
 	} else {
-            length_left -= (bias_height() - node->height()) * bias_ratio();
-	    return bias_height() + length_left;
+            length_left -= (model().bias_height() - node->height()) * model().bias_ratio();
+	    return model().bias_height() + length_left;
 	}
     }
 }
@@ -651,10 +651,10 @@ void ForestState::IS_positional_adjustor(double x, double rate_trans, double rat
 
 void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 
-    if (rec_point.height() <= bias_height() ) {
+    if (rec_point.height() <= model().bias_height() ) {
         // change IWP for lower tree choice
 	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
-				( bias_ratio() * getLocalTreeLength() ));
+				( model().bias_ratio() * getLocalTreeLength() ));
 
     } else {
         // change IWP for upper tree choice
@@ -714,7 +714,7 @@ void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
  */
 TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) const {
 
-    assert(biased_sampling);
+    assert(model().biased_sampling);
     
   if (node == NULL) {
     // Called without arguments => initialization
@@ -766,7 +766,7 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) const {
  
 void ForestState::sampleRecSeqPosition( bool recordEvents ) {
 
-  if( biased_sampling ) {
+  if( model().biased_sampling ) {
 
     this->sampleBiasedRecSeqPosition( recordEvents );
     return;
@@ -801,7 +801,7 @@ void ForestState::sampleRecSeqPosition( bool recordEvents ) {
  */
 TreePoint ForestState::samplePoint(Node* node, double length_left) {
 
-  if ( biased_sampling ){
+  if ( model().biased_sampling ){
  
     assert( node == NULL && length_left == -1);
     TreePoint tp = this->sampleBiasedPoint();
