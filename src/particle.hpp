@@ -139,16 +139,10 @@ class ForestState : public Forest{
 
 
 	//// biased sampling
-        // below should be model parameters
-	bool biased_sampling = true;
-	double bias_height_ = 20000;
-	double bias_ratio_ = 2;
 
 	double importance_weight_predata_ = 1; //incremental reset whenever weights are updated
 	double importance_weight_predata_survival_ = 1; //used for Gerton's process
 
-	double bias_height() const {return bias_height_;}
-	double bias_ratio() const {return bias_ratio_;}
 	double importance_weight_predata() const {return importance_weight_predata_;}
 	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
 	void modify_importance_weight_predata(double adjustment) {importance_weight_predata_ *= adjustment;}
