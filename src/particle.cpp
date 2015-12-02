@@ -470,11 +470,19 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
 
         updated_to = update_to;                // rescues the invariant
+
         /*!
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
         if ( updated_to < extend_to ) {
-            this->sampleNextGenealogy( recordEvents );
+
+            double rec_height = this->sampleNextGenealogy( recordEvents );
+            this->sampleRecSeqPosition( recordEvents );
+
+            if (recordEvents) {
+                this->record_Recombevent_b4_extension();
+                this->record_Recombevent_atNewGenealogy(rec_height);
+            }
 
         #ifdef _SCRM
             double segment_length_ = this->calcSegmentLength();
@@ -486,6 +494,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         }
 
         this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
+
     }
     assert (updated_to == extend_to);
     if (updateWeight) {
