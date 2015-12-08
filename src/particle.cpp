@@ -557,13 +557,13 @@ std::string ForestState::newick(Node *node) {
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
 
     if ( node->height() >= model().bias_height() ) {
-        return node->height_above();
+        return node->height_above() * model().bias_ratio_upper();
     } else if ( node->parent_height() < model().bias_height() ) {
-        return node->height_above() * model().bias_ratio();
+        return node->height_above() * model().bias_ratio_lower();
     } else {
         assert( node->height() + node->height_above() >= model().bias_height() );
-        return (model().bias_height() - node->height()) * model().bias_ratio() +
-               (node->parent_height() - model().bias_height());
+        return (model().bias_height() - node->height()) * model().bias_ratio_lower() +
+               (node->parent_height() - model().bias_height()) * model().bias_ratio_upper();
     }
 }
 
@@ -618,19 +618,19 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
     if ( node->height() >= model().bias_height() ) {
 	// entire branch is above bias_height
 	assert( node->parent_height() > model().bias_height() );
-        return node->height() + length_left;
+        return node->height() + ( length_left/model().bias_ratio_upper() );
     } else if ( node->parent_height() < model().bias_height() ) {
 	// entire branch is below bias_height
 	assert( node->height() < model().bias_height() );
-	return node->height() + ( length_left/model().bias_ratio() );
+	return node->height() + ( length_left/model().bias_ratio_lower() );
     } else {
         // the branch spans the bias_height, so we need to do some standardization
 	// we measure from the node up to stay consistent with scrm TreePoints
-        if ( length_left < ((model().bias_height() - node->height()) * model().bias_ratio()) ) {
-            return node->height() + length_left/model().bias_ratio();
+        if ( length_left < ((model().bias_height() - node->height()) * model().bias_ratio_lower()) ) {
+            return node->height() + length_left/model().bias_ratio_lower();
 	} else {
-            length_left -= (model().bias_height() - node->height()) * model().bias_ratio();
-	    return model().bias_height() + length_left;
+            length_left -= (model().bias_height() - node->height()) * model().bias_ratio_lower();
+	    return model().bias_height() + length_left/model().bias_ratio_upper();
 	}
     }
 }
@@ -654,12 +654,12 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
     if (rec_point.height() <= model().bias_height() ) {
         // change IWP for lower tree choice
 	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
-				( model().bias_ratio() * getLocalTreeLength() ));
+				( model().bias_ratio_lower() * getLocalTreeLength() ));
 
     } else {
         // change IWP for upper tree choice
 	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
-				getLocalTreeLength() );
+				( model().bias_ratio_upper() * getLocalTreeLength() ));
     }
 }
 
