@@ -2,16 +2,24 @@ EXTRA_DIST = Doxyfile bootstrap pfpsmc/R/*r pfpsmc/R/ms_vcf.py #acinclude.m4
 SMCSMCVERSION = $(shell git show HEAD | head -1 | sed -e "s/commit //g" | cat)
 SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/src.*//" | cat)
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
+
 distdir = $(PACKAGE)-$(VERSION)
-#CXXFLAGS= -I/opt/local/include
-#LDFLAGS= -L/opt/local/lib # this is used to link to the unittest library
 
 bin_PROGRAMS = smcsmc smcsmc_dbg
-check_PROGRAMS = unittests  smcsmc_prof scrm
+check_PROGRAMS = unittests smcsmc_prof
+scrmcheck_PROGRAMS = scrm smcsmcSCRM smcsmcSCRM_dbg scrm_dbg
+scrmcheckdir = bindir
+
+PROG = SMCSMC
 
 TESTS = unittests
 
-PROG = SMCSMC
+.PHONY: scrmcheck
+scrmcheck:
+	make scrm scrm_dbg
+	make smcsmcSCRM
+	make smcsmcSCRM_dbg
+
 
 .PHONY: generate_vcf$(EXEEXT)
 generate_vcf$(EXEEXT):
@@ -24,10 +32,6 @@ generate_vcf$(EXEEXT):
 	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./unittest/gvcf2rgvcf.py -i sim-1Samples4msdata1_edited.gvcf -seqlen 30000000
 
 
-##.PHONY: exec_unittests
-##exec_unittests: unittests
-##./unittests
-
 common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
 
 # -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
@@ -35,13 +39,16 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/s
 
 # Binary flags
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
+smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 smcsmcRECOMBOFF_CXXFLAGS = $(smcsmc_CXXFLAGS) -D_RecombRecordingOff
-smcsmcSCRM_CXXFLAGS      = $(smcsmcRECOMBOFF_CXXFLAGS) -D_SCRM
 smcsmc_omp_CXXFLAGS      = $(common_flags) -DNDEBUG -fopenmp -O3
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 
+
 # Debugger flags
+scrm_dbg_CXXFLAGS            = -g $(common_flags)
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
+smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
 smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
 # Profiler flags
@@ -52,9 +59,6 @@ smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp
 unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random
 unittests_LDADD          = -lcppunit -ldl
 
-##export SMCSMCROOT=src
-##export SCRMROOT=src/scrm/src
-##export UNITTESTROOT=tests/unittest
 
 scrm_src = src/scrm/src/node.cc \
            src/scrm/src/node.h \
@@ -80,6 +84,9 @@ scrm_src = src/scrm/src/node.cc \
            src/scrm/src/summary_statistics/seg_sites.cc \
            src/scrm/src/summary_statistics/tmrca.cc \
            src/scrm/src/summary_statistics/oriented_forest.cc
+
+scrm_debug_src = src/scrm/src/random/constant_generator.cc src/scrm/src/random/constant_generator.h \
+                 src/scrm/src/random/constant_generator.h
 
 #scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
 #scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
@@ -120,7 +127,9 @@ smcsmc_omp_SOURCES      = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(o
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
 # Debugger sources
+scrm_dbg_SOURCES  = $(scrm_debug_src) $(scrm_SOURCES)
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
+smcsmcSCRM_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
 smcsmcRECOMBOFF_dbg_SOURCES = $(smcsmc_dbg_SOURCES)
 
 # Profiler sources
@@ -160,4 +169,3 @@ unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
 .PHONY: clean-local
 clean-local:
 	test -z "unittest/sim-1Samples2msdata1.seg" || rm -f unittest/sim-1*
-

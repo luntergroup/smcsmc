@@ -206,9 +206,6 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
 
 
 void ForestState::record_Recombevent_b4_extension (){
-    #ifdef _RecombRecordingOff // if the recombination recording off macro is defined, then return without recording the event
-        return;
-    #endif
 
     dout << endl;
     ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
@@ -257,16 +254,7 @@ void ForestState::resample_recombination_position(void) {
                 void* event_mem = Arena::allocate( epoch );
                 EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
                 newForestdout << " we are modifying event: " << endl;
-                //(*old_event).print_event();
-                //if ((*old_event).parent_){
-                    //dout << " whose parent is " <<endl;
-                    //(*old_event).parent_->print_event();
-                //} else {
-                    //dout << " this will start a new chain" <<endl;
-                //}
-                //cout << "new_event->end_base was at " <<new_event->end_base_ <<endl;
                 new_event->end_base_ = this->next_base();        // friend function access
-                //cout << "new_event->end_base is at " <<new_event->end_base_ <<endl;
                 // splice into event tree, and update pointers
                 new_event->add_leaf_to_tree( new_chain );
                 new_chain = &(new_event->parent_);              // friend function access
@@ -287,10 +275,6 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
     // find the EvolutionaryEvent to add this event to.
     EvolutionaryEvent* event = eventTrees[ epoch_i ];
     while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
-
-    //cout << "event->is_recomb() = " << event->is_recomb() <<endl; // DEBUG
-    //cout << "event->recomb_event_overlaps_opportunity_t( event_height ) " << event->recomb_event_overlaps_opportunity_t( event_height ) << endl; // DEBUG
-//event->print_event();
         event = event->parent();
         assert (event != NULL);
     }
@@ -471,6 +455,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         /*!
          * First, update the likelihood up to either extend_to or the end of this state
          */
+        //cout << "next extension is at " << this->next_base() << endl;
         double update_to = min( extend_to, this->next_base() );
         // calculate the total tree length of the subtree over leaf nodes that carry data.
         double localTreeBranchLength = this->trackLocalTreeBranchLength();
@@ -485,13 +470,22 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
 
         updated_to = update_to;                // rescues the invariant
-        this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
         /*!
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
         if ( updated_to < extend_to ) {
             this->sampleNextGenealogy( recordEvents );
+
+        #ifdef _SCRM
+            double segment_length_ = this->calcSegmentLength();
+            if ( segment_length_ > 1.0 ){ //  only print tree, whose segment length is at least 1
+                cout << this->newick(this->local_root()) << ";" << endl;
+            }
+        #endif
+
         }
+
+        this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
     }
     assert (updated_to == extend_to);
     if (updateWeight) {
@@ -503,22 +497,36 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 
 
 std::string ForestState::newick(Node *node) {
-  if(node->in_sample()){
-    std::ostringstream label_strm;
-    label_strm<<node->label();
-    return label_strm.str();
-  }
-  else{
-    Node *left = this->trackLocalNode(node->first_child());
-    double t1 = node->height() - left->height();
-    std::ostringstream t1_strm;
-    t1_strm << t1 / (4 * this->model().default_pop_size);
+  std::stringstream tree;
+  if (node->in_sample()) tree << node->label();
+  else {
+    Node *left = node->getLocalChild1();
+    Node *right = node->getLocalChild2();
 
-    Node *right = this->trackLocalNode(node->second_child());
-    double t2 = node->height() - right->height();
-    std::ostringstream t2_strm;
-    t2_strm << t2 / (4 * this->model().default_pop_size);
-
-    return "("+this->newick(left)+":"+t1_strm.str()+","+ this->newick(right)+":"+t2_strm.str() +")";
+    tree << "(" << this->newick(left) << ":" <<
+           (node->height() - left->height()) * this->model().scaling_factor() <<
+           "," << this->newick(right) << ":" <<
+           (node->height() - right->height()) * this->model().scaling_factor() << ")";
   }
+
+  return tree.str();
+
+  //if(node->in_sample()){
+    //std::ostringstream label_strm;
+    //label_strm<<node->label();
+    //return label_strm.str();
+  //}
+  //else{
+    //Node *left = this->trackLocalNode(node->first_child());
+    //double t1 = node->height() - left->height();
+    //std::ostringstream t1_strm;
+    //t1_strm << t1 / (4 * this->model().default_pop_size);
+
+    //Node *right = this->trackLocalNode(node->second_child());
+    //double t2 = node->height() - right->height();
+    //std::ostringstream t2_strm;
+    //t2_strm << t2 / (4 * this->model().default_pop_size);
+
+    //return "("+this->newick(left)+":"+t1_strm.str()+","+ this->newick(right)+":"+t2_strm.str() +")";
+  //}
 }
