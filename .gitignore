@@ -61,3 +61,16 @@ smcsmcHIST
 smcsmcNe
 unittests
 tests/unittest/.dirstamp
+doxygen_sqlite3.db
+html/
+scrm
+smcsmcSCRM_dbg
+tests/pfARGHIST
+tests/scrm_tmp_tree
+tests/smcsmc_tmp_tree
+tests/tmpCount
+tests/tmpHIST
+tests/tmpNe
+tests/tmplagCount
+tests/tmplagHIST
+tests/tmplagNe

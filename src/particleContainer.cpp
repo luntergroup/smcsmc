@@ -57,6 +57,9 @@ ParticleContainer::ParticleContainer(Model* model,
         if ( emptyFile ){
             new_state->include_haplotypes_at_tips(first_allelic_state);
         }
+        #ifdef _SCRM
+        cout << new_state->newick( new_state->local_root() ) << ";" << endl;
+        #endif
     }
 }
 
@@ -411,9 +414,8 @@ void ParticleContainer::print_particle_probabilities(){
     }
 
 
-void ParticleContainer::print_particle_newick(){
-    for (size_t i = 0; i < this->particles.size(); i++){
-        cout << this->particles[i]->newick( this->particles[i]->local_root() ) << ";" << endl;
-    }
-}
-
+//void ParticleContainer::print_particle_newick(){
+    //for (size_t i = 0; i < this->particles.size(); i++){
+        //cout << this->particles[i]->scrmTree << ";" << endl;
+    //}
+//}

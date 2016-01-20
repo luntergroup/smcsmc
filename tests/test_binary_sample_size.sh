@@ -3,6 +3,8 @@
 #smcsmc -nsam 23 -Np 1000 -r 130 1000000 . done.
 #smcsmc -nsam 24 -Np 1000 -r 130 1000000 .command cd tests; ./test_binary_sample_size.sh took more than 3 minutes since last output
 
+testObj=smcsmc
+testObjDbg=smcsmc_dbg
 source test_binaries.src
 
 begin=1
@@ -19,5 +21,3 @@ for size in $(seq 2 6);do
  test_smcsmc -nsam ${size} -Np 100 -r 130 1000000 -EM 2 || exit 1
 done
 echo ""
-
-
