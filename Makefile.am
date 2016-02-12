@@ -32,7 +32,7 @@ generate_vcf$(EXEEXT):
 	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./unittest/gvcf2rgvcf.py -i sim-1Samples4msdata1_edited.gvcf -seqlen 30000000
 
 
-common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\"
+common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
 
 # -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
 # -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
