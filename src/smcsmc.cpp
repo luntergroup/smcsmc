@@ -26,6 +26,7 @@
 #include "arena.hpp"
 #include "debug/usage.hpp"
 #include "help.hpp"
+#include "tree_measurements.hpp"
 
 #ifdef GPERF
 #include <gperftools/heap-profiler.h>
@@ -129,6 +130,78 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
+    
+
+
+    //// Simulating trees in order to calibrate lag and bias ratios
+    // CHECK IF CHANGE TIMES START WITH 0 AND END WITH TMAX
+
+    int N_trees = 1000;
+    size_t tree_count = 0;
+    std::vector<double> avg_B_within;
+    std::vector<double> avg_B_below;
+    std::vector<double> avg_lineage_count;
+    std::vector<int> single_lineage_count( model->change_times_.size() , 0 );
+    double avg_B_below_bh;
+    double avg_B;
+    
+    while( tree_count <= N_trees ) {
+      tree_count += 1;
+      // simulate forest
+      MersenneTwister *randomgenerator = new MersenneTwister(true, tree_count); // use the tree_count as the seed
+      Forest* forest = new Forest(model, randomgenerator);
+      // tree_measurement(forest)
+      Tree_measurements tree_meas = Tree_measurements( forest );
+      tree_meas.adjust_branch_measurements( forest->local_root() );
+      tree_meas.count_lineage();
+      // average over tree measuremnts
+      if(tree_count==1) {
+	avg_B_within = tree_meas.B_within();
+	avg_B_below = tree_meas.B_below();
+	avg_lineage_count = tree_meas.lineage_count();
+	//std::vector<int> single_lineage_count( model->change_times_.size() , 0 ) ; //number of simulated trees with a single lineage at t
+	for(size_t i=0 ; i < model->change_times_.size() ; i++) {
+          if(tree_meas.single_lineage().at(i)) {single_lineage_count.at(i) += 1;}
+	}
+        avg_B_below_bh = tree_meas.B_below_bh();
+	avg_B = tree_meas.forest().local_root()->length_below();
+      }
+      else {
+	for(size_t i=0 ; i < model->change_times_.size() ; i++) {
+          avg_B_within.at(i) = (((tree_count-1)/tree_count)*avg_B_within.at(i) + (1/tree_count)*tree_meas.B_within().at(i));
+	  avg_B_below.at(i) = (((tree_count-1)/tree_count)*avg_B_below.at(i) + (1/tree_count)*tree_meas.B_below().at(i));
+	  avg_lineage_count.at(i) = (((tree_count-1)/tree_count)*avg_lineage_count.at(i) + (1/tree_count)*tree_meas.lineage_count().at(i));
+	  // below needs a conversion from boolean to int
+	  if(tree_meas.single_lineage().at(i)) {single_lineage_count.at(i) += 1;}
+	}
+	avg_B_below_bh = (((tree_count-1)/tree_count)*avg_B_below_bh + (1/tree_count)*tree_meas.B_below_bh());
+	avg_B = (((tree_count-1)/tree_count)*avg_B + (1/tree_count)*tree_meas.forest().local_root()->length_below());
+      }
+    }
+    
+    // set bias ratios (model)
+    if(model->biased_sampling) {
+      model->setBiasRatioUpper((avg_B)/(model->bias_strength() * avg_B_below_bh + (avg_B-avg_B_below_bh)));
+      model->setBiasRatioLower(model->bias_strength()*avg_B/(model->bias_strength() * avg_B_below_bh + (avg_B-avg_B_below_bh)));
+    }
+
+    // set lags (countmodel, but this is initialised later; create vector to be passed to countNe->init()?)
+    std::vector<double> Exp_branch_count_given_two( model->change_times_.size() );
+    std::vector<double> lags( model->change_times_.size() );
+
+    for(size_t i=0 ; i < model->change_times_.size() ; i++) {
+      Exp_branch_count_given_two.at(i) = (avg_lineage_count.at(i) - single_lineage_count.at(i)/N_trees) /
+                                          (1 - single_lineage_count.at(i)/N_trees);
+      // lag = ( rho * B_below * ((2/k)*((k-2)/(nsam-2)) + (.5)*((nsam-k)/(nsam-2))) )^-1
+      lags.at(i) = (model->recombination_rate() * avg_B_below.at(i) *
+      ( 1 / ( (2/Exp_branch_count_given_two.at(i))*((Exp_branch_count_given_two.at(i)-2)/(model->sample_size()-2)) +
+           .5*((model->sample_size()-Exp_branch_count_given_two.at(i))/(model->sample_size()-2)) ) ));
+    }
+    //countNe->reset_lag(lags);
+    // PROBLEM: WE INIT COUNTNE LATER WHICH WILL UNDO THIS, so for now reset_lag after init
+    //// Done with calibration
+
+
 
     dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
     Segfile->read_new_line();
@@ -148,6 +221,7 @@ void pfARG_core(PfParam &pfARG_para,
     //#endif
     /*! Initialize prior Ne */
     countNe->init();
+    countNe->reset_lag(lags);
 
     /*! Go through seg data */
     bool force_update = false;
