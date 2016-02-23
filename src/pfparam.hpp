@@ -79,6 +79,8 @@ class PfParam{
 
         double ESS () const { return this-> ESS_;} // scaled between zero and one
 
+	double top_t() const { return this->top_t_;}
+
     private:
 
         //
