@@ -22,12 +22,20 @@ class ModelSummary{
 	times_.push_back(top_t_scaled);
 
 	tree_count_ = 0;
+
+	for( size_t idx=0 ; idx < this->times_.size()-1 ; idx++ ) {
+          current_tree_B_below_.push_back( 0 );
+	  current_tree_B_within_.push_back( 0 );
+	  current_tree_lineage_count_.push_back( 0 );
+          current_tree_single_lineage_.push_back( false );
+	}
+	set_current_tree_B_below_bh( 0 );
     };
     ~ModelSummary(){};
 
     std::vector<double> times_; // times_ contains all time boundaries (specifically starts with 0, ends with top_t_)
 
-    int tree_count_;
+    double tree_count_;
     Model* model;
     double top_t_scaled;
     
@@ -86,7 +94,7 @@ class ModelSummary{
     void set_avg_B_within(size_t idx, double new_value ){avg_B_within_.at(idx) = new_value;}
     void set_avg_B_below_bh( double new_value ){avg_B_below_bh_ = new_value;}
     void set_avg_B( double new_value ){avg_B_ = new_value;}
-    void set_avg_lineage_count(size_t idx, double new_value ){avg_B_below_.at(idx) = new_value;}
+    void set_avg_lineage_count(size_t idx, double new_value ){avg_lineage_count_.at(idx) = new_value;}
     void set_exp_lineage_count_given_two(size_t idx, double new_value ){exp_lineage_count_given_two_.at(idx)=new_value;}
 
     void set_current_tree_B_below(size_t idx, double new_value ){current_tree_B_below_.at(idx) = new_value;}

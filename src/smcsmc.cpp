@@ -134,18 +134,20 @@ void pfARG_core(PfParam &pfARG_para,
 
 
     //// Simulating trees in order to calibrate lag and bias ratios
-    cout << "About to create model_summary" << endl;
     ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
-    cout << "model_summary successfully created" << endl;
+    cout << "model_summary.times_.size() is " << model_summary.times_.size() << endl;
+    cout << "model_summary.times_ is " << model_summary.times_ << endl;
     int Num_trees = 2;
 
     for(size_t tree_idx = 0 ; tree_idx < Num_trees ; tree_idx++){
+      cout << " " << endl;
       cout << "Adding tree " << tree_idx << endl;
       model_summary.addTree();
       cout << "current tree B " << model_summary.current_tree_B() << endl;
     }
     model_summary.finalize();
     cout << "avg B " << model_summary.avg_B() << endl;
+    cout << "avg B below " << model_summary.avg_B_below() << endl;
     
     if(model->biased_sampling) {
       model->setBiasRatioUpper( model_summary.getBiasRatioUpper() );
