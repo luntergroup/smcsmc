@@ -117,23 +117,33 @@ void pfARG_core(PfParam &pfARG_para,
 
     //// Simulating trees in order to calibrate lag and bias ratios
     ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
-    cout << "model_summary.times_.size() is " << model_summary.times_.size() << endl;
-    cout << "model_summary.times_ is " << model_summary.times_ << endl;
-    int Num_trees = 2;
+    int Num_trees = 10000;
 
     for(size_t tree_idx = 0 ; tree_idx < Num_trees ; tree_idx++){
-      cout << " " << endl;
-      cout << "Adding tree " << tree_idx << endl;
+      //cout << "Adding tree " << tree_idx << endl;
       model_summary.addTree();
-      cout << "current tree B " << model_summary.current_tree_B() << endl;
+      //cout << "current tree B " << model_summary.current_tree_B() << endl;
     }
     model_summary.finalize();
-    cout << "avg B " << model_summary.avg_B() << endl;
-    cout << "avg B below " << model_summary.avg_B_below() << endl;
+    cout << "Information from pre-sequence-analysis tree simulation:" << endl;
+    cout << "    model_summary.times_: " << model_summary.times_ << endl;
+    cout << "    avg B: " << model_summary.avg_B() << endl;
+    cout << "    avg B below: " << model_summary.avg_B_below() << endl;
+    cout << "    avg B within: " << model_summary.avg_B_within() << endl;
+    cout << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
+    cout << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
+    cout << "    single lineage count: " << model_summary.single_lineage_count() << endl;
+    cout << "    tree count: " << model_summary.tree_count_ << endl;
     
     if(model->biased_sampling) {
       model->setBiasRatioUpper( model_summary.getBiasRatioUpper() );
       model->setBiasRatioLower( model_summary.getBiasRatioLower() );
+      cout << "    Bias ratio upper set to: " << model->bias_ratio_upper() << endl;
+      cout << "    Bias ratio lower set to: " << model->bias_ratio_lower() << endl;
+      //cout << "To insure correct num of rec events we need rho_u*B_u+rho_l*B_l=rho*B" << endl;
+      //cout << "br_upper*B_upper " << model->bias_ratio_upper()*(model_summary.avg_B()-model_summary.avg_B_below_bh()) << endl;
+      //cout << "br_lower*B_lower " << model->bias_ratio_lower()*model_summary.avg_B_below_bh() << endl;
+      //cout << "B " << model_summary.avg_B() << endl;
     }
     // we reset the lags later as they are currently initialized later
     //// Done with calibration
@@ -159,6 +169,7 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
     countNe->reset_lag(model_summary.getLags());
+    cout << "    Lags set to: " << countNe->check_lags() << endl;
 
     /*! Go through seg data */
     bool force_update = false;
@@ -247,6 +258,8 @@ void pfARG_core(PfParam &pfARG_para,
         Segfile->read_new_line(); // Read new line from the seg file
 
     } while( !Segfile->end_data() );
+
+    cout << "Got to end of sequence" << endl;
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
