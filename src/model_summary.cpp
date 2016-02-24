@@ -167,7 +167,11 @@ void ModelSummary::finalize(){
       // calculate Exp_branch_count_given_two
       exp_lineage_count_given_two_.push_back( k_calculation(avg_lineage_count().at(idx),single_lineage_count().at(idx)) );
       // calculate lags
-      lags_.push_back( lag_calculation(avg_B_below().at(idx),exp_lineage_count_given_two_.at(idx)) );
+      if(model->sample_size()==2) {
+        lags_.push_back( 1 / ( model->recombination_rate()*2*this->times_.at(idx+1) ) );
+      } else {
+        lags_.push_back( lag_calculation(avg_B_below().at(idx),exp_lineage_count_given_two_.at(idx)) );
+      }
     }
 
     assert(exp_lineage_count_given_two_.size()==times_.size()-1);
