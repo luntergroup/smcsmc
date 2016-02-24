@@ -1,12 +1,11 @@
 #include "model_summary.hpp"
+#include <cmath>
 using namespace std;
 
 void ModelSummary::addTree(){
     assert( !is_finalized() );
     
     tree_count_++;
-
-    cout << "About to create MT and forest" << endl;
     
     // simulate tree using tree_count_ as seed
     MersenneTwister *randomgenerator = new MersenneTwister( true, tree_count_ );
@@ -15,21 +14,21 @@ void ModelSummary::addTree(){
     forest.buildInitialTree();
     set_current_tree_B(forest.local_root()->length_below());
 
-    cout << "MT and forest successfully created" << endl;
-
     current_tree_traversed_ = false;
     
     // measuring function called on root node
     this->adjust_current_tree_measurements(forest.local_root());
     current_tree_traversed_ = true;
-    cout << "current tree traversed" << endl;
-    // set current tree single lineage called
+    //cout << "current tree traversed" << endl;
+    //cout << "current tree B below " << current_tree_B_below() << endl;
+    // set current tree single lineage called in processing
     this->process_current_tree_measurements();
-    cout << "current tree processed" << endl;
-    cout << "current tree B below " << current_tree_B_below() << endl;
-    cout << "current tree B within " << current_tree_B_within() << endl;
-    cout << "current tree lineage count " << current_tree_lineage_count() << endl;
-    cout << "current tree single lineage " << current_tree_single_lineage() << endl;
+    //cout << "current tree processed" << endl;
+    //cout << "current tree B below " << current_tree_B_below() << endl;
+    //cout << "current tree B within " << current_tree_B_within() << endl;
+    //cout << "current tree lineage count " << current_tree_lineage_count() << endl;
+    //cout << "current tree single lineage " << current_tree_single_lineage() << endl;
+    //cout << "current tree B below bh " << current_tree_B_below_bh() << endl;
     
     // avg_B_below_ etc modified
     if(tree_count_==1) {  // could remove this if statement by initializing avgs to 0
@@ -40,11 +39,11 @@ void ModelSummary::addTree(){
 	if(current_tree_single_lineage().at(idx)) {single_lineage_count_.push_back(1);} else {single_lineage_count_.push_back(0);}
       }
       set_avg_B(current_tree_B());
-      cout << "After the first tree avg_B is " << avg_B() << endl;
-      cout << "After the first tree avg_B_below is " << avg_B_below() << endl;
-      cout << "After the first tree avg_B_within is " << avg_B_within() << endl;
-      cout << "After the first tree avg_lineage_count is " << avg_lineage_count() << endl;
-      cout << "After the first tree single_lineage_count is " << single_lineage_count() << endl;
+      //cout << "After the first tree avg_B is " << avg_B() << endl;
+      //cout << "After the first tree avg_B_below is " << avg_B_below() << endl;
+      //cout << "After the first tree avg_B_within is " << avg_B_within() << endl;
+      //cout << "After the first tree avg_lineage_count is " << avg_lineage_count() << endl;
+      //cout << "After the first tree single_lineage_count is " << single_lineage_count() << endl;
       set_avg_B_below_bh(current_tree_B_below_bh());
     } else {
       for( size_t idx=0 ; idx < this->times_.size()-1 ; idx++){
@@ -57,12 +56,12 @@ void ModelSummary::addTree(){
 	if(current_tree_single_lineage().at(idx)) {single_lineage_count_.at(idx)++;}
       }
       set_avg_B(((tree_count_-1)/tree_count_)*avg_B() + (1/tree_count_)*current_tree_B());
-      cout << "After the next tree avg_B is " << avg_B() << endl;
-      cout << "After the next tree avg_B_below is " << avg_B_below() << endl;
-      cout << "After the next tree avg_B_within is " << avg_B_within() << endl;
-      cout << "After the next tree avg_lineage_count is " << avg_lineage_count() << endl;
-      cout << "After the next tree single_lineage_count is " << single_lineage_count() << endl;
-      cout << "tree count is " <<  tree_count_ << endl;
+      //cout << "After the next tree avg_B is " << avg_B() << endl;
+      //cout << "After the next tree avg_B_below is " << avg_B_below() << endl;
+      //cout << "After the next tree avg_B_within is " << avg_B_within() << endl;
+      //cout << "After the next tree avg_lineage_count is " << avg_lineage_count() << endl;
+      //cout << "After the next tree single_lineage_count is " << single_lineage_count() << endl;
+      //cout << "tree count is " <<  tree_count_ << endl;
       set_avg_B_below_bh(((tree_count_-1)/tree_count_)*avg_B_below_bh() + (1/tree_count_)*current_tree_B_below_bh());
     }
 }
@@ -70,12 +69,12 @@ void ModelSummary::addTree(){
 void ModelSummary::adjust_current_tree_measurements(Node* node){
     assert( !is_finalized() );
     assert( !current_tree_traversed_ );
-    cout << "adjust current tree measurements called on node" << endl;
-    cout << "node is " << node << endl;
-    cout << "node height is " << node->height() << endl;
+    //cout << "adjust current tree measurements called on node" << endl;
+    //cout << "node is " << node << endl;
+    //cout << "node height is " << node->height() << endl;
     
     if(node->is_root()) {
-	cout << "this node is the root" << endl;
+	//cout << "this node is the root" << endl;
 	//reset for the new tree
 	for( size_t idx=0 ; idx < this->times_.size()-1 ; idx++ ) {
           set_current_tree_B_below( idx, 0 );
@@ -84,6 +83,13 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
           set_current_tree_single_lineage( idx, false );
 	}
 	set_current_tree_B_below_bh( 0 );
+    } else {
+      //check if current_tree_B_below_bh needs to be updated
+      if( node->height() < this->model->bias_height() ) { //if node.height < bh
+        this->set_current_tree_B_below_bh( this->current_tree_B_below_bh() +
+                               std::min( node->parent()->height() - node->height() ,
+                                  this->model->bias_height() - node->height() ) );
+      }
     }
 
     for ( size_t idx=0 ; idx < this->times_.size()-1 ; idx++ ) {
@@ -96,16 +102,22 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
 					    this->times_.at(idx+1) - this->times_.at(idx)) );
 	  //above should be the same as pseudo script below
 	  //B_within[i] +=min(t[i]-node.height,t[i]-t[i-1])
+	  //cout << "Case 1: parent==NULL" << endl;
+	  //cout << "current tree B below: " << current_tree_B_below() << endl;
+	  //cout << "current tree B within: " << current_tree_B_within() << endl;
 	}
 	else if ( node->parent()->height() < this->times_.at(idx+1) ) {//elif parent < t[i]
 	  this->set_current_tree_B_below( idx , this->current_tree_B_below().at(idx) + node->parent()->height() - node->height() );
 	  this->set_current_tree_B_within( idx , this->current_tree_B_within().at(idx) +
 	                                 std::min( std::min(node->parent()->height() - node->height(),
-					      node->parent()->height() - this->times_.at(idx)) ,
+					      std::max(node->parent()->height() - this->times_.at(idx),double(0))) ,
 					      this->times_.at(idx+1) - this->times_.at(idx) ));
 	  //above should be the same as pseudo script below
 	  //B_below[i] +=parent.height-node.height
 	  //B_within[i] +=min(parent-node,parent-t[i-1],t[i]-t[i-1])
+	  //cout << "Case 2: parent<t" << endl;
+	  //cout << "current tree B below: " << current_tree_B_below() << endl;
+	  //cout << "current tree B within: " << current_tree_B_within() << endl;
 	}
 	else { //else
 	  this->set_current_tree_B_below( idx , this->current_tree_B_below().at(idx) +
@@ -116,15 +128,11 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
 	  //above should be the same as pseudo script below
 	  //B_below[i] +=t[i]-node.height
 	  //B_within[i] +=min(t[i]-node.height,t[i]-t[i-1])
+	  //cout << "Case 3: parent>t" << endl;
+	  //cout << "current tree B below: " << current_tree_B_below() << endl;
+	  //cout << "current tree B within: " << current_tree_B_within() << endl;
 	}
       }
-    }
-    
-    //check if current_tree_B_below_bh needs to be updated
-    if( node->height() < this->model->bias_height() ) { //if node.height < bh
-      this->set_current_tree_B_below_bh( this->current_tree_B_below_bh() +
-                               std::min( node->parent()->height() - node->height() ,
-                                  this->model->bias_height() - node->height() ) );
     }
 
     if( node->first_child() != NULL ) {this->adjust_current_tree_measurements(node->first_child());} 
@@ -143,9 +151,12 @@ void ModelSummary::process_current_tree_measurements(){
     for( size_t idx = 0 ; idx < this->times_.size()-1 ; idx++ ){
       set_current_tree_lineage_count(idx, this->current_tree_B_within().at(idx) /
           (this->times_.at(idx+1) - this->times_.at(idx)) );
-      set_current_tree_single_lineage(idx, this->current_tree_lineage_count().at(idx) == 1 );
+      if( idx > 0) {
+	// If this epoch has only one lineage, the bottom t has a single lineage going through it
+        set_current_tree_single_lineage(idx-1, this->current_tree_lineage_count().at(idx) == 1 );
+      }
     }
-
+    set_current_tree_single_lineage(current_tree_lineage_count_.size()-1, true); //assume the most ancient time had a single lineage
 }
 
 void ModelSummary::finalize(){

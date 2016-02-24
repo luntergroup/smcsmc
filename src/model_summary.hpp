@@ -101,8 +101,8 @@ class ModelSummary{
     void set_current_tree_B_within(size_t idx, double new_value ){current_tree_B_within_.at(idx) = new_value;}
     void set_current_tree_B_below_bh( double new_value ){current_tree_B_below_bh_ = new_value;}
     void set_current_tree_B( double new_value ){current_tree_B_ = new_value;}
-    void set_current_tree_lineage_count(size_t idx, double new_value ){current_tree_B_below_.at(idx) = new_value;}
-    void set_current_tree_single_lineage(size_t idx, bool new_value ){current_tree_B_below_.at(idx) = new_value;}
+    void set_current_tree_lineage_count(size_t idx, double new_value ){current_tree_lineage_count_.at(idx) = new_value;}
+    void set_current_tree_single_lineage(size_t idx, bool new_value ){current_tree_single_lineage_.at(idx) = new_value;}
 
     double k_calculation(double, int);
     double lag_calculation(double, double);
