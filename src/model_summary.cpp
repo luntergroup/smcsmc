@@ -19,11 +19,11 @@ void ModelSummary::addTree(){
     // measuring function called on root node
     this->adjust_current_tree_measurements(forest.local_root());
     current_tree_traversed_ = true;
-    cout << "current tree traversed" << endl;
+    //cout << "current tree traversed" << endl;
     //cout << "current tree B below " << current_tree_B_below() << endl;
     // set current tree single lineage called in processing
     this->process_current_tree_measurements();
-    cout << "current tree processed" << endl;
+    //cout << "current tree processed" << endl;
     //cout << "current tree B below " << current_tree_B_below() << endl;
     //cout << "current tree B within " << current_tree_B_within() << endl;
     //cout << "current tree lineage count " << current_tree_lineage_count() << endl;
