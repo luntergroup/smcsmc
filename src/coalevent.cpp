@@ -27,8 +27,8 @@
 
 bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
 {
-  assert (e.ref_counter == 1);
-  if (ref_counter != 1) return false;             // can't add to record that's in multiple use
+  assert (e.ref_counter_ == 1);
+  if (ref_counter_ != 1) return false;             // can't add to record that's in multiple use
   if (!is_no_event()) return false;               // this must not have event (can't have 2 events in single object)
   if (is_recomb() != e.is_recomb()) return false; // type of records must match
   if (is_recomb()) {
@@ -37,7 +37,7 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
       end_base_ == e.start_base_ &&
       weight == e.weight) { // add sequence-wise
       end_base_ = e.end_base_;
-      event_data = e.event_data;
+      event_data_ = e.event_data_;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
@@ -46,7 +46,7 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
       end_height == e.start_height &&
       weight == e.weight) { // add time-wise
       end_height = e.end_height;
-      event_data = e.event_data;
+      event_data_ = e.event_data_;
       a.recomb_pos = e.a.recomb_pos;
       return true;
     }
@@ -56,7 +56,7 @@ bool EvolutionaryEvent::append_event( const EvolutionaryEvent& e )
       a.coal_migr_population == e.a.coal_migr_population &&
       weight == e.weight) {
       end_height = e.end_height;
-      event_data = e.event_data;
+      event_data_ = e.event_data_;
       return true;
     }
   }
@@ -71,15 +71,15 @@ bool EvolutionaryEvent::print_event() const {
 		outstream << "Event Recomb w=" << weight << " [" << start_base_ << "-" << end_base_ << ")  t=" << std::setw(5) << start_height << "-" << std::setw(5) << end_height;
 		if (is_recomb_event()) {
 			outstream << " (**EVENT**";
-			if (event_data == -1) outstream << " xpos=" << a.recomb_pos << ")";
-			if (event_data == 0) outstream << " tpos=" << a.recomb_pos << ")";
+			if (event_data_ == -1) outstream << " xpos=" << a.recomb_pos << ")";
+			if (event_data_ == 0) outstream << " tpos=" << a.recomb_pos << ")";
 		}
 	} else {
 		outstream << "Event CoalMigr w=" << weight << " [" << end_base_ << "] pop=" << a.coal_migr_population << " t=" << std::setw(5) << start_height << "-" << std::setw(5) << end_height;
 		if (is_coal_event())
 			outstream << " (**COAL**) ";
 		else if (is_migr_event())
-			outstream << " (**MIGR** " << event_data << ") ";
+			outstream << " (**MIGR** " << event_data_ << ") ";
 	}
 	outstream << std::endl;
     return true;
@@ -93,7 +93,7 @@ bool remove_event( EvolutionaryEvent** eventptr_location, size_t epoch_idx ) {
 
 	assert (eventptr_location != NULL);
 	EvolutionaryEvent* event = *eventptr_location;
-	assert (event->children_updated < 0);
+	assert (event->children_updated_ < 0);
 	*eventptr_location = event->parent();              // (1) overwrite ptr to event with (2) ptr to parent, so...
 	if (event->parent() != NULL) {
 		event->parent()->increase_refcount();          // ...(2) increase parent's refcount and
