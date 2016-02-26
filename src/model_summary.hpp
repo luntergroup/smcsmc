@@ -13,12 +13,13 @@ class ModelSummary{
 
 	this->top_t_scaled = top_t * 4 *model->default_pop_size;
 	this->model = model;
+	this->finalized_ = false;
 
         for( size_t i=0 ; i < model->getNumEpochs() ; i++ ){
 	    times_.push_back(model->change_times().at(i));
 	}
 
-	assert( top_t_scaled > times_.at(times_.size()) );
+	assert( top_t_scaled > times_.at(times_.size()-1) );
 	times_.push_back(top_t_scaled);
 
 	tree_count_ = 0;

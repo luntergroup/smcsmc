@@ -114,10 +114,11 @@ void pfARG_core(PfParam &pfARG_para,
     double mutation_rate = model->mutation_rate();
 
 
-
+    cout << "model_summary about to be created" << endl;
     //// Simulating trees in order to calibrate lag and bias ratios
     ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
     int Num_trees = 10000;
+    cout << "model_summary created" << endl;
 
     for(size_t tree_idx = 0 ; tree_idx < Num_trees ; tree_idx++){
       //cout << "Adding tree " << tree_idx << endl;
