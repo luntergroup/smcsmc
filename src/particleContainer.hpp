@@ -80,7 +80,6 @@ class ParticleContainer {
         // Methods
         //
         void update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips);
-        void push(ForestState * particle, double weight=1); /*!< If particle is new, initialize the weight as 1 */
         // Resampling
         void resample(valarray<int> & sample_count);
         void duplicate_particles ( valarray<int> & sample_count );

@@ -52,7 +52,8 @@ ParticleContainer::ParticleContainer(Model* model,
             TmrcaState tmrca( 0, new_state->local_root()->height() );
             new_state->TmrcaHistory.push_back ( tmrca );
         }
-        this->push(new_state, 1.0/Num_of_states );
+	new_state->setParticleWeight( 1.0/Num_of_states );
+	this->particles.push_back(new_state);
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){
             new_state->include_haplotypes_at_tips(first_allelic_state);
@@ -98,7 +99,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             ForestState * current_state = this->particles[old_state_index];
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
-            this->push(current_state); // The 'push' implementation sets the particle weight to 1
+	    current_state->setParticleWeight( 1.0 );
+            this->particles.push_back(current_state);
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
                 resampledout << " Making a copy of the " << old_state_index << "th particle ... " ;
@@ -116,8 +118,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ){ // Resample new recombination position if it has not hit the end of the sequence.
                     new_copy_state->resample_recombination_position();
                 }
-                // The 'push' implementation sets the particle weight to 1
-                this->push(new_copy_state);
+		new_copy_state->setParticleWeight( 1.0 );
+                this->particles.push_back(new_copy_state);
             }
         } else {
             resampledout << " Deleting the " << std::setw(5) << old_state_index << "th particle ... " ;
@@ -162,15 +164,6 @@ void ParticleContainer::clear(){
         }
     this->particles.clear();
     dout << "Particles are deleted" << endl;
-    }
-
-
-/*!
- * Append new ForestState to the end of the ParticleContainer with weight.
- */
-void ParticleContainer::push(ForestState* state, double weight){
-    state->setParticleWeight(weight);
-    this->particles.push_back(state);
     }
 
 
@@ -370,7 +363,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                         }
                     current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
                     }
-                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size()); // Normalize by 4N0
 
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;

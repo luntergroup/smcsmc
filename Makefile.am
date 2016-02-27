@@ -6,7 +6,7 @@ COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 distdir = $(PACKAGE)-$(VERSION)
 
 bin_PROGRAMS = smcsmc smcsmc_dbg
-check_PROGRAMS = unittests smcsmc_prof
+check_PROGRAMS = unittests smcsmc_prof smcsmc_gperf
 scrmcheck_PROGRAMS = scrm smcsmcSCRM smcsmcSCRM_dbg scrm_dbg
 scrmcheckdir = bindir
 
@@ -34,30 +34,33 @@ generate_vcf$(EXEEXT):
 
 common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
 
-# -DNDEBUG  # Define macro NDEBUG, for not showing debug messages
-# -D_RecombRecordingOff # Define macro D_RecombRecordingOff, for turning of Recombevent recorders and recombination rate update
-
 # Binary flags
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
-smcsmcRECOMBOFF_CXXFLAGS = $(smcsmc_CXXFLAGS) -D_RecombRecordingOff
-smcsmc_omp_CXXFLAGS      = $(common_flags) -DNDEBUG -fopenmp -O3
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 
-
 # Debugger flags
-scrm_dbg_CXXFLAGS            = -g $(common_flags)
+scrm_dbg_CXXFLAGS            = $(common_flags)
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
 smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
-smcsmcRECOMBOFF_dbg_CXXFLAGS = $(smcsmc_dbg_CXXFLAGS)
 
 # Profiler flags
 smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
-smcsmc_omp_prof_CXXFLAGS = $(smcsmc_prof_CXXFLAGS) -fopenmp
+
+# Gperf flags
+smcsmc_gperf_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -DGPERF -O3
+smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so
+# Notes:
+#
+# - run "sudo apt-get install google-perftools libgoogle-perftools-dev"
+# - to compile, "make smcsmc_gperf"
+# - to run, "env HEAPPROFILE=/full/path/to/profileoutput ./smcsmc_gperf [parameters]"
+# - to analyze, "google-pprof --gv ./smcsmc_gperf /full/path/to/profileoutput.<number>.heap"
 
 # Tester flags
 unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random
 unittests_LDADD          = -lcppunit -ldl
+
 
 
 scrm_src = src/scrm/src/node.cc \
@@ -88,10 +91,6 @@ scrm_src = src/scrm/src/node.cc \
 scrm_debug_src = src/scrm/src/random/constant_generator.cc src/scrm/src/random/constant_generator.h \
                  src/scrm/src/random/constant_generator.h
 
-#scrm_linear_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
-#scrm_linear_prof_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
-#scrm_omp_SOURCES = $(scrm_param) $(scrm_src) scrm_omp.cpp
-
 debug_src = src/scrm/src/random/constant_generator.cc \
             src/scrm/src/random/constant_generator.h \
             src/debug/particle-debug.cpp \
@@ -112,59 +111,27 @@ smcsmc_src = src/coalevent.cpp \
 series_src = src/particleContainer_extra.cpp \
              src/count_extra.cpp
 
-omp_src = src/particleContainer_extra_omp.cpp \
-          src/count_extra_omp.cpp
-
-
 shared_SOURCES = $(smcsmc_src) $(scrm_src)
 smcsmc_shared_SOURCES = $(shared_SOURCES)
 
 # Binary sources
 smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
-smcsmcRECOMBOFF_SOURCES = $(smcsmc_SOURCES)
 smcsmcSCRM_SOURCES      = $(smcsmc_SOURCES)
-smcsmc_omp_SOURCES      = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(omp_src)
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
 # Debugger sources
 scrm_dbg_SOURCES  = $(scrm_debug_src) $(scrm_SOURCES)
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
 smcsmcSCRM_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
-smcsmcRECOMBOFF_dbg_SOURCES = $(smcsmc_dbg_SOURCES)
 
 # Profiler sources
 smcsmc_prof_SOURCES = $(smcsmc_SOURCES)
-smcsmc_omp_prof_SOURCES = $(smcsmc_omp_SOURCES)
-
-#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra_omp.cpp  particleContainer_extra.cpp
-#smcsmc_omp_SOURCES = $(shared_SOURCES)  debug/usage_ghost.cpp count_extra.cpp  particleContainer_extra_omp.cpp
-#smcsmc_prof_SOURCES = $(shared_SOURCES)  smcsmc.cpp debug/usage.cpp
-
-# Tester sources
-#test_src = tests/unittest/test_pattern.cpp \
-		   #tests/unittest/test_runner.cpp \
-		   #tests/unittest/test_Coalevent.cpp \
-           #tests/unittest/test_FroestState.cpp\
-           #tests/unittest/test_PfCount.cpp \
-           #tests/unittest/test_ParticleContainer.cpp
+smcsmc_gperf_SOURCES = $(smcsmc_SOURCES)
 
 test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_FroestState.cpp
 
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
-
-# -L/opt/local/lib -lcppunit -ldl  #link the cppunit unittest library in mac, cppunit was installed via macports
-#-Isrc/scrm/src/ -Isrc/ -Itests/unittest/
- #including hearders for make distribution
-#include_HEADERS = segdata.hpp pfparam.hpp particle.hpp pattern.hpp\
-                  #src/scrm/src/forest.h src/scrm/src/model.h src/scrm/src/node.h src/scrm/src/node_container.h \
-                  #src/scrm/src/time_interval.h src/scrm/src/tree_point.h \
-                  #src/scrm/src/random/constant_generator.h src/scrm/src/random/mersenne_twister.h \
-                  #src/scrm/src/random/random_generator.h src/scrm/src/event.h \
-                  #src/scrm/src/summary_statistics/newick_tree.h \
-                  #src/scrm/src/summary_statistics/frequency_spectrum.h \
-                  #src/scrm/src/summary_statistics/seg_sites.h \
-                  #src/scrm/src/summary_statistics/tmrca.h
 
 .PHONY: clean-local
 clean-local:

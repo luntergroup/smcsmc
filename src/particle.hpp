@@ -126,16 +126,16 @@ class ForestState : public Forest{
         void setParticleWeight(double weight) { this->particle_weight_ = weight; }
         double weight() const { return this->particle_weight_; }
 
-        // Members
-        vector < EvolutionaryEvent* > eventTrees;
-        //vector <double> opportunity_y_s ;
+        // What does this do?
         Node* trackLocalNode(Node *node) const;
 
+        // Members
+        vector < EvolutionaryEvent* > eventTrees;
+        vector < TmrcaState > TmrcaHistory;
         double site_where_weight_was_updated_;
         double particle_weight_;
-        vector < TmrcaState > TmrcaHistory;
-        const vector < int >& record_event_in_epoch;
         bool owning_model_and_random_generator;
+        const vector < int >& record_event_in_epoch;
 
         // Debugging tools
         std::string newick(Node *node) ;

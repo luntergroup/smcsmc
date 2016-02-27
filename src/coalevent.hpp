@@ -80,6 +80,7 @@ public:
                        weight(weight) {
                           if (parent_) parent_->increase_refcount();
                           assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) );
+                          this->init();
                        };
     // Constructor for migration/coalescence opportunity
     explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight, EvolutionaryEvent* parent = NULL ) :
@@ -92,6 +93,7 @@ public:
                        weight(weight) {
                           if (parent_) parent_->increase_refcount();
                           assert(start_height <= end_height);
+                          this->init();
                        };
     // Copy constructor
     EvolutionaryEvent( const EvolutionaryEvent& obj ) :
@@ -102,8 +104,9 @@ public:
                        a( obj.a.coal_migr_population ),
                        parent_(obj.parent_),
                        weight(obj.weight),
-                       event_data(obj.event_data) {
+                       event_data_(obj.event_data_) {
                            if(parent_) parent_->increase_refcount();
+                           this->init();
                        }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
@@ -120,10 +123,10 @@ public:
     // Methods
     bool is_recomb() const            { return start_base_ >= 0; }
     bool is_coalmigr() const          { return start_base_ < 0; }
-    bool is_no_event() const          { return event_data == -2; }
-    bool is_recomb_event() const      { assert(is_recomb()); return event_data > -2; }
-    bool is_coal_event() const        { assert(is_coalmigr()); return event_data == -1; }
-    bool is_migr_event() const        { assert(is_coalmigr()); return event_data >= 0; }
+    bool is_no_event() const          { return event_data_ == -2; }
+    bool is_recomb_event() const      { assert(is_recomb()); return event_data_ > -2; }
+    bool is_coal_event() const        { assert(is_coalmigr()); return event_data_ == -1; }
+    bool is_migr_event() const        { assert(is_coalmigr()); return event_data_ >= 0; }
     int recomb_event_count() const    { return is_recomb_event(); }
     int coal_event_count() const      { return is_coal_event(); }
     int migr_event_count() const      { return is_migr_event(); }
@@ -134,25 +137,25 @@ public:
         assert( this->is_no_event() );
         assert( recomb_x_position <= end_base_ );
         assert( start_base_ <= recomb_x_position );
-        event_data = -1;
+        event_data_ = -1;
         a.recomb_pos = recomb_x_position; }
     void set_recomb_event_time( double recomb_t_position ) {
         assert( this->is_recomb() );
         assert( this->is_no_event() );
         assert( recomb_t_position <= end_height );
         assert( start_height <= recomb_t_position );
-        event_data = 0;
+        event_data_ = 0;
         a.recomb_pos = recomb_t_position; }
     void set_coal_event() {
         assert( this->is_coalmigr() );
         assert( this->is_no_event() );
-        event_data = -1; }
+        event_data_ = -1; }
     void set_migr_event( int to_population ) {
         assert( this->is_coalmigr() );
         assert( this->is_no_event() );
         assert( to_population != a.coal_migr_population );
         assert( to_population >= 0 );
-        event_data = to_population; }
+        event_data_ = to_population; }
     double coal_opportunity() const {
         assert (is_coalmigr());
         return weight * (end_height - start_height); }
@@ -176,8 +179,8 @@ public:
         return ( start_base_ <= recomb_x_position && recomb_x_position <= end_base_ ); }
     int recomb_event_count_between( double height0, double height1, double base0, double base1, bool isEndOfSeq ) const {
         if (!is_recomb_event()) return 0;
-        double base_ = event_data == -1 ? a.recomb_pos : end_base_;
-        double height = event_data == 0 ? a.recomb_pos : end_height;
+        double base_ = event_data_ == -1 ? a.recomb_pos : end_base_;
+        double height = event_data_ == 0 ? a.recomb_pos : end_height;
         return (base0 <= base_) && ( (base_ < base1) || isEndOfSeq ) && (height0 <= height) && (height < height1); }
     size_t get_population() const {
         assert (is_coalmigr());
@@ -185,12 +188,12 @@ public:
     size_t get_migr_to_population() const {
         assert (is_coalmigr());
         assert (is_migr_event());
-        return (size_t)event_data; }
+        return (size_t)event_data_; }
     bool decrease_refcount_is_zero() {
-        assert( ref_counter > 0 );
-        ref_counter--;
-        return (ref_counter == 0); } // Return TRUE, if there is nothing pointing here.
-    void increase_refcount() { ref_counter++; }
+        assert( ref_counter_ > 0 );
+        ref_counter_--;
+        return (ref_counter_ == 0); } // Return TRUE, if there is nothing pointing here.
+    void increase_refcount() { ref_counter_++; }
     bool print_event() const;
     bool append_event( const EvolutionaryEvent& e );
     EvolutionaryEvent* parent() const { return parent_; }
@@ -199,16 +202,16 @@ public:
     // methods for the update algorithm
 
     /* check whether this event is marked as 'removed' (and should subsequently be spliced out of the tree whenever it's encountered) */
-    bool is_removed() const { return children_updated < 0; }
+    bool is_removed() const { return children_updated_ < 0; }
     /* marks as deleted; actual deletion is done by calling purge_events */
     void mark_as_removed() {
-        assert (children_updated <= 0); // ensure events are not removed in mid-flow
-        children_updated = -1; }
+        assert (children_updated_ <= 0); // ensure events are not removed in mid-flow
+        children_updated_ = -1; }
     /* Adds (newly made, refcount==1) this to tree */
     void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
         if (parent_) {
             dout <<"we are here"<<std::endl;
-            dout << "(*eventptr_location)->ref_counter " <<(*eventptr_location)->ref_counter <<std::endl;
+            dout << "(*eventptr_location)->ref_counter " <<(*eventptr_location)->ref_counter_ <<std::endl;
             // this is a tree; replace existing tree off eventptr_location with this
             dout << "            bool lost_event = !(*eventptr_location)->decrease_refcount_is_zero(); "<< std::endl;
             bool eventIsLost = (*eventptr_location)->decrease_refcount_is_zero();
@@ -228,14 +231,14 @@ public:
     /* update posterior, and checks whether the posterior is now complete */
     bool update_posterior_is_done( double additional_posterior ) {
         assert (!is_removed());
-        posterior += additional_posterior;
-        children_updated = (children_updated + 1) % ref_counter;
-        return (children_updated == 0); }
+        posterior_ += additional_posterior;
+        children_updated_ = (children_updated_ + 1) % ref_counter_;
+        return (children_updated_ == 0); }
     double get_and_reset_posterior() {
         assert (!is_removed());
-        assert (children_updated == 0);
-        double p = posterior;
-        posterior = 0.0;
+        assert (children_updated_ == 0);
+        double p = posterior_;
+        posterior_ = 0.0;
         return p;
     }
 
@@ -259,16 +262,33 @@ private:
     } a;
     // helper variables for the update algorithm (put here for packing / alignment)
     EvolutionaryEvent* parent_;
-    double posterior { 0.0 };
-    short children_updated { 0 };
+    double posterior_;
+    void set_posterior ( const double posterior ){ this->posterior_ =  posterior; }
+    double posterior () const { return this->posterior_; }
+
+    short children_updated_;
+    void set_children_updated ( const short children ){ this->children_updated_ = children; }
+    short children_updated() const { return this->children_updated_; }
     // remainder of core variables
     short weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
-    short event_data {-2};   // -2 == no event; otherwise type-specific meaning:
+    short event_data_ ;   // -2 == no event; otherwise type-specific meaning:
                              // recomb:    -1 == event at top edge (time-wise sampling)
                              //             0 == event at right-hand edge (sequence-wise sampling)
                              // coal/migr: -1 == coalescent event;
                              //             0..: migration to this population index
-    short ref_counter {1};
+    void set_event_data ( const short event_data ){ this->event_data_ = event_data; }
+    short event_data() const { return this->event_data_; }
+
+    short ref_counter_ ;
+    void set_ref_counter ( const short ref_counter ){ this->ref_counter_ = ref_counter; }
+    short ref_counter() const { return this->ref_counter_; }
+
+    void init(){
+        this->set_posterior(0.0);
+        this->set_children_updated( (short)0 );
+        this->set_event_data ( (short)-2 );
+        this->set_ref_counter( (short) 1 );
+    }
 };
 
 
