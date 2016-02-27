@@ -27,6 +27,10 @@
 #include "debug/usage.hpp"
 #include "help.hpp"
 
+#ifdef GPERF
+#include <gperftools/heap-profiler.h>
+#endif
+
 /*!
  * Global variables for debugging the number of times that ForestState was constructed and removed.
  */
@@ -57,6 +61,11 @@ int main(int argc, char *argv[]){
         Help_header();
     }
 
+    #ifdef GPERF
+    //std::cout << "Starting heap profiling..." << std::endl;
+    //HeapProfilerStart("smcsmc_gprofile");
+    #endif    
+    
     try {
         /*! Extract pfARG parameters */
         PfParam pfARG_para( argc, argv );
@@ -86,11 +95,20 @@ int main(int argc, char *argv[]){
         delete countNe;
         delete arena;
         cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+	#ifdef GPERF
+	//HeapProfilerStop();
+	//std::cout << "Stopped heap profiling." << std::endl;
+	#endif
         return exit_success;
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
+	std::cout << "Error: " << e.what() << std::endl;
         Help_option();
+	#ifdef GPERF
+	//HeapProfilerStop();
+	//std::cout << "Stopped heap profiling." << std::endl;
+	#endif
         return EXIT_FAILURE;
     }
 }
