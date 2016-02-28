@@ -228,11 +228,11 @@ void PfParam::finalize_scrm_input (  ){
     this->insert_mutation_rate_in_scrm_input ( );
     this->insert_sample_size_in_scrm_input ( );
     if (pattern.size() > 0) {
-		Pattern tmp_pattern( pattern, top_t_ );
-		this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
-	} else {
-		this->scrm_input = "scrm " + this->scrm_input;
-	}
+        Pattern tmp_pattern( pattern, top_t_ );
+        this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
+    } else {
+        this->scrm_input = "scrm " + this->scrm_input;
+    }
     cout << scrm_input << endl;
     this->convert_scrm_input ();
     }
@@ -434,7 +434,7 @@ void PfParam::appending_Ne_file( bool hist ){
 
     this->model.resetTime();
     for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
-    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ;
+    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
         for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
             for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
                 Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
@@ -447,7 +447,7 @@ void PfParam::appending_Ne_file( bool hist ){
 
             this->model.increaseTime();
         }
-    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ;
+    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
     for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
         for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
             Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
@@ -460,16 +460,16 @@ void PfParam::appending_Ne_file( bool hist ){
 
     this->model.resetTime();
     for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
-        Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ;
+        Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
         for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
-            Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size ;
+            Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size() ;
             }
         Ne_file << "\n" ;
         this->model.increaseTime();
         }
-    Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size / 4  ;
+    Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
     for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
-        Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size ;
+        Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size() ;
         }
     Ne_file << "\n" ;
     Ne_file.close();

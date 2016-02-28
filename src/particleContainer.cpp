@@ -365,7 +365,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
                         }
                     current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
                     }
-                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
+                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size()); // Normalize by 4N0
 
                 //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
                 current_state_ptr=NULL;

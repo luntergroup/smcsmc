@@ -6,7 +6,7 @@ COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 distdir = $(PACKAGE)-$(VERSION)
 
 bin_PROGRAMS = smcsmc smcsmc_dbg
-check_PROGRAMS = unittests smcsmc_prof smcsmc_gperf
+check_PROGRAMS = unittests smcsmc_prof
 scrmcheck_PROGRAMS = scrm smcsmcSCRM smcsmcSCRM_dbg scrm_dbg
 scrmcheckdir = bindir
 
