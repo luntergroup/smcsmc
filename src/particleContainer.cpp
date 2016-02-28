@@ -94,9 +94,11 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     resampledout << " ****************************** Start making list of new states ****************************** " << std::endl;
     resampledout << " will make total of " << sample_count.sum()<<" particle states" << endl;
     size_t number_of_particles = sample_count.size();
+    bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
+	    if (flush) current_state->flushOldRecombinations();
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
 	    current_state->setParticleWeight( 1.0 );
@@ -114,8 +116,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
                 dout <<"making particle finished" << endl; // DEBUG
 
-                // Resample the recombination position, and give particle its own event history
-                if ( new_copy_state->current_base() < new_copy_state->next_base() ){ // Resample new recombination position if it has not hit the end of the sequence.
+                // Resample the recombination position if particle has not hit end of sequence, and give particle its own event history
+                if ( new_copy_state->current_base() < new_copy_state->next_base() ){
                     new_copy_state->resample_recombination_position();
                 }
 		new_copy_state->setParticleWeight( 1.0 );
