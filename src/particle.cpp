@@ -712,7 +712,7 @@ void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
  *
  * \return The sampled point on the tree.
  */
-TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) const {
+TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
 
     assert(model().biased_sampling);
     
@@ -732,6 +732,9 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) const {
   if ( node != this->local_root() ) {
     if ( length_left < WeightedBranchLengthAbove(node) ) {
       assert( node->local() );
+      this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
+      //this is the end of iterating through nodes, so we update here
+      // should actually store above adjustment differently, don't want to apply it prematurely
       return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
     }
 
@@ -805,7 +808,7 @@ TreePoint ForestState::samplePoint(Node* node, double length_left) {
  
     assert( node == NULL && length_left == -1);
     TreePoint tp = this->sampleBiasedPoint();
-    this->IS_TreePoint_adjustor( tp ); // this is not in sampleBiasedPoint bc of recursive nature
+    //this->IS_TreePoint_adjustor( tp ); // this is not in sampleBiasedPoint bc of recursive nature
     return tp;
   }
 

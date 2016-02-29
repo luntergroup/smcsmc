@@ -150,7 +150,7 @@ class ForestState : public Forest{
 	void IS_positional_adjustor(double x, double rate_trans, double rate_prop);
 	void IS_TreePoint_adjustor( TreePoint tp );
 
-	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1) const;
+	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
 	void sampleBiasedRecSeqPosition(bool recordEvents);
 
 	double getWeightedLocalTreeLength() const;
