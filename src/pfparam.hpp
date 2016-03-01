@@ -62,7 +62,7 @@ class PfParam{
         // Action
         // ------------------------------------------------------------------
         double lag;
-	bool calibrate_lag;
+	bool calibrate_lag=false;
         bool online_bool;
 
         bool heat_bool;
