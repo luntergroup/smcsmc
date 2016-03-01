@@ -469,6 +469,22 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
 
+	// could combine these if statements with if ( updated_to < enxtend_to ), more efficient, less clear
+	if(model().biased_sampling) {
+	    //store importance sampling correction for the weight of the particle
+	    if(update_to == extend_to) {
+		modify_importance_weight_predata(
+		  std::exp(-(update_to - updated_to)*getLocalTreeLength()*model().recombination_rate())/
+		  std::exp(-(update_to - updated_to)*getWeightedLocalTreeLength()*model().recombination_rate()));
+	    } else {
+		assert(update_to == this->next_base());
+		IS_positional_adjustor((update_to - updated_to),
+		  getLocalTreeLength() * model().recombination_rate(),
+		  getWeightedLocalTreeLength() * model().recombination_rate());
+		//IS_TreePoint_adjustor() is handled in sampleNextGenealogy->samplePoint->sampleBiasedPoint
+	    }
+	}
+
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
 
@@ -686,9 +702,6 @@ void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
 
   assert(next_base() > current_base());
   assert(next_base() <= model().loci_length());
-
-  this->IS_positional_adjustor(length, getLocalTreeLength() * model().recombination_rate(),
-         getWeightedLocalTreeLength() * model().recombination_rate());
 }
 
 
