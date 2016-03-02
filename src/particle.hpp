@@ -160,7 +160,6 @@ class ForestState : public Forest{
 
 	// below are overloaded
 	void sampleRecSeqPosition( bool recordEvents = false );
-	TreePoint samplePoint(Node* node = NULL, double length_left = -1); //removed const as iw is adjusted
 
 
         // Debugging tools

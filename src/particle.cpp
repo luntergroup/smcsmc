@@ -747,7 +747,6 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
       assert( node->local() );
       this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
       //this is the end of iterating through nodes, so we update here
-      // should actually store above adjustment differently, don't want to apply it prematurely
       return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
     }
 
@@ -793,79 +792,5 @@ void ForestState::sampleRecSeqPosition( bool recordEvents ) {
   assert( this->printTree() );
   this->calcSegmentSumStats();
     
-}
-
-/**
- * Uniformly samples a TreePoint on the local tree.
- *
- * Its arguments are meant to be used only when the function iteratively calls
- * itself. Just call it without any arguments if you want to sample a TreePoint.
- *
- * The function first samples a part of the total height of the tree and then
- * goes down from the root, deciding at each node if that point is to the left
- * or right, which should give us an O(log(#nodes)) algorithm.
- *
- * I checked the distribution of this function in multiple cases. -Paul
- *
- * \param node The current position in the tree when the functions goes down
- *             iteratively.
- *
- * \param length_left The length that is left until we encounter the sampled
- *              length.
- *
- * \return The sampled point on the tree.
- */
-TreePoint ForestState::samplePoint(Node* node, double length_left) {
-
-  if ( model().biased_sampling ){
- 
-    assert( node == NULL && length_left == -1);
-    TreePoint tp = this->sampleBiasedPoint();
-    //this->IS_TreePoint_adjustor( tp ); // this is not in sampleBiasedPoint bc of recursive nature
-    return tp;
-  }
-
-    
-  if (node == NULL) {
-    // Called without arguments => initialization
-    assert( this->checkTreeLength() );
-
-    node = this->local_root();
-    length_left = random_generator()->sample() * getLocalTreeLength();
-    assert( 0 < length_left && length_left < getLocalTreeLength() );
-  }
-
-  assert( node->local() || node == this->local_root() );
-  assert( length_left >= 0 );
-  assert( length_left < (node->length_below() + node->height_above()) );
-
-  if ( node != this->local_root() ) {
-    if ( length_left < node->height_above() ) {
-      assert( node->local() );
-      return TreePoint(node, length_left, true);
-    }
-
-    length_left -= node->height_above();
-    assert( length_left >= 0 );
-  }
-
-  // At this point, we should have at least one local child
-  assert( node->first_child() != NULL );
-  assert( node->first_child()->local() || node->second_child()->local() );
-
-  // If we have only one local child, then give it the full length we have left.
-  if ( !node->first_child()->local() ) {
-    return samplePoint(node->second_child(), length_left);
-  }
-  if ( node->second_child() == NULL || !node->second_child()->local() ) {
-    return samplePoint(node->first_child(), length_left);
-  }
-
-  // If we have two local children, the look if we should go down left or right.
-  double tmp = node->first_child()->height_above() + node->first_child()->length_below();
-  if ( length_left <= tmp )
-    return samplePoint(node->first_child(), length_left);
-  else
-    return samplePoint(node->second_child(), length_left - tmp);
 }
 
