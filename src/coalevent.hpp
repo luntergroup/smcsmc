@@ -106,7 +106,7 @@ public:
                        weight(obj.weight),
                        event_data_(obj.event_data_) {
                            if(parent_) parent_->increase_refcount();
-                           this->init();
+                           this->set_ref_counter( (short) 1 );
                        }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
