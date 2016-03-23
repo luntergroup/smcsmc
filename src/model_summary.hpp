@@ -11,7 +11,7 @@ class ModelSummary{
 
     ModelSummary(Model *model, double top_t){
 
-	this->top_t_scaled = top_t * 4 *model->default_pop_size;
+	this->top_t_scaled = top_t * 4 *model->default_pop_size();
 	this->model = model;
 	this->finalized_ = false;
 
