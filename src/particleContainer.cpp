@@ -170,17 +170,6 @@ void ParticleContainer::clear(){
 
 
 /*!
- * Append new ForestState to the end of the ParticleContainer with weight.
- */
-void ParticleContainer::push(ForestState* state, double weight){
-    state->setParticleWeight(weight);
-    assert( state->importance_weight_predata() == 1);
-    // should only be adding a particle when its iw has been factored into the weight
-    this->particles.push_back(state);
-    }
-
-
-/*!
  * @ingroup group_pf_resample
  * @ingroup group_pf_update
  * \brief Calculate the effective sample size, and update the cumulative weight of the particles
