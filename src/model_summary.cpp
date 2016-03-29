@@ -64,6 +64,9 @@ void ModelSummary::addTree(){
       //cout << "tree count is " <<  tree_count_ << endl;
       set_avg_B_below_bh(((tree_count_-1)/tree_count_)*avg_B_below_bh() + (1/tree_count_)*current_tree_B_below_bh());
     }
+
+    delete randomgenerator;
+
 }
 
 void ModelSummary::adjust_current_tree_measurements(Node* node){
