@@ -137,7 +137,33 @@ class ForestState : public Forest{
         bool owning_model_and_random_generator;
         const vector < int >& record_event_in_epoch;
 
+
+	//// biased sampling
+
+	double importance_weight_predata_ = 1; //incremental reset whenever weights are updated
+	double importance_weight_predata_survival_ = 1; //used for Gerton's process
+
+	double importance_weight_predata() const {return importance_weight_predata_;}
+	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
+	void modify_importance_weight_predata(double adjustment) {importance_weight_predata_ *= adjustment;}
+
+	void IS_positional_adjustor(double x, double rate_trans, double rate_prop);
+	void IS_TreePoint_adjustor( TreePoint tp );
+
+	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
+	void sampleBiasedRecSeqPosition(bool recordEvents);
+
+	double getWeightedLocalTreeLength() const;
+	double getWeightedLengthBelow( Node* node ) const;
+	double WeightedBranchLengthAbove( Node* node ) const;
+	double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
+
+	// below are overloaded
+	void sampleRecSeqPosition( bool recordEvents = false );
+
+
         // Debugging tools
         std::string newick(Node *node) ;
+
 };
 #endif

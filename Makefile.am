@@ -106,7 +106,8 @@ smcsmc_src = src/coalevent.cpp \
              src/segdata.cpp \
              src/rescue.cpp \
              src/help.cpp \
-             src/arena.cpp
+             src/arena.cpp \
+             src/model_summary.cpp
 
 series_src = src/particleContainer_extra.cpp \
              src/count_extra.cpp

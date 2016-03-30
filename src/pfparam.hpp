@@ -62,6 +62,7 @@ class PfParam{
         // Action
         // ------------------------------------------------------------------
         double lag;
+	bool calibrate_lag=false;
         bool online_bool;
 
         bool heat_bool;
@@ -78,6 +79,8 @@ class PfParam{
         double default_loci_length;
 
         double ESS () const { return this-> ESS_;} // scaled between zero and one
+
+	double top_t() const { return this->top_t_;}
 
     private:
 
