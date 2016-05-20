@@ -67,6 +67,7 @@ class ParticleContainer {
         void normalize_probability();
         void clear();
         void print_particle_probabilities();
+        void print_ln_normalization_factor();
 
         //
         // Debugging tools
@@ -80,6 +81,7 @@ class ParticleContainer {
         // Methods
         //
         void update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips);
+        void store_normalization_factor();
         // Resampling
         void resample(valarray<int> & sample_count);
         void duplicate_particles ( valarray<int> & sample_count );
@@ -97,6 +99,7 @@ class ParticleContainer {
         RandomGenerator* random_generator() const { return this->random_generator_; }
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
+        double ln_normalization_factor() const { return this->ln_normalization_factor_; }
 
         //
         // Members
@@ -106,6 +109,8 @@ class ParticleContainer {
         RandomGenerator* random_generator_; // This is for particle filter only,
         double current_printing_base_;
         bool heat_bool_ ;
+        double ln_normalization_factor_;
+        double temp_sum_of_weights;
 };
 
 #endif

@@ -416,3 +416,7 @@ void ParticleContainer::print_particle_probabilities(){
         //cout << this->particles[i]->scrmTree << ";" << endl;
     //}
 //}
+
+void ParticleContainer::print_ln_normalization_factor(){
+	cout << "Our likelihood measure is " << ln_normalization_factor() << endl;
+    }
