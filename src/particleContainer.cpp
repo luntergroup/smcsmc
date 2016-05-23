@@ -39,6 +39,7 @@ ParticleContainer::ParticleContainer(Model* model,
     this->heat_bool_ = heat_bool;
     this->random_generator_ = rg;
     this->set_ESS(0);
+    this->ln_normalization_factor_ = 0;
     this->set_current_printing_base(0);
     bool make_copies_of_model_and_rg = false; // Set to true to use a random generator, and model per particle for multithreading (slower!)
     dout << " --------------------   Particle Initial States   --------------------" << std::endl;
