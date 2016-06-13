@@ -27,6 +27,7 @@
 #include <deque>
 #include <valarray>
 #include "segdata.hpp"
+#include <queue>
 
 #ifndef NDEBUG
 #define ForestStatedout (std::cout << "    ForestState ")
@@ -78,6 +79,40 @@ struct BranchLengthData {
     double subtreeBranchLength;
 };
 
+// machinery for delayedIS
+
+class DelayedFactor {
+
+    public:
+	    DelayedFactor(double pos, double factor);
+	    
+	    // Members
+	    double application_position;
+	    double importance_factor;
+	    void print_info() const;
+
+};
+
+class compareDFs {
+	public:
+		bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
+		    return lhs.application_position > rhs.application_position;	
+		}			
+};
+
+DelayedFactor::DelayedFactor( double pos, double factor) {
+	this->application_position = pos;
+	this->importance_factor = factor;
+	
+
+}
+
+// DEBUG delayedIS
+void DelayedFactor::print_info() const {
+    std::cout << "\nThe application position of this DF is " << this->application_position << std::endl;
+    std::cout << "The importance factor of this DF is " << this->importance_factor << std::endl;	
+}
+
 /*!
  * \brief Derived class from Forest.
  * A particle is a special case of a Forest, with special members
@@ -125,6 +160,9 @@ class ForestState : public Forest{
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
         void setParticleWeight(double weight) { this->particle_weight_ = weight; }
         double weight() const { return this->particle_weight_; }
+        void setDelayedWeight(double weight) { this->delayed_weight_ = weight; }
+        double delayed_weight() const { return this->delayed_weight_; }
+        
 
         // What does this do?
         Node* trackLocalNode(Node *node) const;
@@ -134,6 +172,7 @@ class ForestState : public Forest{
         vector < TmrcaState > TmrcaHistory;
         double site_where_weight_was_updated_;
         double particle_weight_;
+        double delayed_weight_;
         bool owning_model_and_random_generator;
         const vector < int >& record_event_in_epoch;
 
@@ -141,7 +180,6 @@ class ForestState : public Forest{
 	//// biased sampling
 
 	double importance_weight_predata_ = 1; //incremental reset whenever weights are updated
-	double importance_weight_predata_survival_ = 1; //used for Gerton's process
 
 	double importance_weight_predata() const {return importance_weight_predata_;}
 	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
@@ -157,6 +195,11 @@ class ForestState : public Forest{
 	double getWeightedLengthBelow( Node* node ) const;
 	double WeightedBranchLengthAbove( Node* node ) const;
 	double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
+	
+	//// delayed IS
+	
+	std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, compareDFs > delayed_adjustments;
+	double total_delayed_adjustment = 1;  // this is the product over the factors in delayed_adjustments
 
 	// below are overloaded
 	void sampleRecSeqPosition( bool recordEvents = false );

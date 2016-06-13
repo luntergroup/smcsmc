@@ -34,6 +34,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
              record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     this->setParticleWeight( 1.0 );
+    this->setDelayedWeight( 1.0 );
     this->reset_importance_weight_predata();
     this->setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
@@ -54,6 +55,7 @@ ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
     setParticleWeight( copied_state.weight() );
+    setDelayedWeight( copied_state.delayed_weight() );
     this->reset_importance_weight_predata();
     this->modify_importance_weight_predata(copied_state.importance_weight_predata());
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
@@ -469,21 +471,20 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
 
-	// could combine these if statements with if ( updated_to < enxtend_to ), more efficient, less clear
-	if(model().biased_sampling) {
-	    //store importance sampling correction for the weight of the particle
-	    if(update_to == extend_to) {
-		modify_importance_weight_predata(
-		  std::exp(-(update_to - updated_to)*getLocalTreeLength()*model().recombination_rate())/
-		  std::exp(-(update_to - updated_to)*getWeightedLocalTreeLength()*model().recombination_rate()));
-	    } else {
-		assert(update_to == this->next_base());
-		IS_positional_adjustor((update_to - updated_to),
-		  getLocalTreeLength() * model().recombination_rate(),
-		  getWeightedLocalTreeLength() * model().recombination_rate());
-		//IS_TreePoint_adjustor() is handled in sampleNextGenealogy->samplePoint->sampleBiasedPoint
-	    }
-	}
+		if(model().biased_sampling) {
+		    // store importance sampling correction for the weight of the particle
+		    // positional importance factors are stored in importance_weight_predata and applied to the particle weight with the likelihood
+		    if(update_to == extend_to) {		
+				modify_importance_weight_predata(
+				  std::exp(-(update_to - updated_to)*getLocalTreeLength()*model().recombination_rate())/
+				  std::exp(-(update_to - updated_to)*getWeightedLocalTreeLength()*model().recombination_rate()));
+		    } else {
+			assert(update_to == this->next_base());
+				IS_positional_adjustor((update_to - updated_to),
+				  getLocalTreeLength() * model().recombination_rate(),
+				  getWeightedLocalTreeLength() * model().recombination_rate());
+		    }
+		}
 
         dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
         dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
@@ -517,8 +518,20 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     }
     assert (updated_to == extend_to);
     if (updateWeight) {
+		// update weights for extension of ARG
         this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
-        this->reset_importance_weight_predata();
+        if model().biased_sampling {
+	        this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
+	        assert( weight() == delayed_weight() * total_delayed_adjustment );
+	        this->reset_importance_weight_predata();	        
+	        // update weights for application positions passed during extension
+	        while (delayed_adjustments.top()->application_position < extend_to) {
+				total_delayed_adjustment =\ delayed_adjustments.top()->importance_factor;
+				this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top()->importance_factor );
+				delayed_adjustments.pop();		
+				assert( weight() == delayed_weight() * total_delayed_adjustment );
+			}
+        }
     }
     this->setSiteWhereWeightWasUpdated( extend_to );
     return likelihood;
@@ -668,15 +681,37 @@ void ForestState::IS_positional_adjustor(double x, double rate_trans, double rat
 void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 
     if (rec_point.height() <= model().bias_height() ) {
-        // change IWP for lower tree choice
-	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
-				( model().bias_ratio_lower() * getLocalTreeLength() ));
-
+        // store importance factor for lower tree choice
+        // we want the application position to reflect the rec_point.height: identify epoch then create new DelayFactor
+        for( size_t indx=0; indx < model().change_times.size()-1 ; indx++ ) {
+			if( rec_point.height() <= model().change_times[indx+1] && rec_point.height() > model().change_times[indx] ) {
+				// add factor to the priority queue
+				delayed_adjustments.push( DelayedFactor (
+				current_position + model().application_delays.at(indx) ,
+				getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) ) );
+				// update the total delayed adjustment
+				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() );
+				break
+			}
+			// need to catch rec_point.height() > last change_time ???
+		}
     } else {
-        // change IWP for upper tree choice
-	this->modify_importance_weight_predata( getWeightedLocalTreeLength() /
-				( model().bias_ratio_upper() * getLocalTreeLength() ));
+        // store importance factor for upper tree choice
+        // we want the application position to reflect the rec_point.height: identify epoch then create new DelayedFactor
+        for( size_t indx=0; indx < model().change_times.size()-1 ; indx++ ) {
+			if( rec_point.height() <= model().change_times[indx+1] && rec_point.height() > model().change_times[indx] ) {
+				// add factor to the priority queue
+				delayed_adjustments.push( DelayedFactor (
+				current_position + model().application_delays.at(indx) ,
+				getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) ) );
+				// update the total delayed adjustment
+				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ); 
+				break
+			}
+			// need to catch rec_point.height() > last change_time ???
+		}
     }
+    
 }
 
 

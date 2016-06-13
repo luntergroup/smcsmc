@@ -58,6 +58,9 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, vector <int
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() 
                                                       * likelihood_of_haplotypes_at_tips
                                                       * this->particles[particle_i]->importance_weight_predata());
+        this->particles[particle_i]->setDelayedWeight( this->particles[particle_i]->delayed_weight() 
+                                                      * likelihood_of_haplotypes_at_tips );
+        // Store DF for IS_TreePoint_Adjustor
         this->particles[particle_i]->reset_importance_weight_predata();
 		dout << "particle " <<  particle_i<<" done" << endl;
         }

@@ -54,6 +54,7 @@ ParticleContainer::ParticleContainer(Model* model,
             new_state->TmrcaHistory.push_back ( tmrca );
         }
 	new_state->setParticleWeight( 1.0/Num_of_states );
+	new_state->setDelayedWeight( 1.0/Num_of_states );
 	this->particles.push_back(new_state);
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){

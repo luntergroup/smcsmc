@@ -188,6 +188,7 @@ void pfARG_core(PfParam &pfARG_para,
     if (pfARG_para.calibrate_lag){
       countNe->reset_lag(model_summary.getLags());
     }
+    model->lags_to_application_delays( model_summary.getLags() );
     cout << "    Lags set to: " << countNe->check_lags() << endl;
 
     /*! Go through seg data */
