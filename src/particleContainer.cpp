@@ -209,6 +209,9 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
  * Normalize the particle weight, inorder to prevent underflow problem
  */
 void ParticleContainer::normalize_probability(){
+	//// DEBUG
+	dout << "Normalize particle weights" << endl;
+	////
     double total_probability = 0;
     for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ){
         assert( this->particles[particle_i]->importance_weight_predata() == 1);
@@ -216,6 +219,11 @@ void ParticleContainer::normalize_probability(){
         }
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ){
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() / total_probability);
+        this->particles[particle_i]->setDelayedWeight(this->particles[particle_i]->delayed_weight() / total_probability); // should be conditional on biased_sampling
+        //// DEBUG
+	        dout << " particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
+	        dout << " the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
+        ////
         }
     }
 

@@ -520,16 +520,38 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     if (updateWeight) {
 		// update weights for extension of ARG
         this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
-        if model().biased_sampling {
+        if (model().biased_sampling) {
 	        this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
-	        assert( weight() == delayed_weight() * total_delayed_adjustment );
-	        this->reset_importance_weight_predata();	        
-	        // update weights for application positions passed during extension
-	        while (delayed_adjustments.top()->application_position < extend_to) {
-				total_delayed_adjustment =\ delayed_adjustments.top()->importance_factor;
-				this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top()->importance_factor );
-				delayed_adjustments.pop();		
-				assert( weight() == delayed_weight() * total_delayed_adjustment );
+	        //// DEBUG
+	        dout << "Particle weight is " << weight() << endl;
+	        dout << "delayed weight is " << delayed_weight() << endl;
+	        dout << "total_delayed_adjustment is " << total_delayed_adjustment << endl;
+	        if( !delayed_adjustments.empty() ) {
+				dout << "next df should be applied at base " << delayed_adjustments.top().application_position << endl;
+		    }
+		    dout << " lhs is " << std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <<
+		    " rhs is " << .001 * this->weight() << endl;
+	        ////
+	        assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+	        this->reset_importance_weight_predata();      
+	    // update weights for application positions passed during extension
+	        if( !delayed_adjustments.empty() ) {
+		        while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
+					dout << "Need to apply a df to the delayed weight" << endl;
+					dout << " delayed_adjustments has " << delayed_adjustments.size() << " elements" << endl;
+					dout << " The top element has pos " << delayed_adjustments.top().application_position <<
+					" and factor " << delayed_adjustments.top().importance_factor << endl;
+					total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
+					this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top().importance_factor );
+					delayed_adjustments.pop();
+					dout << " particle weight is now " << weight() << endl;
+					dout << " delayed weight is now " << delayed_weight() << endl;
+					dout << " total_delayed_adjustment is now " << total_delayed_adjustment << endl;
+					assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+				}
+				dout << "DELAY" << endl;
+				dout << "*current position is " << this->current_base() << endl;
+				dout << "*next DelayFactor to be applied at " << delayed_adjustments.top().application_position << endl;
 			}
         }
     }
@@ -679,34 +701,57 @@ void ForestState::IS_positional_adjustor(double x, double rate_trans, double rat
 }
 
 void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
+	
+	//// DEBUG
+	dout << "Inside IS_TreePoint_adjustor" << endl;
+	dout << " rec_height is " << rec_point.height() << " bias_height is " << model().bias_height() << endl;
+	////
 
     if (rec_point.height() <= model().bias_height() ) {
         // store importance factor for lower tree choice
         // we want the application position to reflect the rec_point.height: identify epoch then create new DelayFactor
-        for( size_t indx=0; indx < model().change_times.size()-1 ; indx++ ) {
-			if( rec_point.height() <= model().change_times[indx+1] && rec_point.height() > model().change_times[indx] ) {
+        for( size_t indx=0; indx < model().change_times().size()-1 ; indx++ ) {
+			if( rec_point.height() <= model().change_times().at(indx+1) && rec_point.height() > model().change_times().at(indx) ) {
 				// add factor to the priority queue
+				dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
 				delayed_adjustments.push( DelayedFactor (
-				current_position + model().application_delays.at(indx) ,
+				this->current_base() + model().application_delays.at(indx) ,
 				getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) ) );
+				dout << " we have added df with pos " << this->current_base() + model().application_delays.at(indx) <<
+				" and factor " << getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) << endl;
+				dout << " delayed_adjustments now has " << delayed_adjustments.size() << " elements" << endl;
+				dout << " the next df has pos " << delayed_adjustments.top().application_position << " and factor " << delayed_adjustments.top().importance_factor << endl;
 				// update the total delayed adjustment
 				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() );
-				break
+				dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
+				// update the particle weight so we have a weighted sample of the target distribution
+				this->setParticleWeight( this->weight()*getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) );
+				assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+				break;
 			}
 			// need to catch rec_point.height() > last change_time ???
 		}
     } else {
         // store importance factor for upper tree choice
         // we want the application position to reflect the rec_point.height: identify epoch then create new DelayedFactor
-        for( size_t indx=0; indx < model().change_times.size()-1 ; indx++ ) {
-			if( rec_point.height() <= model().change_times[indx+1] && rec_point.height() > model().change_times[indx] ) {
+        for( size_t indx=0; indx < model().change_times().size()-1 ; indx++ ) {
+			if( rec_point.height() <= model().change_times().at(indx+1) && rec_point.height() > model().change_times().at(indx) ) {
 				// add factor to the priority queue
+				dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
 				delayed_adjustments.push( DelayedFactor (
-				current_position + model().application_delays.at(indx) ,
+				this->current_base() + model().application_delays.at(indx) ,
 				getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) ) );
+				dout << " we have added df with pos " << this->current_base() + model().application_delays.at(indx) <<
+				" and factor " << getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) << endl;
+				dout << " delayed_adjustments now has " << delayed_adjustments.size() << " elements" << endl;
+				dout << " the next df has pos " << delayed_adjustments.top().application_position << " and factor " << delayed_adjustments.top().importance_factor << endl;
 				// update the total delayed adjustment
 				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ); 
-				break
+				dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
+				// update the particle weight so we have a weighted sample of the target distribution
+				this->setParticleWeight( this->weight()*getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) );
+				assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+				break;
 			}
 			// need to catch rec_point.height() > last change_time ???
 		}

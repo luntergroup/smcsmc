@@ -28,6 +28,7 @@
 #include <valarray>
 #include "segdata.hpp"
 #include <queue>
+#include <cmath>
 
 #ifndef NDEBUG
 #define ForestStatedout (std::cout << "    ForestState ")
@@ -100,15 +101,13 @@ class compareDFs {
 		}			
 };
 
-DelayedFactor::DelayedFactor( double pos, double factor) {
+inline DelayedFactor::DelayedFactor( double pos, double factor) {
 	this->application_position = pos;
 	this->importance_factor = factor;
-	
-
 }
 
 // DEBUG delayedIS
-void DelayedFactor::print_info() const {
+inline void DelayedFactor::print_info() const {
     std::cout << "\nThe application position of this DF is " << this->application_position << std::endl;
     std::cout << "The importance factor of this DF is " << this->importance_factor << std::endl;	
 }
