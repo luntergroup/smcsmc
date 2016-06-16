@@ -36,7 +36,9 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
+        dout << " before extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
         (void)this->particles[particle_i]->extend_ARG ( mutation_rate, extend_to, segment_state);
+        dout << " after extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
     }
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
@@ -55,9 +57,9 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, vector <int
         double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( );
         dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
 
+		assert( this->particles[particle_i]->importance_weight_predata() == 1 );
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() 
-                                                      * likelihood_of_haplotypes_at_tips
-                                                      * this->particles[particle_i]->importance_weight_predata());
+                                                      * likelihood_of_haplotypes_at_tips);
         this->particles[particle_i]->setDelayedWeight( this->particles[particle_i]->delayed_weight() 
                                                       * likelihood_of_haplotypes_at_tips );
         // Store DF for IS_TreePoint_Adjustor

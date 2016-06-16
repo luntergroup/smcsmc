@@ -495,8 +495,9 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
         if ( updated_to < extend_to ) {
-
+			dout << "    We are about to sample the next genealogy and the particle weight is " << this->weight() << endl;
             double rec_height = this->sampleNextGenealogy( recordEvents );
+            dout << "    We have sampled the next genealogy and the particle weight is " << this->weight() << endl;
             this->sampleRecSeqPosition( recordEvents );
 
             if (recordEvents) {
@@ -710,7 +711,9 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
     if (rec_point.height() <= model().bias_height() ) {
         // store importance factor for lower tree choice
         // we want the application position to reflect the rec_point.height: identify epoch then create new DelayFactor
+        dout << "The change times are " << model().change_times() << endl;
         for( size_t indx=0; indx < model().change_times().size()-1 ; indx++ ) {
+			dout << "index is " << indx << " and the window we are considering is " << model().change_times().at(indx) << " to " << model().change_times().at(indx+1) << endl;
 			if( rec_point.height() <= model().change_times().at(indx+1) && rec_point.height() > model().change_times().at(indx) ) {
 				// add factor to the priority queue
 				dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
@@ -725,7 +728,7 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() );
 				dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
 				// update the particle weight so we have a weighted sample of the target distribution
-				this->setParticleWeight( this->weight()*getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) );
+				this->setParticleWeight( this->weight()*(getWeightedLocalTreeLength() / ( model().bias_ratio_lower() * getLocalTreeLength() ) ) );
 				assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
 				break;
 			}
@@ -734,7 +737,9 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
     } else {
         // store importance factor for upper tree choice
         // we want the application position to reflect the rec_point.height: identify epoch then create new DelayedFactor
+        dout << "The change times are " << model().change_times() << endl;
         for( size_t indx=0; indx < model().change_times().size()-1 ; indx++ ) {
+			dout << "index is " << indx << " and the window we are considering is " << model().change_times().at(indx) << " to " << model().change_times().at(indx+1) << endl;
 			if( rec_point.height() <= model().change_times().at(indx+1) && rec_point.height() > model().change_times().at(indx) ) {
 				// add factor to the priority queue
 				dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
@@ -749,7 +754,25 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ); 
 				dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
 				// update the particle weight so we have a weighted sample of the target distribution
-				this->setParticleWeight( this->weight()*getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) );
+				this->setParticleWeight( this->weight()*(getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) ) );
+				assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+				break;
+			} else if ( rec_point.height() > model().change_times().at( model().change_times().size()-1 ) ) {
+				dout << " rec point happens higher than our last change time" << endl;
+				// add factor to the priority queue
+				dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
+				delayed_adjustments.push( DelayedFactor (
+				this->current_base() + model().application_delays.at( model().change_times().size()-1 ) ,
+				getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) ) );
+				dout << " we have added df with pos " << this->current_base() + model().application_delays.at( model().change_times().size()-1 ) <<
+				" and factor " << getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) << endl;
+				dout << " delayed_adjustments now has " << delayed_adjustments.size() << " elements" << endl;
+				dout << " the next df has pos " << delayed_adjustments.top().application_position << " and factor " << delayed_adjustments.top().importance_factor << endl;
+				// update the total delayed adjustment
+				total_delayed_adjustment *= getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() );
+				dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
+				// update the particle weight so we have a weighted sample of the target distribution
+				this->setParticleWeight( this->weight()*(getWeightedLocalTreeLength() / ( model().bias_ratio_upper() * getLocalTreeLength() ) ) );
 				assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
 				break;
 			}
@@ -825,7 +848,9 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
   if ( node != this->local_root() ) {
     if ( length_left < WeightedBranchLengthAbove(node) ) {
       assert( node->local() );
+      dout << " before IS_TP the weight is " << this->weight() << endl;
       this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
+      dout << " Straight after IS_TP the weight is " << this->weight() << endl;
       //this is the end of iterating through nodes, so we update here
       return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
     }
