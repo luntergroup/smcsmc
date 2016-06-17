@@ -35,6 +35,7 @@ ForestState::ForestState( Model* model, RandomGenerator* random_generator, const
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     this->setParticleWeight( 1.0 );
     this->setDelayedWeight( 1.0 );
+    this->total_delayed_adjustment = 1.0;
     this->reset_importance_weight_predata();
     this->setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
@@ -56,6 +57,8 @@ ForestState::ForestState( const ForestState & copied_state )
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
     setParticleWeight( copied_state.weight() );
     setDelayedWeight( copied_state.delayed_weight() );
+    this->total_delayed_adjustment = copied_state.total_delayed_adjustment;
+    this->delayed_adjustments = copied_state.delayed_adjustments;
     this->reset_importance_weight_predata();
     this->modify_importance_weight_predata(copied_state.importance_weight_predata());
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
@@ -520,9 +523,17 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     assert (updated_to == extend_to);
     if (updateWeight) {
 		// update weights for extension of ARG
+		dout << "Particle weight is " << weight() << endl;
+		dout << "The likelihood is " << likelihood << endl;
+		dout << "The IWP is " << importance_weight_predata() << endl;
         this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
+        dout << "The updated particle weight is " << weight() << endl;
         if (model().biased_sampling) {
+			dout << "Delayed particle weight is " << delayed_weight() << endl;
+			dout << "The likelihood is " << likelihood << endl;
+			dout << "The IWP is " << importance_weight_predata() << endl;
 	        this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
+	        dout << "The updated delayed particle weight is " << delayed_weight() << endl;
 	        //// DEBUG
 	        dout << "Particle weight is " << weight() << endl;
 	        dout << "delayed weight is " << delayed_weight() << endl;

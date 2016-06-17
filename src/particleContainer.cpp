@@ -103,7 +103,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 	    if (flush) current_state->flushOldRecombinations();
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
-	    current_state->setParticleWeight( 1.0 );
+			current_state->setParticleWeight( 1.0/number_of_particles );
+			current_state->setDelayedWeight( current_state->weight()/current_state->total_delayed_adjustment );
             this->particles.push_back(current_state);
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
@@ -122,7 +123,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ){
                     new_copy_state->resample_recombination_position();
                 }
-		new_copy_state->setParticleWeight( 1.0 );
+				new_copy_state->setParticleWeight( 1.0/number_of_particles );
+				new_copy_state->setDelayedWeight( new_copy_state->weight()/new_copy_state->total_delayed_adjustment );
                 this->particles.push_back(new_copy_state);
             }
         } else {
@@ -218,11 +220,15 @@ void ParticleContainer::normalize_probability(){
         total_probability += this->particles[particle_i]->weight();
         }
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ){
+		dout << " Before normalization" << endl;
+		dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
+		dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() / total_probability);
         this->particles[particle_i]->setDelayedWeight(this->particles[particle_i]->delayed_weight() / total_probability); // should be conditional on biased_sampling
         //// DEBUG
-	        dout << " particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
-	        dout << " the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
+        dout << " After normalization" << endl;
+	    dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
+	    dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
         ////
         }
     }
