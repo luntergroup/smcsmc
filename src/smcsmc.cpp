@@ -189,6 +189,10 @@ void pfARG_core(PfParam &pfARG_para,
       countNe->reset_lag(model_summary.getLags());
     }
     model->lags_to_application_delays( model_summary.getLags() );
+    for( size_t i=0; i<model->application_delays.size(); i++ ){
+	    //model->application_delays.at(i) = 0;
+	    cout << "DDDD application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
+	}
     cout << "    Lags set to: " << countNe->check_lags() << endl;
 
     /*! Go through seg data */

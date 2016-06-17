@@ -111,6 +111,7 @@ class ParticleContainer {
         bool heat_bool_ ;
         double ln_normalization_factor_;
         double temp_sum_of_weights;
+        Model* model;
 };
 
 #endif

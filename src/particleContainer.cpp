@@ -41,6 +41,7 @@ ParticleContainer::ParticleContainer(Model* model,
     this->set_ESS(0);
     this->ln_normalization_factor_ = 0;
     this->set_current_printing_base(0);
+    this->model = model;
     bool make_copies_of_model_and_rg = false; // Set to true to use a random generator, and model per particle for multithreading (slower!)
     dout << " --------------------   Particle Initial States   --------------------" << std::endl;
     for ( size_t i=0; i < Num_of_states ; i++ ){
@@ -103,8 +104,12 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 	    if (flush) current_state->flushOldRecombinations();
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
-			current_state->setParticleWeight( 1.0/number_of_particles );
-			current_state->setDelayedWeight( current_state->weight()/current_state->total_delayed_adjustment );
+            if( !model->biased_sampling ){ 
+			    current_state->setParticleWeight( 1.0/number_of_particles );
+			} else {
+			    current_state->setDelayedWeight( 1.0/number_of_particles );
+			    current_state->setParticleWeight( current_state->delayed_weight()*current_state->total_delayed_adjustment );
+		    }
             this->particles.push_back(current_state);
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
@@ -123,8 +128,12 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ){
                     new_copy_state->resample_recombination_position();
                 }
-				new_copy_state->setParticleWeight( 1.0/number_of_particles );
-				new_copy_state->setDelayedWeight( new_copy_state->weight()/new_copy_state->total_delayed_adjustment );
+                if( !model->biased_sampling ) {
+				    new_copy_state->setParticleWeight( 1.0/number_of_particles );
+				} else {
+				    new_copy_state->setDelayedWeight( 1.0/number_of_particles );
+			        new_copy_state->setParticleWeight( new_copy_state->delayed_weight()*new_copy_state->total_delayed_adjustment );
+                }
                 this->particles.push_back(new_copy_state);
             }
         } else {
@@ -186,23 +195,35 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 
     for (size_t i=0; i < Num_of_states ;i++){
         //update the cum sum array
-        double w_i=this->particles[i]->weight();
+        double w_i = model->biased_sampling ? this->particles[i]->delayed_weight() : this->particles[i]->weight();
         weight_cum_sum[i+1]=weight_cum_sum[i]+w_i;
         wi_sum = wi_sum + w_i;
         wi_sq_sum = wi_sq_sum + w_i * w_i;
         }
 
     //check for the cum weight
-    dout << "### particle weights ";
-    for (size_t i=0;i<Num_of_states;i++){
-        dout << this->particles[i]->weight()<<"  ";
-        } dout << std::endl<<std::endl;
-
-    dout << "### updated cum sum of particle weight ";
-    for (size_t i=0;i<weight_cum_sum.size();i++){
-        dout << weight_cum_sum[i]<<"  ";
-        } dout << std::endl;
-
+    if( !model->biased_sampling ){
+	    dout << "### particle weights ";
+	    for (size_t i=0;i<Num_of_states;i++){
+	        dout << this->particles[i]->weight()<<"  ";
+	        } dout << std::endl<<std::endl;
+	
+	    dout << "### updated cum sum of particle weight ";
+	    for (size_t i=0;i<weight_cum_sum.size();i++){
+	        dout << weight_cum_sum[i]<<"  ";
+	        } dout << std::endl;
+	} else {
+	    dout << "### delayed particle weights ";
+	    for (size_t i=0;i<Num_of_states;i++){
+	        dout << this->particles[i]->delayed_weight()<<"  ";
+	        } dout << std::endl<<std::endl;
+	        
+	    dout << "### updated cum sum of delayed particle weight ";
+	    for (size_t i=0;i<weight_cum_sum.size();i++){
+	        dout << weight_cum_sum[i]<<"  ";
+	        } dout << std::endl;	
+	}
+	
     this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
     }
 
@@ -423,6 +444,7 @@ void ParticleContainer::set_particles_with_random_weight(){
 void ParticleContainer::print_particle_probabilities(){
     for (size_t i = 0; i < this->particles.size(); i++){
         cout<<"weight = "<<this->particles[i]->weight()<<endl;
+        if( model->biased_sampling ) {cout<<"delayed weight = "<<this->particles[i]->delayed_weight()<<endl;}
         }
     }
 
