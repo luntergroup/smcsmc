@@ -742,7 +742,7 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 	}
 	double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
 	// update the particle weight so we have a correctly weighted sample of the target distribution
-	this->setParticleWeight( importance_weight );
+	this->setParticleWeight( this->weight() * importance_weight );
 	// delay applying the importance weight to the distribution used for resampling particles, by
 	// storing it in the priority queue
 	dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
