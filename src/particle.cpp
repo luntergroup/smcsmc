@@ -730,8 +730,7 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
 	while (indx+1 < model().change_times().size() && rec_point.height() >= model().change_times().at(indx+1) ) {
 		indx++;
 	}
-	dout << "index is " << indx << " and the window we are considering is " << model().change_times().at(indx) 
-		 << " to " << model().change_times().at(indx+1) << endl;
+	dout << "index is " << indx << " and the epoch we are considering starts at " << model().change_times().at(indx) << endl;
 	// calculate the importance weight: the ratio of the desired probability density of sampling this time point, over
 	// the probability density of the actual, biased, sampling distribution that was used.
 	double bias_ratio;
