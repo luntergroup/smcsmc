@@ -129,17 +129,19 @@ void Segment::read_new_line(){
 }
 
 
-void Segment::extract_field_VARIANT ( ){
-    allelic_state_at_Segment_end.clear();
+void Segment::extract_field_VARIANT ( ) {
 
-    assert( nsam_ == this->tmp_str.size() );
-    for ( size_t i = 0; i < nsam_; i++){
-        int seg_contant = ( this->tmp_str[i] == '.' ) ? -1 : strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0);
-        this->allelic_state_at_Segment_end.push_back ( seg_contant );
-        //this->allelic_state_at_Segment_start.push_back ( strtol(this->tmp_str.substr(i, 1).c_str(), NULL, 0) );
-        //cout << this->allelic_state_at_Segment_start.back();
+    allelic_state_at_Segment_end.clear();
+    assert( nsam_ == tmp_str.size() );
+    for ( size_t i = 0; i < nsam_; i++ ) {
+		int seg_content;
+		switch (tmp_str[i]) {
+			case '.': seg_content = -1; break;  // missing data
+			case '/': seg_content = 2; break;   // unphased heterozygous genotype
+			default: seg_content = strtol( tmp_str.substr(i,1).c_str(), NULL, 0 );
+		}
+        allelic_state_at_Segment_end.push_back ( seg_content );
     }
-    //cout<<endl;
 }
 
 

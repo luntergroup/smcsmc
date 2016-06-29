@@ -43,25 +43,62 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
 }
 
 
-/*! \brief Update particle weight according to the haplotype data
+bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const {
+
+	// find the next haplotype that is compatible with the genotype encoded in data_at_tips
+	for (int i=0; i<haplotype_at_tips.size(); i+=2) {
+		
+		if (data_at_tips[i] != 2) continue;   // phased site -- ignore
+		if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
+			haplotype_at_tips[i] = 1;
+			haplotype_at_tips[i+1] = 0;
+			return true;
+		}
+		haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
+		haplotype_at_tips[i+1] = 1;
+
+	}
+	// we fell through, so we have considered all haplotypes; stop main loop
+	return false;
+}
+
+
+/*! \brief Update particle weight according to the haplotype or genotype data
  *	@ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips ){
-			
+void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
+				
+	// first check if there are any (unphased) genotypes in the data
+	vector<int> haplotype_at_tips = data_at_tips;
+	int num_haplotypes = 1;
+	for (int i=0; i < data_at_tips.size(); i+=2) {
+		if (data_at_tips[i] == 2) {
+			num_haplotypes *= 2;
+			assert (data_at_tips[i+1] == 2);
+			haplotype_at_tips[i] = 0;    // initialize phase vector
+			haplotype_at_tips[i+1] = 1;
+		} else {
+			assert (data_at_tips[i+1] != 2);
+		}
+	}
+	double normalization_factor = 1.0 / num_haplotypes;
+
 	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
-	for (size_t particle_i=0; particle_i < this->particles.size(); particle_i++){
-		this->particles[particle_i]->include_haplotypes_at_tips(haplotypes_at_tips);
-
-        double likelihood_of_haplotypes_at_tips = this->particles[particle_i]->calculate_likelihood( );
-        dout << "updated weight =" << this->particles[particle_i]->weight()  << "*" <<  likelihood_of_haplotypes_at_tips <<endl;
-
-        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() 
-                                                      * likelihood_of_haplotypes_at_tips
-                                                      * this->particles[particle_i]->importance_weight_predata());
+	for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+		double likelihood_of_haplotype_at_tips = 0;
+		do {
+			particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
+			likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
+		} while ((num_haplotypes > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
+		likelihood_of_haplotype_at_tips *= normalization_factor;
+        dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << endl;
+        this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight() 
+                                                      * likelihood_of_haplotype_at_tips
+                                                      * particles[particle_i]->importance_weight_predata());
         this->particles[particle_i]->reset_importance_weight_predata();
-		dout << "particle " <<  particle_i<<" done" << endl;
-        }
-    
+		dout << "particle " << particle_i << " done" << endl;
+	}    
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
-    }
+
+}
