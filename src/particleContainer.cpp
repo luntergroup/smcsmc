@@ -98,6 +98,13 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     resampledout << " will make total of " << sample_count.sum()<<" particle states" << endl;
     size_t number_of_particles = sample_count.size();
     bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
+    // calculate the sum of the delayed weights, this should be invariant
+    double sum_of_delayed_weights = 0;
+    if( model->biased_sampling ) {
+        for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
+            sum_of_delayed_weights += particles[old_state_index]->delayed_weight();
+        }
+    }
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
@@ -107,7 +114,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             if( !model->biased_sampling ){ 
 			    current_state->setParticleWeight( 1.0/number_of_particles );
 			} else {
-			    current_state->setDelayedWeight( 1.0/number_of_particles );
+                assert( sum_of_delayed_weights != 0 );
+			    current_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
 			    current_state->setParticleWeight( current_state->delayed_weight()*current_state->total_delayed_adjustment );
 		    }
             this->particles.push_back(current_state);
@@ -131,7 +139,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 if( !model->biased_sampling ) {
 				    new_copy_state->setParticleWeight( 1.0/number_of_particles );
 				} else {
-				    new_copy_state->setDelayedWeight( 1.0/number_of_particles );
+                    assert( sum_of_delayed_weights != 0 );
+				    new_copy_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
 			        new_copy_state->setParticleWeight( new_copy_state->delayed_weight()*new_copy_state->total_delayed_adjustment );
                 }
                 this->particles.push_back(new_copy_state);
