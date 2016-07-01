@@ -98,7 +98,16 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
         this->particles[particle_i]->reset_importance_weight_predata();
 		dout << "particle " << particle_i << " done" << endl;
 	}    
+    
+    this->store_normalization_factor();
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
-
+}
+    
+void ParticleContainer::store_normalization_factor() {
+	temp_sum_of_weights = 0;
+	for( size_t i = 0; i < this->particles.size(); i++){
+		temp_sum_of_weights += this->particles[i]->weight();
+    }
+	ln_normalization_factor_ += log( temp_sum_of_weights );
 }

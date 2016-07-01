@@ -265,6 +265,7 @@ void pfARG_core(PfParam &pfARG_para,
         }
         /*! ESS resampling. Filtering step*/
         current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        current_states.normalize_probability();
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
@@ -303,6 +304,8 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */
     current_states.appendingStuffToFile( sequence_end, pfARG_para);
+    
+    current_states.print_ln_normalization_factor();
 
     //#ifdef _SCRM
         //current_states.print_particle_newick();
