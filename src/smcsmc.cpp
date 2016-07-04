@@ -27,6 +27,7 @@
 #include "debug/usage.hpp"
 #include "help.hpp"
 #include "model_summary.hpp"
+#include <set>
 
 #ifdef GPERF
 #include <gperftools/heap-profiler.h>
@@ -115,6 +116,74 @@ int main(int argc, char *argv[]){
 }
 
 
+bool is_height_in_tree( const Forest& forest, double height ) {
+    for (auto it = forest.getNodes()->iterator(); it.good(); ++it) {
+        if ( abs( it.height() - height ) <= .000001 ){
+            return true;
+        }
+    }
+    return false;
+}
+
+vector<double> calculate_median_survival_distances( Model& model, int Num_events = 200 ) {
+
+    //// Simulating trees in order to calibrate lag and bias ratios
+    // lag calibration
+    const int num_epochs = model.change_times().size();
+    vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
+    int num_epochs_not_done = num_epochs;
+    MersenneTwister randomgenerator( true, 1 );
+    while ( num_epochs_not_done > 0 ) {
+      Forest arg( &model, &randomgenerator );
+      arg.buildInitialTree();
+      std::set<double> original_node_heights;
+      for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
+          if (!(*it)->in_sample()) {
+              original_node_heights.insert( (*it)->height() );
+          }
+      }
+      int num_extensions = 3000;
+      while( !original_node_heights.empty() && num_extensions>0 ) {
+        arg.sampleRecSeqPosition( false );
+        arg.sampleNextGenealogy( false );
+        --num_extensions;
+        for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
+          if( !is_height_in_tree( arg, *it ) ) {
+            //// add genomic position to the histogram fo survival for the appropriate epoch
+            // loop over change times to get appropriate index
+            size_t epoch_idx = 0;
+            while (epoch_idx+1 < model.change_times().size() && model.change_times().at(epoch_idx+1) <= *it) {
+                 epoch_idx++;
+            }
+            survival_distances[epoch_idx].push_back( arg.current_base() );
+            if (survival_distances[epoch_idx].size() == Num_events) {
+                --num_epochs_not_done;
+            }
+            //// remove height from the set
+            original_node_heights.erase( *it );
+            break;
+          }
+        }
+      }
+    }
+    vector <double> median_survival;
+    cout << "ARGs simulated under model:" << endl;
+    for( size_t epoch_idx = 0; epoch_idx < survival_distances.size(); epoch_idx++ ) {
+        std::sort( survival_distances[epoch_idx].begin(), survival_distances[epoch_idx].end() );
+        int median_idx = (survival_distances[epoch_idx].size()-1) / 2;
+        if (median_idx == -1) {
+            throw std::length_error("No survival_distance instances in epoch");
+        }
+        median_survival.push_back( survival_distances[epoch_idx][ median_idx ] );
+        cout << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
+        cout << "   These have a median survival distance of " << survival_distances[epoch_idx][ median_idx ]
+             << ", a minimum of " << *survival_distances[epoch_idx].begin()
+             << ", and a maximum of " << *survival_distances[epoch_idx].rbegin() << endl;
+    }
+    return median_survival;
+}
+
+
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ) {
@@ -131,12 +200,10 @@ void pfARG_core(PfParam &pfARG_para,
     Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
 
-
-    //// Simulating trees in order to calibrate lag and bias ratios
+    // bias ratio calibration
+    int Num_bias_ratio_simulation_trees = 10000;
     ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
-    int Num_trees = 10000;
-
-    for(size_t tree_idx = 0 ; tree_idx < Num_trees ; tree_idx++){
+    for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
       //cout << "Adding tree " << tree_idx << endl;
       model_summary.addTree();
       //cout << "current tree B " << model_summary.current_tree_B() << endl;
@@ -157,12 +224,7 @@ void pfARG_core(PfParam &pfARG_para,
       model->setBiasRatioLower( model_summary.getBiasRatioLower() );
       cout << "    Bias ratio upper set to: " << model->bias_ratio_upper() << endl;
       cout << "    Bias ratio lower set to: " << model->bias_ratio_lower() << endl;
-      //cout << "To insure correct num of rec events we need rho_u*B_u+rho_l*B_l=rho*B" << endl;
-      //cout << "br_upper*B_upper " << model->bias_ratio_upper()*(model_summary.avg_B()-model_summary.avg_B_below_bh()) << endl;
-      //cout << "br_lower*B_lower " << model->bias_ratio_lower()*model_summary.avg_B_below_bh() << endl;
-      //cout << "B " << model_summary.avg_B() << endl;
     }
-    // we reset the lags later as they are currently initialized later
     //// Done with calibration
 
 
@@ -185,8 +247,9 @@ void pfARG_core(PfParam &pfARG_para,
     //#endif
     /*! Initialize prior Ne */
     countNe->init();
+    vector<double> median_survival = calculate_median_survival_distances( *model );
     if (pfARG_para.calibrate_lag){
-      countNe->reset_lag(model_summary.getLags());
+      countNe->reset_lag(median_survival);
     }
     cout << "    Lags set to: " << countNe->check_lags() << endl;
 
