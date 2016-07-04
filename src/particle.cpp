@@ -29,9 +29,12 @@
 /*! \brief Initialize a new ForestState.  A copy of model/random_generator is made if own_m_and_rg==True; either way the objects are not stolen
  * @ingroup group_pf_init
  * */
-ForestState::ForestState( Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch, bool own_model_and_random_generator)
-            :Forest( model, random_generator ),
-             record_event_in_epoch(record_event_in_epoch) {
+ForestState::ForestState( Model* model,
+                          RandomGenerator* random_generator,
+                          const vector<int>& record_event_in_epoch,
+                          bool own_model_and_random_generator)
+            : Forest( model, random_generator ),
+              record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     this->setParticleWeight( 1.0 );
     this->setDelayedWeight( 1.0 );

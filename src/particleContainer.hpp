@@ -80,7 +80,8 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_weight_at_site( double mutation_rate, vector <int> &haplotypes_at_tips);
+        void update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips);
+        bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
         void store_normalization_factor();
         // Resampling
         void resample(valarray<int> & sample_count);
