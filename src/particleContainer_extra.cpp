@@ -101,7 +101,7 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
                                                       * likelihood_of_haplotype_at_tips
                                                       * particles[particle_i]->importance_weight_predata() );
         this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight() 
-                                                      * likelihood_of_haplotypes_at_tips
+                                                      * likelihood_of_haplotype_at_tips
                                                       * particles[particle_i]->importance_weight_predata() );
         this->particles[particle_i]->reset_importance_weight_predata();
 		dout << "particle " << particle_i << " done" << endl;
