@@ -142,7 +142,7 @@ vector<double> calculate_median_survival_distances( Model& model, int Num_events
               original_node_heights.insert( (*it)->height() );
           }
       }
-      while( !original_node_heights.empty() ) {
+      while( !original_node_heights.empty() && arg.current_base() < (model.loci_length() * 0.9) ) {
         arg.sampleNextGenealogy( false );
         arg.sampleRecSeqPosition( false );
         for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
