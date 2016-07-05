@@ -142,11 +142,9 @@ vector<double> calculate_median_survival_distances( Model& model, int Num_events
               original_node_heights.insert( (*it)->height() );
           }
       }
-      int num_extensions = 3000;
-      while( !original_node_heights.empty() && num_extensions>0 ) {
-        arg.sampleRecSeqPosition( false );
+      while( !original_node_heights.empty() ) {
         arg.sampleNextGenealogy( false );
-        --num_extensions;
+        arg.sampleRecSeqPosition( false );
         for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
           if( !is_height_in_tree( arg, *it ) ) {
             //// add genomic position to the histogram fo survival for the appropriate epoch
