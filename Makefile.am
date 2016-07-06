@@ -109,14 +109,11 @@ smcsmc_src = src/coalevent.cpp \
              src/arena.cpp \
              src/model_summary.cpp
 
-series_src = src/particleContainer_extra.cpp \
-             src/count_extra.cpp
-
 shared_SOURCES = $(smcsmc_src) $(scrm_src)
 smcsmc_shared_SOURCES = $(shared_SOURCES)
 
 # Binary sources
-smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp $(series_src) src/smcsmc.cpp
+smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp src/smcsmc.cpp
 smcsmcSCRM_SOURCES      = $(smcsmc_SOURCES)
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
@@ -132,7 +129,7 @@ smcsmc_gperf_SOURCES = $(smcsmc_SOURCES)
 test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_FroestState.cpp
 
-unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src) $(series_src)
+unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src)
 
 .PHONY: clean-local
 clean-local:

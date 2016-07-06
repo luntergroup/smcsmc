@@ -68,6 +68,96 @@ ParticleContainer::ParticleContainer(Model* model,
 }
 
 
+/*! 
+ * @ingroup group_pf_update
+ * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
+ */
+void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state ){
+    dout << endl<<" We are extending particles" << endl<<endl;
+    
+ 	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
+        dout << "We are updating particle " << particle_i << endl;
+        /*! 
+         * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
+         * Invariant: the likelihood is correct up to 'updated_to'
+         */
+        dout << " before extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
+        (void)this->particles[particle_i]->extend_ARG ( mutation_rate, extend_to, segment_state);
+        dout << " after extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
+    }
+    /*! normalize the probability upon until the mutation */
+    //this->normalize_probability(); // This normalization doesn't seem to do much ...
+}
+
+
+bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const {
+
+	// find the next haplotype that is compatible with the genotype encoded in data_at_tips
+	for (int i=0; i<haplotype_at_tips.size(); i+=2) {
+		
+		if (data_at_tips[i] != 2) continue;   // phased site -- ignore
+		if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
+			haplotype_at_tips[i] = 1;
+			haplotype_at_tips[i+1] = 0;
+			return true;
+		}
+		haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
+		haplotype_at_tips[i+1] = 1;
+
+	}
+	// we fell through, so we have considered all haplotypes; stop main loop
+	return false;
+}
+
+
+/*! \brief Update particle weight according to the haplotype or genotype data
+ *	@ingroup group_pf_update
+ */
+void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
+				
+	// first check if there are any (unphased) genotypes in the data
+	vector<int> haplotype_at_tips = data_at_tips;
+	int num_haplotypes = 1;
+	for (int i=0; i < data_at_tips.size(); i+=2) {
+		if (data_at_tips[i] == 2) {
+			num_haplotypes *= 2;
+			assert (data_at_tips[i+1] == 2);
+			haplotype_at_tips[i] = 0;    // initialize phase vector
+			haplotype_at_tips[i+1] = 1;
+		} else {
+			assert (data_at_tips[i+1] != 2);
+		}
+	}
+	double normalization_factor = 1.0 / num_haplotypes;
+
+	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
+	for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+		double likelihood_of_haplotype_at_tips = 0;
+		do {
+			particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
+			likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
+		} while ((num_haplotypes > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
+		likelihood_of_haplotype_at_tips *= normalization_factor;
+        dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << "*" << particles[particle_i]->importance_weight_predata() << endl;
+        // the following assertion checks appropriate importance factors have been accounted for
+        //   if we ever change the emission factor of the sampling distribution, this assertion should fail
+        assert( particles[particle_i]->importance_weight_predata() == 1 );
+        this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight() 
+                                                      * likelihood_of_haplotype_at_tips
+                                                      * particles[particle_i]->importance_weight_predata() );
+        this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight() 
+                                                      * likelihood_of_haplotype_at_tips
+                                                      * particles[particle_i]->importance_weight_predata() );
+        this->particles[particle_i]->reset_importance_weight_predata();
+		dout << "particle " << particle_i << " done" << endl;
+	}    
+    
+    this->store_normalization_factor();
+    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
+	dout << endl;
+}
+
+
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
@@ -434,6 +524,7 @@ bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
     }
 
 
+// set_particles_with_random_weight() has not been updated for use with delayed IS
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
         //this->particles[i]->setParticleWeight( this->random_generator()->sample() );
@@ -464,6 +555,16 @@ void ParticleContainer::print_particle_probabilities(){
     //}
 //}
 
+
+void ParticleContainer::store_normalization_factor() {
+	temp_sum_of_weights = 0;
+	for( size_t i = 0; i < this->particles.size(); i++){
+		temp_sum_of_weights += this->particles[i]->weight();
+    }
+	ln_normalization_factor_ += log( temp_sum_of_weights );
+}
+
+
 void ParticleContainer::print_ln_normalization_factor(){
 	cout << "Our likelihood measure is " << ln_normalization_factor() << endl;
-    }
+}
