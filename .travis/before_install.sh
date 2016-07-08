@@ -3,6 +3,7 @@ echo $LANG
 echo $LC_ALL
 if [ $TRAVIS_OS_NAME = linux ]; then
     echo "Linux"
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
     sudo apt-get update -qq
     sudo apt-get install -qq git-core libcppunit-dev graphviz valgrind r-base-core
 fi
