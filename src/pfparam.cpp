@@ -79,7 +79,8 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Action
         // ------------------------------------------------------------------
         else if ( argv_i == "-lag"    ){ this->lag = this->readNextInput<double>(); }
-	else if ( argv_i == "-calibrate_lag"){ this->calibrate_lag = true; }
+	    else if ( argv_i == "-calibrate_lag"){ this->calibrate_lag = true;
+                                               this->lag_fraction = readNextInput<double>(); }
         //else if ( argv_i == "-filter" ){ this->filter_window_ = this->readNextInput<int>(); }
         //else if ( argv_i == "-missing"){ this->missing_data_threshold_ = this->readNextInput<int>(); }
         else if ( argv_i == "-online" ){ this->online_bool = true; }

@@ -170,9 +170,9 @@ void CountModel::init_lags(){
 }
 
 // Do we want to allow for different lags in diff populations?
-void CountModel::reset_lag ( std::vector<double> new_lags ){
+void CountModel::reset_lag ( std::vector<double> survival, double lag_fraction ){
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++) {
-        lags.at(epoch_idx) = new_lags.at(epoch_idx);
+        lags.at(epoch_idx) = survival.at(epoch_idx) * lag_fraction;
     }
 }
 

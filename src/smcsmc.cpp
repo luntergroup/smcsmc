@@ -269,11 +269,8 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
-    //if ( pfARG_para.calibrate_lag ){
-      //countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
-    //}
     if ( pfARG_para.calibrate_lag ){
-      countNe->reset_lag( median_survival );
+      countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
     model->lags_to_application_delays( model_summary.getLags() );
     for( size_t i=0; i<model->application_delays.size(); i++ ){

@@ -71,11 +71,11 @@ class CountModel: public Model {
         void extract_and_update_count( ParticleContainer &Endparticles , double current_base, bool end_data = false);
         void reset_model_parameters(double current_base, Model * model, bool online = true, bool force_update = false, bool print = true);
         void log_counts( PfParam& param );
-	void reset_lag( std::vector<double> new_lags );
+	    void reset_lag( std::vector<double> survival, double lag_fraction = 1 );
 
         // DEBUG
         void print_recomb_count();
-	vector<double> check_lags() const {return lags;}
+	    vector<double> check_lags() const {return lags;}
 
     private:
         // Initialisation
