@@ -130,6 +130,15 @@ vector<double> calculate_median_survival_distances( Model& model, int Num_events
     //// Simulating trees in order to calibrate lag and bias ratios
     // lag calibration
     const int num_epochs = model.change_times().size();
+    //const int num_pops = model.population_number();
+    //cout << "Number of populations: " << num_pops << endl;
+    //cout << "std::vector<std::vector<double> > single_mig_probs_list_; " << model.single_mig_probs_list_ << endl;
+    //cout << "single_mig_probs_list_.size() " << model.single_mig_probs_list_.size() << endl;
+    //for (size_t i = 0; i<model.change_times().size(); i++){
+        //cout << "single_mig_probs_list_.at(" << i << ") " << model.single_mig_probs_list_.at(i) << endl;
+    //}
+    ////vector < vector < vector<double> > > survival_distances( num_pops ); // survival_distances[pop_idx][epoch_idx][coal_sample_index]
+    //// to size each vector to number of epochs, need to find which one involves the absorbtion of that pop...
     vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
@@ -162,6 +171,20 @@ vector<double> calculate_median_survival_distances( Model& model, int Num_events
             break;
           }
         }
+      }
+      // Need to break if we have troublesome epochs due to large estimated population sizes
+      bool exists_highly_explored_epoch = false;
+      bool exists_insufficiently_explored_epoch = false;
+      for( size_t epoch_idx = 0; epoch_idx < num_epochs; epoch_idx++) {
+        if( survival_distances[epoch_idx].size() > 1000000 ) {
+          exists_highly_explored_epoch = true;
+        }
+        if( survival_distances[epoch_idx].size() < 3 ) {
+          exists_insufficiently_explored_epoch = true;
+        }
+      }
+      if ( exists_highly_explored_epoch && !exists_insufficiently_explored_epoch ) {
+        break;
       }
     }
     vector <double> median_survival;
@@ -246,14 +269,31 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
-    if (pfARG_para.calibrate_lag){
-      countNe->reset_lag(median_survival);
+    //if ( pfARG_para.calibrate_lag ){
+      //countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
+    //}
+    if ( pfARG_para.calibrate_lag ){
+      countNe->reset_lag( median_survival );
     }
     model->lags_to_application_delays( model_summary.getLags() );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    cout << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
 	}
     cout << "    Lags set to: " << countNe->check_lags() << endl;
+
+    //cout << "This model has " << model->population_number() << " populations" << endl;
+    //model->resetTime();
+    //for( size_t idx=0; idx < model->change_times().size(); idx++){
+        //cout << "hasFixedTimeEvent is " << model->hasFixedTimeEvent( model->change_times()[idx] )
+             //<< " for epoch " << idx << " at time " << model->change_times()[idx] << endl;
+        //if( idx < model->change_times().size() - 1 ) {
+            //model->increaseTime();
+        //} else if( idx == model->change_times().size() - 1 ) {
+            //model->resetTime();
+        //} else {
+            //cout << "PROBLEM ITERATING OVER TIMES" << endl;
+        //}
+    //}
 
     /*! Go through seg data */
     bool force_update = false;
