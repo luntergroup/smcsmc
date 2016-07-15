@@ -125,7 +125,11 @@ bool is_height_in_tree( const Forest& forest, double height ) {
     return false;
 }
 
-vector<double> calculate_median_survival_distances( Model& model, int Num_events = 200 ) {
+vector<double> calculate_median_survival_distances( Model model, int Num_events = 200 ) {
+
+    // we want to change model attributes inside this function only
+    model.setLocusLength(10000000);
+    model.biased_sampling = false;
 
     //// Simulating trees in order to calibrate lag and bias ratios
     // lag calibration
