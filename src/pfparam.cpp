@@ -61,6 +61,14 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                 }
             }
         }
+        else if ( argv_i == "-cap"  ){ this->useCap = true;
+                                       this->Ne_cap = readNextInput<double>(); }
+           // would be better to allow no accompaning number, like below, but we can't increment the argv_i as param.cc does
+           //try {
+             //this->Ne_cap = readNextInput<double>();
+           //} catch (std::invalid_argument e) {
+             //--argv_i;
+           //} }
         else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }

@@ -36,7 +36,7 @@ void CountModel::init() {
 }
 
 
-void CountModel::reset_model_parameters(double current_base, Model * model, bool online, bool force_update, bool print){
+void CountModel::reset_model_parameters(double current_base, Model * model, bool useCap, double cap, bool online, bool force_update, bool print){
 
     bool update = false;
     if ( online && current_base > this->update_param_threshold_ ) {
@@ -47,7 +47,7 @@ void CountModel::reset_model_parameters(double current_base, Model * model, bool
     if ( update || force_update  ) {
         cout<<" MODEL IS RESET at base " << current_base <<endl;
         this->reset_recomb_rate ( model );
-        this->reset_Ne ( model );
+        this->reset_Ne ( model, useCap, cap );
         this->reset_mig_rate ( model );
         model->finalize();
     } else {
@@ -176,7 +176,7 @@ void CountModel::reset_lag ( std::vector<double> survival, double lag_fraction )
     }
 }
 
-void CountModel::reset_Ne ( Model *model ){
+void CountModel::reset_Ne ( Model *model, bool useCap, double cap){
 
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++) {
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ) {
@@ -185,7 +185,16 @@ void CountModel::reset_Ne ( Model *model ){
             double coal_weight = total_coal_weight[epoch_idx][pop_j].final_answer();
             double coal_rate  = coal_count / coal_opp;
             double pop_size   = 1.0 / (2.0 * coal_rate);
-            model->addPopulationSize(change_times_[epoch_idx], pop_j, pop_size ,false, false);
+            if ( useCap ){
+				if ( pop_size >= cap ){
+					model->addPopulationSize(change_times_[epoch_idx], pop_j, cap ,false, false);
+				} else {
+					model->addPopulationSize(change_times_[epoch_idx], pop_j, pop_size ,false, false);
+				}
+			} else {
+				model->addPopulationSize(change_times_[epoch_idx], pop_j, pop_size ,false, false);
+			}
+
             cout << " Setting size of population " << pop_j << " @ " << setw(8) << change_times_[epoch_idx] << " to "
                  << setw(8) << pop_size
                  << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j].final_answer() << " / " << this->total_coal_count[epoch_idx][pop_j].final_answer() << "; post-lag ESS "

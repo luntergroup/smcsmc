@@ -362,7 +362,7 @@ void pfARG_core(PfParam &pfARG_para,
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
 
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
+        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.useCap, pfARG_para.Ne_cap, pfARG_para.online_bool, force_update = false, false );
 
         if ( pfARG_para.ESS() == 1 ) {
             dout << " random weights" <<endl;
@@ -400,7 +400,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     cout << " Inference step completed." << endl;
-    countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
+    countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 
     bool append_to_history_file = true;
     pfARG_para.appending_Ne_file( append_to_history_file );

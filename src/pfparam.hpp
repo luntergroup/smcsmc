@@ -58,6 +58,9 @@ class PfParam{
         int    EM_steps;     /*!< \brief Number of EM iterations */
         double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
 
+        bool   useCap = false;
+        double Ne_cap = 200000;
+
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
