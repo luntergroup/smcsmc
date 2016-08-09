@@ -10,28 +10,30 @@ class ModelSummary{
     public:
 
     ModelSummary(Model *model, double top_t){
-
-	this->top_t_scaled = top_t * 4 *model->default_pop_size();
-	this->model = model;
-	this->finalized_ = false;
-
+        top_t_scaled = top_t * 4 *model->default_pop_size();
+        model = model;
+        finalized_ = false;
+    
         for( size_t i=0 ; i < model->getNumEpochs() ; i++ ){
-	    times_.push_back(model->change_times().at(i));
-	}
-
-	assert( top_t_scaled > times_.at(times_.size()-1) );
-	times_.push_back(top_t_scaled);
-
-	tree_count_ = 0;
-
-	for( size_t idx=0 ; idx < this->times_.size()-1 ; idx++ ) {
-          current_tree_B_below_.push_back( 0 );
-	  current_tree_B_within_.push_back( 0 );
-	  current_tree_lineage_count_.push_back( 0 );
-          current_tree_single_lineage_.push_back( false );
-	}
-	set_current_tree_B_below_bh( 0 );
+            times_.push_back(model->change_times().at(i));
+        }
+    
+        assert( top_t_scaled > times_.at(times_.size()-1) );
+        times_.push_back(top_t_scaled);
+    
+        tree_count_ = 0;
+    
+        for( size_t idx=0 ; idx < times_.size()-1 ; idx++ ) {
+            current_tree_B_below_.push_back( 0 );
+            current_tree_B_within_.push_back( 0 );
+            current_tree_lineage_count_.push_back( 0 );
+            current_tree_single_lineage_.push_back( false );
+        }
+        for( size_t bias_section_idx=0; bias_section_idx < model->bias_strengths().size(); bias_section_idx++) {
+            set_current_tree_B_below_bh( bias_section_idx, 0 );
+        }
     };
+    
     ~ModelSummary(){};
 
     std::vector<double> times_; // times_ contains all time boundaries (specifically starts with 0, ends with top_t_)
@@ -40,13 +42,15 @@ class ModelSummary{
     Model* model;
     double top_t_scaled;
     
-
+    // Need to measure below and within epochs
     std::vector<double> avg_B_below_;
     std::vector<double> avg_B_within_;
-    double avg_B_below_bh_;
+    // Need to measure below and within bias sections
+    std::vector<double> avg_B_below_bh_ (model->bias_strengths().size());
+    std::vector<double> avg_B_within_bias_section_;
+    
     double avg_B_;
     std::vector<double> avg_lineage_count_;
-
     std::vector<int> single_lineage_count_;
 
     bool finalized_;
@@ -58,7 +62,7 @@ class ModelSummary{
     // information for the current tree
     std::vector<double> current_tree_B_below_;
     std::vector<double> current_tree_B_within_;
-    double current_tree_B_below_bh_;
+    std::vector<double> current_tree_B_below_bh_;
     double current_tree_B_;
     std::vector<double> current_tree_lineage_count_;
     std::vector<bool> current_tree_single_lineage_;
@@ -68,7 +72,8 @@ class ModelSummary{
 
     std::vector<double> avg_B_below() const {return avg_B_below_;}
     std::vector<double> avg_B_within() const {return avg_B_within_;}
-    double avg_B_below_bh() const {return avg_B_below_bh_;}
+    std::vector<double> avg_B_below_bh() const {return avg_B_below_bh_;}
+    std::vector<double> avg_B_within_bias_section() const {return avg_B_within_bias_section_;}
     double avg_B() const {return avg_B_;}
     std::vector<double> avg_lineage_count() const {return avg_lineage_count_;}
 
@@ -76,10 +81,9 @@ class ModelSummary{
 
     bool is_finalized() const {return finalized_;}
 
-    //need getters and setters for current_tree_*
     std::vector<double> current_tree_B_below() const {return current_tree_B_below_;}
     std::vector<double> current_tree_B_within() const {return current_tree_B_within_;}
-    double current_tree_B_below_bh() const {return current_tree_B_below_bh_;}
+    std::vector<double> current_tree_B_below_bh() const {return current_tree_B_below_bh_;}
     double current_tree_B() const {return current_tree_B_;}
     std::vector<double> current_tree_lineage_count() const {return current_tree_lineage_count_;}
     std::vector<bool> current_tree_single_lineage() const {return current_tree_single_lineage_;}
@@ -93,14 +97,15 @@ class ModelSummary{
     // setters
     void set_avg_B_below(size_t idx, double new_value ){avg_B_below_.at(idx) = new_value;}
     void set_avg_B_within(size_t idx, double new_value ){avg_B_within_.at(idx) = new_value;}
-    void set_avg_B_below_bh( double new_value ){avg_B_below_bh_ = new_value;}
+    void set_avg_B_below_bh(size_t idx, double new_value ){avg_B_below_bh_.at(idx) = new_value;}
+    void calculate_avg_B_within_bias_section();
     void set_avg_B( double new_value ){avg_B_ = new_value;}
     void set_avg_lineage_count(size_t idx, double new_value ){avg_lineage_count_.at(idx) = new_value;}
     void set_exp_lineage_count_given_two(size_t idx, double new_value ){exp_lineage_count_given_two_.at(idx)=new_value;}
 
     void set_current_tree_B_below(size_t idx, double new_value ){current_tree_B_below_.at(idx) = new_value;}
     void set_current_tree_B_within(size_t idx, double new_value ){current_tree_B_within_.at(idx) = new_value;}
-    void set_current_tree_B_below_bh( double new_value ){current_tree_B_below_bh_ = new_value;}
+    void set_current_tree_B_below_bh(size_t idx, double new_value ){current_tree_B_below_bh_.at(idx) = new_value;}
     void set_current_tree_B( double new_value ){current_tree_B_ = new_value;}
     void set_current_tree_lineage_count(size_t idx, double new_value ){current_tree_lineage_count_.at(idx) = new_value;}
     void set_current_tree_single_lineage(size_t idx, bool new_value ){current_tree_single_lineage_.at(idx) = new_value;}

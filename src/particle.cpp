@@ -616,22 +616,35 @@ std::string ForestState::newick(Node *node) {
 
 /**
  * Function for calculating the weighted branch length above a node.
- * The portion of the branch below bias_height is weighted by bias_ratio,
- * the portion of the branch above bias_height is weighted by 1.
+ * The portion of the branch in time section i is weighted by bias_ratio[i]
+ * NB: bias_heights is the outer boundaries and hence has one more element than bias_ratios (e.g. bh=(0,200,DBL_MAX), br=(5,0.5))
  * 
  *  \return the weighted length of the branch above node.
  */
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
-
-    if ( node->height() >= model().bias_height() ) {
-        return node->height_above() * model().bias_ratio_upper();
-    } else if ( node->parent_height() < model().bias_height() ) {
-        return node->height_above() * model().bias_ratio_lower();
-    } else {
-        assert( node->height() + node->height_above() >= model().bias_height() );
-        return (model().bias_height() - node->height()) * model().bias_ratio_lower() +
-               (node->parent_height() - model().bias_height()) * model().bias_ratio_upper();
+    
+    // identify time section of the bottom of the branch (the node)
+    size_t node_time_idx = 0;
+    while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
+        node_time_idx++;
     }
+    
+    // identify the time section of the top of the branch (the parent node)
+    size_t parent_node_time_idx = 0;
+    while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
+        parent_node_time_idx++;
+    }
+    
+    // loop over time sections present in branch and add the weighted length
+    double weighted_branch_length = 0;
+    for ( size_t time_idx = node_time_idx; time_idx <= parent_node_time_idx; time_idx++) {
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() )
+        double lower_end = max( model().bias_heights()[time_idx] , node->height() )
+        assert( upper_end > lower_end );
+        weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end )
+    }
+    
+    return (weighted_branch_length);
 }
 
 /**
@@ -676,29 +689,37 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
 
 /**
  * Function for converting a node and the weighted (sampled) length above
- * to an absolute height.
+ * to an absolute height. The returned height is found by measuring down from
+ * the parent node height in order to stay consistent with SCRM.
  *
  * \return a standardized height
  */
 double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
+    
     assert( length_left <= WeightedBranchLengthAbove( node ) );
-    if ( node->height() >= model().bias_height() ) {
-	// entire branch is above bias_height
-	assert( node->parent_height() > model().bias_height() );
-        return node->height() + ( length_left/model().bias_ratio_upper() );
-    } else if ( node->parent_height() < model().bias_height() ) {
-	// entire branch is below bias_height
-	assert( node->height() < model().bias_height() );
-	return node->height() + ( length_left/model().bias_ratio_lower() );
-    } else {
-        // the branch spans the bias_height, so we need to do some standardization
-	// we measure from the node up to stay consistent with scrm TreePoints
-        if ( length_left < ((model().bias_height() - node->height()) * model().bias_ratio_lower()) ) {
-            return node->height() + length_left/model().bias_ratio_lower();
-	} else {
-            length_left -= (model().bias_height() - node->height()) * model().bias_ratio_lower();
-	    return model().bias_height() + length_left/model().bias_ratio_upper();
-	}
+    
+    // identify time section of the bottom of the branch (the node)
+    size_t node_time_idx = 0;
+    while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
+        node_time_idx++;
+    }
+    
+    // identify the time section of the top of the branch (the parent node)
+    size_t parent_node_time_idx = 0;
+    while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
+        parent_node_time_idx++;
+    }
+    
+    // loop over time sections present in branch (starting at the top) and subtract from length_left until the sampled height is reached
+    for ( size_t time_idx = parent_node_time_idx; time_idx >= node_time_idx; --time_idx) {
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() )
+        double lower_end = max( model().bias_heights()[time_idx] , node->height() )
+        assert( upper_end > lower_end );
+        if( length_left >= model().bias_ratios()[time_idx] * (upper_end-lower_end) ) {
+            length_left -= model().bias_ratios()[time_idx] * (upper_end-lower_end);
+        } else {
+            return upper_end - length_left / model().bias_ratios()[time_idx];
+        }
     }
 }
 
