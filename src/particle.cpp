@@ -483,7 +483,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 		    if(update_to == extend_to) {
 				IS_positional_adjustor_no_recombination((update_to - updated_to),
 					getLocalTreeLength() * model().recombination_rate(),
-					getWeightedLocalTreeLength() * model().recombination_rate());		
+					getWeightedLocalTreeLength() * model().recombination_rate());
 		    } else {
 				assert(update_to == this->next_base());
 				IS_positional_adjustor_at_recombination((update_to - updated_to),
@@ -549,7 +549,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
 		    " rhs is " << .001 * this->weight() << endl;
 	        ////
 	        assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
-	        this->reset_importance_weight_predata();      
+	        this->reset_importance_weight_predata();
 	    // update weights for application positions passed during extension
 	        if( !delayed_adjustments.empty() ) {
 		        while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
@@ -618,32 +618,32 @@ std::string ForestState::newick(Node *node) {
  * Function for calculating the weighted branch length above a node.
  * The portion of the branch in time section i is weighted by bias_ratio[i]
  * NB: bias_heights is the outer boundaries and hence has one more element than bias_ratios (e.g. bh=(0,200,DBL_MAX), br=(5,0.5))
- * 
+ *
  *  \return the weighted length of the branch above node.
  */
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
-    
+
     // identify time section of the bottom of the branch (the node)
     size_t node_time_idx = 0;
     while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
         node_time_idx++;
     }
-    
+
     // identify the time section of the top of the branch (the parent node)
     size_t parent_node_time_idx = 0;
     while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
         parent_node_time_idx++;
     }
-    
+
     // loop over time sections present in branch and add the weighted length
     double weighted_branch_length = 0;
     for ( size_t time_idx = node_time_idx; time_idx <= parent_node_time_idx; time_idx++) {
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() )
-        double lower_end = max( model().bias_heights()[time_idx] , node->height() )
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
         assert( upper_end > lower_end );
-        weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end )
+        weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end );
     }
-    
+
     return (weighted_branch_length);
 }
 
@@ -664,7 +664,7 @@ double ForestState::getWeightedLocalTreeLength() const {
  *
  * \return the sum of weighted branches below node
  */
- 
+
 double ForestState::getWeightedLengthBelow( Node* node ) const {
     double weighted_length = 0;
 
@@ -676,14 +676,14 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
 	// add length below child
 	weighted_length += getWeightedLengthBelow(node->first_child());
     }
-    
+
     if ( node->second_child() !=NULL && node->second_child()->samples_below() > 0 ) {
 	// add length above child
 	weighted_length += WeightedBranchLengthAbove(node->second_child());
 	// add length below child
 	weighted_length += getWeightedLengthBelow(node->second_child());
     }
-    
+
     return weighted_length;
 }
 
@@ -695,25 +695,25 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
  * \return a standardized height
  */
 double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
-    
+
     assert( length_left <= WeightedBranchLengthAbove( node ) );
-    
+
     // identify time section of the bottom of the branch (the node)
     size_t node_time_idx = 0;
     while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
         node_time_idx++;
     }
-    
+
     // identify the time section of the top of the branch (the parent node)
     size_t parent_node_time_idx = 0;
     while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
         parent_node_time_idx++;
     }
-    
+
     // loop over time sections present in branch (starting at the top) and subtract from length_left until the sampled height is reached
     for ( size_t time_idx = parent_node_time_idx; time_idx >= node_time_idx; --time_idx) {
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() )
-        double lower_end = max( model().bias_heights()[time_idx] , node->height() )
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
         assert( upper_end > lower_end );
         if( length_left >= model().bias_ratios()[time_idx] * (upper_end-lower_end) ) {
             length_left -= model().bias_ratios()[time_idx] * (upper_end-lower_end);
@@ -733,7 +733,7 @@ void ForestState::IS_positional_adjustor_no_recombination(double x, double rate_
  * sampled a seq position from our biased sampler.
  *
  * \return the importance weight adjustor needed to correct for biased sampling along seq.
- * 
+ *
  */
 void ForestState::IS_positional_adjustor_at_recombination(double x, double rate_trans, double rate_prop) {
     double transition_prob = rate_trans * std::exp( - rate_trans * x );
@@ -742,49 +742,52 @@ void ForestState::IS_positional_adjustor_at_recombination(double x, double rate_
 }
 
 void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
-	
-	//// DEBUG
-	dout << "Inside IS_TreePoint_adjustor" << endl;
-	dout << " rec_height is " << rec_point.height() << " bias_height is " << model().bias_height() << endl;
-	////
 
-	// figure out the epoch of the recombination event; 
-	// use the top epoch in case the recombination occurred above the top epoch
-	size_t indx = 0;
-	while (indx+1 < model().change_times().size() && rec_point.height() >= model().change_times().at(indx+1) ) {
-		indx++;
-	}
-	dout << "index is " << indx << " and the epoch we are considering starts at " << model().change_times().at(indx) << endl;
-	// calculate the importance weight: the ratio of the desired probability density of sampling this time point, over
-	// the probability density of the actual, biased, sampling distribution that was used.
-	double bias_ratio;
-    if (rec_point.height() <= model().bias_height() ) {
-		bias_ratio = model().bias_ratio_lower();
-	} else {
-		bias_ratio = model().bias_ratio_upper();
-	}
-	double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
-	// update the particle weight so we have a correctly weighted sample of the target distribution
-	this->setParticleWeight( this->weight() * importance_weight );
-	// delay applying the importance weight to the distribution used for resampling particles, by
-	// storing it in the priority queue
-	dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
-	delayed_adjustments.push( 
-		DelayedFactor (
-			this->current_base() + model().application_delays.at(indx) ,
-			importance_weight
-		) 
-	);
-	// update the total delayed adjustment (for checking only)
-	total_delayed_adjustment *= importance_weight;
-	dout << " we have added df with pos " << this->current_base() + model().application_delays.at(indx) 
-		 << " and factor " << importance_weight << endl;
-	dout << " delayed_adjustments now has " << delayed_adjustments.size() << " elements" << endl;
-	dout << " the next df has pos " << delayed_adjustments.top().application_position 
-		 << " and factor " << delayed_adjustments.top().importance_factor << endl;
-	dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
-	assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
-    
+    //// DEBUG
+    dout << "Inside IS_TreePoint_adjustor" << endl;
+    dout << " rec_height is " << rec_point.height() << " bias_heights are " << model().bias_heights() << endl;
+    ////
+
+    // figure out the epoch of the recombination event;
+    // use the top epoch in case the recombination occurred above the top epoch
+    size_t indx = 0;
+    while (indx+1 < model().change_times().size() && rec_point.height() >= model().change_times().at(indx+1) ) {
+        indx++;
+    }
+    dout << "index is " << indx << " and the epoch we are considering starts at " << model().change_times().at(indx) << endl;
+    // calculate the importance weight: the ratio of the desired probability density of sampling this time point, over
+    // the probability density of the actual, biased, sampling distribution that was used.
+
+    // find the bias time section containing the rec point height, in order to use the appropriate bias ratio
+    size_t time_section_idx = 0;
+    while( model().bias_heights()[time_section_idx+1] < rec_point.height() ){
+        time_section_idx++;
+    }
+    assert( time_section_idx <= model().bias_ratios().size() );
+    double bias_ratio = model().bias_ratios()[ time_section_idx ];
+
+    double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
+    // update the particle weight so we have a correctly weighted sample of the target distribution
+    setParticleWeight( weight() * importance_weight );
+    // delay applying the importance weight to the distribution used for resampling particles, by
+    // storing it in the priority queue
+    dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
+    delayed_adjustments.push(
+        DelayedFactor (
+            current_base() + model().application_delays.at(indx) ,
+            importance_weight
+        )
+    );
+    // update the total delayed adjustment (for checking only)
+    total_delayed_adjustment *= importance_weight;
+    dout << " we have added df with pos " << current_base() + model().application_delays.at(indx)
+         << " and factor " << importance_weight << endl;
+    dout << " delayed_adjustments now has " << delayed_adjustments.size() << " elements" << endl;
+    dout << " the next df has pos " << delayed_adjustments.top().application_position
+         << " and factor " << delayed_adjustments.top().importance_factor << endl;
+    dout << " total_delayed_adjustment updated to " << total_delayed_adjustment << endl;
+    assert( std::abs(weight() - delayed_weight() * total_delayed_adjustment) <= .001 * weight() );
+
 }
 
 
@@ -794,7 +797,7 @@ void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
  *
  * want to change importance weight member, rather than returning below
  * \return the importance weight adjustor needed to correct for biased sampling.
- * 
+ *
  */
 void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
     double length = random_generator()->sampleExpoLimit(model().recombination_rate() * getWeightedLocalTreeLength(),
@@ -836,7 +839,7 @@ void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
 TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
 
     assert(model().biased_sampling);
-    
+
   if (node == NULL) {
     // Called without arguments => initialization
     assert( this->checkTreeLength() );
@@ -885,10 +888,10 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
 }
 
 /**
- * Function for sampling the sequence position of the next recombination event 
- * 
+ * Function for sampling the sequence position of the next recombination event
+ *
  */
- 
+
 void ForestState::sampleRecSeqPosition( bool recordEvents ) {
 
   if( model().biased_sampling ) {
@@ -901,6 +904,6 @@ void ForestState::sampleRecSeqPosition( bool recordEvents ) {
 
   assert( this->printTree() );
   this->calcSegmentSumStats();
-    
+
 }
 

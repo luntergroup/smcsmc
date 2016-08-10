@@ -223,6 +223,8 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
+    cout << "model has bias heights " << model->bias_heights() << endl;
+    cout << "model has bias strengths " << model->bias_strengths() << endl;
 
     // bias ratio calibration
     int Num_bias_ratio_simulation_trees = 10000;
@@ -244,10 +246,12 @@ void pfARG_core(PfParam &pfARG_para,
     cout << "    tree count: " << model_summary.tree_count_ << endl;
     
     if(model->biased_sampling) {
-      model->setBiasRatioUpper( model_summary.getBiasRatioUpper() );
-      model->setBiasRatioLower( model_summary.getBiasRatioLower() );
-      cout << "    Bias ratio upper set to: " << model->bias_ratio_upper() << endl;
-      cout << "    Bias ratio lower set to: " << model->bias_ratio_lower() << endl;
+        model->clearBiasRatios();
+        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
+            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
+        }
+        cout << "    Bias ratios set to: " << model->bias_ratios() << endl;
+        assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
     }
     //// Done with calibration
 

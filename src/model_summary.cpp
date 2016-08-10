@@ -10,7 +10,7 @@ void ModelSummary::addTree(){
     // simulate tree using tree_count_ as seed
     MersenneTwister *randomgenerator = new MersenneTwister( true, tree_count_ );
     //Forest* forest = new Forest( this->model, randomgenerator );
-    Forest forest = Forest( model, randomgenerator );
+    Forest forest = Forest( this->model, randomgenerator );
     forest.buildInitialTree();
     set_current_tree_B(forest.local_root()->length_below());
 
@@ -31,7 +31,8 @@ void ModelSummary::addTree(){
     //cout << "current tree B below bh " << current_tree_B_below_bh() << endl;
     
     // avg_B_below_ etc modified
-    if(tree_count_==1) {  // could remove this if statement by initializing avgs to 0
+    if(tree_count_==1) {
+        // size the vectors containing vectors; must be a better way to initialize this...
         for( size_t idx=0 ; idx < this->times_.size()-1 ; idx++){
             avg_B_below_.push_back(current_tree_B_below().at(idx));
             avg_B_within_.push_back(current_tree_B_within().at(idx));
@@ -44,8 +45,8 @@ void ModelSummary::addTree(){
         //cout << "After the first tree avg_B_within is " << avg_B_within() << endl;
         //cout << "After the first tree avg_lineage_count is " << avg_lineage_count() << endl;
         //cout << "After the first tree single_lineage_count is " << single_lineage_count() << endl;
-        for( size_t idx = 0; idx < avg_B_below_bh().size(); idx++) {
-            set_avg_B_below_bh(idx, current_tree_B_below_bh()[idx]);
+        for( size_t idx = 0; idx < current_tree_B_below_bh().size(); idx++) {
+            avg_B_below_bh_.push_back( current_tree_B_below_bh()[idx]);
         }
     } else {
         for( size_t idx=0 ; idx < times_.size()-1 ; idx++){
@@ -94,11 +95,11 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
         }
     } else {
         //check if current_tree_B_below_bh needs to be updated
-        for( size_t bh_idx = 1; bh_idx < model->bias_heights.size(); bh_idx++){
-            if( node->height() < model->bias_height()[bh_idx] ) { //if node.height < bh
+        for( size_t bh_idx = 1; bh_idx < model->bias_heights().size(); bh_idx++){
+            if( node->height() < model->bias_heights()[bh_idx] ) { //if node.height < bh
                 set_current_tree_B_below_bh( bh_idx-1, current_tree_B_below_bh()[bh_idx-1] +
                                 std::min( node->parent()->height() - node->height() ,
-                                model->bias_height()[bh_idx] - node->height() ) );
+                                model->bias_heights()[bh_idx] - node->height() ) );
             }
         }
     }
@@ -144,7 +145,7 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
         }
     }
 
-    if( node->first_child() != NULL ) {adjust_current_tree_measurements(node->first_child());} 
+    if( node->first_child() != NULL ) {adjust_current_tree_measurements(node->first_child());}
     if( node->second_child() != NULL ) {adjust_current_tree_measurements(node->second_child());}
 
     //assertions on B_below, B_within
@@ -171,7 +172,7 @@ void ModelSummary::process_current_tree_measurements(){
 void ModelSummary::finalize(){
     assert( !is_finalized() );
     assert( current_tree_traversed_ );
-    
+
     calculate_avg_B_within_bias_section();
 
     // for loop below is unused since we now calibrate lag empirically
