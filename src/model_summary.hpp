@@ -129,7 +129,7 @@ class ModelSummary{
         for( size_t temp_idx=0; temp_idx < model->bias_strengths().size(); temp_idx++ ){
             normalizing_factor += avg_B_within_bias_section()[temp_idx] * model->bias_strengths()[temp_idx];
         }
-        return avg_B_within_bias_section()[idx] * model->bias_strengths()[idx] / normalizing_factor;
+        return avg_B_ * model->bias_strengths()[idx] / normalizing_factor;
     }
 
 };
