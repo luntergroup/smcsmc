@@ -279,7 +279,7 @@ void pfARG_core(PfParam &pfARG_para,
     if ( pfARG_para.calibrate_lag ){
       countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
-    model->lags_to_application_delays( model_summary.getLags() );
+    model->lags_to_application_delays( countNe->check_lags() );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    cout << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
 	}
