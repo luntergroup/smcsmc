@@ -278,7 +278,8 @@ void pfARG_core(PfParam &pfARG_para,
     vector<double> median_survival = calculate_median_survival_distances( *model );
     // We will temporarily reset the lags to the value we want for the application delays. Need to change model->lags_to_application_delays to be survival_to_application_delays
     if ( pfARG_para.calibrate_lag ){
-      countNe->reset_lag( median_survival, 0.5 );
+      countNe->reset_lag( median_survival, 1.0 );
+      // lags_to_application_delays sets app delay to half the lag, we want the app delay to be half the survival, so set lags equal to survival
     }
     model->lags_to_application_delays( countNe->check_lags() );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
