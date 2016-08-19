@@ -276,13 +276,18 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
+    // We will temporarily reset the lags to the value we want for the application delays. Need to change model->lags_to_application_delays to be survival_to_application_delays
     if ( pfARG_para.calibrate_lag ){
-      countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
+      countNe->reset_lag( median_survival, 0.5 );
     }
     model->lags_to_application_delays( countNe->check_lags() );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    cout << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
-	}
+    }
+    // Now set the lag correctly according to the command
+    if ( pfARG_para.calibrate_lag ){
+      countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
+    }
     cout << "    Lags set to: " << countNe->check_lags() << endl;
 
     //cout << "This model has " << model->population_number() << " populations" << endl;
