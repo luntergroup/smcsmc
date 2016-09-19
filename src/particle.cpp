@@ -630,7 +630,7 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
     }
 
     // identify the time section of the top of the branch (the parent node)
-    size_t parent_node_time_idx = 0;
+    size_t parent_node_time_idx = node_time_idx;
     while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
         parent_node_time_idx++;
     }
@@ -638,8 +638,8 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
     // loop over time sections present in branch and add the weighted length
     double weighted_branch_length = 0;
     for ( size_t time_idx = node_time_idx; time_idx <= parent_node_time_idx; time_idx++) {
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
         double lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
         assert( upper_end > lower_end );
         weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end );
     }
@@ -705,15 +705,15 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
     }
 
     // identify the time section of the top of the branch (the parent node)
-    size_t parent_node_time_idx = 0;
+    size_t parent_node_time_idx = node_time_idx;
     while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
         parent_node_time_idx++;
     }
 
     // loop over time sections present in branch (starting at the top) and subtract from length_left until the sampled height is reached
     for ( size_t time_idx = parent_node_time_idx; time_idx >= node_time_idx; --time_idx) {
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
         double lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
         assert( upper_end > lower_end );
         if( length_left >= model().bias_ratios()[time_idx] * (upper_end-lower_end) ) {
             length_left -= model().bias_ratios()[time_idx] * (upper_end-lower_end);
