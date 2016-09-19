@@ -168,6 +168,8 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
     if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
         resampledout<<" ESS_diff = " << ESS_diff<<endl;
         resampledout << " ### PROGRESS: ESS resampling" << endl;
+        cout << "Resampling at position " << mutation_at << endl;
+        cout << "ESS is " << this->ESS() << endl;
         this->systematic_resampling( weight_cum_sum, sample_count, num_state);
         this->resample(sample_count);
     }
