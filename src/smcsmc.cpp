@@ -375,7 +375,7 @@ void pfARG_core(PfParam &pfARG_para,
             current_states.set_particles_with_random_weight();
         }
         /*! ESS resampling. Filtering step*/
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para, Nparticles);
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;

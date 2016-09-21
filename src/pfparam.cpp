@@ -283,6 +283,7 @@ void PfParam::finalize(  ){
     this->log_NAME     = out_NAME_prefix + ".log";
     this->HIST_NAME    = out_NAME_prefix + "HIST";
     this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
+    this->Resample_NAME= out_NAME_prefix + "Resample";
 
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
@@ -348,6 +349,7 @@ void PfParam::log_param( ){
         }
     //if (this->hist_bool){
         log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
+        log_file << "Resample saved in file: " << Resample_NAME << "\n";
         //}
 
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";
@@ -486,6 +488,15 @@ void PfParam::appending_Ne_file( bool hist ){
     return;
     }
 
+
+void PfParam::append_resample_file( int position, double ESS) const {
+    string file_name = Resample_NAME;
+    ofstream resample_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    resample_file << "Resampling at position " << position
+                  << " ; ESS is " << ESS
+                  << endl;
+    resample_file.close();
+}
 
 
 //void PfParam::get_scrm_argv(){
