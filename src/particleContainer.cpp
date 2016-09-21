@@ -161,15 +161,14 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
-void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, double ESSthreshold, int num_state)
+void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state)
 {
-    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << ESSthreshold <<endl;
-    double ESS_diff = ESSthreshold - this->ESS();
+    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << pfparam.ESSthreshold <<endl;
+    double ESS_diff = pfparam.ESSthreshold - this->ESS();
     if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
         resampledout<<" ESS_diff = " << ESS_diff<<endl;
         resampledout << " ### PROGRESS: ESS resampling" << endl;
-        cout << "Resampling at position " << mutation_at << endl;
-        cout << "ESS is " << this->ESS() << endl;
+        pfparam.append_resample_file( mutation_at, ESS() );
         this->systematic_resampling( weight_cum_sum, sample_count, num_state);
         this->resample(sample_count);
     }
@@ -438,7 +437,7 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
     }
 
 
-bool ParticleContainer::appendingStuffToFile( double x_end,  PfParam &pfparam){
+bool ParticleContainer::appendingStuffToFile( double x_end, const PfParam &pfparam){
     // Record the TMRCA and weight when a heatmap is generated
     if (!pfparam.heat_bool){
         return true;
