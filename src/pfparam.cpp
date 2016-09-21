@@ -285,6 +285,7 @@ void PfParam::finalize(  ){
     this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
     this->Resample_NAME= out_NAME_prefix + "Resample";
 
+    // remove any existing files with these names
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
     //remove( this->BL_NAME.c_str()    );
@@ -292,6 +293,7 @@ void PfParam::finalize(  ){
     remove( this->Count_NAME.c_str() );
     remove( this->log_NAME.c_str()   );
     remove( this->SURVIVOR_NAME.c_str());
+    remove( this->Resample_NAME.c_str());
     if ( this->rescue_bool ){ // By default, no rescue
         cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
         //RescueHist rescueHist( this->HIST_NAME );
