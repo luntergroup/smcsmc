@@ -58,7 +58,7 @@ smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so
 # - to analyze, "google-pprof --gv ./smcsmc_gperf /full/path/to/profileoutput.<number>.heap"
 
 # Tester flags
-unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random
+unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random --coverage
 unittests_LDADD          = -lcppunit -ldl
 
 
