@@ -74,3 +74,4 @@ tests/tmpNe
 tests/tmplagCount
 tests/tmplagHIST
 tests/tmplagNe
+testCoverage/
