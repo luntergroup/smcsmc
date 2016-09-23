@@ -61,6 +61,14 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                 }
             }
         }
+        else if ( argv_i == "-cap"  ){ this->useCap = true;
+                                       this->Ne_cap = readNextInput<double>(); }
+           // would be better to allow no accompaning number, like below, but we can't increment the argv_i as param.cc does
+           //try {
+             //this->Ne_cap = readNextInput<double>();
+           //} catch (std::invalid_argument e) {
+             //--argv_i;
+           //} }
         else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }
         else if ( argv_i == "-p"    ){ this->nextArg();
                                        this->pattern = argv_[argc_i]; }
@@ -79,7 +87,8 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Action
         // ------------------------------------------------------------------
         else if ( argv_i == "-lag"    ){ this->lag = this->readNextInput<double>(); }
-	else if ( argv_i == "-calibrate_lag"){ this->calibrate_lag = true; }
+	    else if ( argv_i == "-calibrate_lag"){ this->calibrate_lag = true;
+                                               this->lag_fraction = readNextInput<double>(); }
         //else if ( argv_i == "-filter" ){ this->filter_window_ = this->readNextInput<int>(); }
         //else if ( argv_i == "-missing"){ this->missing_data_threshold_ = this->readNextInput<int>(); }
         else if ( argv_i == "-online" ){ this->online_bool = true; }
@@ -274,7 +283,9 @@ void PfParam::finalize(  ){
     this->log_NAME     = out_NAME_prefix + ".log";
     this->HIST_NAME    = out_NAME_prefix + "HIST";
     this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
+    this->Resample_NAME= out_NAME_prefix + "Resample";
 
+    // remove any existing files with these names
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
     //remove( this->BL_NAME.c_str()    );
@@ -282,6 +293,7 @@ void PfParam::finalize(  ){
     remove( this->Count_NAME.c_str() );
     remove( this->log_NAME.c_str()   );
     remove( this->SURVIVOR_NAME.c_str());
+    remove( this->Resample_NAME.c_str());
     if ( this->rescue_bool ){ // By default, no rescue
         cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
         //RescueHist rescueHist( this->HIST_NAME );
@@ -339,6 +351,7 @@ void PfParam::log_param( ){
         }
     //if (this->hist_bool){
         log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
+        log_file << "Resample saved in file: " << Resample_NAME << "\n";
         //}
 
     log_file << "Ne saved in file: "     << Ne_NAME     << "\n";
@@ -477,6 +490,15 @@ void PfParam::appending_Ne_file( bool hist ){
     return;
     }
 
+
+void PfParam::append_resample_file( int position, double ESS) const {
+    string file_name = Resample_NAME;
+    ofstream resample_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    resample_file << "Resampling at position " << position
+                  << " ; ESS is " << ESS
+                  << endl;
+    resample_file.close();
+}
 
 
 //void PfParam::get_scrm_argv(){

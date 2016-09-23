@@ -125,11 +125,23 @@ bool is_height_in_tree( const Forest& forest, double height ) {
     return false;
 }
 
-vector<double> calculate_median_survival_distances( Model& model, int Num_events = 200 ) {
+vector<double> calculate_median_survival_distances( Model model, int Num_events = 200 ) {
+
+    // we want to change model attributes inside this function only
+    model.biased_sampling = false;
 
     //// Simulating trees in order to calibrate lag and bias ratios
     // lag calibration
     const int num_epochs = model.change_times().size();
+    //const int num_pops = model.population_number();
+    //cout << "Number of populations: " << num_pops << endl;
+    //cout << "std::vector<std::vector<double> > single_mig_probs_list_; " << model.single_mig_probs_list_ << endl;
+    //cout << "single_mig_probs_list_.size() " << model.single_mig_probs_list_.size() << endl;
+    //for (size_t i = 0; i<model.change_times().size(); i++){
+        //cout << "single_mig_probs_list_.at(" << i << ") " << model.single_mig_probs_list_.at(i) << endl;
+    //}
+    ////vector < vector < vector<double> > > survival_distances( num_pops ); // survival_distances[pop_idx][epoch_idx][coal_sample_index]
+    //// to size each vector to number of epochs, need to find which one involves the absorbtion of that pop...
     vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
@@ -162,6 +174,20 @@ vector<double> calculate_median_survival_distances( Model& model, int Num_events
             break;
           }
         }
+      }
+      // Need to break if we have troublesome epochs due to large estimated population sizes
+      bool exists_highly_explored_epoch = false;
+      bool exists_insufficiently_explored_epoch = false;
+      for( size_t epoch_idx = 0; epoch_idx < num_epochs; epoch_idx++) {
+        if( survival_distances[epoch_idx].size() > 1000000 ) {
+          exists_highly_explored_epoch = true;
+        }
+        if( survival_distances[epoch_idx].size() < 3 ) {
+          exists_insufficiently_explored_epoch = true;
+        }
+      }
+      if ( exists_highly_explored_epoch && !exists_insufficiently_explored_epoch ) {
+        break;
       }
     }
     vector <double> median_survival;
@@ -197,6 +223,8 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
+    cout << "model has bias heights " << model->bias_heights() << endl;
+    cout << "model has bias strengths " << model->bias_strengths() << endl;
 
     // bias ratio calibration
     int Num_bias_ratio_simulation_trees = 10000;
@@ -218,10 +246,12 @@ void pfARG_core(PfParam &pfARG_para,
     cout << "    tree count: " << model_summary.tree_count_ << endl;
     
     if(model->biased_sampling) {
-      model->setBiasRatioUpper( model_summary.getBiasRatioUpper() );
-      model->setBiasRatioLower( model_summary.getBiasRatioLower() );
-      cout << "    Bias ratio upper set to: " << model->bias_ratio_upper() << endl;
-      cout << "    Bias ratio lower set to: " << model->bias_ratio_lower() << endl;
+        model->clearBiasRatios();
+        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
+            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
+        }
+        cout << "    Bias ratios set to: " << model->bias_ratios() << endl;
+        assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
     }
     //// Done with calibration
 
@@ -246,14 +276,30 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
-    if (pfARG_para.calibrate_lag){
-      countNe->reset_lag(median_survival);
-    }
-    model->lags_to_application_delays( model_summary.getLags() );
+    // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
+    model->lags_to_application_delays( median_survival );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    cout << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
-	}
+    }
+    // Now set the lag correctly according to the command
+    if ( pfARG_para.calibrate_lag ){
+      countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
+    }
     cout << "    Lags set to: " << countNe->check_lags() << endl;
+
+    //cout << "This model has " << model->population_number() << " populations" << endl;
+    //model->resetTime();
+    //for( size_t idx=0; idx < model->change_times().size(); idx++){
+        //cout << "hasFixedTimeEvent is " << model->hasFixedTimeEvent( model->change_times()[idx] )
+             //<< " for epoch " << idx << " at time " << model->change_times()[idx] << endl;
+        //if( idx < model->change_times().size() - 1 ) {
+            //model->increaseTime();
+        //} else if( idx == model->change_times().size() - 1 ) {
+            //model->resetTime();
+        //} else {
+            //cout << "PROBLEM ITERATING OVER TIMES" << endl;
+        //}
+    //}
 
     /*! Go through seg data */
     bool force_update = false;
@@ -322,14 +368,14 @@ void pfARG_core(PfParam &pfARG_para,
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
 
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.online_bool, force_update = false, false);
+        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.useCap, pfARG_para.Ne_cap, pfARG_para.online_bool, force_update = false, false );
 
         if ( pfARG_para.ESS() == 1 ) {
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
         }
         /*! ESS resampling. Filtering step*/
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para.ESSthreshold, Nparticles);
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para, Nparticles);
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
@@ -360,7 +406,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     cout << " Inference step completed." << endl;
-    countNe->reset_model_parameters(sequence_end, model, true, force_update = true, true); // This is mandatory for EM steps
+    countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 
     bool append_to_history_file = true;
     pfARG_para.appending_Ne_file( append_to_history_file );

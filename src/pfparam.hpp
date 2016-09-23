@@ -50,6 +50,7 @@ class PfParam{
         int  log( );
         void appending_Ne_file( bool hist = false );
         void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight );
+        void append_resample_file( int position, double ESS ) const;
 
         // ------------------------------------------------------------------
         // PfParameters
@@ -58,11 +59,15 @@ class PfParam{
         int    EM_steps;     /*!< \brief Number of EM iterations */
         double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
 
+        bool   useCap = false;
+        double Ne_cap = 200000;
+
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
         double lag;
-	bool calibrate_lag=false;
+	    bool calibrate_lag=false;
+        double lag_fraction;
         bool online_bool;
 
         bool heat_bool;
@@ -178,6 +183,7 @@ class PfParam{
         string WEIGHT_NAME;
         //string BL_NAME;
         string SURVIVOR_NAME;
+        string Resample_NAME;
         int heat_seq_window;
 
         // ------------------------------------------------------------------
