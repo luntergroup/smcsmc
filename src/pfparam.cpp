@@ -28,10 +28,10 @@
 #include "help.hpp"
 
 PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
-    this->init(); // Initialize pfARG program parameters
-    argc_i=1; // Skipping argv[0], which is smcsmc calling
 
-    while( argc_i < argc ){
+    this->init(); // Initialize pfARG program parameters
+
+    for (argc_i = 1; argc_i < argc; ++argc_i ) {
 
         string argv_i(argv_[argc_i]);
 
@@ -39,13 +39,16 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
         // Parameters
         // ------------------------------------------------------------------
         if      ( argv_i == "-Np"   ){ this->N = readNextInput<size_t>(); }
+
         else if ( argv_i == "-nsam" ){ this->default_nsam = readNextInput<size_t>(); }
+
         else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
                                        this->ESS_default_bool = false; }
+
         else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
                                        this->EM_bool = true; }
-        else if ( argv_i == "-xr" || argv_i == "-xc" )
-            {
+
+        else if ( argv_i == "-xr" || argv_i == "-xc" ) {
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
             first_epoch--;                                  // turn into 0-based half-open
@@ -60,76 +63,60 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                     record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
                 }
             }
-        }
-        else if ( argv_i == "-cap"  ){ this->useCap = true;
-                                       this->Ne_cap = readNextInput<double>(); }
-           // would be better to allow no accompaning number, like below, but we can't increment the argv_i as param.cc does
-           //try {
-             //this->Ne_cap = readNextInput<double>();
-           //} catch (std::invalid_argument e) {
-             //--argv_i;
-           //} }
-        else if ( argv_i == "-tmax" ){ this->top_t_ = readNextInput<double>(); }
-        else if ( argv_i == "-p"    ){ this->nextArg();
-                                       this->pattern = argv_[argc_i]; }
-
+        } else if ( argv_i == "-cap"  ){
+	    this->useCap = true;
+	    this->Ne_cap = readNextInput<double>();
+	} else if ( argv_i == "-tmax" ){
+	    this->top_t_ = readNextInput<double>();
+	} else if ( argv_i == "-p"    ){
+	    this->nextArg();
+	    this->pattern = argv_[argc_i];
         // ------------------------------------------------------------------
         // Input files
         // ------------------------------------------------------------------
-        else if ( argv_i == "-seg"  ){ this->nextArg();
-                                       this->input_SegmentDataFileName = argv_[argc_i];
-                                       }
-
-        //else if ( argv_i == "-buff" ){ this->buff_length = this->readNextInput<int>(); }
-        //else if ( argv_i == "-ghost"){ this->ghost = readNextInput<int>(); }
-
+	} else if ( argv_i == "-seg"  ){
+	    this->nextArg();
+	    this->input_SegmentDataFileName = argv_[argc_i];
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
-        else if ( argv_i == "-lag"    ){ this->lag = this->readNextInput<double>(); }
-	    else if ( argv_i == "-calibrate_lag"){ this->calibrate_lag = true;
-                                               this->lag_fraction = readNextInput<double>(); }
-        //else if ( argv_i == "-filter" ){ this->filter_window_ = this->readNextInput<int>(); }
-        //else if ( argv_i == "-missing"){ this->missing_data_threshold_ = this->readNextInput<int>(); }
-        else if ( argv_i == "-online" ){ this->online_bool = true; }
-        else if ( argv_i == "-rescue" ){ this->rescue_bool = true; }
-
+	} else if ( argv_i == "-lag"    ){
+	    this->lag = this->readNextInput<double>();
+	} else if ( argv_i == "-calibrate_lag"){
+	    this->calibrate_lag = true;
+	    this->lag_fraction = readNextInput<double>();
+	} else if ( argv_i == "-online" ){
+	    this->online_bool = true;
+	} else if ( argv_i == "-rescue" ){
+	    this->rescue_bool = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
-        else if ( argv_i == "-o"     ){ this->nextArg();
-                                        this->out_NAME_prefix = argv_[argc_i]; }
-        else if ( argv_i == "-log"   ){ this->log_bool  = true; }
-        else if ( argv_i == "-heat"  ){ this->heat_bool = true; }
-        //else if ( argv_i == "-hist" ){ this->hist_bool = true; }
-        //else if ( argv_i == "-finite"  ){ this->finite_bool  = true; }
-
-        else if (argv_i == "-h" || argv_i == "-help") {
+	} else if ( argv_i == "-o"     ){
+	    this->nextArg();
+	    this->out_NAME_prefix = argv_[argc_i];
+	} else if ( argv_i == "-log"   ){
+	    this->log_bool  = true;
+	} else if ( argv_i == "-heat"  ){
+	    this->heat_bool = true;
+	} else if (argv_i == "-h" || argv_i == "-help") {
             Help_header();
-        }
-
-        else if (argv_i == "-v") {
+        } else if (argv_i == "-v") {
             Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion);
             exit(0);
-        }
-
-        else {
+        } else {
             scrm_input += argv_i + " ";
         }
-        argc_i++;
     }
     this->finalize( );
 }
 
 
 PfParam::~PfParam(){
-    //cout<<"~PfParam() is called"<<endl;
     delete this->Segfile;
-    //delete this->model;
     delete this->SCRMparam;
-    //this->rg->clearFastFunc();
     delete this->rg;
-    }
+}
 
 
 /*!
@@ -141,7 +128,6 @@ void PfParam::init(){
     this->default_recomb_rate = 1e-9;
     this->default_loci_length = 2e7;
     this->default_num_mut = this->default_mut_rate*40000*this->default_loci_length;
-    //this->ghost = 10;
 
     #ifdef COMPILEDATE
         compileTime = COMPILEDATE;
@@ -163,52 +149,45 @@ void PfParam::init(){
 
     this->original_recombination_rate_ = 0;
     this->N                = 100;
-    //this->buff_length      = 200;
     this->lag              = 0;
-    //this->lag              = 5000000;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_              = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
-    //this->hist_bool        = false;
     this->online_bool      = false;
-    //this->finite_bool      = false;
     this->heat_seq_window  = 400;
-    //this->heat_seq_window  = 100;
     this->EM_steps         = 0;
     this->EM_bool          = false;
 
-    //this->FileType         = EMPTY;
     this->Segfile          = NULL;
     this->SCRMparam        = NULL;
     this->rg               = NULL;
     this->scrm_input       = "";
     this->top_t_            = 2;
-    //this->filter_window_   = 0;
-    //this->filter_window_   = 2;
-    //this->missing_data_threshold_ = INT_MAX;
     this->rescue_bool = false;
-    }
+}
 
 
 void PfParam::insert_mutation_rate_in_scrm_input ( ) {
+
     size_t found = scrm_input.find("-t");
-    if ( found == std::string::npos ) { // if "-t" option is not find ...
+    if ( found == std::string::npos ) {
+	// if "-t" option is not found ...
         this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
         this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
-            //this->scrm_input = to_string ( nsam ) + " 1 " + this->scrm_input;
-        }
     }
+}
 
 
 void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
+
     size_t found = scrm_input.find("-r");
-    if ( found == std::string::npos ) { // if "-r" option is not find ...
-        this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )  // number of recombination events in 4N0, as the scaling N0 in screen is 10000
-                                 + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;            // sequence length
-        }
-    else {
+    if ( found == std::string::npos ) { // if "-r" option is not found ...
+	// number of recombination events in 4N0, as the scaling N0 in scrm is 10000
+        this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )  
+	                 + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
+    } else {
         // skipping the number of recombination first
         size_t pos_start = scrm_input.find(" ", found+2, 1);
         size_t pos_end = scrm_input.find(" ", pos_start+1, 1);
@@ -216,23 +195,17 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
         pos_start = scrm_input.find(" ", pos_start+2, 1);
         pos_end = scrm_input.find(" ", pos_start+1, 1);
         this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
-        }
-
-    //if ( this->FileType == EMPTY ){
-        //VCFfile->ghost_num_mut = this->ghost;
-        //VCFfile->set_even_interval( this->default_loci_length / VCFfile->ghost_num_mut );
-        //}
-
     }
+}
 
 
-void PfParam::insert_sample_size_in_scrm_input (  ){
-    //size_t nsam = ( this->FileType == EMPTY ) ? this->default_nsam: 2*Segfile->nsam(); // Extract number of samples from Segment file
+void PfParam::insert_sample_size_in_scrm_input (  ) {
     this->scrm_input = to_string ( this->default_nsam ) + " 1 " + this->scrm_input;
-    }
+}
 
 
-void PfParam::finalize_scrm_input (  ){
+void PfParam::finalize_scrm_input (  ) {
+
     // These options insert parameters to the beginning of the current scrm_input
     this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
     this->insert_mutation_rate_in_scrm_input ( );
@@ -245,7 +218,7 @@ void PfParam::finalize_scrm_input (  ){
     }
     cout << scrm_input << endl;
     this->convert_scrm_input ();
-    }
+}
 
 
 void PfParam::convert_scrm_input (){
@@ -256,20 +229,15 @@ void PfParam::convert_scrm_input (){
     while (p2 && scrm_argc < kMaxArgs) {
         scrm_argv[scrm_argc++] = p2;
         p2 = strtok(0, " ");
-        }
+    }
     ///*! Extract scrm parameters */
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
     //this->SCRMparam->parse( *this->model );
     this->model = this->SCRMparam->parse();
-    // By default, use SMC' model, check if exact window length has been set or not, if it not (i.e. exact window length is infinity, which is denoted by -1) set it to 0.
-    //if ( this->model.exact_window_length() == -1 ){
-        //this->model.set_exact_window_length ( 0 );
-        //}
     this->model.has_window_seq_ = true;
     this->rg = new MersenneTwister(this->SCRMparam->seed_is_set(), this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
-
     this->original_recombination_rate_ = model.recombination_rate();
-    }
+}
 
 
 void PfParam::finalize(  ){
@@ -277,7 +245,6 @@ void PfParam::finalize(  ){
     this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
-    //this->BL_NAME      = out_NAME_prefix + "BL";
     this->Ne_NAME      = out_NAME_prefix + "Ne";
     this->Count_NAME   = out_NAME_prefix + "Count";
     this->log_NAME     = out_NAME_prefix + ".log";
@@ -288,7 +255,6 @@ void PfParam::finalize(  ){
     // remove any existing files with these names
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
-    //remove( this->BL_NAME.c_str()    );
     remove( this->Ne_NAME.c_str()    );
     remove( this->Count_NAME.c_str() );
     remove( this->log_NAME.c_str()   );
@@ -296,13 +262,10 @@ void PfParam::finalize(  ){
     remove( this->Resample_NAME.c_str());
     if ( this->rescue_bool ){ // By default, no rescue
         cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        //RescueHist rescueHist( this->HIST_NAME );
-        //this->scrm_input = rescueHist.rescured_param_string;
         cout << this->scrm_input <<endl;
-        }
-    else {
+    } else {
         remove( this->HIST_NAME.c_str() );
-        }
+    }
 
     this->finalize_scrm_input ( );
 
@@ -318,21 +281,19 @@ void PfParam::finalize(  ){
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
     this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model.loci_length(), this->default_num_mut );
-    //this->VCFfile->filter_window_ = this->filter_window_;
-    //this->VCFfile->missing_data_threshold_ = this->missing_data_threshold_;
 }
 
 
-int PfParam::log( ){
+int PfParam::log( ) {
+
     if (log_bool){
         this->log_param( );
         string log_cmd="cat " + log_NAME;
         return system(log_cmd.c_str());
-        }
-    else {
+    } else {
         return 0;
-        }
     }
+}
 
 
 void PfParam::log_param( ){
@@ -417,7 +378,7 @@ void PfParam::log_param( ){
         //}
 
     log_file.close();
-    }
+}
 
 
 void PfParam::append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight) {
@@ -488,7 +449,7 @@ void PfParam::appending_Ne_file( bool hist ){
     Ne_file << "\n" ;
     Ne_file.close();
     return;
-    }
+}
 
 
 void PfParam::append_resample_file( int position, double ESS) const {
@@ -501,7 +462,3 @@ void PfParam::append_resample_file( int position, double ESS) const {
 }
 
 
-//void PfParam::get_scrm_argv(){
-    //scrm_input += convert_pattern(pattern, top_t);
-    //cout << scrm_input << endl;
-    //}
