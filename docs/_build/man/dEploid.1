@@ -1,0 +1,448 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "DEPLOID" "1" "October 06, 2016" "beta.v0.4" "DEploid"
+.SH NAME
+dEploid \- 
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.INDENT 0.0
+.INDENT 3.5
+smcsmc
+.UNINDENT
+.UNINDENT
+.SH SYNOPSIS
+.sp
+smcsmc [ \-seg \fIfile\fP ] [ \-Np \fIint\fP ] [ \-t \fIfloat\fP ] [ \-r \fIint\fP ] [ \-npop \fIfloat\fP ]
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+More examples.
+.UNINDENT
+.UNINDENT
+.SS Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ ./smcsmc \-seg data/exampleData/example.seg \e
+ \-Np 5
+ \-t 0.002
+ \-r 400
+ \-npop 20000
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+Full desciption with images.
+.UNINDENT
+.UNINDENT
+.SH INSTALLATION
+.sp
+\fBsmcsmc\fP is written in C++.
+.SS Stable Release
+.INDENT 0.0
+.INDENT 3.5
+.SS Todo
+.sp
+You can download the latest stable release packaged for a variety of different platform from
+.UNINDENT
+.UNINDENT
+.SS Development Version From GitHub
+.sp
+You can also install \fBsmcsmc\fP directly from the git repository. Here, you will need \fBautoconf\fP, check whether this is already installed by running:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ which autoconf
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+On Debian/Ubuntu based systems:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ apt\-get install build\-essential autoconf autoconf\-archive libcppunit\-dev
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+On Mac OS:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ port install automake autoconf autoconf\-archive cppunit
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Afterwards you can clone the code from the github repository,
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ git clone git@github.com:luntergroup/smcsmc.git
+$ cd smcsmc
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+and build the binary using
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ ./bootstrap
+$ make
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+or install with \fBmake install\fP\&.
+.SH HOW IT WORKS?
+.SS Program parameters and options
+.SS Mostly used
+.INDENT 0.0
+.TP
+.B \-seg [\fIfile\fP]
+File path of the input data file in seg format. Each line of the segment
+file represent a segment of the sequence. The first column marks the
+position of segment start. The second column records the segment length,
+which is the difference between the start and the end of a segment.
+The third column records T(rue) if it\(aqs invariant. The forth column
+records T(rue) if it is a genetic break, F(alse) otherwise. The fifth
+column shows the chromosome number. The last column records the genotype,
+and use . to denote missing, and // to denote unphased.
+.UNINDENT
+[image: segment data]
+[image]
+.sp
+For example, a segment input file looks like this:
+.TS
+center;
+|l|l|l|l|l|l|.
+_
+T{
+segment start
+T}	T{
+segment length
+T}	T{
+invariant
+T}	T{
+genetic break
+T}	T{
+chromosome
+T}	T{
+genotype
+T}
+_
+T{
+1
+T}	T{
+521
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+01.0
+T}
+_
+T{
+522
+T}	T{
+2721
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0111
+T}
+_
+T{
+3243
+T}	T{
+1758
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+10//
+T}
+_
+T{
+5001
+T}	T{
+1296
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0000
+T}
+_
+T{
+6297
+T}	T{
+1
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+\&....
+T}
+_
+T{
+6298
+T}	T{
+4669
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0110
+T}
+_
+T{
+10967
+T}	T{
+880
+T}	T{
+T
+T}	T{
+T
+T}	T{
+1
+T}	T{
+0100
+T}
+_
+T{
+1
+T}	T{
+708
+T}	T{
+T
+T}	T{
+F
+T}	T{
+2
+T}	T{
+1010
+T}
+_
+.TE
+.INDENT 0.0
+.TP
+.B \-Np [int]
+Number of particles (default value 1000).
+.TP
+.B \-ESS [float]
+Fractional ESS threshold for resampling, in range of (0, 1], and 1
+impiles to use random likelihoods (default value 0.6).
+.TP
+.B \-tmax [float]
+Maximum time, in unit of 4N0 (default value 3, i.e. 12N0).
+.TP
+.B \-p [string]
+Pattern of time segments. Given a maximum
+TMRCA specified by \fB\-tmax\fP flag, in the 4N0 scale, we divide the time
+interval [0, Tmax] to n atomic time intervals, for example, n = 3*1+2*3+4 = 13
+by default. We then block adjacent atomic time intervals, and assume they
+have equal population sizes. For the default pattern, the first 3 blocks span
+1 interval, then each of the 4th and 5th intervals spans over three
+atomic intervals, the last interval spans over 4 atomic intervals [Li2011]\&.
+.TP
+.B \-EM [int]
+Number of EM iterations (default value 20).
+.TP
+.B \-o [string]
+Prefix for output files
+.TP
+.B \-online
+Perform online EM
+.TP
+.B \-xr [int]
+Epoch or epoch range to exclude from recombination EM (1\-based, closed)
+.TP
+.B \-xc [int]
+Epoch or epoch range (e.g. 1\-10) to exclude from coalescent/migration EM
+.TP
+.B \-log
+Generate *.log file.
+.UNINDENT
+.SS You may also try
+.INDENT 0.0
+.TP
+.B \-heat
+Generate *TMRCA and *WEIGHT for heatmap.
+.TP
+.B \-v
+Display timestamp and git versions.
+.UNINDENT
+.SS Example of data exploration
+.IP [Li2011] 5
+Li, H. and R. Durbin (2011). Inference of human population history from individual whole\-genome sequences. \fINature\fP 475, 493–496.
+.SH MAKING SENSE OF THE OUTPUT
+.SS Output files
+.sp
+\fBsmcsmc\fP outputs text files with user\-specified prefix with flag \fB\-o\fP\&.
+.INDENT 0.0
+.TP
+.B \fIprefix\fP\&.log
+Log file records both \fBsmcsmc\fP and \fBscrm\fP versions (git commits), input file paths, parameters used and population estimation at the final EM iteration.
+.TP
+.B \fIprefix\fP HIST
+Histrory, each iteration is seperated by =========, for example.
+.UNINDENT
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+=========
+RE  5.26809e\-09
+ME  0       0
+ME  0.009672        0
+ME  0.025538        0
+ME  0.045624        0
+ME  0.07105 0
+ME  0.103238        0
+ME  0.143983        0
+ME  0.195563        0
+ME  0.260858        0
+ME  0.343515        0
+ME  0.44815 0
+ME  0.580607        0
+ME  0.748285        0
+ME  0.960548        0
+ME  1.22925 0
+ME  1.5694  0
+ME  2       0
+NE  0       0.172105
+NE  0.009672        0.118122
+NE  0.025538        0.0528732
+NE  0.045624        0.267541
+NE  0.07105 0.915965
+NE  0.103238        0.795306
+NE  0.143983        0.915542
+NE  0.195563        0.595508
+NE  0.260858        0.498153
+NE  0.343515        0.437207
+NE  0.44815 0.585799
+NE  0.580607        0.557354
+NE  0.748285        0.457153
+NE  0.960548        0.433858
+NE  1.22925 1.10365
+NE  1.5694  1.92134
+NE  2       2.49941
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \fIprefix\fP Ne
+The final EM iteratio, last iteration of \fBprefix\fP HIST.
+.TP
+.B \fIprefix\fP Count
+The total count of oppurtunities and event count, used for recombination rate inference.
+.UNINDENT
+.SS Example of output interpretion
+.SH EXAMPLE
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+Full example of working pipeline.
+.UNINDENT
+.UNINDENT
+.SH REPORTING BUGS
+.sp
+If you encounter any problem when using \fBsmcsmc\fP, please file a short
+bug report by using the \fI\%issue tracker\fP
+on GitHub or email joe.zhu (at) well.ox.ac.uk.
+.sp
+Please include the output of \fBsmcsmc \-v\fP and the platform you are using
+\fBsmcsmc\fP on in the report. If the problem occurs while executing \fBsmcsmc\fP,
+please also include the command you are using and the random seed.
+.sp
+Thank you!
+.SH CITING DEPLOID
+.sp
+If you use \fBsmcsmc\fP in your work, please cite the program:
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+PLACEHOLDER FOR APP NOTE
+.UNINDENT
+.UNINDENT
+.SH AUTHOR
+Sha (Joe) Zhu
+.SH COPYRIGHT
+2016, Sha (Joe) Zhu
+.\" Generated by docutils manpage writer.
+.
