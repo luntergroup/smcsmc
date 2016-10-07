@@ -68,16 +68,16 @@ ParticleContainer::ParticleContainer(Model* model,
 }
 
 
-/*! 
+/*!
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
 void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state ){
     dout << endl<<" We are extending particles" << endl<<endl;
-    
+
  	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
-        /*! 
+        /*!
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
@@ -94,7 +94,7 @@ bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const ve
 
 	// find the next haplotype that is compatible with the genotype encoded in data_at_tips
 	for (int i=0; i<haplotype_at_tips.size(); i+=2) {
-		
+
 		if (data_at_tips[i] != 2) continue;   // phased site -- ignore
 		if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
 			haplotype_at_tips[i] = 1;
@@ -114,7 +114,7 @@ bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const ve
  *	@ingroup group_pf_update
  */
 void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
-				
+
 	// first check if there are any (unphased) genotypes in the data
 	vector<int> haplotype_at_tips = data_at_tips;
 	int num_haplotypes = 1;
@@ -130,7 +130,7 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 	}
 	double normalization_factor = 1.0 / num_haplotypes;
 
-	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment	
+	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment
 	for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
 		double likelihood_of_haplotype_at_tips = 0;
 		do {
@@ -142,16 +142,16 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
         // the following assertion checks appropriate importance factors have been accounted for
         //   if we ever change the emission factor of the sampling distribution, this assertion should fail
         assert( particles[particle_i]->importance_weight_predata() == 1 );
-        this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight() 
+        this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight()
                                                       * likelihood_of_haplotype_at_tips
                                                       * particles[particle_i]->importance_weight_predata() );
-        this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight() 
+        this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight()
                                                       * likelihood_of_haplotype_at_tips
                                                       * particles[particle_i]->importance_weight_predata() );
         this->particles[particle_i]->reset_importance_weight_predata();
 		dout << "particle " << particle_i << " done" << endl;
-	}    
-    
+	}
+
     this->store_normalization_factor();
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
 	dout << endl;
@@ -202,7 +202,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 	    if (flush) current_state->flushOldRecombinations();
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
-            if( !model->biased_sampling ){ 
+            if( !model->biased_sampling ){
 			    current_state->setParticleWeight( 1.0/number_of_particles );
 			} else {
                 assert( sum_of_delayed_weights != 0 );
@@ -307,7 +307,7 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 	    for (size_t i=0;i<Num_of_states;i++){
 	        dout << this->particles[i]->weight()<<"  ";
 	        } dout << std::endl<<std::endl;
-	
+
 	    dout << "### updated cum sum of particle weight ";
 	    for (size_t i=0;i<weight_cum_sum.size();i++){
 	        dout << weight_cum_sum[i]<<"  ";
@@ -317,13 +317,13 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 	    for (size_t i=0;i<Num_of_states;i++){
 	        dout << this->particles[i]->delayed_weight()<<"  ";
 	        } dout << std::endl<<std::endl;
-	        
+
 	    dout << "### updated cum sum of delayed particle weight ";
 	    for (size_t i=0;i<weight_cum_sum.size();i++){
 	        dout << weight_cum_sum[i]<<"  ";
-	        } dout << std::endl;	
+	        } dout << std::endl;
 	}
-	
+
     this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
     }
 
@@ -483,12 +483,12 @@ bool ParticleContainer::appendingStuffToFile( double x_end, const PfParam &pfpar
             ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
             ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
             //ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
-            ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
+            //ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
 
             TmrcaOfstream  << this->current_printing_base();
             WeightOfstream << this->current_printing_base();
             //BLOfstream     << this->current_printing_base();
-            SURVIVORstream << this->current_printing_base();
+            //SURVIVORstream << this->current_printing_base();
 
             for ( size_t i = 0; i < this->particles.size(); i++){
                 ForestState * current_state_ptr = this->particles[i];
@@ -511,12 +511,12 @@ bool ParticleContainer::appendingStuffToFile( double x_end, const PfParam &pfpar
             TmrcaOfstream  << endl;
             WeightOfstream << endl;
             //BLOfstream     << endl;
-            SURVIVORstream << endl;
+            //SURVIVORstream << endl;
 
             TmrcaOfstream.close();
             WeightOfstream.close();
             //BLOfstream.close();
-            SURVIVORstream.close();
+            //SURVIVORstream.close();
             }
         this->set_current_printing_base(this->current_printing_base() + pfparam.heat_seq_window);
         } while ( this->current_printing_base() < x_end);

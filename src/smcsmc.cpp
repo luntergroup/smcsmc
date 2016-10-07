@@ -66,8 +66,8 @@ int main(int argc, char *argv[]){
     #ifdef GPERF
     //std::cout << "Starting heap profiling..." << std::endl;
     //HeapProfilerStart("smcsmc_gprofile");
-    #endif    
-    
+    #endif
+
     try {
         /*! Extract pfARG parameters */
         PfParam pfARG_para( argc, argv );
@@ -77,21 +77,20 @@ int main(int argc, char *argv[]){
 
         /*!  INITIALIZE CountModel */
         CountModel *countNe = new CountModel( pfARG_para.model , pfARG_para.lag);
-        pfARG_para.appending_Ne_file( true ); // Append initial values to History file
 
         /*! EM step */
-        for (int i = 0; i <= pfARG_para.EM_steps; i++) {
+        pfARG_para.outFileHeader();
+        for (int i = 0; i < pfARG_para.EM_steps; i++) {
 
             cout << "EM step " << i << endl;
             clog << "EM step " << i << endl;
+            pfARG_para.increaseEMcounter();
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             cout << "End of EM step " << i << endl;
             clog << "End of EM step " << i << endl;
         }
-
-        pfARG_para.appending_Ne_file( );
 
         int exit_success = pfARG_para.log( );
 
@@ -204,6 +203,7 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ) {
+
     recombination_counter = 0; // DEBUG
     recomb_opp = 0;// DEBUG
 
@@ -235,7 +235,7 @@ void pfARG_core(PfParam &pfARG_para,
     clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
     clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
     clog << "    tree count: " << model_summary.tree_count_ << endl;
-    
+
     if(model->biased_sampling) {
         model->clearBiasRatios();
         for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
@@ -384,15 +384,14 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     clog << " Inference step completed." << endl;
+
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 
-    bool append_to_history_file = true;
-    pfARG_para.appending_Ne_file( append_to_history_file );
     countNe->log_counts( pfARG_para );
 
     /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */
     current_states.appendingStuffToFile( sequence_end, pfARG_para);
-    
+
     current_states.print_ln_normalization_factor();
 
     //#ifdef _SCRM

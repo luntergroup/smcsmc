@@ -49,7 +49,18 @@ class PfParam{
         //
         int  log( );
         void appending_Ne_file( bool hist = false );
-        void append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight );
+        void outFileHeader();
+        void appendToOutFile( size_t EMstep,
+                              int epoch,
+                              string epochBegin,
+                              string epochEnd,
+                              string eventType,
+                              int from_pop,
+                              int to_pop,
+                              double opportunity,
+                              double count,
+                              double weight);
+
         void append_resample_file( int position, double ESS ) const;
 
         // ------------------------------------------------------------------
@@ -86,6 +97,9 @@ class PfParam{
         double ESS () const { return this-> ESS_;} // scaled between zero and one
 
 	double top_t() const { return this->top_t_;}
+
+        void increaseEMcounter() { this->EMcounter_++; }
+        size_t EMcounter() const { return EMcounter_; }
 
     private:
 
@@ -142,6 +156,7 @@ class PfParam{
         const int argc_;
         int argc_i;
         char * const* argv_;
+        size_t EMcounter_;
 
         // ------------------------------------------------------------------
         // PfParameters
@@ -175,14 +190,14 @@ class PfParam{
         bool log_bool;
         bool rescue_bool;
         string out_NAME_prefix;
-        string HIST_NAME;
-        string Ne_NAME;
-        string Count_NAME;
+        //string HIST_NAME;
+        //string Ne_NAME;
+        string outFileName;
         string log_NAME;
         string TMRCA_NAME;
         string WEIGHT_NAME;
         //string BL_NAME;
-        string SURVIVOR_NAME;
+        //string SURVIVOR_NAME;
         string Resample_NAME;
         int heat_seq_window;
 

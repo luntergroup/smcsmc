@@ -62,25 +62,64 @@ void CountModel::log_counts( PfParam& param ) {
     // log coalescent counts
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
         for (size_t pop_idx = 0; pop_idx < this->population_number(); pop_idx++ ) {
-            param.append_to_count_file( epoch_idx, "Coal", pop_idx, -1, this->total_coal_opportunity[epoch_idx][pop_idx].final_answer(),
-                                                                        this->total_coal_count[epoch_idx][pop_idx].final_answer(),
-                                                                        this->total_coal_weight[epoch_idx][pop_idx].final_answer());
+            param.appendToOutFile( param.EMcounter(),
+                                   (int)epoch_idx,
+                                   to_string(change_times_[epoch_idx]),
+                                   ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                   "Coal",
+                                   pop_idx,
+                                   -1,
+                                   this->total_coal_opportunity[epoch_idx][pop_idx].final_answer(),
+                                   this->total_coal_count[epoch_idx][pop_idx].final_answer(),
+                                   this->total_coal_weight[epoch_idx][pop_idx].final_answer());
         }
     }
+
     // log recombination counts
+    double recomb_opportunity = 0;
+    double recomb_count = 0;
+    double recomb_weight = 0;
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
-        param.append_to_count_file( epoch_idx, "Recomb", -1, -1, this->total_recomb_opportunity[epoch_idx][0].final_answer(),
-                                                                 this->total_recomb_count[epoch_idx][0].final_answer(),
-                                                                 this->total_recomb_weight[epoch_idx][0].final_answer());
+        recomb_opportunity += total_recomb_opportunity[epoch_idx][0].final_answer();
+        recomb_count       += total_recomb_count[epoch_idx][0].final_answer();
+        recomb_weight      += total_recomb_weight[epoch_idx][0].final_answer();
+        param.appendToOutFile( param.EMcounter(),
+                               (int)epoch_idx,
+                               to_string(change_times_[epoch_idx]),
+                               ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                               "Recomb",
+                               -1,
+                               -1,
+                               this->total_recomb_opportunity[epoch_idx][0].final_answer(),
+                               this->total_recomb_count[epoch_idx][0].final_answer(),
+                               this->total_recomb_weight[epoch_idx][0].final_answer());
     }
+    param.appendToOutFile( param.EMcounter(),
+                           -1,
+                           "0.000000",
+                           "Inf",
+                           "Recomb",
+                           -1,
+                           -1,
+                           recomb_opportunity,
+                           recomb_count,
+                           recomb_weight);
+
     // log migration counts
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
         for (size_t from_pop_idx = 0; from_pop_idx < this->population_number(); from_pop_idx++ ) {
             for (size_t to_pop_idx = 0; to_pop_idx < this->population_number(); to_pop_idx++ ) {
                 if (from_pop_idx != to_pop_idx) {
-                    param.append_to_count_file( epoch_idx, "Migr", from_pop_idx, to_pop_idx, this->total_mig_opportunity[epoch_idx][from_pop_idx].final_answer(),
-                                                                                             this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer(),
-                                                                                             this->total_mig_weight[epoch_idx][from_pop_idx].final_answer());
+                    param.appendToOutFile( param.EMcounter(),
+                                           (int)epoch_idx,
+                                           to_string(change_times_[epoch_idx]),
+                                           ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                           "Migr",
+                                           from_pop_idx,
+                                           to_pop_idx,
+                                           this->total_mig_opportunity[epoch_idx][from_pop_idx].final_answer(),
+                                           this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer(),
+                                           this->total_mig_weight[epoch_idx][from_pop_idx].final_answer());
                 }
             }
         }
