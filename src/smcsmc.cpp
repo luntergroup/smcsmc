@@ -80,14 +80,14 @@ int main(int argc, char *argv[]){
 
         /*! EM step */
         pfARG_para.outFileHeader();
-        for (int i = 0; i < pfARG_para.EM_steps; i++) {
+        for (int i = 0; i <= pfARG_para.EM_steps; i++) {
 
             cout << "EM step " << i << endl;
             clog << "EM step " << i << endl;
-            pfARG_para.increaseEMcounter();
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
+            pfARG_para.increaseEMcounter();
             cout << "End of EM step " << i << endl;
             clog << "End of EM step " << i << endl;
         }
