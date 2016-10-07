@@ -108,8 +108,8 @@ inline DelayedFactor::DelayedFactor( double pos, double factor) {
 
 // DEBUG delayedIS
 inline void DelayedFactor::print_info() const {
-    std::cout << "\nThe application position of this DF is " << this->application_position << std::endl;
-    std::cout << "The importance factor of this DF is " << this->importance_factor << std::endl;	
+    std::clog << "\nThe application position of this DF is " << this->application_position << std::endl;
+    std::clog << "The importance factor of this DF is " << this->importance_factor << std::endl;	
 }
 
 /*!

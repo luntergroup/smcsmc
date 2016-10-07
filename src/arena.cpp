@@ -45,7 +45,7 @@ void Arena::init_arena() {
 
 Arena::~Arena() {
 
-	std::cout << "Arena: allocated " << numAllocs << " blocks, deallocated " << numDeallocs << " blocks, max in use " << maxInUse << " blocks, num skips " << numSkips << std::endl;
+	std::clog << "Arena: allocated " << numAllocs << " blocks, deallocated " << numDeallocs << " blocks, max in use " << maxInUse << " blocks, num skips " << numSkips << std::endl;
 	for (int i=0; i<blocks.size(); i++)
 		free( allocblocks[i] );
 

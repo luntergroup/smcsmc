@@ -45,7 +45,7 @@ void CountModel::reset_model_parameters(double current_base, Model * model, bool
     }
 
     if ( update || force_update  ) {
-        cout<<" MODEL IS RESET at base " << current_base <<endl;
+        clog<<" MODEL IS RESET at base " << current_base <<endl;
         this->reset_recomb_rate ( model );
         this->reset_Ne ( model, useCap, cap );
         this->reset_mig_rate ( model );
@@ -195,7 +195,7 @@ void CountModel::reset_Ne ( Model *model, bool useCap, double cap){
 				model->addPopulationSize(change_times_[epoch_idx], pop_j, pop_size ,false, false);
 			}
 
-            cout << " Setting size of population " << pop_j << " @ " << setw(8) << change_times_[epoch_idx] << " to "
+            clog << " Setting size of population " << pop_j << " @ " << setw(8) << change_times_[epoch_idx] << " to "
                  << setw(8) << pop_size
                  << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j].final_answer() << " / " << this->total_coal_count[epoch_idx][pop_j].final_answer() << "; post-lag ESS "
                  << 1.0 / (coal_weight / coal_opp) << " )" << endl;
@@ -219,7 +219,7 @@ void CountModel::reset_recomb_rate ( Model *model ){
     double inferred_recomb_rate = recomb_count / recomb_opportunity;
 
     model->setRecombinationRate( inferred_recomb_rate, false, false, 0);
-    cout << " Setting recombination rate to " << model->recombination_rate(0)
+    clog << " Setting recombination rate to " << model->recombination_rate(0)
          << " ( " << recomb_count<<" / " << recomb_opportunity << "; post-lag ESS "
          << 1.0 / (recomb_weight / recomb_opportunity) << " )" << endl;
 }

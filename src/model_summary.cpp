@@ -4,9 +4,9 @@ using namespace std;
 
 void ModelSummary::addTree(){
     assert( !is_finalized() );
-    
+
     tree_count_++;
-    
+
     // simulate tree using tree_count_ as seed
     MersenneTwister *randomgenerator = new MersenneTwister( true, tree_count_ );
     //Forest* forest = new Forest( this->model, randomgenerator );
@@ -15,21 +15,14 @@ void ModelSummary::addTree(){
     set_current_tree_B(forest.local_root()->length_below());
 
     current_tree_traversed_ = false;
-    
+
     // measuring function called on root node
     adjust_current_tree_measurements(forest.local_root());
     current_tree_traversed_ = true;
-    //cout << "current tree traversed" << endl;
-    //cout << "current tree B below " << current_tree_B_below() << endl;
+
     // set current tree single lineage called in processing
     process_current_tree_measurements();
-    //cout << "current tree processed" << endl;
-    //cout << "current tree B below " << current_tree_B_below() << endl;
-    //cout << "current tree B within " << current_tree_B_within() << endl;
-    //cout << "current tree lineage count " << current_tree_lineage_count() << endl;
-    //cout << "current tree single lineage " << current_tree_single_lineage() << endl;
-    //cout << "current tree B below bh " << current_tree_B_below_bh() << endl;
-    
+
     // avg_B_below_ etc modified
     if(tree_count_==1) {
         // size the vectors containing vectors; must be a better way to initialize this...
@@ -40,11 +33,7 @@ void ModelSummary::addTree(){
             if(current_tree_single_lineage().at(idx)) {single_lineage_count_.push_back(1);} else {single_lineage_count_.push_back(0);}
         }
         set_avg_B(current_tree_B());
-        //cout << "After the first tree avg_B is " << avg_B() << endl;
-        //cout << "After the first tree avg_B_below is " << avg_B_below() << endl;
-        //cout << "After the first tree avg_B_within is " << avg_B_within() << endl;
-        //cout << "After the first tree avg_lineage_count is " << avg_lineage_count() << endl;
-        //cout << "After the first tree single_lineage_count is " << single_lineage_count() << endl;
+
         for( size_t idx = 0; idx < current_tree_B_below_bh().size(); idx++) {
             avg_B_below_bh_.push_back( current_tree_B_below_bh()[idx]);
         }
@@ -59,12 +48,7 @@ void ModelSummary::addTree(){
             if(current_tree_single_lineage().at(idx)) {single_lineage_count_.at(idx)++;}
         }
         set_avg_B(((tree_count_-1)/tree_count_)*avg_B() + (1/tree_count_)*current_tree_B());
-        //cout << "After the next tree avg_B is " << avg_B() << endl;
-        //cout << "After the next tree avg_B_below is " << avg_B_below() << endl;
-        //cout << "After the next tree avg_B_within is " << avg_B_within() << endl;
-        //cout << "After the next tree avg_lineage_count is " << avg_lineage_count() << endl;
-        //cout << "After the next tree single_lineage_count is " << single_lineage_count() << endl;
-        //cout << "tree count is " <<  tree_count_ << endl;
+
         for( size_t idx = 0; idx < avg_B_below_bh().size(); idx++) {
             set_avg_B_below_bh(idx, ((tree_count_-1)/tree_count_)*avg_B_below_bh()[idx] + (1/tree_count_)*current_tree_B_below_bh()[idx]);
         }
@@ -77,12 +61,9 @@ void ModelSummary::addTree(){
 void ModelSummary::adjust_current_tree_measurements(Node* node){
     assert( !is_finalized() );
     assert( !current_tree_traversed_ );
-    //cout << "adjust current tree measurements called on node" << endl;
-    //cout << "node is " << node << endl;
-    //cout << "node height is " << node->height() << endl;
-    
+
     if(node->is_root()) {
-        //cout << "this node is the root" << endl;
+
         //reset for the new tree
         for( size_t idx=0 ; idx < times_.size()-1 ; idx++ ) {
             set_current_tree_B_below( idx, 0 );
@@ -105,7 +86,7 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
     }
 
     for ( size_t idx=0 ; idx < times_.size()-1 ; idx++ ) {
-    
+
         //check if B_below[i] or B_within[i] need to be updated
         if( node->height() < times_.at(idx+1) ) { //if node.height < t[i]
             if( node->is_root() ) { //if node.parent==NULL
@@ -114,9 +95,7 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
                                     times_.at(idx+1) - times_.at(idx)) );
                 //above should be the same as pseudo script below
                 //B_within[i] +=min(t[i]-node.height,t[i]-t[i-1])
-                //cout << "Case 1: parent==NULL" << endl;
-                //cout << "current tree B below: " << current_tree_B_below() << endl;
-                //cout << "current tree B within: " << current_tree_B_within() << endl;
+
             } else if ( node->parent()->height() < times_.at(idx+1) ) {//elif parent < t[i]
                 set_current_tree_B_below( idx , current_tree_B_below().at(idx) + node->parent()->height() - node->height() );
                 set_current_tree_B_within( idx , current_tree_B_within().at(idx) +
@@ -126,9 +105,7 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
                 //above should be the same as pseudo script below
                 //B_below[i] +=parent.height-node.height
                 //B_within[i] +=min(parent-node,parent-t[i-1],t[i]-t[i-1])
-                //cout << "Case 2: parent<t" << endl;
-                //cout << "current tree B below: " << current_tree_B_below() << endl;
-                //cout << "current tree B within: " << current_tree_B_within() << endl;
+
             } else {
                 set_current_tree_B_below( idx , current_tree_B_below().at(idx) +
                                     times_.at(idx+1) - node->height() );
@@ -138,9 +115,7 @@ void ModelSummary::adjust_current_tree_measurements(Node* node){
             //above should be the same as pseudo script below
             //B_below[i] +=t[i]-node.height
             //B_within[i] +=min(t[i]-node.height,t[i]-t[i-1])
-            //cout << "Case 3: parent>t" << endl;
-            //cout << "current tree B below: " << current_tree_B_below() << endl;
-            //cout << "current tree B within: " << current_tree_B_within() << endl;
+
             }
         }
     }

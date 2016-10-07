@@ -216,7 +216,7 @@ void PfParam::finalize_scrm_input (  ) {
     } else {
         this->scrm_input = "scrm " + this->scrm_input;
     }
-    cout << scrm_input << endl;
+    clog << scrm_input << endl;
     this->convert_scrm_input ();
 }
 
@@ -260,9 +260,10 @@ void PfParam::finalize(  ){
     remove( this->log_NAME.c_str()   );
     remove( this->SURVIVOR_NAME.c_str());
     remove( this->Resample_NAME.c_str());
+    // below is not used as we now call a single EM step at a time
     if ( this->rescue_bool ){ // By default, no rescue
-        cout << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        cout << this->scrm_input <<endl;
+        clog << " Rescue from " << this->HIST_NAME.c_str() << endl;
+        clog << this->scrm_input <<endl;
     } else {
         remove( this->HIST_NAME.c_str() );
     }

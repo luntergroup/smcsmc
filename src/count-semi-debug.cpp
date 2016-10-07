@@ -72,24 +72,24 @@ void CountModel::print_recomb_count() {
 
 
 void CountModel::check_model_updated_Ne(Model * model) {
-    cout << " check_model_updated_Ne " << endl;
+    clog << " check_model_updated_Ne " << endl;
     model->resetTime();
     size_t time_i = 0;
     while (model->getNextTime() < FLT_MAX){
-        cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
+        clog << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
         for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++){
-            cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
+            clog << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
         }
-        cout<<endl;
+        clog<<endl;
         model->increaseTime();
         time_i++;
     }
 
-    cout << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
+    clog << "Updated Ne at time " << setw(8) <<  model->getCurrentTime() <<" : " ;
     for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++) {
-        cout << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
+        clog << " | " << setw(12) << model->population_size(pop_j) << " ("<< setw(12) << this->total_coal_count[time_i][pop_j].final_answer() <<")" ;
     }
-    cout<<endl;
+    clog<<endl;
 }
 
 
@@ -97,15 +97,15 @@ void CountModel::check_model_updated_mig(Model * model) {
 
     model->resetTime();
     for (size_t time_i = 0; time_i < model->change_times_.size()-1; time_i++) {
-        cout << "Updated Mij @ time " << setw(8) << model->getCurrentTime() << ":";
+        clog << "Updated Mij @ time " << setw(8) << model->getCurrentTime() << ":";
         for (size_t pop_i = 0 ; pop_i < model->population_number() ; pop_i++) {
             for (size_t pop_j = 0 ; pop_j < model->population_number() ; pop_j++) {
                 if (pop_i != pop_j) {
-                    cout << " (" << pop_i << "->" << pop_j << ") " << setw(12) << model->migration_rate(pop_i,pop_j);
+                    clog << " (" << pop_i << "->" << pop_j << ") " << setw(12) << model->migration_rate(pop_i,pop_j);
                 }
             }
         }
-        cout << endl;
+        clog << endl;
         model->increaseTime();
     }
 }

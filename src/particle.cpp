@@ -466,7 +466,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         /*!
          * First, update the likelihood up to either extend_to or the end of this state
          */
-        //cout << "next extension is at " << this->next_base() << endl;
         double update_to = min( extend_to, this->next_base() );
         // calculate the total tree length of the subtree over leaf nodes that carry data.
         double localTreeBranchLength = this->trackLocalTreeBranchLength();

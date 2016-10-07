@@ -83,10 +83,12 @@ int main(int argc, char *argv[]){
         for (int i = 0; i <= pfARG_para.EM_steps; i++) {
 
             cout << "EM step " << i << endl;
+            clog << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             cout << "End of EM step " << i << endl;
+            clog << "End of EM step " << i << endl;
         }
 
         pfARG_para.appending_Ne_file( );
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]){
         /*! Clean up */
         delete countNe;
         delete arena;
-        cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
+        //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
 	#ifdef GPERF
 	//HeapProfilerStop();
 	//std::cout << "Stopped heap profiling." << std::endl;
@@ -105,7 +107,7 @@ int main(int argc, char *argv[]){
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
-	std::cout << "Error: " << e.what() << std::endl;
+        std::cout << "Error: " << e.what() << std::endl;
         Help_option();
 	#ifdef GPERF
 	//HeapProfilerStop();
@@ -133,15 +135,6 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
     //// Simulating trees in order to calibrate lag and bias ratios
     // lag calibration
     const int num_epochs = model.change_times().size();
-    //const int num_pops = model.population_number();
-    //cout << "Number of populations: " << num_pops << endl;
-    //cout << "std::vector<std::vector<double> > single_mig_probs_list_; " << model.single_mig_probs_list_ << endl;
-    //cout << "single_mig_probs_list_.size() " << model.single_mig_probs_list_.size() << endl;
-    //for (size_t i = 0; i<model.change_times().size(); i++){
-        //cout << "single_mig_probs_list_.at(" << i << ") " << model.single_mig_probs_list_.at(i) << endl;
-    //}
-    ////vector < vector < vector<double> > > survival_distances( num_pops ); // survival_distances[pop_idx][epoch_idx][coal_sample_index]
-    //// to size each vector to number of epochs, need to find which one involves the absorbtion of that pop...
     vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
@@ -191,7 +184,7 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
       }
     }
     vector <double> median_survival;
-    cout << "ARGs simulated under model:" << endl;
+    clog << "ARGs simulated under model:" << endl;
     for( size_t epoch_idx = 0; epoch_idx < survival_distances.size(); epoch_idx++ ) {
         std::sort( survival_distances[epoch_idx].begin(), survival_distances[epoch_idx].end() );
         int median_idx = (survival_distances[epoch_idx].size()-1) / 2;
@@ -199,8 +192,8 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
             throw std::length_error("No survival_distance instances in epoch");
         }
         median_survival.push_back( survival_distances[epoch_idx][ median_idx ] );
-        cout << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
-        cout << "   These have a median survival distance of " << survival_distances[epoch_idx][ median_idx ]
+        clog << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
+        clog << "   These have a median survival distance of " << survival_distances[epoch_idx][ median_idx ]
              << ", a minimum of " << *survival_distances[epoch_idx].begin()
              << ", and a maximum of " << *survival_distances[epoch_idx].rbegin() << endl;
     }
@@ -223,34 +216,32 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
     double mutation_rate = model->mutation_rate();
-    cout << "model has bias heights " << model->bias_heights() << endl;
-    cout << "model has bias strengths " << model->bias_strengths() << endl;
+    clog << "model has bias heights " << model->bias_heights() << endl;
+    clog << "model has bias strengths " << model->bias_strengths() << endl;
 
     // bias ratio calibration
     int Num_bias_ratio_simulation_trees = 10000;
     ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
     for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
-      //cout << "Adding tree " << tree_idx << endl;
       model_summary.addTree();
-      //cout << "current tree B " << model_summary.current_tree_B() << endl;
     }
     model_summary.finalize();
-    cout << "Information from pre-sequence-analysis tree simulation:" << endl;
-    cout << "    model_summary.times_: " << model_summary.times_ << endl;
-    cout << "    avg B: " << model_summary.avg_B() << endl;
-    cout << "    avg B below: " << model_summary.avg_B_below() << endl;
-    cout << "    avg B within: " << model_summary.avg_B_within() << endl;
-    cout << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
-    cout << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
-    cout << "    single lineage count: " << model_summary.single_lineage_count() << endl;
-    cout << "    tree count: " << model_summary.tree_count_ << endl;
+    clog << "Information from pre-sequence-analysis tree simulation:" << endl;
+    clog << "    model_summary.times_: " << model_summary.times_ << endl;
+    clog << "    avg B: " << model_summary.avg_B() << endl;
+    clog << "    avg B below: " << model_summary.avg_B_below() << endl;
+    clog << "    avg B within: " << model_summary.avg_B_within() << endl;
+    clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
+    clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
+    clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
+    clog << "    tree count: " << model_summary.tree_count_ << endl;
     
     if(model->biased_sampling) {
         model->clearBiasRatios();
         for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
             model->addToBiasRatios( model_summary.getBiasRatio(idx) );
         }
-        cout << "    Bias ratios set to: " << model->bias_ratios() << endl;
+        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
         assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
     }
     //// Done with calibration
@@ -279,27 +270,14 @@ void pfARG_core(PfParam &pfARG_para,
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
     model->lags_to_application_delays( median_survival );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
-	    cout << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
+	    clog << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
     }
     // Now set the lag correctly according to the command
     if ( pfARG_para.calibrate_lag ){
       countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
-    cout << "    Lags set to: " << countNe->check_lags() << endl;
+    clog << "    Lags set to: " << countNe->check_lags() << endl;
 
-    //cout << "This model has " << model->population_number() << " populations" << endl;
-    //model->resetTime();
-    //for( size_t idx=0; idx < model->change_times().size(); idx++){
-        //cout << "hasFixedTimeEvent is " << model->hasFixedTimeEvent( model->change_times()[idx] )
-             //<< " for epoch " << idx << " at time " << model->change_times()[idx] << endl;
-        //if( idx < model->change_times().size() - 1 ) {
-            //model->increaseTime();
-        //} else if( idx == model->change_times().size() - 1 ) {
-            //model->resetTime();
-        //} else {
-            //cout << "PROBLEM ITERATING OVER TIMES" << endl;
-        //}
-    //}
 
     /*! Go through seg data */
     bool force_update = false;
@@ -380,7 +358,7 @@ void pfARG_core(PfParam &pfARG_para,
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
             if ( Segfile->segment_end() > (double)model->loci_length() ) {
-                cout << "  Segment data is beyond loci length" << endl;
+                clog << "  Segment data is beyond loci length" << endl;
             }
             Segfile->set_end_data (true);
         }
@@ -389,7 +367,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     } while( !Segfile->end_data() );
 
-    cout << "Got to end of sequence" << endl;
+    clog << "Got to end of sequence" << endl;
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
     // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
@@ -399,13 +377,13 @@ void pfARG_core(PfParam &pfARG_para,
     // should include coalescent events as well ...
 
     //current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
-    dout <<endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
+    dout << endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones.
     current_states.normalize_probability();
 
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
-    cout << " Inference step completed." << endl;
+    clog << " Inference step completed." << endl;
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 
     bool append_to_history_file = true;

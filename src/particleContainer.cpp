@@ -267,8 +267,8 @@ ParticleContainer::~ParticleContainer() {}
  */
 void ParticleContainer::clear(){
     // When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-     cout<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-     cout<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
+     clog<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
+     clog<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
 
     dout << "ParticleContainer clear() is called" << endl;
     for (size_t i = 0; i < this->particles.size(); i++){
@@ -384,7 +384,6 @@ void ParticleContainer::trivial_resampling( std::valarray<int> & sample_count, s
         size_t index = random_generator()->sampleInt(num_state);
         sample_count[index]=sample_count[index]+1;
         }
-        //cout << sample_count.sum() <<endl;
         assert( sample_count.sum() == num_state );
     }
 
@@ -544,8 +543,8 @@ void ParticleContainer::set_particles_with_random_weight(){
 
 void ParticleContainer::print_particle_probabilities(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        cout<<"weight = "<<this->particles[i]->weight()<<endl;
-        if( model->biased_sampling ) {cout<<"delayed weight = "<<this->particles[i]->delayed_weight()<<endl;}
+        clog<<"weight = "<<this->particles[i]->weight()<<endl;
+        if( model->biased_sampling ) {clog<<"delayed weight = "<<this->particles[i]->delayed_weight()<<endl;}
         }
     }
 
@@ -567,5 +566,5 @@ void ParticleContainer::store_normalization_factor() {
 
 
 void ParticleContainer::print_ln_normalization_factor(){
-	cout << "Our likelihood measure is " << ln_normalization_factor() << endl;
+	clog << "Our likelihood measure is " << ln_normalization_factor() << endl;
 }
