@@ -87,8 +87,8 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
 	    this->lag_fraction = readNextInput<double>();
 	} else if ( argv_i == "-online" ){
 	    this->online_bool = true;
-	} else if ( argv_i == "-rescue" ){
-	    this->rescue_bool = true;
+	//} else if ( argv_i == "-rescue" ){
+	    //this->rescue_bool = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -166,6 +166,7 @@ void PfParam::init(){
     this->scrm_input       = "";
     this->top_t_            = 2;
     this->rescue_bool = false;
+    this->EMcounter_ = 0;
 }
 
 
@@ -185,7 +186,7 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
     size_t found = scrm_input.find("-r");
     if ( found == std::string::npos ) { // if "-r" option is not found ...
 	// number of recombination events in 4N0, as the scaling N0 in scrm is 10000
-        this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )  
+        this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )
 	                 + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
     } else {
         // skipping the number of recombination first
@@ -245,28 +246,23 @@ void PfParam::finalize(  ){
     this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
     this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
-    this->Ne_NAME      = out_NAME_prefix + "Ne";
-    this->Count_NAME   = out_NAME_prefix + "Count";
+    this->outFileName   = out_NAME_prefix + ".out";
     this->log_NAME     = out_NAME_prefix + ".log";
-    this->HIST_NAME    = out_NAME_prefix + "HIST";
-    this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
+    //this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
     this->Resample_NAME= out_NAME_prefix + "Resample";
 
     // remove any existing files with these names
     remove( this->TMRCA_NAME.c_str() );
     remove( this->WEIGHT_NAME.c_str());
-    remove( this->Ne_NAME.c_str()    );
-    remove( this->Count_NAME.c_str() );
+    remove( this->outFileName.c_str() );
     remove( this->log_NAME.c_str()   );
-    remove( this->SURVIVOR_NAME.c_str());
+    //remove( this->SURVIVOR_NAME.c_str());
     remove( this->Resample_NAME.c_str());
     // below is not used as we now call a single EM step at a time
-    if ( this->rescue_bool ){ // By default, no rescue
-        clog << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        clog << this->scrm_input <<endl;
-    } else {
-        remove( this->HIST_NAME.c_str() );
-    }
+    //if ( this->rescue_bool ){ // By default, no rescue
+        //clog << " Rescue from " << this->HIST_NAME.c_str() << endl;
+        //clog << this->scrm_input <<endl;
+    //}
 
     this->finalize_scrm_input ( );
 
@@ -312,11 +308,9 @@ void PfParam::log_param( ){
         //log_file << "BL saved in file: "     << BL_NAME     << "\n";
         }
     //if (this->hist_bool){
-        log_file << "HIST saved in file: "   << HIST_NAME   << "\n";
-        log_file << "Resample saved in file: " << Resample_NAME << "\n";
+        //log_file << "Resample saved in file: " << Resample_NAME << "\n";
         //}
 
-    log_file << "Ne saved in file: "     << Ne_NAME     << "\n";
     log_file << "Segment Data file: " ;
     log_file << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
     log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
@@ -339,7 +333,6 @@ void PfParam::log_param( ){
     log_file << setw(17) <<    "Seq length =" << setw(10) << this->model.loci_length()        << "\n";
     log_file << setw(17) << "mutation rate =" << setw(10) << this->model.mutation_rate()      << "\n";
     log_file << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
-    //log_file << setw(17) <<   "recomb rate =" << setw(10) << this->model.recombination_rate() << "\n";
     log_file << setw(17) <<"inferred recomb rate = " << setw(10) << this->model.recombination_rate()   << "\n";
 
     this->model.resetTime();
@@ -359,97 +352,63 @@ void PfParam::log_param( ){
     }
     log_file<< "\n";
 
-    //this->model.resetTime();
-    //log_file << "Migration rate :" << "\n";
-    //for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
-        //log_file << setw(3) << " ";
-        //for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-            //log_file << setw(14) << this->model.migration_rate(pop_i, pop_j)  ;
-            //}
-        //log_file << "\n";
-        //}
-
-    //log_file << "Inferred Migration rate :" << "\n";
-    //for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
-        //log_file << setw(3) << " ";
-        //for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-            //log_file << setw(14) << migrate[pop_i][pop_j]  ;
-            //}
-        //log_file << "\n";
-        //}
+    log_file << "Out file is saved in file: "  << outFileName   << "\n";
 
     log_file.close();
 }
 
 
-void PfParam::append_to_count_file( size_t epoch, string label, int from_pop, int to_pop, double opportunity, double count, double weight) {
-    string file_name = Count_NAME;
+void PfParam::outFileHeader(){
+    string file_name = outFileName;
     ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
-    int field_length_1 = 7;
+    int field_length_1 = 10;
     int field_length_2 = 15;
-    count_file << setw(field_length_1) << epoch << " "
-               << setw(field_length_1) << label << " "
+    count_file << setw(field_length_1) << "EMstep"      << " "
+               << setw(field_length_1) << "EpochIndex"  << " "
+               << setw(field_length_1) << "EpochBegin"  << " "
+               << setw(field_length_1) << "EpochEnd"    << " "
+               << setw(field_length_1) << "EventType"   << " "
+               << setw(field_length_1) << "FromPop"     << " "
+               << setw(field_length_1) << "ToPop"       << " "
+               << setw(field_length_2) << "Opportunity" << " "
+               << setw(field_length_2) << "Count"       << " "
+               << setw(field_length_2) << "Rate"        << " "
+               << setw(field_length_2) << "NE"<< " "
+               << setw(field_length_2) << "ESS"
+               << endl;
+    count_file.close();
+
+}
+
+
+void PfParam::appendToOutFile( size_t EMstep,
+                               int epoch,
+                               string epochBegin,
+                               string epochEnd,
+                               string eventType,
+                               int from_pop,
+                               int to_pop,
+                               double opportunity,
+                               double count,
+                               double weight) {
+    string file_name = outFileName;
+    ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    int field_length_1 = 10;
+    int field_length_2 = 15;
+    count_file << setw(field_length_1) << EMstep << " "
+               << setw(field_length_1) << epoch << " "
+               << setw(field_length_1) << epochBegin << " "
+               << setw(field_length_1) << epochEnd << " "
+               << setw(field_length_1) << eventType << " "
                << setw(field_length_1) << from_pop << " "
                << setw(field_length_1) << to_pop << " "
                << setw(field_length_2) << opportunity << " "
                << setw(field_length_2) << count << " "
-               << setw(field_length_2) << count/(opportunity+1e-10) << " "
-               << setw(field_length_2) << 1.0 / (weight/opportunity+1e-10)
+               << setw(field_length_2) << count/(opportunity+1e-10) << " " // Rate
+               << setw(field_length_2) << ((eventType=="Coal") ? to_string((opportunity+1e-10)/(2.0*count)) : "-1") << " " // Ne
+               << setw(field_length_2) << 1.0 / (weight/opportunity+1e-10) // ESS
                << endl;
     count_file.close();
-}
-
-
-void PfParam::appending_Ne_file( bool hist ){
-    string file_name = hist ? HIST_NAME : Ne_NAME ;
-    ofstream Ne_file( file_name.c_str(), ios::out | ios::app | ios::binary);
-    if (hist){
-        Ne_file << "=========\n";
-        }
-    Ne_file << "RE\t" << this->model.recombination_rate() << "\n";
-
-    this->model.resetTime();
-    for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
-    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
-        for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
-            for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-                Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
-                }
-            if ( pop_i < (this->model.population_number()-1)){
-                Ne_file << "\t|";
-                }
-            }
-            Ne_file << "\n";
-
-            this->model.increaseTime();
-        }
-    Ne_file << "ME\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
-    for (size_t pop_i = 0 ; pop_i < this->model.population_number() ; pop_i++){
-        for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-            Ne_file <<  "\t" << this->model.migration_rate(pop_i, pop_j)  ;
-            }
-        if ( pop_i < (this->model.population_number()-1)){
-            Ne_file << "\t|";
-            }
-        }
-        Ne_file << "\n";
-
-    this->model.resetTime();
-    for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
-        Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
-        for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
-            Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size() ;
-            }
-        Ne_file << "\n" ;
-        this->model.increaseTime();
-        }
-    Ne_file << "NE\t" << this->model.getCurrentTime() / this->model.default_pop_size() / 4  ;
-    for ( size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++ ){
-        Ne_file << "\t" << this->model.population_size(pop_j) / this->model.default_pop_size() ;
-        }
-    Ne_file << "\n" ;
-    Ne_file.close();
-    return;
 }
 
 
