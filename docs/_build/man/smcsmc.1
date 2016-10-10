@@ -1,0 +1,467 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "SMCSMC" "1" "October 10, 2016" "beta.v0.4" "smcsmc"
+.SH NAME
+smcsmc \- 
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.INDENT 0.0
+.INDENT 3.5
+smcsmc
+.UNINDENT
+.UNINDENT
+.SH SYNOPSIS
+.sp
+smcsmc [ \-seg \fIfile\fP ] [ \-Np \fIint\fP ] [ \-t \fIfloat\fP ] [ \-r \fIint\fP ] [ \-npop \fIfloat\fP ]
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+More examples.
+.UNINDENT
+.UNINDENT
+.SS Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ ./smcsmc \-seg data/exampleData/example.seg \e
+ \-Np 5
+ \-t 0.002
+ \-r 400
+ \-npop 20000
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+Full desciption with images.
+.UNINDENT
+.UNINDENT
+.SH INSTALLATION
+.sp
+\fBsmcsmc\fP is written in C++.
+.SS Stable Release
+.INDENT 0.0
+.INDENT 3.5
+.SS Todo
+.sp
+You can download the latest stable release packaged for a variety of different platform from
+.UNINDENT
+.UNINDENT
+.SS Development Version From GitHub
+.sp
+You can also install \fBsmcsmc\fP directly from the git repository. Here, you will need \fBautoconf\fP, check whether this is already installed by running:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ which autoconf
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+On Debian/Ubuntu based systems:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ apt\-get install build\-essential autoconf autoconf\-archive libcppunit\-dev
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+On Mac OS:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ port install automake autoconf autoconf\-archive cppunit
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Afterwards you can clone the code from the github repository,
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ git clone git@github.com:luntergroup/smcsmc.git
+$ cd smcsmc
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+and build the binary using
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+$ ./bootstrap
+$ make
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+or install with \fBmake install\fP\&.
+.SH HOW IT WORKS?
+.SS Program parameters and options
+.SS Mostly used
+.INDENT 0.0
+.TP
+.B \-seg [\fIfile\fP]
+File path of the input data file in seg format. Each line of the segment
+file represent a segment of the sequence. The first column marks the
+position of segment start. The second column records the segment length,
+which is the difference between the start and the end of a segment.
+The third column records T(rue) if it\(aqs invariant. The forth column
+records T(rue) if it is a genetic break, F(alse) otherwise. The fifth
+column shows the chromosome number. The last column records the genotype,
+and use . to denote missing, and // to denote unphased.
+.UNINDENT
+[image: segment data]
+[image]
+.sp
+For example, a segment input file looks like this:
+.TS
+center;
+|l|l|l|l|l|l|.
+_
+T{
+segment start
+T}	T{
+segment length
+T}	T{
+invariant
+T}	T{
+genetic break
+T}	T{
+chromosome
+T}	T{
+genotype
+T}
+_
+T{
+1
+T}	T{
+521
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+01.0
+T}
+_
+T{
+522
+T}	T{
+2721
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0111
+T}
+_
+T{
+3243
+T}	T{
+1758
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+10//
+T}
+_
+T{
+5001
+T}	T{
+1296
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0000
+T}
+_
+T{
+6297
+T}	T{
+1
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+\&....
+T}
+_
+T{
+6298
+T}	T{
+4669
+T}	T{
+T
+T}	T{
+F
+T}	T{
+1
+T}	T{
+0110
+T}
+_
+T{
+10967
+T}	T{
+880
+T}	T{
+T
+T}	T{
+T
+T}	T{
+1
+T}	T{
+0100
+T}
+_
+T{
+1
+T}	T{
+708
+T}	T{
+T
+T}	T{
+F
+T}	T{
+2
+T}	T{
+1010
+T}
+_
+.TE
+.INDENT 0.0
+.TP
+.B \-Np [int]
+Number of particles (default value 1000).
+.TP
+.B \-ESS [float]
+Fractional ESS threshold for resampling, in range of (0, 1], and 1
+impiles to use random likelihoods (default value 0.6).
+.TP
+.B \-tmax [float]
+Maximum time, in unit of 4N_0 (default value 3, i.e. 12N_0).
+.TP
+.B \-p [string]
+Pattern of time segments. Given a maximum
+TMRCA specified by \fB\-tmax\fP flag, in the 4N_0 scale, we divide the time
+interval [0, T_{max}] to n atomic time intervals, for example, default
+pattern is "3*1+2*3+4". Therefore n = 3\times1+2\times3+4 = 13\&. We
+then block adjacent atomic time intervals, and assume they
+have equal population sizes. For the default pattern, the first 3 blocks span
+1 interval, then each of the 4th and 5th intervals spans over three
+atomic intervals, the last interval spans over 4 atomic intervals [Li2011]\&.
+.TP
+.B \-EM [int]
+Number of EM iterations (default value 20).
+.TP
+.B \-o [string]
+Prefix for output files
+.TP
+.B \-online
+Perform online EM
+.TP
+.B \-xr [int]
+Epoch or epoch range to exclude from recombination EM (1\-based, closed)
+.TP
+.B \-xc [int]
+Epoch or epoch range (e.g. 1\-10) to exclude from coalescent/migration EM
+.TP
+.B \-log
+Generate *.log file.
+.UNINDENT
+.SS You may also try
+.INDENT 0.0
+.TP
+.B \-heat
+Generate *TMRCA and *WEIGHT for heatmap.
+.TP
+.B \-v
+Display timestamp and git versions.
+.UNINDENT
+.SS Example of data exploration
+.IP [Li2011] 5
+Li, H. and R. Durbin (2011). Inference of human population history from individual whole\-genome sequences. \fINature\fP 475, 493–496.
+.SH MAKING SENSE OF THE OUTPUT
+.SS Output files
+.sp
+\fBsmcsmc\fP outputs text files with user\-specified prefix with flag \fB\-o\fP\&.
+.INDENT 0.0
+.TP
+.B \fIprefix\fP\&.log
+Log file records both \fBsmcsmc\fP and \fBscrm\fP versions (git commits),
+input file paths, parameters used and population estimation at the final EM iteration.
+.TP
+.B \fIprefix\fP\&.out
+\fBsmcsmc\fP records the inference results in the \fI*.out\fP file. Each row
+contains inference result of the population parameters including
+"population sizes", "migration rates" at different times and overall
+recombination rate.
+.UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+\fBEMstep\fP EM iteration.
+.IP \(bu 2
+\fBEpochIndex\fP Epoch (time interval) index. \fB\-1\fP for recombination rate inference.
+.IP \(bu 2
+\fBEpochBegin\fP Epoch time begin (recent).
+.IP \(bu 2
+\fBEpochEnd\fP Epoch time end (acient).
+.IP \(bu 2
+\fBEventType\fP \fIType of event\fP, \fBCoal\fP refers to coalescent event; \fBRecomb\fP refers to recombination event; \fBMigr\fP refers to migration event.
+.IP \(bu 2
+\fBFromPop\fP Population index for coalescent rate inference, and migration (from) rate inference, 0\-indexed. \fB\-1\fP for recombination rate inference.
+.IP \(bu 2
+\fBToPop\fP Population index for migration (to) rate inference. 0\-indexed. \fB\-1\fP for recombination and coalescent rate inference.
+.IP \(bu 2
+\fBOpportunity\fP Time (time times sequence for recombination events) span o that \fItype of event\fP can happen.
+.IP \(bu 2
+\fBCount\fP Number of \fItype of event\fP c happened during the simulation.
+.IP \(bu 2
+\fBRate\fP Coalescent, recombination and migration rate, equal to c/o\&.
+.IP \(bu 2
+\fBNE\fP Population size. Calculated by o/2c\&. \fB\-1\fP for recombination and migration rate inference.
+.IP \(bu 2
+\fBESS\fP Effective sample size, .
+.UNINDENT
+.sp
+For example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+EMstep EpochIndex EpochBegin   EpochEnd  EventType    FromPop      ToPop     Opportunity           Count            Rate              NE             ESS
+     0          0   0.000000        Inf       Coal          0         \-1     1.43803e+07         720.833     5.01264e\-05     9974.779387               6
+     0         \-1   0.000000        Inf     Recomb         \-1         \-1      7.3339e+11         719.833     9.81516e\-10              \-1               6
+     1          0   0.000000        Inf       Coal          0         \-1     1.59149e+07         793.167      4.9838e\-05    10032.496392               6
+     1         \-1   0.000000        Inf     Recomb         \-1         \-1     8.20343e+11         792.167     9.65653e\-10              \-1               6
+     2          0   0.000000        Inf       Coal          0         \-1     1.53825e+07             769      4.9992e\-05    10001.597264               6
+     2         \-1   0.000000        Inf     Recomb         \-1         \-1     7.87734e+11             768     9.74948e\-10              \-1               6
+     3          0   0.000000        Inf       Coal          0         \-1     1.59971e+07         800.333       5.003e\-05     9994.012474               6
+     3         \-1   0.000000        Inf     Recomb         \-1         \-1     8.21027e+11         799.333     9.73577e\-10              \-1               6
+     4          0   0.000000        Inf       Coal          0         \-1     1.57724e+07         771.833     4.89357e\-05    10217.492772               6
+     4         \-1   0.000000        Inf     Recomb         \-1         \-1     7.97319e+11         770.833     9.66782e\-10              \-1               6
+     5          0   0.000000        Inf       Coal          0         \-1     1.61938e+07         796.333     4.91752e\-05    10167.727706               6
+     5         \-1   0.000000        Inf     Recomb         \-1         \-1     8.21524e+11         795.333      9.6812e\-10              \-1               6
+     6          0   0.000000        Inf       Coal          0         \-1     1.49512e+07           752.5     5.03303e\-05     9934.372706               6
+     6         \-1   0.000000        Inf     Recomb         \-1         \-1     7.64212e+11           751.5     9.83366e\-10              \-1               6
+     7          0   0.000000        Inf       Coal          0         \-1     1.68871e+07           846.5     5.01271e\-05     9974.637421               6
+     7         \-1   0.000000        Inf     Recomb         \-1         \-1     8.43795e+11           845.5     1.00202e\-09              \-1               6
+     8          0   0.000000        Inf       Coal          0         \-1     1.63813e+07         816.333     4.98333e\-05    10033.452317               6
+     8         \-1   0.000000        Inf     Recomb         \-1         \-1      8.2094e+11         815.333     9.93171e\-10              \-1               6
+     9          0   0.000000        Inf       Coal          0         \-1     1.72288e+07         862.333     5.00518e\-05     9989.652610               6
+     9         \-1   0.000000        Inf     Recomb         \-1         \-1     8.82067e+11         861.333     9.76494e\-10              \-1               6
+    10          0   0.000000        Inf       Coal          0         \-1     1.48676e+07             751     5.05127e\-05     9898.501864               6
+    10         \-1   0.000000        Inf     Recomb         \-1         \-1     7.67899e+11             750     9.76691e\-10              \-1               6
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Example of output interpretion
+.INDENT 0.0
+.INDENT 3.5
+.SS Todo
+.sp
+Examples to come
+.UNINDENT
+.UNINDENT
+.SH EXAMPLE
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+Full example of working pipeline.
+.UNINDENT
+.UNINDENT
+.SH REPORTING BUGS
+.sp
+If you encounter any problem when using \fBsmcsmc\fP, please file a short
+bug report by using the \fI\%issue tracker\fP
+on GitHub or email joe.zhu (at) well.ox.ac.uk.
+.sp
+Please include the output of \fBsmcsmc \-v\fP and the platform you are using
+\fBsmcsmc\fP on in the report. If the problem occurs while executing \fBsmcsmc\fP,
+please also include the command you are using and the random seed.
+.sp
+Thank you!
+.SH CITING DEPLOID
+.sp
+If you use \fBsmcsmc\fP in your work, please cite the program:
+.INDENT 0.0
+.INDENT 3.5
+.SH TODO
+.sp
+PLACEHOLDER FOR APP NOTE
+.UNINDENT
+.UNINDENT
+.SH AUTHOR
+Sha (Joe) Zhu
+.SH COPYRIGHT
+2013-2016, Sha (Joe) Zhu, Donna Henderson and Gerton Lunter
+.\" Generated by docutils manpage writer.
+.
