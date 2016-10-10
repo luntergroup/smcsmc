@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# DEploid documentation build configuration file, created by
+# smcsmc documentation build configuration file, created by
 # sphinx-quickstart on Fri Aug  5 15:16:16 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -31,7 +31,7 @@ import shlex
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 #extensions = [ "breathe", "sphinx.ext.todo", "sphinx.ext.coverage" ]
-extensions = [ "sphinx.ext.todo", "sphinx.ext.coverage" ]
+extensions = [ "sphinx.ext.todo", "sphinx.ext.coverage", "sphinx.ext.mathjax" ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -48,8 +48,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'DEploid'
-copyright = '2016, Sha (Joe) Zhu'
+project = 'smcsmc'
+copyright = '2013-2016, Sha (Joe) Zhu, Donna Henderson and Gerton Lunter'
 author = 'Sha (Joe) Zhu'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -204,7 +204,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'DEploiddoc'
+htmlhelp_basename = 'smcsmcdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -227,7 +227,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'DEploid.tex', 'DEploid Documentation',
+  (master_doc, 'smcsmc.tex', 'SMCSMC Documentation',
    'Sha (Joe) Zhu', 'manual'),
 ]
 
@@ -257,7 +257,7 @@ latex_use_parts = False
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dEploid', '',
+    (master_doc, 'smcsmc', '',
      [author], 1)
 ]
 
@@ -271,8 +271,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'DEploid', 'DEploid Documentation',
-   author, 'DEploid', 'One line description of project.',
+  (master_doc, 'smcsmc', 'SMCSMC Documentation',
+   author, 'SMCSMC', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -289,6 +289,6 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 breathe_projects = {
-    "dEploid":"../xml/",
+    "smcsmc":"../xml/",
     }
 

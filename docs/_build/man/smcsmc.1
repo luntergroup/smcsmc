@@ -1,8 +1,8 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "DEPLOID" "1" "October 06, 2016" "beta.v0.4" "DEploid"
+.TH "SMCSMC" "1" "October 10, 2016" "beta.v0.4" "smcsmc"
 .SH NAME
-dEploid \- 
+smcsmc \- 
 .
 .nr rst2man-indent-level 0
 .
@@ -304,13 +304,14 @@ Fractional ESS threshold for resampling, in range of (0, 1], and 1
 impiles to use random likelihoods (default value 0.6).
 .TP
 .B \-tmax [float]
-Maximum time, in unit of 4N0 (default value 3, i.e. 12N0).
+Maximum time, in unit of 4N_0 (default value 3, i.e. 12N_0).
 .TP
 .B \-p [string]
 Pattern of time segments. Given a maximum
-TMRCA specified by \fB\-tmax\fP flag, in the 4N0 scale, we divide the time
-interval [0, Tmax] to n atomic time intervals, for example, n = 3*1+2*3+4 = 13
-by default. We then block adjacent atomic time intervals, and assume they
+TMRCA specified by \fB\-tmax\fP flag, in the 4N_0 scale, we divide the time
+interval [0, T_{max}] to n atomic time intervals, for example, default
+pattern is "3*1+2*3+4". Therefore n = 3\times1+2\times3+4 = 13\&. We
+then block adjacent atomic time intervals, and assume they
 have equal population sizes. For the default pattern, the first 3 blocks span
 1 interval, then each of the 4th and 5th intervals spans over three
 atomic intervals, the last interval spans over 4 atomic intervals [Li2011]\&.
@@ -352,65 +353,83 @@ Li, H. and R. Durbin (2011). Inference of human population history from individu
 .INDENT 0.0
 .TP
 .B \fIprefix\fP\&.log
-Log file records both \fBsmcsmc\fP and \fBscrm\fP versions (git commits), input file paths, parameters used and population estimation at the final EM iteration.
+Log file records both \fBsmcsmc\fP and \fBscrm\fP versions (git commits),
+input file paths, parameters used and population estimation at the final EM iteration.
 .TP
-.B \fIprefix\fP HIST
-Histrory, each iteration is seperated by =========, for example.
+.B \fIprefix\fP\&.out
+\fBsmcsmc\fP records the inference results in the \fI*.out\fP file. Each row
+contains inference result of the population parameters including
+"population sizes", "migration rates" at different times and overall
+recombination rate.
 .UNINDENT
+.INDENT 0.0
+.IP \(bu 2
+\fBEMstep\fP EM iteration.
+.IP \(bu 2
+\fBEpochIndex\fP Epoch (time interval) index. \fB\-1\fP for recombination rate inference.
+.IP \(bu 2
+\fBEpochBegin\fP Epoch time begin (recent).
+.IP \(bu 2
+\fBEpochEnd\fP Epoch time end (acient).
+.IP \(bu 2
+\fBEventType\fP \fIType of event\fP, \fBCoal\fP refers to coalescent event; \fBRecomb\fP refers to recombination event; \fBMigr\fP refers to migration event.
+.IP \(bu 2
+\fBFromPop\fP Population index for coalescent rate inference, and migration (from) rate inference, 0\-indexed. \fB\-1\fP for recombination rate inference.
+.IP \(bu 2
+\fBToPop\fP Population index for migration (to) rate inference. 0\-indexed. \fB\-1\fP for recombination and coalescent rate inference.
+.IP \(bu 2
+\fBOpportunity\fP Time (time times sequence for recombination events) span o that \fItype of event\fP can happen.
+.IP \(bu 2
+\fBCount\fP Number of \fItype of event\fP c happened during the simulation.
+.IP \(bu 2
+\fBRate\fP Coalescent, recombination and migration rate, equal to c/o\&.
+.IP \(bu 2
+\fBNE\fP Population size. Calculated by o/2c\&. \fB\-1\fP for recombination and migration rate inference.
+.IP \(bu 2
+\fBESS\fP Effective sample size, .
+.UNINDENT
+.sp
+For example:
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .nf
 .ft C
-=========
-RE  5.26809e\-09
-ME  0       0
-ME  0.009672        0
-ME  0.025538        0
-ME  0.045624        0
-ME  0.07105 0
-ME  0.103238        0
-ME  0.143983        0
-ME  0.195563        0
-ME  0.260858        0
-ME  0.343515        0
-ME  0.44815 0
-ME  0.580607        0
-ME  0.748285        0
-ME  0.960548        0
-ME  1.22925 0
-ME  1.5694  0
-ME  2       0
-NE  0       0.172105
-NE  0.009672        0.118122
-NE  0.025538        0.0528732
-NE  0.045624        0.267541
-NE  0.07105 0.915965
-NE  0.103238        0.795306
-NE  0.143983        0.915542
-NE  0.195563        0.595508
-NE  0.260858        0.498153
-NE  0.343515        0.437207
-NE  0.44815 0.585799
-NE  0.580607        0.557354
-NE  0.748285        0.457153
-NE  0.960548        0.433858
-NE  1.22925 1.10365
-NE  1.5694  1.92134
-NE  2       2.49941
+EMstep EpochIndex EpochBegin   EpochEnd  EventType    FromPop      ToPop     Opportunity           Count            Rate              NE             ESS
+     0          0   0.000000        Inf       Coal          0         \-1     1.43803e+07         720.833     5.01264e\-05     9974.779387               6
+     0         \-1   0.000000        Inf     Recomb         \-1         \-1      7.3339e+11         719.833     9.81516e\-10              \-1               6
+     1          0   0.000000        Inf       Coal          0         \-1     1.59149e+07         793.167      4.9838e\-05    10032.496392               6
+     1         \-1   0.000000        Inf     Recomb         \-1         \-1     8.20343e+11         792.167     9.65653e\-10              \-1               6
+     2          0   0.000000        Inf       Coal          0         \-1     1.53825e+07             769      4.9992e\-05    10001.597264               6
+     2         \-1   0.000000        Inf     Recomb         \-1         \-1     7.87734e+11             768     9.74948e\-10              \-1               6
+     3          0   0.000000        Inf       Coal          0         \-1     1.59971e+07         800.333       5.003e\-05     9994.012474               6
+     3         \-1   0.000000        Inf     Recomb         \-1         \-1     8.21027e+11         799.333     9.73577e\-10              \-1               6
+     4          0   0.000000        Inf       Coal          0         \-1     1.57724e+07         771.833     4.89357e\-05    10217.492772               6
+     4         \-1   0.000000        Inf     Recomb         \-1         \-1     7.97319e+11         770.833     9.66782e\-10              \-1               6
+     5          0   0.000000        Inf       Coal          0         \-1     1.61938e+07         796.333     4.91752e\-05    10167.727706               6
+     5         \-1   0.000000        Inf     Recomb         \-1         \-1     8.21524e+11         795.333      9.6812e\-10              \-1               6
+     6          0   0.000000        Inf       Coal          0         \-1     1.49512e+07           752.5     5.03303e\-05     9934.372706               6
+     6         \-1   0.000000        Inf     Recomb         \-1         \-1     7.64212e+11           751.5     9.83366e\-10              \-1               6
+     7          0   0.000000        Inf       Coal          0         \-1     1.68871e+07           846.5     5.01271e\-05     9974.637421               6
+     7         \-1   0.000000        Inf     Recomb         \-1         \-1     8.43795e+11           845.5     1.00202e\-09              \-1               6
+     8          0   0.000000        Inf       Coal          0         \-1     1.63813e+07         816.333     4.98333e\-05    10033.452317               6
+     8         \-1   0.000000        Inf     Recomb         \-1         \-1      8.2094e+11         815.333     9.93171e\-10              \-1               6
+     9          0   0.000000        Inf       Coal          0         \-1     1.72288e+07         862.333     5.00518e\-05     9989.652610               6
+     9         \-1   0.000000        Inf     Recomb         \-1         \-1     8.82067e+11         861.333     9.76494e\-10              \-1               6
+    10          0   0.000000        Inf       Coal          0         \-1     1.48676e+07             751     5.05127e\-05     9898.501864               6
+    10         \-1   0.000000        Inf     Recomb         \-1         \-1     7.67899e+11             750     9.76691e\-10              \-1               6
 .ft P
 .fi
 .UNINDENT
 .UNINDENT
-.INDENT 0.0
-.TP
-.B \fIprefix\fP Ne
-The final EM iteratio, last iteration of \fBprefix\fP HIST.
-.TP
-.B \fIprefix\fP Count
-The total count of oppurtunities and event count, used for recombination rate inference.
-.UNINDENT
 .SS Example of output interpretion
+.INDENT 0.0
+.INDENT 3.5
+.SS Todo
+.sp
+Examples to come
+.UNINDENT
+.UNINDENT
 .SH EXAMPLE
 .INDENT 0.0
 .INDENT 3.5
@@ -443,6 +462,6 @@ PLACEHOLDER FOR APP NOTE
 .SH AUTHOR
 Sha (Joe) Zhu
 .SH COPYRIGHT
-2016, Sha (Joe) Zhu
+2013-2016, Sha (Joe) Zhu, Donna Henderson and Gerton Lunter
 .\" Generated by docutils manpage writer.
 .

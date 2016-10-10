@@ -45,18 +45,19 @@ For example, a segment input file looks like this:
     Number of particles (default value 1000).
 
 -ESS [float]
-    Fractional ESS threshold for resampling, in range of (0, 1], and 1
+    Fractional ESS threshold for resampling, in range of :math:`(0, 1]`, and 1
     impiles to use random likelihoods (default value 0.6).
 
 
 -tmax [float]
-    Maximum time, in unit of 4N0 (default value 3, i.e. 12N0).
+    Maximum time, in unit of :math:`4N_0` (default value :math:`3`, i.e. :math:`12N_0`).
 
 -p [string]
     Pattern of time segments. Given a maximum
-    TMRCA specified by **-tmax** flag, in the 4N0 scale, we divide the time
-    interval [0, Tmax] to n atomic time intervals, for example, n = 3*1+2*3+4 = 13
-    by default. We then block adjacent atomic time intervals, and assume they
+    TMRCA specified by **-tmax** flag, in the :math:`4N_0` scale, we divide the time
+    interval :math:`[0, T_{max}]` to n atomic time intervals, for example, default
+    pattern is "3*1+2*3+4". Therefore :math:`n = 3\times1+2\times3+4 = 13`. We
+    then block adjacent atomic time intervals, and assume they
     have equal population sizes. For the default pattern, the first 3 blocks span
     1 interval, then each of the 4th and 5th intervals spans over three
     atomic intervals, the last interval spans over 4 atomic intervals [Li2011]_.
