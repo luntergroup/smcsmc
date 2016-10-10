@@ -83,16 +83,18 @@ void CountModel::log_counts( PfParam& param ) {
         recomb_opportunity += total_recomb_opportunity[epoch_idx][0].final_answer();
         recomb_count       += total_recomb_count[epoch_idx][0].final_answer();
         recomb_weight      += total_recomb_weight[epoch_idx][0].final_answer();
-        param.appendToOutFile( param.EMcounter(),
-                               (int)epoch_idx,
-                               to_string(change_times_[epoch_idx]),
-                               ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
-                               "Recomb",
-                               -1,
-                               -1,
-                               this->total_recomb_opportunity[epoch_idx][0].final_answer(),
-                               this->total_recomb_count[epoch_idx][0].final_answer(),
-                               this->total_recomb_weight[epoch_idx][0].final_answer());
+        if ( false ){ // when false, do not print out recomb events at every epoch.
+            param.appendToOutFile( param.EMcounter(),
+                                   (int)epoch_idx,
+                                   to_string(change_times_[epoch_idx]),
+                                   ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                   "Recomb",
+                                   -1,
+                                   -1,
+                                   this->total_recomb_opportunity[epoch_idx][0].final_answer(),
+                                   this->total_recomb_count[epoch_idx][0].final_answer(),
+                                   this->total_recomb_weight[epoch_idx][0].final_answer());
+        }
     }
     param.appendToOutFile( param.EMcounter(),
                            -1,
