@@ -74,4 +74,8 @@ tests/tmpNe
 tests/tmplagCount
 tests/tmplagHIST
 tests/tmplagNe
+
+# Coverage
 testCoverage/
+*gcda
+*gcno

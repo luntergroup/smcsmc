@@ -144,7 +144,7 @@ void CountModel::init_coal_and_recomb() {
         if (epoch_idx > 0)
             increaseTime();
         // populate coalescent and recombination event counters
-        vector <Two_doubles> tmp_count(this->population_number(), Two_doubles(0));
+        vector <TwoDoubles> tmp_count(this->population_number(), TwoDoubles(0));
         total_coal_count.push_back(tmp_count);
         total_recomb_count.push_back(tmp_count);
         // enter initial value
@@ -154,7 +154,7 @@ void CountModel::init_coal_and_recomb() {
             total_recomb_count[epoch_idx][pop_i] = this->recombination_rate();
         }
         // populate and enter initial value for opportunity
-        vector <Two_doubles> tmp_opportunity(this->population_number(), Two_doubles(1));
+        vector <TwoDoubles> tmp_opportunity(this->population_number(), TwoDoubles(1));
         total_coal_opportunity.push_back(tmp_opportunity);
         total_recomb_opportunity.push_back(tmp_opportunity);
         // and same for weight counters
@@ -179,12 +179,12 @@ void CountModel::init_migr() {
             increaseTime();
 
         // populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
-        vector < vector < Two_doubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
-        vector < Two_doubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
+        vector < vector < TwoDoubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
+        vector < TwoDoubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
         vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-            tmp_count_Time_i.      push_back( vector<Two_doubles>( this->population_number(), Two_doubles( 0.0 ) ) );
-            tmp_opp_Time_i.        push_back( Two_doubles(1) );
+            tmp_count_Time_i.      push_back( vector<TwoDoubles>( this->population_number(), TwoDoubles( 0.0 ) ) );
+            tmp_opp_Time_i.        push_back( TwoDoubles(1) );
             tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
                 tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );

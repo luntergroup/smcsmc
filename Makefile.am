@@ -127,7 +127,7 @@ smcsmc_prof_SOURCES = $(smcsmc_SOURCES)
 smcsmc_gperf_SOURCES = $(smcsmc_SOURCES)
 
 test_src = tests/unittest/test_runner.cpp \
-		   tests/unittest/test_FroestState.cpp
+		   tests/unittest/test_TwoDoubles.cpp
 
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src)
 

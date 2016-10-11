@@ -27,20 +27,21 @@
 #define COUNT
 
 #ifndef BIG_TO_SMALL_RATIO
-#define BIG_TO_SMALL_RATIO 67108864
+#define BIG_TO_SMALL_RATIO 67108864 // 2^26
 #endif
 
-class Two_doubles {
+class TwoDoubles {
+  friend class TestTwoDoubles;
     public:
-        Two_doubles( double init = 0 ) : big_(0), small_(init) {}
+        TwoDoubles( double init = 0.0 ) : big_(0.0), small_(init) {}
 
-        ~Two_doubles(){};
+        ~TwoDoubles(){};
 
         void add( double x ) {
             small_ += x;
             if (fabs(small_ * BIG_TO_SMALL_RATIO) > fabs(big_)) {
                 big_ += small_;
-                small_ = 0;
+                small_ = 0.0;
             }
         }
 
@@ -101,15 +102,15 @@ class CountModel: public Model {
          *      number_of_epochs * number_of_population (from) * number_of_population (to).
          *  For total_weighted_mig_opportunity only the 'from' population is important
          */
-        vector < vector <Two_doubles> >   total_coal_count;
-        vector < vector <Two_doubles> >   total_coal_opportunity;
-        vector < vector <Two_doubles> >   total_coal_weight;
-        vector < vector <Two_doubles> >   total_recomb_count;
-        vector < vector <Two_doubles> >   total_recomb_opportunity;
-        vector < vector <Two_doubles> >   total_recomb_weight;
-        vector < vector < vector<Two_doubles> > >  total_mig_count;
-        vector < vector <Two_doubles> >            total_mig_opportunity;
-        vector < vector <Two_doubles> >            total_mig_weight;
+        vector < vector <TwoDoubles> >   total_coal_count;
+        vector < vector <TwoDoubles> >   total_coal_opportunity;
+        vector < vector <TwoDoubles> >   total_coal_weight;
+        vector < vector <TwoDoubles> >   total_recomb_count;
+        vector < vector <TwoDoubles> >   total_recomb_opportunity;
+        vector < vector <TwoDoubles> >   total_recomb_weight;
+        vector < vector < vector<TwoDoubles> > >  total_mig_count;
+        vector < vector <TwoDoubles> >            total_mig_opportunity;
+        vector < vector <TwoDoubles> >            total_mig_weight;
 
         vector < double > counted_to;
         vector < double > lags;
