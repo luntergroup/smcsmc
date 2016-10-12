@@ -6,7 +6,6 @@
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 class TestTwoDoubles : public CppUnit::TestCase {
-
     CPPUNIT_TEST_SUITE( TestTwoDoubles );
     CPPUNIT_TEST( testMainConstructor );
     CPPUNIT_TEST( testAdd );
@@ -16,8 +15,8 @@ class TestTwoDoubles : public CppUnit::TestCase {
     TwoDoubles * testNumber1_;
     TwoDoubles * testNumber2_;
     double epsilon_8, epsilon_7;
- public:
 
+ public:
     void setUp() {
         this->testNumber1_ = new TwoDoubles();
         this->testNumber2_ = new TwoDoubles(3.1);

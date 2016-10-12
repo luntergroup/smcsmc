@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Generate gcov output
 #make clean
 
 # Generate html report
