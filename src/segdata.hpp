@@ -1,11 +1,11 @@
 /*
- * smcsmc is short for particle filters for ancestral recombination graphs. 
- * This is a free software for demographic inference from genome data with particle filters. 
- * 
+ * smcsmc is short for particle filters for ancestral recombination graphs.
+ * This is a free software for demographic inference from genome data with particle filters.
+ *
  * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
- * 
+ *
  * This file is part of smcsmc.
- * 
+ *
  * smcsmc is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -42,7 +42,7 @@ class Segment{
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
-    friend class TestParam;
+    friend class TestPfParam;
     #endif
 
 
@@ -60,7 +60,7 @@ class Segment{
     //vector <int> allelic_state_at_Segment_start; // Since missing variant can be represented here, variant can be ignored?
     bool empty_file_;
     size_t nsam_;
-    
+
     // less important stuff
 
     string file_name_;
@@ -68,17 +68,17 @@ class Segment{
     string tmp_str;
 
     vector <string> buffer_lines;
-    size_t current_line_index_; 
-    
+    size_t current_line_index_;
+
     // Line related
     size_t feild_start;
     size_t field_end;
     int field_index;
-    
-    
+
+    Segment(){}
     Segment( string file_name , size_t nsam, double seqlen, double num_of_mut );
     ~Segment(){};
-    
+
     // Methods
     void init();
     void initialize_read_newLine();
@@ -87,7 +87,7 @@ class Segment{
 
     double num_of_expected_mutations_;
     bool end_data_;
-    
+
 public:
     vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
     bool empty_file () const { return this->empty_file_; }
@@ -96,8 +96,8 @@ public:
     double segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
 
     void read_new_line();
-    void reset_data_to_first_entry(){ 
-        this->current_line_index_ = 0; 
+    void reset_data_to_first_entry(){
+        this->current_line_index_ = 0;
         this->set_end_data(false);
         this->segment_start_ = 1;
         this->segment_length_ = 0;
@@ -105,7 +105,7 @@ public:
             this->reset_empty_entry();
         }
     };
-    
+
     void reset_empty_entry(){
         // Round segment_length_ to an integer
         this->segment_length_ = (size_t)this->seqlen_ / this->num_of_expected_mutations_ ;
@@ -113,7 +113,7 @@ public:
         //dout << "this->segment_length_ = "<<this->segment_length_<<endl;
         this->segment_state_ = SEGMENT_MISSING;
         //this->variant_state_ = false;
-        this->genetic_break_ = true;         
+        this->genetic_break_ = true;
     }
 
     bool end_data() const {return end_data_; }

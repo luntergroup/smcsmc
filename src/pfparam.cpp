@@ -24,31 +24,53 @@
 
 #include "pfparam.hpp"
 #include "pattern.hpp"
-#include "rescue.hpp"
-#include "help.hpp"
+#include <ostream>
+PfParam::PfParam(){
+    this->init();  // Initialize pfARG program parameters
+}
 
-PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
 
-    this->init(); // Initialize pfARG program parameters
+void PfParam::reInit(){
+    if ( this->Segfile != NULL ){
+        delete this->Segfile;
+    }
+    if ( this->SCRMparam != NULL ){
+        delete this->SCRMparam;
+    }
+    if ( this->rg != NULL ){
+        delete this->rg;
+    }
+    this->init();
+}
 
-    for (argc_i = 1; argc_i < argc; ++argc_i ) {
 
-        string argv_i(argv_[argc_i]);
+void PfParam::parse(int argc, char *argv[]) {
+    this->argc_ = argc;
+    this->argv_ = std::vector<std::string>(argv + 1, argv + argc);
+    this->argv_i = argv_.begin();
 
+    if ( argv_.size() == 0 ) {
+        this->setHelp(true);
+        return;
+    }
+
+    this->reInit();
+
+    do {
         // ------------------------------------------------------------------
         // Parameters
         // ------------------------------------------------------------------
-        if      ( argv_i == "-Np"   ){ this->N = readNextInput<size_t>(); }
-
-        else if ( argv_i == "-nsam" ){ this->default_nsam = readNextInput<size_t>(); }
-
-        else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
-                                       this->ESS_default_bool = false; }
-
-        else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
-                                       this->EM_bool = true; }
-
-        else if ( argv_i == "-xr" || argv_i == "-xc" ) {
+        if        ( *argv_i == "-Np"   ){
+            this->N = readNextInput<size_t>();
+        } else if ( *argv_i == "-nsam" ){
+            this->default_nsam = readNextInput<size_t>();
+        } else if ( *argv_i == "-ESS"  ){
+            this->ESS_ = readNextInput<double>();
+            this->ESS_default_bool = false;
+        } else if ( *argv_i == "-EM"   ){
+            this->EM_steps = readNextInput<int>();
+            this->EM_bool = true;
+        } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
             first_epoch--;                                  // turn into 0-based half-open
@@ -60,54 +82,57 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+                    record_event_in_epoch[i] &= ~( (*argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
                 }
             }
-        } else if ( argv_i == "-cap"  ){
-	    this->useCap = true;
-	    this->Ne_cap = readNextInput<double>();
-	} else if ( argv_i == "-tmax" ){
-	    this->top_t_ = readNextInput<double>();
-	} else if ( argv_i == "-p"    ){
-	    this->nextArg();
-	    this->pattern = argv_[argc_i];
+        } else if ( *argv_i == "-cap"  ){
+            this->useCap = true;
+            this->Ne_cap = readNextInput<double>();
+        } else if ( *argv_i == "-tmax" ){
+            this->top_t_ = readNextInput<double>();
+        } else if ( *argv_i == "-p"    ){
+            this->nextArg();
+            this->pattern = argv_[argc_i];
         // ------------------------------------------------------------------
         // Input files
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-seg"  ){
-	    this->nextArg();
-	    this->input_SegmentDataFileName = argv_[argc_i];
+        } else if ( *argv_i == "-seg"  ){
+            this->nextArg();
+            this->input_SegmentDataFileName = argv_[argc_i];
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-lag"    ){
-	    this->lag = this->readNextInput<double>();
-	} else if ( argv_i == "-calibrate_lag"){
-	    this->calibrate_lag = true;
-	    this->lag_fraction = readNextInput<double>();
-	} else if ( argv_i == "-online" ){
-	    this->online_bool = true;
-	//} else if ( argv_i == "-rescue" ){
-	    //this->rescue_bool = true;
+        } else if ( *argv_i == "-lag"    ){
+            this->lag = this->readNextInput<double>();
+        } else if ( *argv_i == "-calibrate_lag"){
+            this->calibrate_lag = true;
+            this->lag_fraction = readNextInput<double>();
+        } else if ( *argv_i == "-online" ){
+            this->online_bool = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-o"     ){
-	    this->nextArg();
-	    this->out_NAME_prefix = argv_[argc_i];
-	} else if ( argv_i == "-log"   ){
-	    this->log_bool  = true;
-	} else if ( argv_i == "-heat"  ){
-	    this->heat_bool = true;
-	} else if (argv_i == "-h" || argv_i == "-help") {
-            Help_header();
-        } else if (argv_i == "-v") {
-            Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion);
-            exit(0);
+        } else if ( *argv_i == "-o"     ){
+            this->nextArg();
+            this->out_NAME_prefix = argv_[argc_i];
+        } else if ( *argv_i == "-log"   ){
+            this->log_bool  = true;
+        } else if ( *argv_i == "-heat"  ){
+            this->heat_bool = true;
+        } else if (*argv_i == "-h" || *argv_i == "-help") {
+            //Help_header();
+            this->setHelp(true);
+        } else if (*argv_i == "-v" || *argv_i == "-version") {
+            this->setVersion(true);
         } else {
-            scrm_input += argv_i + " ";
+            scrm_input += *argv_i + " ";
         }
+    } while ( ++argv_i != argv_.end());
+
+    if ( this->help() || version() ){
+        return;
     }
+
     this->finalize( );
 }
 
@@ -151,7 +176,7 @@ void PfParam::init(){
     this->N                = 100;
     this->lag              = 0;
     this->out_NAME_prefix  = "smcsmc";
-    this->ESS_              = 0.5;
+    this->ESS_             = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
@@ -164,9 +189,13 @@ void PfParam::init(){
     this->SCRMparam        = NULL;
     this->rg               = NULL;
     this->scrm_input       = "";
-    this->top_t_            = 2;
-    this->rescue_bool = false;
-    this->EMcounter_ = 0;
+    this->top_t_           = 2;
+    this->EMcounter_       = 0;
+    this->argc_            = 0;
+    this->useCap           = false;
+    this->Ne_cap           = 200000;
+    this->setHelp(false);
+    this->setVersion(false);
 }
 
 
@@ -174,7 +203,7 @@ void PfParam::insert_mutation_rate_in_scrm_input ( ) {
 
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) {
-	// if "-t" option is not found ...
+    // if "-t" option is not found ...
         this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
         this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
     }
@@ -185,9 +214,9 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
 
     size_t found = scrm_input.find("-r");
     if ( found == std::string::npos ) { // if "-r" option is not found ...
-	// number of recombination events in 4N0, as the scaling N0 in scrm is 10000
+    // number of recombination events in 4N0, as the scaling N0 in scrm is 10000
         this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )
-	                 + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
+                           + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
     } else {
         // skipping the number of recombination first
         size_t pos_start = scrm_input.find(" ", found+2, 1);
@@ -258,11 +287,6 @@ void PfParam::finalize(  ){
     remove( this->log_NAME.c_str()   );
     //remove( this->SURVIVOR_NAME.c_str());
     remove( this->Resample_NAME.c_str());
-    // below is not used as we now call a single EM step at a time
-    //if ( this->rescue_bool ){ // By default, no rescue
-        //clog << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        //clog << this->scrm_input <<endl;
-    //}
 
     this->finalize_scrm_input ( );
 
@@ -300,7 +324,7 @@ void PfParam::log_param( ){
     log_file << "###########################\n";
     log_file << "#        smcsmc log       #\n";
     log_file << "###########################\n";
-    Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion, log_file);
+    this->printVersion(&log_file);
     log_file << "smcsmc parameters: \n";
     if (this->heat_bool){
         log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
@@ -422,3 +446,46 @@ void PfParam::append_resample_file( int position, double ESS) const {
 }
 
 
+void PfParam::helpOption(){
+    //cout << "Too few command line arguments" << endl;
+    cout << "Options:" << endl;
+    cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
+    cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
+    cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
+    cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
+    cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
+    cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
+    cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
+    cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
+    cout << setw(10)<<"-xr"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
+    cout << setw(10)<<"-xc"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
+    cout << setw(10)<<"-v"      << setw(5) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+};
+
+
+void PfParam::helpExample(){
+    cout << "    Examples:" << endl;
+    cout << "smcsmc 10 -nsam 3" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg -buff 4" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
+};
+
+
+void PfParam::printHelp(){
+    cout << "smcsmc" << endl;
+    cout << "  version: " << VERSION << endl;
+    cout << "  authored by Sha (Joe) Zhu and Gerton Lunter " <<endl;
+    this->helpOption();
+    this->helpExample();
+};
+
+
+void PfParam::printVersion(std::ostream *output){
+    (*output) << "Program was compiled on: " << this->compileTime << endl;
+    (*output) << "smcsmc version: " << this->smcsmcVersion << endl;
+    (*output) << "scrm version:   " << this->scrmVersion   << endl;
+}
