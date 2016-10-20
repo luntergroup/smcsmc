@@ -84,7 +84,7 @@ class PfParam{
     // Action
     // ------------------------------------------------------------------
     double lag;
-    bool calibrate_lag=false;
+    bool calibrate_lag;
     double lag_fraction;
     bool online_bool;
 
@@ -101,7 +101,7 @@ class PfParam{
 
     double default_loci_length;
 
-    double ESS () const { return this-> ESS_;} // scaled between zero and one
+    double ESS() const { return this-> ESS_;} // scaled between zero and one
 
     double top_t() const { return this->top_t_;}
 
@@ -115,22 +115,23 @@ class PfParam{
     //
     void init();
     void reInit();
-    void insert_mutation_rate_in_scrm_input ( );
-    void insert_recomb_rate_and_seqlen_in_scrm_input ( );
-    void insert_sample_size_in_scrm_input ( );
+    void insertMutationRateInScrmInput();
+    void insertRecombRateAndSeqlenInScrmInput();
+    void insertSampleSizeInScrmInput();
     void finalize_scrm_input ( );
     void finalize ( );
     void convert_scrm_input();
-    //void log_param( double inferred_recomb_rate, vector < vector<double> > migrate );
-    void log_param( );
+    void writeLog(ostream * writeTo);
 
 
     void nextArg(){
-        ++argc_i;
-        if (argc_i >= argc_) {
-        throw std::invalid_argument(std::string("Not enough parameters when parsing options: ") + argv_[argc_i-1]);
+        string tmpFlag = *argv_i;
+        ++argv_i;
+        if (argv_i == argv_.end() || (*argv_i)[0] == '-' ) {
+            throw NotEnoughArg (tmpFlag);
         }
     }
+
 
     template<class T>
     T convert(const std::string &arg) {
@@ -143,34 +144,31 @@ class PfParam{
         return value;
     }
 
+
     template<class T>
     T readNextInput() {
-        string tmpFlag = *argv_i;
-        ++argv_i;
-        if (argv_i == argv_.end() || (*argv_i)[0] == '-' ) {
-        throw NotEnoughArg (tmpFlag);}
+        this->nextArg();
         return convert<T>(*argv_i);
     }
+
 
     int readRange(int& second) {
         this->nextArg();
         char c;
         double input;
-        std::stringstream ss(argv_[argc_i]);
+        std::stringstream ss(*argv_i);
         ss >> input;
         second = input;
-        if (ss.fail() || input < 1) throw std::invalid_argument(std::string("Failed to parse int (e.g. '1') or int range (e.g. '1-10'): ") + argv_[argc_i]);
+        if (ss.fail() || input < 1) throw std::invalid_argument(std::string("Failed to parse int (e.g. '1') or int range (e.g. '1-10'): ") + *argv_i);
         if (!ss.get(c)) return input;
-        if (c != '-') throw std::invalid_argument(std::string("Parsing failure: expected '-' after int in range expression: ") + argv_[argc_i]);
+        if (c != '-') throw std::invalid_argument(std::string("Parsing failure: expected '-' after int in range expression: ") + *argv_i);
         ss >> second;
-        if (ss.fail() || second <= input || ss.get(c)) throw std::invalid_argument(std::string("Failed to parse int or int range: ") + argv_[argc_i]);
+        if (ss.fail() || second <= input || ss.get(c)) throw std::invalid_argument(std::string("Failed to parse int or int range: ") + *argv_i);
         return input;
     }
 
     // Members
     int argc_;
-    int argc_i;
-    //char * const* argv_;
     std::vector<std::string> argv_;
     std::vector<std::string>::iterator argv_i;
 
