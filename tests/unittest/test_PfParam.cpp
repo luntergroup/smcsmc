@@ -22,6 +22,7 @@ class TestPfParam : public CppUnit::TestCase {
     CPPUNIT_TEST(testPrintHelp);
     CPPUNIT_TEST(testOutOfRange);
     CPPUNIT_TEST(testWrongType);
+    CPPUNIT_TEST(testXrXc);
     CPPUNIT_TEST_SUITE_END();
 
  private:
@@ -71,6 +72,7 @@ class TestPfParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_EQUAL(this->input_->help(), false);
         CPPUNIT_ASSERT_EQUAL(this->input_->version(), false);
         CPPUNIT_ASSERT(this->input_->input_SegmentDataFileName == "");
+        CPPUNIT_ASSERT(this->input_->pattern == "");
     }
 
     void testReInit(){
@@ -208,13 +210,15 @@ class TestPfParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_DOUBLES_EQUAL(this->input_->lag, 0.5, this->epsilon_);
         CPPUNIT_ASSERT_THROW(this->input_->parse(18, argv1), NotEnoughArg);
 
-        // pattern
+        //// pattern
         CPPUNIT_ASSERT_NO_THROW(this->input_->parse(17, argv1));
         CPPUNIT_ASSERT(this->input_->pattern == "3*1+1");
+        CPPUNIT_ASSERT_EQUAL(this->input_->model.change_times_.size(), (size_t)4);
         CPPUNIT_ASSERT_THROW(this->input_->parse(16, argv1), NotEnoughArg);
 
         // tmax
         CPPUNIT_ASSERT_NO_THROW(this->input_->parse(15, argv1));
+        CPPUNIT_ASSERT_EQUAL(this->input_->model.change_times_.size(), (size_t)1);
         CPPUNIT_ASSERT_DOUBLES_EQUAL(this->input_->top_t(), 5, this->epsilon_);
         CPPUNIT_ASSERT_THROW(this->input_->parse(14, argv1), NotEnoughArg);
 
@@ -250,6 +254,7 @@ class TestPfParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_THROW(this->input_->parse(2, argv1), NotEnoughArg);
     }
 
+
     void testOutOfRange(){
         char *argv1[] = { "./smcsmc",
                          "-ESS", "2.0"};
@@ -260,10 +265,53 @@ class TestPfParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_THROW(this->input_->parse(3, argv3), OutOfRange);
     }
 
+
     void testWrongType(){
         char *argv1[] = { "./smcsmc",
                          "-Np", "asdf"};
         CPPUNIT_ASSERT_THROW(this->input_->parse(3, argv1), WrongType);
+    }
+
+
+    void testXrXc(){
+        char *argv1[] = { "./smcsmc",
+                         "-xc", "1-17"};
+        CPPUNIT_ASSERT_THROW(this->input_->parse(3, argv1), OutOfEpochRange);
+
+        char *argv2[] = { "./smcsmc",
+                         "-xr", "1-17"};
+        CPPUNIT_ASSERT_THROW(this->input_->parse(3, argv1), OutOfEpochRange);
+
+        char *argv3[] = { "./smcsmc",
+                         "-p", "3*1+4*2",
+                         "-xc", "1-2",
+                         "-xr", "1-2"};
+        CPPUNIT_ASSERT_NO_THROW(this->input_->parse(7, argv3));
+        CPPUNIT_ASSERT(this->input_->pattern == "3*1+4*2");
+        CPPUNIT_ASSERT_NO_THROW(this->input_->parse(5, argv3));
+
+        char *argv5[] = { "./smcsmc",
+                         "-p", "3*1+4*2",
+                         "-xc", "1-12",
+                         "-xr", "1-12"};
+        CPPUNIT_ASSERT_THROW(this->input_->parse(7, argv5), OutOfEpochRange);
+        CPPUNIT_ASSERT(this->input_->pattern == "3*1+4*2");
+        CPPUNIT_ASSERT_THROW(this->input_->parse(5, argv5), OutOfEpochRange);
+
+        char *argv4[] = { "./smcsmc",
+                         "-eN", "1", "1",
+                         "-xc", "1-2",
+                         "-xr", "1-2"};
+        CPPUNIT_ASSERT_NO_THROW(this->input_->parse(8, argv4));
+        CPPUNIT_ASSERT_NO_THROW(this->input_->parse(6, argv4));
+        this->testWriteLog();
+
+        char *argv6[] = { "./smcsmc",
+                         "-eN", "1", "1",
+                         "-xc", "1-3",
+                         "-xr", "1-3"};
+        CPPUNIT_ASSERT_THROW(this->input_->parse(8, argv6), OutOfEpochRange);
+        CPPUNIT_ASSERT_THROW(this->input_->parse(6, argv6), OutOfEpochRange);
     }
 };
 

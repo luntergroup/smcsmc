@@ -75,6 +75,16 @@ struct FlagsConflict : public InvalidInput{
 };
 
 
+struct OutOfEpochRange : public InvalidInput{
+  OutOfEpochRange( string str1, string str2 ):InvalidInput( str1 ){
+    this->reason = "Problem: epochs specified in -xr/-xc options out of range: ";
+    this->src      = "\033[1;31m" + str1 + string(" is greater than ") + str2 + "\033[0m";
+    throwMsg = this->reason + src;
+  }
+  ~OutOfEpochRange() throw() {}
+};
+
+
 struct OutOfRange : public InvalidInput{
   OutOfRange( string str1, string str2 ):InvalidInput( str1 ){
     this->reason = "Flag \"";

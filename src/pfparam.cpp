@@ -40,6 +40,7 @@ void PfParam::reInit(){
     if ( this->rg != NULL ){
         delete this->rg;
     }
+    //this->model.change_times_.clear();
     this->init();
 }
 
@@ -74,6 +75,7 @@ void PfParam::parse(int argc, char *argv[]) {
             this->EM_steps = readNextInput<int>();
             this->EM_bool = true;
         } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
+            string tmpFlag = *argv_i;
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
             first_epoch--;                                  // turn into 0-based half-open
@@ -85,7 +87,7 @@ void PfParam::parse(int argc, char *argv[]) {
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (*argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
                 }
             }
         } else if ( *argv_i == "-cap"  ){
@@ -205,6 +207,8 @@ void PfParam::init(){
     this->setHelp(false);
     this->setVersion(false);
     this->input_SegmentDataFileName = "";
+    this->pattern = "";
+    this->record_event_in_epoch.clear();
 }
 
 
@@ -268,7 +272,6 @@ void PfParam::convert_scrm_input (){
     }
     ///*! Extract scrm parameters */
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
-    //this->SCRMparam->parse( *this->model );
     this->model = this->SCRMparam->parse();
     this->model.has_window_seq_ = true;
     this->rg = new MersenneTwister(this->SCRMparam->seed_is_set(), this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
@@ -294,7 +297,7 @@ void PfParam::finalize(){
     //remove( this->SURVIVOR_NAME.c_str());
     remove( this->Resample_NAME.c_str());
 
-    this->finalize_scrm_input ( );
+    this->finalize_scrm_input();
 
     // if necessary, extend the vector specifying what epochs to collect events for,
     // and check it hasn't been made too large (which wouldn't strictly be a problem,
@@ -303,7 +306,8 @@ void PfParam::finalize(){
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
     }
     if (record_event_in_epoch.size() > this->model.change_times_.size()) {
-        throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+        //throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+        throw OutOfEpochRange(to_string(record_event_in_epoch.size()), to_string(this->model.change_times_.size()));
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
