@@ -187,7 +187,7 @@ class TestPfParam : public CppUnit::TestCase {
         CPPUNIT_ASSERT_THROW(this->input_->parse(26, argv1), std::invalid_argument);
 
         // seg
-        CPPUNIT_ASSERT_THROW(this->input_->parse(25, argv1), std::invalid_argument);
+        CPPUNIT_ASSERT_THROW(this->input_->parse(25, argv1), InvalidInputFile);
         CPPUNIT_ASSERT(this->input_->input_SegmentDataFileName == "noSuchFile");
         CPPUNIT_ASSERT_THROW(this->input_->parse(24, argv1), NotEnoughArg);
 

@@ -66,8 +66,8 @@ void Segment::init(){
 
     }
     else {
-        throw std::invalid_argument ( std::string("Invaild file: ") + this->file_name_ );
-        }
+        throw InvalidInputFile(this->file_name_);
+    }
     in_file.close();
 
     this->segment_length_ = 0;

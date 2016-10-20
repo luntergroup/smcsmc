@@ -22,19 +22,28 @@
 */
 
 
-#include<string>
-#include<fstream>
-#include<iostream>
-#include<vector>
-#include<cassert>       // assert
-#include<stdexcept>      // std::invalid_argument
-#include<stdlib.h>     /* strtol, strtod */
-#include<climits> // INT_MAX
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <cassert>       // assert
+#include <stdlib.h>     /* strtol, strtod */
+#include <climits> // INT_MAX
+#include "exception.hpp"
 
 using namespace std;
 
 #ifndef SEGDATA
 #define SEGDATA
+
+struct InvalidInputFile : public InvalidInput{
+  InvalidInputFile( string str ):InvalidInput( str ){
+    this->reason = "Invalid input file: ";
+    throwMsg = this->reason + this->src;
+  }
+  ~InvalidInputFile() throw() {}
+};
+
 
 enum Segment_State {SEGMENT_INVARIANT, SEGMENT_MISSING};
 
