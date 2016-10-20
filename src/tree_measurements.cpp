@@ -1,13 +1,13 @@
 #include "tree_measurements.hpp"
 
-void Tree_measurements::init(Forest* forest) {
+void TreeMeasurements::init(Forest* forest) {
     this->set_forest(forest);
 }
 
 //Will call this in smcsmc.cpp (on root node) and keep a running average of B_below, etc
 //also need Prob k=1 at each t
-void Tree_measurements::adjust_branch_measurements(Node* node) {
-    
+void TreeMeasurements::adjust_branch_measurements(Node* node) {
+
     if(node->is_root()) {
 	//reset
 	for( size_t time_idx=0 ; time_idx < this->forest().model().change_times_.size() ; time_idx++ ) {
@@ -49,7 +49,7 @@ void Tree_measurements::adjust_branch_measurements(Node* node) {
 	}
       }
     }
-    
+
     //check if B_below_bh needs to be updated
     if( node->height() < this->forest().model().bias_height() ) { //if node.height < bh
       this->set_B_below_bh( this->B_below_bh() +
@@ -57,7 +57,7 @@ void Tree_measurements::adjust_branch_measurements(Node* node) {
                                   this->forest().model().bias_height() - node->height() ) );
     }
 
-    if( node->first_child() != NULL ) {this->adjust_branch_measurements(node->first_child());} 
+    if( node->first_child() != NULL ) {this->adjust_branch_measurements(node->first_child());}
     if( node->second_child() != NULL ) {this->adjust_branch_measurements(node->second_child());}
 
     //assertions on B_below, B_within, B_below_bh
@@ -65,7 +65,7 @@ void Tree_measurements::adjust_branch_measurements(Node* node) {
     assert( this->B_within().size() == this->forest().model().change_times_.size() );
 }
 
-void Tree_measurements::count_lineage() {
+void TreeMeasurements::count_lineage() {
     //assertion to check B_within is appropriate
 
     for( size_t time_idx = 0 ; time_idx < this->forest().model().change_times_.size() ; time_idx++ ){

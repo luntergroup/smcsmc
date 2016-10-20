@@ -86,7 +86,7 @@ class DelayedFactor {
 
     public:
 	    DelayedFactor(double pos, double factor);
-	    
+
 	    // Members
 	    double application_position;
 	    double importance_factor;
@@ -94,11 +94,11 @@ class DelayedFactor {
 
 };
 
-class compareDFs {
+class CompareDFs {
 	public:
 		bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
-		    return lhs.application_position > rhs.application_position;	
-		}			
+		    return lhs.application_position > rhs.application_position;
+		}
 };
 
 inline DelayedFactor::DelayedFactor( double pos, double factor) {
@@ -109,7 +109,7 @@ inline DelayedFactor::DelayedFactor( double pos, double factor) {
 // DEBUG delayedIS
 inline void DelayedFactor::print_info() const {
     std::clog << "\nThe application position of this DF is " << this->application_position << std::endl;
-    std::clog << "The importance factor of this DF is " << this->importance_factor << std::endl;	
+    std::clog << "The importance factor of this DF is " << this->importance_factor << std::endl;
 }
 
 /*!
@@ -161,7 +161,7 @@ class ForestState : public Forest{
         double weight() const { return this->particle_weight_; }
         void setDelayedWeight(double weight) { this->delayed_weight_ = weight; }
         double delayed_weight() const { return this->delayed_weight_; }
-        
+
 
         // What does this do?
         Node* trackLocalNode(Node *node) const;
@@ -195,10 +195,10 @@ class ForestState : public Forest{
 	double getWeightedLengthBelow( Node* node ) const;
 	double WeightedBranchLengthAbove( Node* node ) const;
 	double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
-	
+
 	//// delayed IS
-	
-	std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, compareDFs > delayed_adjustments;
+
+	std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
 	double total_delayed_adjustment = 1;  // this is the product over the factors in delayed_adjustments
 
 	// below are overloaded
