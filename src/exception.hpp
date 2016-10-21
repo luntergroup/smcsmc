@@ -49,47 +49,5 @@ struct InvalidInput : std::exception {
 };
 
 
-struct NotEnoughArg : public InvalidInput{
-    NotEnoughArg( string str ):InvalidInput( str ){
-        this->reason = "Not enough parameters when parsing option: ";
-        throwMsg = this->reason + this->src;
-    }
-    ~NotEnoughArg() throw() {}
-};
-
-
-struct UnknowArg : public InvalidInput{
-  UnknowArg( string str ):InvalidInput( str ){
-    this->reason = "Unknow option: ";
-    throwMsg = this->reason + this->src;
-  }
-  ~UnknowArg() throw() {}
-};
-
-struct FlagsConflict : public InvalidInput{
-  FlagsConflict( string str1, string str2 ):InvalidInput( str1 ){
-    this->reason = "Flag: ";
-    throwMsg = this->reason + this->src + string(" conflict with flag ") + str2;
-  }
-  ~FlagsConflict() throw() {}
-};
-
-
-struct OutOfRange : public InvalidInput{
-  OutOfRange( string str1, string str2 ):InvalidInput( str1 ){
-    this->reason = "Flag \"";
-    throwMsg = this->reason + this->src + string(" ") + str2 + string("\" out of range [0, 1].");
-  }
-  ~OutOfRange() throw() {}
-};
-
-
-struct WrongType : public InvalidInput{
-  WrongType( string str ):InvalidInput( str ){
-    this->reason = "Wrong type for parsing: ";
-    throwMsg = this->reason + this->src;
-  }
-  ~WrongType() throw() {}
-};
 
 #endif

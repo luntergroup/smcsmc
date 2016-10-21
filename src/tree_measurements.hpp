@@ -2,12 +2,12 @@
 
 #include "scrm/src/forest.h"
 
-class Tree_measurements {
+class TreeMeasurements {
 
   public:
-  
-  Tree_measurements( Forest *forest );
-  ~Tree_measurements();
+
+  TreeMeasurements( Forest *forest );
+  ~TreeMeasurements();
 
   Forest* forest_;
   void set_forest(Forest* forest) { this->forest_ = forest; }

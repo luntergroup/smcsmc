@@ -29,8 +29,9 @@ Pattern::Pattern(){
 }
 
 
-Pattern::Pattern (string pattern, double top_t):top_t_(top_t){
+Pattern::Pattern (string pattern, double top_t){
     this->init();
+    this->top_t_ = top_t;
     this->extractFromPattern(pattern);
 }
 

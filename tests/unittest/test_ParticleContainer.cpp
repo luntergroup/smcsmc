@@ -9,12 +9,12 @@
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
-class TestVparticle : public CppUnit::TestCase {
-  
-  CPPUNIT_TEST_SUITE( TestVparticle );
+class TestParticleContainer : public CppUnit::TestCase {
 
-  CPPUNIT_TEST( somemethod ); 
-  
+  CPPUNIT_TEST_SUITE( TestParticleContainer );
+
+  CPPUNIT_TEST( somemethod );
+
   CPPUNIT_TEST_SUITE_END();
 
  private:
@@ -22,8 +22,8 @@ class TestVparticle : public CppUnit::TestCase {
 
  public:
   void somemethod() {}
-      
+
 };
 
 //Uncomment this to activate the test
-CPPUNIT_TEST_SUITE_REGISTRATION( TestVparticle );
+CPPUNIT_TEST_SUITE_REGISTRATION( TestParticleContainer );

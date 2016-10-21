@@ -24,31 +24,58 @@
 
 #include "pfparam.hpp"
 #include "pattern.hpp"
-#include "rescue.hpp"
-#include "help.hpp"
+#include <ostream>
+PfParam::PfParam(){
+    this->init();  // Initialize pfARG program parameters
+}
 
-PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
 
-    this->init(); // Initialize pfARG program parameters
+void PfParam::reInit(){
+    if ( this->Segfile != NULL ){
+        delete this->Segfile;
+    }
+    if ( this->SCRMparam != NULL ){
+        delete this->SCRMparam;
+    }
+    if ( this->rg != NULL ){
+        delete this->rg;
+    }
+    //this->model.change_times_.clear();
+    this->init();
+}
 
-    for (argc_i = 1; argc_i < argc; ++argc_i ) {
 
-        string argv_i(argv_[argc_i]);
+void PfParam::parse(int argc, char *argv[]) {
+    this->argc_ = argc;
+    this->argv_ = std::vector<std::string>(argv + 1, argv + argc);
+    this->argv_i = argv_.begin();
 
+    if ( argv_.size() == 0 ) {
+        this->setHelp(true);
+        return;
+    }
+
+    this->reInit();
+
+    do {
         // ------------------------------------------------------------------
         // Parameters
         // ------------------------------------------------------------------
-        if      ( argv_i == "-Np"   ){ this->N = readNextInput<size_t>(); }
-
-        else if ( argv_i == "-nsam" ){ this->default_nsam = readNextInput<size_t>(); }
-
-        else if ( argv_i == "-ESS"  ){ this->ESS_ = readNextInput<double>();
-                                       this->ESS_default_bool = false; }
-
-        else if ( argv_i == "-EM"   ){ this->EM_steps = readNextInput<int>();
-                                       this->EM_bool = true; }
-
-        else if ( argv_i == "-xr" || argv_i == "-xc" ) {
+        if        ( *argv_i == "-Np"   ){
+            this->N = readNextInput<size_t>();
+        } else if ( *argv_i == "-nsam" ){
+            this->default_nsam = readNextInput<size_t>();
+        } else if ( *argv_i == "-ESS"  ){
+            this->ESS_ = readNextInput<double>();
+            this->ESS_default_bool = false;
+            if ( this->ESS() > 1.0 || this->ESS() < 0.0 ){
+                throw OutOfRange ("-ESS", *argv_i );
+            }
+        } else if ( *argv_i == "-EM"   ){
+            this->EM_steps = readNextInput<int>();
+            this->EM_bool = true;
+        } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
+            string tmpFlag = *argv_i;
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
             first_epoch--;                                  // turn into 0-based half-open
@@ -60,54 +87,60 @@ PfParam::PfParam(int argc, char *argv[]): argc_(argc), argv_(argv) {
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (argv_i == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
                 }
             }
-        } else if ( argv_i == "-cap"  ){
-	    this->useCap = true;
-	    this->Ne_cap = readNextInput<double>();
-	} else if ( argv_i == "-tmax" ){
-	    this->top_t_ = readNextInput<double>();
-	} else if ( argv_i == "-p"    ){
-	    this->nextArg();
-	    this->pattern = argv_[argc_i];
+        } else if ( *argv_i == "-cap"  ){
+            this->Ne_cap = readNextInput<double>();
+            this->useCap = true;
+        } else if ( *argv_i == "-tmax" ){
+            this->top_t_ = readNextInput<double>();
+        } else if ( *argv_i == "-p"    ){
+            this->nextArg();
+            this->pattern = *argv_i;
         // ------------------------------------------------------------------
         // Input files
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-seg"  ){
-	    this->nextArg();
-	    this->input_SegmentDataFileName = argv_[argc_i];
+        } else if ( *argv_i == "-seg"  ){
+            this->nextArg();
+            this->input_SegmentDataFileName = *argv_i;
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-lag"    ){
-	    this->lag = this->readNextInput<double>();
-	} else if ( argv_i == "-calibrate_lag"){
-	    this->calibrate_lag = true;
-	    this->lag_fraction = readNextInput<double>();
-	} else if ( argv_i == "-online" ){
-	    this->online_bool = true;
-	//} else if ( argv_i == "-rescue" ){
-	    //this->rescue_bool = true;
+        } else if ( *argv_i == "-lag"    ){
+            this->lag = this->readNextInput<double>();
+        } else if ( *argv_i == "-calibrate_lag"){
+            this->calibrate_lag = true;
+            this->lag_fraction = readNextInput<double>();
+            if ( this->lag_fraction > 1.0 || this->lag_fraction < 0.0 ){
+                throw OutOfRange ("-calibrate_lag", *argv_i );
+            }
+        } else if ( *argv_i == "-online" ){
+            this->online_bool = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
-	} else if ( argv_i == "-o"     ){
-	    this->nextArg();
-	    this->out_NAME_prefix = argv_[argc_i];
-	} else if ( argv_i == "-log"   ){
-	    this->log_bool  = true;
-	} else if ( argv_i == "-heat"  ){
-	    this->heat_bool = true;
-	} else if (argv_i == "-h" || argv_i == "-help") {
-            Help_header();
-        } else if (argv_i == "-v") {
-            Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion);
-            exit(0);
+        } else if ( *argv_i == "-o"     ){
+            this->nextArg();
+            this->out_NAME_prefix = *argv_i;
+        } else if ( *argv_i == "-log"   ){
+            this->log_bool  = true;
+        } else if ( *argv_i == "-heat"  ){
+            this->heat_bool = true;
+        } else if (*argv_i == "-h" || *argv_i == "-help") {
+            //Help_header();
+            this->setHelp(true);
+        } else if (*argv_i == "-v" || *argv_i == "-version") {
+            this->setVersion(true);
         } else {
-            scrm_input += argv_i + " ";
+            scrm_input += *argv_i + " ";
         }
+    } while ( ++argv_i != argv_.end());
+
+    if ( this->help() || version() ){
+        return;
     }
+
     this->finalize( );
 }
 
@@ -149,9 +182,11 @@ void PfParam::init(){
 
     this->original_recombination_rate_ = 0;
     this->N                = 100;
-    this->lag              = 0;
+    this->lag              = 0.0;
+    this->calibrate_lag    = false;
+    this->lag_fraction     = 0.0;
     this->out_NAME_prefix  = "smcsmc";
-    this->ESS_              = 0.5;
+    this->ESS_             = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->heat_bool        = false;
@@ -164,31 +199,36 @@ void PfParam::init(){
     this->SCRMparam        = NULL;
     this->rg               = NULL;
     this->scrm_input       = "";
-    this->top_t_            = 2;
-    this->rescue_bool = false;
-    this->EMcounter_ = 0;
+    this->top_t_           = 2;
+    this->EMcounter_       = 0;
+    this->argc_            = 0;
+    this->useCap           = false;
+    this->Ne_cap           = 200000;
+    this->setHelp(false);
+    this->setVersion(false);
+    this->input_SegmentDataFileName = "";
+    this->pattern = "";
+    this->record_event_in_epoch.clear();
 }
 
 
-void PfParam::insert_mutation_rate_in_scrm_input ( ) {
-
+void PfParam::insertMutationRateInScrmInput(){
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) {
-	// if "-t" option is not found ...
+    // if "-t" option is not found ...
         this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
         this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
     }
 }
 
 
-void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
-
+void PfParam::insertRecombRateAndSeqlenInScrmInput(){
     size_t found = scrm_input.find("-r");
     if ( found == std::string::npos ) { // if "-r" option is not found ...
-	// number of recombination events in 4N0, as the scaling N0 in scrm is 10000
+    // number of recombination events in 4N0, as the scaling N0 in scrm is 10000
         this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )
-	                 + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
-    } else {
+                           + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
+    } else { // If recombination and sequence length are defined in the input, extract the sequence length
         // skipping the number of recombination first
         size_t pos_start = scrm_input.find(" ", found+2, 1);
         size_t pos_end = scrm_input.find(" ", pos_start+1, 1);
@@ -200,17 +240,16 @@ void PfParam::insert_recomb_rate_and_seqlen_in_scrm_input (  ){
 }
 
 
-void PfParam::insert_sample_size_in_scrm_input (  ) {
+void PfParam::insertSampleSizeInScrmInput(){
     this->scrm_input = to_string ( this->default_nsam ) + " 1 " + this->scrm_input;
 }
 
 
 void PfParam::finalize_scrm_input (  ) {
-
     // These options insert parameters to the beginning of the current scrm_input
-    this->insert_recomb_rate_and_seqlen_in_scrm_input ( );
-    this->insert_mutation_rate_in_scrm_input ( );
-    this->insert_sample_size_in_scrm_input ( );
+    this->insertRecombRateAndSeqlenInScrmInput(); // This must be run before insertMutationRateInScrmInput, need to define the sequence length
+    this->insertMutationRateInScrmInput();
+    this->insertSampleSizeInScrmInput();
     if (pattern.size() > 0) {
         Pattern tmp_pattern( pattern, top_t_ );
         this->scrm_input = "scrm " + this->scrm_input + tmp_pattern.pattern_str;
@@ -233,7 +272,6 @@ void PfParam::convert_scrm_input (){
     }
     ///*! Extract scrm parameters */
     this->SCRMparam = new Param(scrm_argc, scrm_argv, false);
-    //this->SCRMparam->parse( *this->model );
     this->model = this->SCRMparam->parse();
     this->model.has_window_seq_ = true;
     this->rg = new MersenneTwister(this->SCRMparam->seed_is_set(), this->SCRMparam->random_seed());  /*! Initialize mersenneTwister seed */
@@ -241,7 +279,7 @@ void PfParam::convert_scrm_input (){
 }
 
 
-void PfParam::finalize(  ){
+void PfParam::finalize(){
 
     this->ESSthreshold = this->N * this->ESS();
     this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
@@ -258,13 +296,8 @@ void PfParam::finalize(  ){
     remove( this->log_NAME.c_str()   );
     //remove( this->SURVIVOR_NAME.c_str());
     remove( this->Resample_NAME.c_str());
-    // below is not used as we now call a single EM step at a time
-    //if ( this->rescue_bool ){ // By default, no rescue
-        //clog << " Rescue from " << this->HIST_NAME.c_str() << endl;
-        //clog << this->scrm_input <<endl;
-    //}
 
-    this->finalize_scrm_input ( );
+    this->finalize_scrm_input();
 
     // if necessary, extend the vector specifying what epochs to collect events for,
     // and check it hasn't been made too large (which wouldn't strictly be a problem,
@@ -273,7 +306,8 @@ void PfParam::finalize(  ){
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
     }
     if (record_event_in_epoch.size() > this->model.change_times_.size()) {
-        throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+        //throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
+        throw OutOfEpochRange(to_string(record_event_in_epoch.size()), to_string(this->model.change_times_.size()));
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
@@ -281,80 +315,74 @@ void PfParam::finalize(  ){
 }
 
 
-int PfParam::log( ) {
-
+int PfParam::log(){
     if (log_bool){
-        this->log_param( );
-        string log_cmd="cat " + log_NAME;
-        return system(log_cmd.c_str());
-    } else {
-        return 0;
+        ofstream logFile(log_NAME.c_str(), ios::out | ios::app | ios::binary);
+        this->writeLog(&logFile );
+        logFile.close();
     }
+    this->writeLog(&std::cout);
+    return 0;
 }
 
 
-void PfParam::log_param( ){
-    ofstream log_file;
-    log_file.open (log_NAME.c_str(), ios::out | ios::app | ios::binary);
-
-    log_file << "###########################\n";
-    log_file << "#        smcsmc log       #\n";
-    log_file << "###########################\n";
-    Help_version(this->compileTime, this->smcsmcVersion, this->scrmVersion, log_file);
-    log_file << "smcsmc parameters: \n";
+void PfParam::writeLog(ostream * writeTo){
+    (*writeTo) << "###########################\n";
+    (*writeTo) << "#        smcsmc log       #\n";
+    (*writeTo) << "###########################\n";
+    this->printVersion(writeTo);
+    (*writeTo) << "smcsmc parameters: \n";
     if (this->heat_bool){
-        log_file << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
-        log_file << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
-        //log_file << "BL saved in file: "     << BL_NAME     << "\n";
-        }
+        (*writeTo) << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
+        (*writeTo) << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
+        //(*writeTo) << "BL saved in file: "     << BL_NAME     << "\n";
+    }
     //if (this->hist_bool){
-        //log_file << "Resample saved in file: " << Resample_NAME << "\n";
-        //}
+        //(*writeTo) << "Resample saved in file: " << Resample_NAME << "\n";
+    //}
 
-    log_file << "Segment Data file: " ;
-    log_file << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
-    log_file << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
+    (*writeTo) << "Segment Data file: " ;
+    (*writeTo) << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
+    (*writeTo) << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
     if (lag > 0){
-        log_file << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";
+        (*writeTo) << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";
         }
     if (online_bool){
-        log_file << setw(15) << "Online update = TRUE\n";
+        (*writeTo) << setw(15) << "Online update = TRUE\n";
     }
-    log_file << setw(15) <<             "N =" << setw(10) << N                           << "\n";
-    log_file << setw(15) <<           "ESS =" << setw(10) << ESS_;
-    if (ESS_default_bool){ log_file << " (by default)";}                        log_file << "\n";
-    //log_file << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
+    (*writeTo) << setw(15) <<             "N =" << setw(10) << N                           << "\n";
+    (*writeTo) << setw(15) <<           "ESS =" << setw(10) << ESS_;
+    if (ESS_default_bool){ (*writeTo) << " (by default)";}                        (*writeTo) << "\n";
+    //(*writeTo) << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
 
-    log_file<<"scrm model parameters: \n";
-    log_file << setw(17) <<"Extract window =" << setw(10) << this->model.window_length_seq()<< "\n";
-    //log_file << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
+    (*writeTo)<<"scrm model parameters: \n";
+    (*writeTo) << setw(17) <<"Extract window =" << setw(10) << this->model.window_length_seq()<< "\n";
+    //(*writeTo) << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
 
-    log_file << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";
-    log_file << setw(17) <<    "Seq length =" << setw(10) << this->model.loci_length()        << "\n";
-    log_file << setw(17) << "mutation rate =" << setw(10) << this->model.mutation_rate()      << "\n";
-    log_file << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
-    log_file << setw(17) <<"inferred recomb rate = " << setw(10) << this->model.recombination_rate()   << "\n";
+    (*writeTo) << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";
+    (*writeTo) << setw(17) <<    "Seq length =" << setw(10) << this->model.loci_length()        << "\n";
+    (*writeTo) << setw(17) << "mutation rate =" << setw(10) << this->model.mutation_rate()      << "\n";
+    (*writeTo) << setw(17) <<   "recomb rate =" << setw(10) << this->original_recombination_rate_ << "\n";
+    (*writeTo) << setw(17) <<"inferred recomb rate = " << setw(10) << this->model.recombination_rate()   << "\n";
 
     this->model.resetTime();
-    log_file<<setw(17)<<"Pop size (at Generation):\n";
+    (*writeTo)<<setw(17)<<"Pop size (at Generation):\n";
     for (size_t i = 0; i < this->model.change_times_.size()-1; i++){
-        log_file<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )";
+        (*writeTo)<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )";
         for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-            log_file << " | " << setw(10)<<this->model.population_size(pop_j);
+            (*writeTo) << " | " << setw(10)<<this->model.population_size(pop_j);
             }
 
-        log_file<< "\n";
+        (*writeTo)<< "\n";
         this->model.increaseTime();
         }
-    log_file<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )" ;
+    (*writeTo)<<setw(3)<<"(" << setw(8) << this->model.getCurrentTime() <<" )" ;
     for (size_t pop_j = 0 ; pop_j < this->model.population_number() ; pop_j++){
-        log_file << " | " << setw(10)<<this->model.population_size(pop_j);
+        (*writeTo) << " | " << setw(10)<<this->model.population_size(pop_j);
     }
-    log_file<< "\n";
+    (*writeTo)<< "\n";
 
-    log_file << "Out file is saved in file: "  << outFileName   << "\n";
-
-    log_file.close();
+    (*writeTo) << "Out file is saved in file: "  << outFileName   << "\n";
 }
 
 
@@ -422,3 +450,46 @@ void PfParam::append_resample_file( int position, double ESS) const {
 }
 
 
+void PfParam::helpOption(){
+    //cout << "Too few command line arguments" << endl;
+    cout << "Options:" << endl;
+    cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
+    cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
+    cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
+    cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
+    cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
+    cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
+    cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
+    cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
+    cout << setw(10)<<"-xr"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
+    cout << setw(10)<<"-xc"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
+    cout << setw(10)<<"-v"      << setw(5) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+};
+
+
+void PfParam::helpExample(){
+    cout << "    Examples:" << endl;
+    cout << "smcsmc 10 -nsam 3" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg -buff 4" << endl;
+    cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
+    cout << "./smcsmc -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
+};
+
+
+void PfParam::printHelp(){
+    cout << "smcsmc" << endl;
+    cout << "  version: " << VERSION << endl;
+    cout << "  authored by Sha (Joe) Zhu and Gerton Lunter " <<endl;
+    this->helpOption();
+    this->helpExample();
+};
+
+
+void PfParam::printVersion(std::ostream *output){
+    (*output) << "Program was compiled on: " << this->compileTime << endl;
+    (*output) << "smcsmc version: " << this->smcsmcVersion << endl;
+    (*output) << "scrm version:   " << this->scrmVersion   << endl;
+}

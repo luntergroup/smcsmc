@@ -25,7 +25,6 @@
 #include "count.hpp"
 #include "arena.hpp"
 #include "debug/usage.hpp"
-#include "help.hpp"
 #include "model_summary.hpp"
 #include <set>
 
@@ -59,10 +58,6 @@ int main(int argc, char *argv[]){
 
     bool print_update_count = false; // DEBUG
 
-    if ( argc == 1 ) {
-        Help_header();
-    }
-
     #ifdef GPERF
     //std::cout << "Starting heap profiling..." << std::endl;
     //HeapProfilerStart("smcsmc_gprofile");
@@ -70,7 +65,18 @@ int main(int argc, char *argv[]){
 
     try {
         /*! Extract pfARG parameters */
-        PfParam pfARG_para( argc, argv );
+        PfParam pfARG_para;
+        (void)pfARG_para.parse( argc, argv );
+
+        if (pfARG_para.version()){
+            pfARG_para.printVersion(&std::cout);
+            return EXIT_SUCCESS;
+        }
+
+        if (pfARG_para.help()){
+            pfARG_para.printHelp();
+            return EXIT_SUCCESS;
+        }
 
         /*! Initialize memory arena */
         Arena* arena = new Arena( pfARG_para.model.getNumEpochs(), 1000000 );
@@ -98,20 +104,19 @@ int main(int argc, char *argv[]){
         delete countNe;
         delete arena;
         //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-	#ifdef GPERF
-	//HeapProfilerStop();
-	//std::cout << "Stopped heap profiling." << std::endl;
-	#endif
+        #ifdef GPERF
+        //HeapProfilerStop();
+        //std::cout << "Stopped heap profiling." << std::endl;
+        #endif
         return exit_success;
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cout << "Error: " << e.what() << std::endl;
-        Help_option();
-	#ifdef GPERF
-	//HeapProfilerStop();
-	//std::cout << "Stopped heap profiling." << std::endl;
-	#endif
+        #ifdef GPERF
+        //HeapProfilerStop();
+        //std::cout << "Stopped heap profiling." << std::endl;
+        #endif
         return EXIT_FAILURE;
     }
 }

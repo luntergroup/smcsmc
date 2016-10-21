@@ -104,8 +104,6 @@ smcsmc_src = src/coalevent.cpp \
              src/pattern.cpp \
              src/pfparam.cpp \
              src/segdata.cpp \
-             src/rescue.cpp \
-             src/help.cpp \
              src/arena.cpp \
              src/model_summary.cpp
 
@@ -131,7 +129,8 @@ test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_Coalevent.cpp \
 		   tests/unittest/test_FroestState.cpp \
 		   tests/unittest/test_ParticleContainer.cpp \
-		   tests/unittest/test_Pattern.cpp
+		   tests/unittest/test_Pattern.cpp \
+		   tests/unittest/test_PfParam.cpp
 
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src)
 
