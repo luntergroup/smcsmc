@@ -88,9 +88,7 @@ void Segment::initialize_read_newLine(){
     this->field_end   = 0;
     this->field_index = 0;
 
-    if ( !this->genetic_break_ ){
-        this->segment_start_ += this->segment_length_;
-    }
+    this->segment_start_ += this->segment_length_;
     // check for genetic break, see if starts from a new chrom
     // todo
 }
@@ -117,19 +115,19 @@ void Segment::read_new_line(){
         field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
         this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
         if        ( field_index == 0 ) {
+            if (this->genetic_break_){ // Genetic break! reset segMent_start
+                this->segment_start_ = 1;
+            }
             assert ( strtol( tmp_str.c_str(), NULL, 0) == this->segment_start_ );
-            //if (strtol( tmp_str.c_str(), NULL, 0) != this->segment_start_){
-                //throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
-            //}
+            if (strtol( tmp_str.c_str(), NULL, 0) != this->segment_start_ ){
+                throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
+            }
         } else if ( field_index == 1 ) {
             this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0);
         } else if ( field_index == 2 ) {
             this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
         } else if ( field_index == 3 ) {
             this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false;
-            if (this->genetic_break_){ // Genetic break! reset segMent_start
-                this->segment_start_ = 1;
-            }
         } else if ( field_index == 4 ) {
             this->chrom_ = strtol( tmp_str.c_str(), NULL, 0);
         } else if ( field_index == 5 ) {
@@ -152,9 +150,9 @@ void Segment::extract_field_VARIANT ( ) {
 
     allelic_state_at_Segment_end.clear();
     assert( nsam_ == tmp_str.size() );
-    //if ( nsam_ != tmp_str.size() ){
-        //throw WrongNumberOfEntry(tmp_str);
-    //}
+    if ( nsam_ != tmp_str.size() ){
+        throw WrongNumberOfEntry(tmp_str);
+    }
 
     for ( size_t i = 0; i < nsam_; i++ ) {
         int seg_content;

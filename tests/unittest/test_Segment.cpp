@@ -9,8 +9,8 @@ class TestSegment : public CppUnit::TestCase {
 
     CPPUNIT_TEST_SUITE(TestSegment);
     CPPUNIT_TEST(testMainConstructor);
-    //CPPUNIT_TEST(testWrongNumberOfEntry);
-    //CPPUNIT_TEST(testInvalidSegmentStartPosition);
+    CPPUNIT_TEST(testWrongNumberOfEntry);
+    CPPUNIT_TEST(testInvalidSegmentStartPosition);
     CPPUNIT_TEST(testInvalidInputFile);
     CPPUNIT_TEST_SUITE_END();
 
@@ -47,6 +47,13 @@ class TestSegment : public CppUnit::TestCase {
         //10967   880     T       T       1       0100
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         //1       708     T       F       2       1010
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
+        //709	2	T	F	2	1010
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
+        //711	2	T	T	2	1010
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
+        //1	708	T	F	3	1010
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
 
