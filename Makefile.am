@@ -130,7 +130,8 @@ test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_FroestState.cpp \
 		   tests/unittest/test_ParticleContainer.cpp \
 		   tests/unittest/test_Pattern.cpp \
-		   tests/unittest/test_PfParam.cpp
+		   tests/unittest/test_PfParam.cpp \
+		   tests/unittest/test_Segment.cpp
 
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src)
 

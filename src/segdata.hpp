@@ -36,12 +36,41 @@ using namespace std;
 #ifndef SEGDATA
 #define SEGDATA
 
-struct InvalidInputFile : public InvalidInput{
-  InvalidInputFile( string str ):InvalidInput( str ){
-    this->reason = "Invalid input file: ";
-    throwMsg = this->reason + this->src;
-  }
-  ~InvalidInputFile() throw() {}
+
+struct InvalidSeg : public InvalidInput{
+    InvalidSeg( string str ):InvalidInput( str ){
+    }
+    virtual ~InvalidSeg() throw() {}
+    //virtual const char* what () const noexcept {
+        //return throwMsg.c_str();
+    //}
+};
+
+
+struct InvalidInputFile : public InvalidSeg{
+    InvalidInputFile( string str ):InvalidSeg( str ){
+        this->reason = "Invalid input file: ";
+        throwMsg = this->reason + this->src;
+    }
+    ~InvalidInputFile() throw() {}
+};
+
+
+struct WrongNumberOfEntry : public InvalidSeg{
+    WrongNumberOfEntry( string str ):InvalidSeg( str ){
+        this->reason = "Number of variant site is wrong: ";
+        throwMsg = this->reason + this->src;
+    }
+    ~WrongNumberOfEntry() throw() {}
+};
+
+
+struct InvalidSegmentStartPosition : public InvalidSeg{
+    InvalidSegmentStartPosition( string str1, string str2 ):InvalidSeg( str1 ){
+        this->reason = "Segment start position at:";
+        throwMsg = this->reason + this->src + string(" expect ") + str2;
+    }
+    ~InvalidSegmentStartPosition() throw() {}
 };
 
 
@@ -52,6 +81,7 @@ class Segment{
     friend class ParticleContainer;
     #ifdef UNITTEST
     friend class TestPfParam;
+    friend class TestSegment;
     #endif
 
 
@@ -89,7 +119,8 @@ class Segment{
     ~Segment(){};
 
     // Methods
-    void init();
+    void init(string file_name , size_t nsam, double seqlen, double num_of_mut);
+    void prepare();
     void initialize_read_newLine();
     void extract_field_VARIANT();
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
