@@ -117,10 +117,10 @@ void Segment::read_new_line(){
         field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
         this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
         if        ( field_index == 0 ) {
-            //assert ( strtol( tmp_str.c_str(), NULL, 0) == this->segment_start_ );
-            if (strtol( tmp_str.c_str(), NULL, 0) != this->segment_start_){
-                throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
-            }
+            assert ( strtol( tmp_str.c_str(), NULL, 0) == this->segment_start_ );
+            //if (strtol( tmp_str.c_str(), NULL, 0) != this->segment_start_){
+                //throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
+            //}
         } else if ( field_index == 1 ) {
             this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0);
         } else if ( field_index == 2 ) {
@@ -151,10 +151,10 @@ void Segment::read_new_line(){
 void Segment::extract_field_VARIANT ( ) {
 
     allelic_state_at_Segment_end.clear();
-    //assert( nsam_ == tmp_str.size() );
-    if ( nsam_ != tmp_str.size() ){
-        throw WrongNumberOfEntry(tmp_str);
-    }
+    assert( nsam_ == tmp_str.size() );
+    //if ( nsam_ != tmp_str.size() ){
+        //throw WrongNumberOfEntry(tmp_str);
+    //}
 
     for ( size_t i = 0; i < nsam_; i++ ) {
         int seg_content;

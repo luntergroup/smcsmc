@@ -9,8 +9,8 @@ class TestSegment : public CppUnit::TestCase {
 
     CPPUNIT_TEST_SUITE(TestSegment);
     CPPUNIT_TEST(testMainConstructor);
-    CPPUNIT_TEST(testWrongNumberOfEntry);
-    CPPUNIT_TEST(testInvalidSegmentStartPosition);
+    //CPPUNIT_TEST(testWrongNumberOfEntry);
+    //CPPUNIT_TEST(testInvalidSegmentStartPosition);
     CPPUNIT_TEST(testInvalidInputFile);
     CPPUNIT_TEST_SUITE_END();
 
