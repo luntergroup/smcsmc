@@ -389,19 +389,19 @@ void PfParam::writeLog(ostream * writeTo){
 void PfParam::outFileHeader(){
     string file_name = outFileName;
     ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
-    int field_length_1 = 10;
-    int field_length_2 = 15;
-    count_file << setw(field_length_1) << "EMstep"      << " "
-               << setw(field_length_1) << "EpochIndex"  << " "
-               << setw(field_length_1) << "EpochBegin"  << " "
-               << setw(field_length_1) << "EpochEnd"    << " "
-               << setw(field_length_1) << "EventType"   << " "
-               << setw(field_length_1) << "FromPop"     << " "
-               << setw(field_length_1) << "ToPop"       << " "
-               << setw(field_length_2) << "Opportunity" << " "
-               << setw(field_length_2) << "Count"       << " "
-               << setw(field_length_2) << "Rate"        << " "
-               << setw(field_length_2) << "NE"<< " "
+    int field_length_1 = 6;
+    int field_length_2 = 11;
+    count_file << setw(field_length_1) << "Iter"   << " "
+               << setw(field_length_1) << "Epoch"  << " "
+               << setw(field_length_2) << "Start"  << " "
+               << setw(field_length_2) << "End"    << " "
+               << setw(field_length_1) << "Type"   << " "
+               << setw(field_length_1) << "From"   << " "
+               << setw(field_length_1) << "To"     << " "
+               << setw(field_length_2) << "Opp"    << " "
+               << setw(field_length_2) << "Count"  << " "
+               << setw(field_length_2) << "Rate"   << " "
+               << setw(field_length_2) << "Ne"     << " "
                << setw(field_length_2) << "ESS"
                << endl;
     count_file.close();
@@ -409,10 +409,28 @@ void PfParam::outFileHeader(){
 }
 
 
+class FormatDouble {
+public:
+    FormatDouble( double d, double scientific_bound = 1.0 ) : d(d), scientific_bound(scientific_bound) {}
+    double d, scientific_bound;
+};
+
+ostream& operator<<(ostream& ostr, const FormatDouble& fd) {
+    const int field_length = 11;
+    const int precision = 2;
+    const double maxdouble = exp( (field_length - precision - 1) * log(10.0) );
+    if (fd.d < maxdouble && (fd.d > fd.scientific_bound || fd.d == 0.0)) {
+        return ostr << setw(field_length) << fixed << setprecision(precision) << fd.d;
+    } else {
+        return ostr << setw(field_length) << scientific << setprecision(field_length-6) << fd.d;
+    }
+}
+
+
 void PfParam::appendToOutFile( size_t EMstep,
                                int epoch,
-                               string epochBegin,
-                               string epochEnd,
+                               double epochBegin,
+                               double epochEnd,
                                string eventType,
                                int from_pop,
                                int to_pop,
@@ -421,20 +439,19 @@ void PfParam::appendToOutFile( size_t EMstep,
                                double weight) {
     string file_name = outFileName;
     ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
-    int field_length_1 = 10;
-    int field_length_2 = 15;
+    int field_length_1 = 6;
     count_file << setw(field_length_1) << EMstep << " "
                << setw(field_length_1) << epoch << " "
-               << setw(field_length_1) << epochBegin << " "
-               << setw(field_length_1) << epochEnd << " "
+               << FormatDouble(epochBegin) << " "
+               << FormatDouble(epochEnd) << " "
                << setw(field_length_1) << eventType << " "
                << setw(field_length_1) << from_pop << " "
                << setw(field_length_1) << to_pop << " "
-               << setw(field_length_2) << opportunity << " "
-               << setw(field_length_2) << count << " "
-               << setw(field_length_2) << count/(opportunity+1e-10) << " " // Rate
-               << setw(field_length_2) << ((eventType=="Coal") ? to_string((opportunity+1e-10)/(2.0*count)) : "-1") << " " // Ne
-               << setw(field_length_2) << 1.0 / (weight/opportunity+1e-10) // ESS
+               << FormatDouble(opportunity) << " "
+               << FormatDouble(count) << " "
+               << FormatDouble(count/(opportunity+1e-10)) << " "
+               << FormatDouble( (eventType=="Coal") ? (opportunity+1e-10)/(2.0*count) : 0.0 ) << " "
+               << FormatDouble( 1.0 / (weight/opportunity+1e-10) )
                << endl;
     count_file.close();
 }

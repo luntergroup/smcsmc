@@ -64,8 +64,8 @@ void CountModel::log_counts( PfParam& param ) {
         for (size_t pop_idx = 0; pop_idx < this->population_number(); pop_idx++ ) {
             param.appendToOutFile( param.EMcounter(),
                                    (int)epoch_idx,
-                                   to_string(change_times_[epoch_idx]),
-                                   ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                   change_times_[epoch_idx],
+                                   ( epoch_idx == change_times_.size()-1 ) ? 1e+99 : change_times_[epoch_idx+1],
                                    "Coal",
                                    pop_idx,
                                    -1,
@@ -86,8 +86,8 @@ void CountModel::log_counts( PfParam& param ) {
         if ( false ){ // when false, do not print out recomb events at every epoch.
             param.appendToOutFile( param.EMcounter(),
                                    (int)epoch_idx,
-                                   to_string(change_times_[epoch_idx]),
-                                   ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                   change_times_[epoch_idx],
+                                   ( epoch_idx == change_times_.size()-1 ) ? 1e+99 :change_times_[epoch_idx+1],
                                    "Recomb",
                                    -1,
                                    -1,
@@ -98,8 +98,8 @@ void CountModel::log_counts( PfParam& param ) {
     }
     param.appendToOutFile( param.EMcounter(),
                            -1,
-                           "0.000000",
-                           "Inf",
+                           0.0,
+                           1e+99,
                            "Recomb",
                            -1,
                            -1,
@@ -114,8 +114,8 @@ void CountModel::log_counts( PfParam& param ) {
                 if (from_pop_idx != to_pop_idx) {
                     param.appendToOutFile( param.EMcounter(),
                                            (int)epoch_idx,
-                                           to_string(change_times_[epoch_idx]),
-                                           ( epoch_idx == change_times_.size()-1 ) ? "Inf" : to_string(change_times_[epoch_idx+1]),
+                                           change_times_[epoch_idx],
+                                           ( epoch_idx == change_times_.size()-1 ) ? 1e+99 : change_times_[epoch_idx+1],
                                            "Migr",
                                            from_pop_idx,
                                            to_pop_idx,

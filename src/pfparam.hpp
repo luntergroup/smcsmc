@@ -114,8 +114,8 @@ class PfParam{
     void outFileHeader();
     void appendToOutFile( size_t EMstep,
                           int epoch,
-                          string epochBegin,
-                          string epochEnd,
+                          double epochBegin,
+                          double epochEnd,
                           string eventType,
                           int from_pop,
                           int to_pop,

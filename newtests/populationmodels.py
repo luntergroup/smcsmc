@@ -14,6 +14,7 @@ Population structures
 defaults = {'N0': 10000,
             'mutation_rate': 2.5e-8,
             'recombination_rate': 5e-9,
+            'sequence_length': 1e6,
             'num_samples': 2}
 
 class Population:
@@ -22,7 +23,7 @@ class Population:
                  N0                   = defaults['N0'],
                  mutation_rate        = defaults['mutation_rate'],
                  recombination_rate   = defaults['recombination_rate'],
-                 sequence_length      = 1e6,
+                 sequence_length      = defaults['sequence_length'],
                  num_samples          = defaults['num_samples'],
                  change_points        = [.01, 0.06, 0.2, 1, 2],
                  population_sizes     = [0.1, 1, 0.5, 1, 2],
@@ -42,7 +43,6 @@ class Population:
         self.additional_commands = additional_commands
         self.seed = seed
         self.filename = filename
-
 
         if len(population_sizes) != len(change_points):
             raise ValueError("Expected {} population sizes; got {}".format(len(change_points),population_sizes))
@@ -81,8 +81,8 @@ class Population:
 
         # complete the command
         command = "{cmd} {args} -seed {seed[0]} {seed[1]} {seed[2]}".format(cmd = "scrm",
-                                                                         args = command,
-                                                                         seed = self.seed)
+                                                                            args = command,
+                                                                            seed = self.seed)
 
         # print Newick trees; use 10 digits precision; limit exact LD window to 300 kb
         command += " -T -p 10 -l 300000 > " + filename + ".tmp"
@@ -93,6 +93,7 @@ class Population:
         if returnvalue > 0:
             raise ValueError("Problem executing " + command)
 
+        # convert scrm output file to .seg file
         scrmfile = open(filename + ".tmp", "r")
         data = None
         positions = None
@@ -122,19 +123,20 @@ class Population:
                                        genotype = ''.join( [sequence[idx] for sequence in data] ) ) )
         outfile.close()
 
+        # done; remove scrm output file
         os.unlink( filename + ".tmp" )
 
 
 #
 # some models
 #
-class Sim1(Population):
+class Pop1(Population):
 
     def __init__(self, **kwargs):
         Population.__init__(self, **kwargs)
 
 
-class Sim1Migr(Population):
+class Pop1Migr(Population):
 
     def __init__(self,
                  change_points        = [.01, 0.06, 0.2, 0.6,  1, 2],
@@ -152,14 +154,16 @@ class Sim1Migr(Population):
                             **kwargs)
 
 
-
-
+#
+# main code for standalone execution
+# 
 if __name__ == "__main__":
-    models = {"Sim1": Sim1,
-              "Sim1Migr": Sim1Migr}
+    models = {"Pop1": Sim1,
+              "Pop1Migr": Sim1Migr}
+    labels = str(tuple(models.keys())).replace("'","")
     parser = OptionParser()
     parser.add_option("-o", "--output", dest="outfile", help="write data to FILE.seg", metavar="FILE.seg")
-    parser.add_option("-m", "--model", dest="model", help="choose model (Sim1, Sim1Migr)", default = "Sim1")
+    parser.add_option("-m", "--model", dest="model", help="choose model {}".format(labels), default = "Pop1")
     parser.add_option("-n", "--numsamples", type="int", dest="num_samples", help="number of samples to simulate")
     parser.add_option("-l", "--seqlen", type="int", dest="seqlen", help="sequence length", default = 1e6)
     parser.add_option("-s", "--seed", type="int", dest="seed", help="random number seed", default = 1)
