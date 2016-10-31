@@ -25,82 +25,93 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut ){
-    this->init(file_name, nsam, seqlen, num_of_mut);
-}
+Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut, double data_start )
+    : file_name_(file_name), nsam_(nsam), data_start_(data_start), seqlen_(seqlen)
+{
 
-
-void Segment::init(string file_name, size_t nsam, double seqlen, double num_of_mut){
-    this->file_name_ = file_name;
-    this->nsam_ = nsam;
-    this->seqlen_ = seqlen;
-    this->segment_start_ = 1;
-    this->current_line_index_ = 0;
-    this->end_data_ = false;
-    this->empty_file_ = false;
-    this->genetic_break_ = false;
-    this->num_of_expected_mutations_ = 0;
-    this->buffer_lines.clear();
+    num_of_expected_mutations_ = 0;
 
     if ( this->file_name_.size() == 0 ){
-        this->empty_file_ = true;
-        this->calculate_num_of_expected_mutations( nsam, num_of_mut );
-        this->reset_empty_entry();
-        for ( size_t i = 0; i < nsam_; i++){
-            this->allelic_state_at_Segment_end.push_back ( -1 );
-        }
-        return;
-    }
 
-    this->prepare();
+        empty_file_ = true;
+        calculate_num_of_expected_mutations( nsam, num_of_mut );
+        for ( size_t i = 0; i < nsam_; i++){
+            allelic_state_at_Segment_end.push_back ( -1 );
+        }
+
+    } else {
+
+        empty_file_ = false;
+        prepare();
+
+    }
+    reset_data_to_first_entry();
 }
 
 
 void Segment::prepare(){
     ifstream in_file;
+    string tmp_line;
     in_file.open( this->file_name_.c_str() );
     if ( in_file.good() ){
-        getline ( in_file, this->tmp_line );
-        //dout << this->tmp_line <<endl;
-        while ( this->tmp_line.size() > 0 ){
-            if ( this->tmp_line[0] != '#' ){
-                buffer_lines.push_back ( this->tmp_line );
+        this->buffer_lines.clear();
+        getline ( in_file, tmp_line );
+        while ( tmp_line.size() > 0 ){
+            if ( tmp_line[0] != '#' ){
+                int first_tab_pos = tmp_line.find('\t');
+                int second_tab_pos = tmp_line.find('\t',first_tab_pos + 1);
+                int segstart = strtol( tmp_line.substr( 0, first_tab_pos ).c_str(), NULL, 0 );
+                int seglen   = strtol( tmp_line.substr( first_tab_pos+1, second_tab_pos-first_tab_pos ).c_str(),
+                                       NULL, 0 );
+                if (segstart >= data_start_ + seqlen_) {
+                    tmp_line = "";
+                    break;
+                }
+                if (segstart + seglen > data_start_) {
+                    buffer_lines.push_back ( tmp_line );
+                }
             }
-            getline ( in_file, this->tmp_line );
+            getline ( in_file, tmp_line );
         }
-    }
-    else {
+        in_file.close();
+    } else {
         throw InvalidInputFile(this->file_name_);
     }
-    in_file.close();
 
-    this->segment_length_ = 0;
-    this->read_new_line ();
-
-    this->segment_start_ = 1;
-    this->segment_length_ = 0;
-    this->current_line_index_ = 0;
+    if (buffer_lines.size() == 0) {
+        throw NoDataError(file_name_, data_start_, data_start_ + seqlen_);
+    }
 }
 
 
-void Segment::initialize_read_newLine(){
-    this->feild_start = 0;
+void Segment::reset_data_to_first_entry() {
+
+    current_line_index_ = 0;
+    set_end_data(false);
+    genetic_break_ = false;
+    segment_start_ = data_start_;
+    segment_length_ = 0;
+    if ( empty_file_ ){
+        segment_length_ = (size_t)seqlen_ / num_of_expected_mutations_ ;
+        segment_state_ = SEGMENT_MISSING;
+        genetic_break_ = true;
+    }
+}
+
+
+void Segment::read_new_line(){
+    /*! Read Segment data, extract mutation site and haplotype
+     */
+
+    this->field_start = 0;
     this->field_end   = 0;
     this->field_index = 0;
 
     this->segment_start_ += this->segment_length_;
     // check for genetic break, see if starts from a new chrom
     // todo
-}
-
-void Segment::read_new_line(){
-    /*! Read Segment data, extract mutation site and haplotype
-     */
-
-    this->initialize_read_newLine();
 
     if ( this->empty_file() ){
-        //this->end_data_ = true;
         return;
     }
 
@@ -109,21 +120,30 @@ void Segment::read_new_line(){
         return;
     }
 
-    this->tmp_line = this->buffer_lines[this->current_line_index_];
+    string tmp_line = this->buffer_lines[this->current_line_index_];
+    int new_seg_start = -1;
 
-    while ( field_end < this->tmp_line.size() ){
-        field_end = min ( this->tmp_line.find('\t',feild_start), this->tmp_line.find('\n', feild_start) );
-        this->tmp_str = this->tmp_line.substr( feild_start, field_end - feild_start );
-        if        ( field_index == 0 ) {
-            if (this->genetic_break_){ // Genetic break! reset segMent_start
-                this->segment_start_ = 1;
+    while ( field_end < tmp_line.size() ){
+        field_end = min ( tmp_line.find('\t',field_start), tmp_line.find('\n', field_start) );
+        this->tmp_str = tmp_line.substr( field_start, field_end - field_start );
+        if ( field_index == 0 ) {
+            if (this->genetic_break_){    // Genetic break! reset segMent_start
+                this->segment_start_ = data_start_;
             }
-            assert ( strtol( tmp_str.c_str(), NULL, 0) == this->segment_start_ );
-            if (strtol( tmp_str.c_str(), NULL, 0) != this->segment_start_ ){
+            new_seg_start = strtol( tmp_str.c_str(), NULL, 0 );  // check values when we know the length
+        } else if ( field_index == 1 ) {
+            this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0 );
+            // check that current segment_start_ is inside the new segment
+            if (new_seg_start > segment_start_) {
                 throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
             }
-        } else if ( field_index == 1 ) {
-            this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0);
+            if (new_seg_start + segment_length_ < segment_start_) {
+                throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
+            }
+            // tweak the length so that the endpoint is where we want it to be
+            int new_seg_end = new_seg_start + segment_length_;
+            segment_start_ = max( (int)segment_start_, new_seg_start );
+            segment_length_ = new_seg_end - segment_start_;
         } else if ( field_index == 2 ) {
             this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
         } else if ( field_index == 3 ) {
@@ -133,15 +153,14 @@ void Segment::read_new_line(){
         } else if ( field_index == 5 ) {
             this->extract_field_VARIANT();
         }
-
-        feild_start = field_end+1;
+        field_start = field_end+1;
         field_index++;
-        }
+    }
 
-    if ( current_line_index_ > 0 && current_line_index_%300 == 0 ){
-        //cout << "\r" << " Reading the " << current_line_index_ << "th entry"<<flush;
-        cout << "\r" << " Particle filtering step" << setw(4) << int(segment_end() * 100 / this->seqlen_) << "% completed."<<flush;
-        }
+    if ( current_line_index_ > 0 && current_line_index_ % 300 == 0 ){
+        cout << "\r" << " Particle filtering step" << setw(4) << int((segment_end() * 100) / seqlen_)
+             << "% completed." << flush;
+    }
     this->current_line_index_++;
 }
 

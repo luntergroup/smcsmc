@@ -74,9 +74,21 @@ struct InvalidSegmentStartPosition : public InvalidSeg{
 };
 
 
+struct NoDataError : public InvalidSeg{
+    NoDataError( string str, int start, int end ):InvalidSeg( str ){
+        this->reason = "No data found in file ";
+        throwMsg = this->reason + str + " between positions " +to_string(start) + " and " + to_string(end);
+    }
+    ~NoDataError() throw() {}
+};
+
+
 enum Segment_State {SEGMENT_INVARIANT, SEGMENT_MISSING};
 
 class Segment{
+    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut, double data_start = 1 );
+    ~Segment(){};
+
     friend class PfParam;
     friend class ParticleContainer;
     #ifdef UNITTEST
@@ -85,76 +97,46 @@ class Segment{
     #endif
 
 
-    Segment_State segment_state() const { return this->segment_state_; }
-    //bool variant_state() const { return this->variant_state_; }
-    bool genetic_break() const { return this->genetic_break_; }
-    double seqlen_;
-    // Important stuff
+    const string file_name_;
+    const size_t nsam_;
+    const double data_start_;
+    const double seqlen_;
     double segment_start_;
     double segment_length_;
     Segment_State segment_state_;
-    //bool variant_state_;                   // Variant state (given it is not missing ) at the start of the segment, True or False
     bool genetic_break_;
     size_t chrom_;
-    //vector <int> allelic_state_at_Segment_start; // Since missing variant can be represented here, variant can be ignored?
     bool empty_file_;
-    size_t nsam_;
 
     // less important stuff
-
-    string file_name_;
-    string tmp_line;
     string tmp_str;
-
     vector <string> buffer_lines;
     size_t current_line_index_;
 
     // Line related
-    size_t feild_start;
+    size_t field_start;
     size_t field_end;
     int field_index;
 
-    Segment(){}
-    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut );
-    ~Segment(){};
-
     // Methods
-    void init(string file_name , size_t nsam, double seqlen, double num_of_mut);
     void prepare();
-    void initialize_read_newLine();
     void extract_field_VARIANT();
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
+    Segment_State segment_state() const { return this->segment_state_; }
+    bool genetic_break() const { return this->genetic_break_; }
 
     double num_of_expected_mutations_;
     bool end_data_;
 
 public:
     vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
-    bool empty_file () const { return this->empty_file_; }
-    double segment_start() const { return this->segment_start_; }
-    double segment_length() const { return this->segment_length_; }
-    double segment_end() const { return ( this->segment_start_ + this->segment_length_ ); }
+    bool empty_file () const      { return this->empty_file_; }
+    double segment_start() const  { return segment_start_ - data_start_ + 1; }
+    double segment_length() const { return segment_length_; }
+    double segment_end() const    { return segment_start_ - data_start_ + 1 + segment_length_; }
 
     void read_new_line();
-    void reset_data_to_first_entry(){
-        this->current_line_index_ = 0;
-        this->set_end_data(false);
-        this->segment_start_ = 1;
-        this->segment_length_ = 0;
-        if ( this->empty_file_ ){
-            this->reset_empty_entry();
-        }
-    };
-
-    void reset_empty_entry(){
-        // Round segment_length_ to an integer
-        this->segment_length_ = (size_t)this->seqlen_ / this->num_of_expected_mutations_ ;
-        //dout << "this->num_of_expected_mutations_ = "<<this->num_of_expected_mutations_<<endl;
-        //dout << "this->segment_length_ = "<<this->segment_length_<<endl;
-        this->segment_state_ = SEGMENT_MISSING;
-        //this->variant_state_ = false;
-        this->genetic_break_ = true;
-    }
+    void reset_data_to_first_entry();
 
     bool end_data() const {return end_data_; }
     void set_end_data ( bool condition ) { this->end_data_ = condition ; }

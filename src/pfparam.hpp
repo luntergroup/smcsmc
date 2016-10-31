@@ -128,7 +128,7 @@ class PfParam{
     // ------------------------------------------------------------------
     // PfParameters
     // ------------------------------------------------------------------
-    size_t N;        /*!< \brief Number of particles */
+    size_t N;            /*!< \brief Number of particles */
     int    EM_steps;     /*!< \brief Number of EM iterations */
     double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
 
@@ -142,7 +142,7 @@ class PfParam{
     bool calibrate_lag;
     double lag_fraction;
     bool online_bool;
-
+    double start_position;
     bool heat_bool;
 
     Segment * Segfile;
@@ -259,14 +259,10 @@ class PfParam{
     // ------------------------------------------------------------------
     bool log_bool;
     string out_NAME_prefix;
-    //string HIST_NAME;
-    //string Ne_NAME;
     string outFileName;
     string log_NAME;
     string TMRCA_NAME;
     string WEIGHT_NAME;
-    //string BL_NAME;
-    //string SURVIVOR_NAME;
     string Resample_NAME;
     int heat_seq_window;
 

@@ -13,10 +13,11 @@ class TestGeneric(unittest.TestCase):
         self.em = 0
         self.tmax = 4
         self.seed = [1,1,1]
+        self.success = False
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
-        if 'caseprefix' in self.__dict__:
+        if self.success and 'caseprefix' in self.__dict__:
             if self.caseprefix != None:
                 for suffix in ['Resample','.outXXX','.logXXX','.stdout','.stderr']:
                     try:
@@ -24,7 +25,11 @@ class TestGeneric(unittest.TestCase):
                     except OSError:
                         print "Warning: file ",self.caseprefix + suffix," expected but not found"
                         pass
-                self.caseprefix = None
+                    self.caseprefix = None
+        if not self.success:
+            # tell derived class that test failed, so don't delete intermediate files
+            self.__class__.success = False
+            
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
@@ -75,11 +80,12 @@ class TestTwoSample(TestGeneric):
         cls.seqlen = 1e7
         cls.pop = populationmodels.Pop1( filename = cls.segfile, sequence_length = cls.seqlen )
         cls.pop.simulate()
+        cls.success = True   # set ourselves up for success
 
     # remove simulated data
     @classmethod
     def tearDownClass(cls):
-        if cls.segfile != None:
+        if cls.segfile != None and cls.success:
             os.unlink( cls.segfile )
             cls.filename = None
 
@@ -127,6 +133,7 @@ class TestTwoSample(TestGeneric):
                 out_of_range += 1
 
         self.assertTrue( out_of_range < 3 )
+        self.success = True
 
 
 if __name__ == "__main__":

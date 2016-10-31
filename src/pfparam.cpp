@@ -87,7 +87,9 @@ void PfParam::parse(int argc, char *argv[]) {
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ? PfParam::RECORD_COALMIGR_EVENT : PfParam::RECORD_RECOMB_EVENT );
+                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ?
+                                                   PfParam::RECORD_COALMIGR_EVENT :
+                                                   PfParam::RECORD_RECOMB_EVENT );
                 }
             }
         } else if ( *argv_i == "-cap"  ){
@@ -104,6 +106,11 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-seg"  ){
             this->nextArg();
             this->input_SegmentDataFileName = *argv_i;
+        } else if ( *argv_i == "-startpos" ) {
+            this->start_position = readNextInput<double>();
+            if (start_position < 1) {
+                throw OutOfRange("-startpos", *argv_i);
+            }
         // ------------------------------------------------------------------
         // Action
         // ------------------------------------------------------------------
@@ -196,6 +203,7 @@ void PfParam::init(){
     this->EM_bool          = false;
 
     this->Segfile          = NULL;
+    this->start_position   = 1;
     this->SCRMparam        = NULL;
     this->rg               = NULL;
     this->scrm_input       = "";
@@ -311,7 +319,11 @@ void PfParam::finalize(){
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
-    this->Segfile = new Segment( this->input_SegmentDataFileName, this->default_nsam, (double)this->model.loci_length(), this->default_num_mut );
+    this->Segfile = new Segment( this->input_SegmentDataFileName,
+                                 this->default_nsam,
+                                 (double)this->model.loci_length(),
+                                 this->default_num_mut,
+                                 this->start_position );
 }
 
 
@@ -468,7 +480,6 @@ void PfParam::append_resample_file( int position, double ESS) const {
 
 
 void PfParam::helpOption(){
-    //cout << "Too few command line arguments" << endl;
     cout << "Options:" << endl;
     cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
     cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
@@ -476,6 +487,7 @@ void PfParam::helpOption(){
     cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
     cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
     cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
+    cout << setw(10)<<"-startpos"<<setw(5) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(10)<<"-xr"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
