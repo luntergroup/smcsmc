@@ -25,7 +25,7 @@ class TestGeneric(unittest.TestCase):
                     except OSError:
                         print "Warning: file ",self.caseprefix + suffix," expected but not found"
                         pass
-                    self.caseprefix = None
+                self.caseprefix = None
         if not self.success:
             # tell derived class that test failed, so don't delete intermediate files
             self.__class__.success = False
