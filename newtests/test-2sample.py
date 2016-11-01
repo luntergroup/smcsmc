@@ -23,7 +23,7 @@ class TestGeneric(unittest.TestCase):
                     try:
                         os.unlink( self.caseprefix + suffix )
                     except OSError:
-                        print "Warning: file ",self.caseprefix + suffix," expected but not found"
+                        print ("Warning: file ",self.caseprefix + suffix," expected but not found")
                         pass
                 self.caseprefix = None
         if not self.success:
@@ -55,13 +55,13 @@ class TestGeneric(unittest.TestCase):
 
     # helper -- run smcsmc
     def infer(self, case = 0):
-        print " running smcsmc for case",case,"..."
+        print (" running smcsmc for case",case,"...")
         self.caseprefix = self.prefix + str(case)
         self.outfile = self.caseprefix + ".out"
         cmd = "{cmd} -o {caseprefix} > {caseprefix}.stdout 2> {caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
-        print " command:",cmd
+        print (" command:",cmd)
         returnvalue = subprocess.check_call(cmd, shell = True)
         self.assertTrue( returnvalue == 0 )
 
@@ -75,12 +75,14 @@ class TestTwoSample(TestGeneric):
     @classmethod
     def setUpClass(cls):
         cls.prefix = "2sample"
-        print "simulating for",cls.prefix,"..."
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
-        cls.pop = populationmodels.Pop1( filename = cls.segfile, sequence_length = cls.seqlen )
-        cls.pop.simulate()
+        cls.scrmpath = "../scrm"
+        cls.pop = populationmodels.Pop1( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
         cls.success = True   # set ourselves up for success
+
+        print ("simulating for",cls.prefix,"...")
+        cls.pop.simulate()
 
     # remove simulated data
     @classmethod
@@ -125,11 +127,11 @@ class TestTwoSample(TestGeneric):
 
             # see if it is within range
             out_of_range = 0
-            print "Checking epoch",epoch,result,target_min[epoch],target_max[epoch]
+            print ("Checking epoch",epoch,result,target_min[epoch],target_max[epoch])
             #self.assertTrue( result >= target_min[epoch] )
             #self.assertTrue( result <= target_max[epoch] )
             if result < target_min[epoch] or result > target_max[epoch]:
-                print "Out of range!"
+                print ("Out of range!")
                 out_of_range += 1
 
         self.assertTrue( out_of_range < 3 )

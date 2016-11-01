@@ -15,7 +15,8 @@ defaults = {'N0': 10000,
             'mutation_rate': 2.5e-8,
             'recombination_rate': 5e-9,
             'sequence_length': 1e6,
-            'num_samples': 2}
+            'num_samples': 2,
+            'scrmpath': 'scrm'}
 
 class Population:
 
@@ -30,7 +31,8 @@ class Population:
                  migration_commands   = [None, None, None, None, None],
                  additional_commands  = "",
                  seed                 = (1,1,1),
-                 filename             = None ):
+                 filename             = None,
+                 scrmpath             = defaults['scrmpath'] ):
 
         self.N0 = N0
         self.mutation_rate = mutation_rate
@@ -43,6 +45,7 @@ class Population:
         self.additional_commands = additional_commands
         self.seed = seed
         self.filename = filename
+        self.scrmpath = scrmpath
 
         if len(population_sizes) != len(change_points):
             raise ValueError("Expected {} population sizes; got {}".format(len(change_points),population_sizes))
@@ -80,7 +83,7 @@ class Population:
             filename = self.filename
 
         # complete the command
-        command = "{cmd} {args} -seed {seed[0]} {seed[1]} {seed[2]}".format(cmd = "scrm",
+        command = "{cmd} {args} -seed {seed[0]} {seed[1]} {seed[2]}".format(cmd = self.scrmpath,
                                                                             args = command,
                                                                             seed = self.seed)
 
@@ -99,9 +102,11 @@ class Population:
         positions = None
         for line in scrmfile:
             if line.startswith('positions:'):
-                positions = map(float,line.strip().split()[1:])
+                positions = list(map(float,line.strip().split()[1:]))
                 data = []
             elif type(data) == type([]):
+                if positions == None:
+                    raise ValueError("Unexpected output from scrm -- not 'positions' line found")
                 data.append(line.strip())
                 if len(data[-1]) != len(positions):
                     raise ValueError("Unexpected number of mutations: got {}, expected {}".format(len(data[-1]),len(positions)))
@@ -113,7 +118,7 @@ class Population:
         outfile = open(filename,'w')
         row = "{pos}\t{distance}\tT\tF\t1\t{genotype}\n"
 
-        positions = map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions )
+        positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
         positions.append( int(self.sequence_length) )
         
         outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = ".." ) )
@@ -174,7 +179,7 @@ if __name__ == "__main__":
         raise ValueError("Unexpected arguments:" + str(args))
 
     if options.num_samples == None:
-        print "Error: -n, --numsamples is required.  Use --help for help"
+        print ("Error: -n, --numsamples is required.  Use --help for help")
         sys.exit(1)
 
     popclass = models[ options.model ]
