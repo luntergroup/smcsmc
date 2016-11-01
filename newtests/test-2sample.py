@@ -12,14 +12,14 @@ class TestGeneric(unittest.TestCase):
         self.np = 1000
         self.em = 0
         self.tmax = 4
-        self.seed = [1,1,1]
+        self.seed = (3647837471,)
         self.success = False
-
+        
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
         if self.success and 'caseprefix' in self.__dict__:
             if self.caseprefix != None:
-                for suffix in ['Resample','.outXXX','.logXXX','.stdout','.stderr']:
+                for suffix in ['Resample','.out','.log','.stdout','.stderr']:
                     try:
                         os.unlink( self.caseprefix + suffix )
                     except OSError:
@@ -40,7 +40,7 @@ class TestGeneric(unittest.TestCase):
         npopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
         tmaxopt = "-tmax {tmax}".format(tmax=self.tmax)
-        seedopt = "-seed {seed[0]} {seed[1]} {seed[2]}".format(seed=self.seed)
+        seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.segfile )
         return "../smcsmc {nsam} {t} {r} {np} {em} {p} {tmax} {seed} {seg}".format(
             nsam = nsamopt,
@@ -91,6 +91,7 @@ class TestTwoSample(TestGeneric):
             os.unlink( cls.segfile )
             cls.filename = None
 
+
     def readResults(self):
         results = {'Coal':[],    # type -> epoch -> {'start' -> # ,'end' -> # ,'estimates' -> iteration -> # }
                    'Recomb':[]}
@@ -113,7 +114,7 @@ class TestTwoSample(TestGeneric):
     def test_inference(self):
         self.em = 4
         self.np = 1000
-        self.seed = [1,1,1]
+        self.seed = (3647837471,)
         self.infer( case = 1 )
 
         # Ne target ranges for the varous epochs

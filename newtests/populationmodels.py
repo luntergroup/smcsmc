@@ -30,7 +30,7 @@ class Population:
                  population_sizes     = [0.1, 1, 0.5, 1, 2],
                  migration_commands   = [None, None, None, None, None],
                  additional_commands  = "",
-                 seed                 = (1,1,1),
+                 seed                 = (3647837471,),
                  filename             = None,
                  scrmpath             = defaults['scrmpath'] ):
 
@@ -83,9 +83,9 @@ class Population:
             filename = self.filename
 
         # complete the command
-        command = "{cmd} {args} -seed {seed[0]} {seed[1]} {seed[2]}".format(cmd = self.scrmpath,
-                                                                            args = command,
-                                                                            seed = self.seed)
+        command = "{cmd} {args} -seed {seed}".format(cmd = "scrm",
+                                                     args = command,
+                                                     seed = ' '.join(map(str,self.seed)))
 
         # print Newick trees; use 10 digits precision; limit exact LD window to 300 kb
         command += " -T -p 10 -l 300000 > " + filename + ".tmp"
