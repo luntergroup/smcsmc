@@ -76,7 +76,7 @@ class TestPfParam : public CppUnit::TestCase {
     }
 
     void testReInit(){
-        this->input_->Segfile = new Segment();
+        this->input_->Segfile = new Segment( "", 2, 1e6, 1e3 );
         this->input_->SCRMparam = new Param();
         this->input_->rg = new MersenneTwister();
         CPPUNIT_ASSERT_NO_THROW(this->input_->reInit());

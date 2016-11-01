@@ -41,9 +41,6 @@ struct InvalidSeg : public InvalidInput{
     InvalidSeg( string str ):InvalidInput( str ){
     }
     virtual ~InvalidSeg() throw() {}
-    //virtual const char* what () const noexcept {
-        //return throwMsg.c_str();
-    //}
 };
 
 
@@ -95,7 +92,6 @@ class Segment{
     friend class TestPfParam;
     friend class TestSegment;
     #endif
-
 
     const string file_name_;
     const size_t nsam_;
