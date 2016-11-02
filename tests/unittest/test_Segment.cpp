@@ -20,18 +20,19 @@ class TestSegment : public CppUnit::TestCase {
 
   public:
     void setUp() {
-        this->segFile_ = new Segment ();
+        this->segFile_ = NULL;
         this->epsilon_ = 1e-10;
     }
 
     void tearDown() {
-        delete segFile_;
+        if (segFile_ != NULL)
+            delete segFile_;
     }
 
 
     void testMainConstructor(){
         CPPUNIT_ASSERT_NO_THROW(Segment( "data/exampleData/example.seg", (size_t)4, 1000000.0, 100.0));
-        CPPUNIT_ASSERT_NO_THROW(this->segFile_->init( "data/exampleData/example.seg", (size_t)4, 1000000.0, 100.0));
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_ = new Segment( "data/exampleData/example.seg", (size_t)4, 1000000.0, 100.0));
         //1       521     T       F       1       01.0
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         //522     2721    T       F       1       0111
@@ -56,8 +57,9 @@ class TestSegment : public CppUnit::TestCase {
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
+        CPPUNIT_ASSERT_NO_THROW(delete this->segFile_);
 
-        CPPUNIT_ASSERT_NO_THROW(this->segFile_->init( "", (size_t)4, 1000000.0, 100.0));
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_ = new Segment( "", (size_t)4, 1000000.0, 100.0));
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
@@ -65,7 +67,7 @@ class TestSegment : public CppUnit::TestCase {
 
 
     void testWrongNumberOfEntry(){
-        CPPUNIT_ASSERT_NO_THROW(this->segFile_->init( "data/exampleData/example.WrongNumberOfEntry.seg", (size_t)4, 1000000.0, 100.0));
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_ = new Segment( "data/exampleData/example.WrongNumberOfEntry.seg", (size_t)4, 1000000.0, 100.0));
         //1       521     T       F       1       01.0
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         //522     2721    T       F       1       01111
@@ -74,7 +76,7 @@ class TestSegment : public CppUnit::TestCase {
 
 
     void testInvalidSegmentStartPosition(){
-        CPPUNIT_ASSERT_NO_THROW(this->segFile_->init( "data/exampleData/example.InvalidSegmentStartPosition.seg", (size_t)4, 1000000.0, 100.0));
+        CPPUNIT_ASSERT_NO_THROW(this->segFile_ = new Segment( "data/exampleData/example.InvalidSegmentStartPosition.seg", (size_t)4, 1000000.0, 100.0));
         //1	521	T	F	1	01.0
         CPPUNIT_ASSERT_NO_THROW(this->segFile_->read_new_line());
         //522	2721	T	F	1	0111
@@ -87,8 +89,7 @@ class TestSegment : public CppUnit::TestCase {
 
 
     void testInvalidInputFile(){
-        CPPUNIT_ASSERT_THROW(this->segFile_->init("noSuchFile", (size_t)4, 1000000.0, 100.0), InvalidInputFile);
-        CPPUNIT_ASSERT_THROW(Segment("noSuchFile", (size_t)4, 1000000.0, 100.0), InvalidInputFile);
+        CPPUNIT_ASSERT_THROW(this->segFile_ = new Segment("noSuchFile", (size_t)4, 1000000.0, 100.0), InvalidInputFile);
     }
 
 };
