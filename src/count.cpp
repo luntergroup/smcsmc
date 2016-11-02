@@ -21,13 +21,15 @@
 
 */
 
-#include"count.hpp"
+#include "count.hpp"
+#include "descendants.hpp"
 
 
 void CountModel::init() {
 
     this->init_coal_and_recomb();
     this->init_migr();
+    this->init_local_recomb();
     this->init_lags();
 
     this->update_param_interval_  = 5e6; // ONLINE EM
@@ -209,6 +211,17 @@ void CountModel::init_lags(){
         this->lags.push_back( lag_i );
     }
 }
+
+void CountModel::init_local_recomb() {
+
+    local_recomb_opportunity.clear();
+    local_recomb_counts.clear();
+    for (int sample = 0; sample < sample_size_; ++sample) {
+        local_recomb_counts.push_back( vector<double>() );
+    }
+
+}
+
 
 // Do we want to allow for different lags in diff populations?
 void CountModel::reset_lag ( std::vector<double> survival, double lag_fraction ){
@@ -480,8 +493,88 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
             total_recomb_count[epoch_idx][ 0 ].add( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end, isEndOfSeq ) );
             total_recomb_opportunity[epoch_idx][ 0 ].add( weight * recomb_opp );
             total_recomb_weight[ epoch_idx ][ 0 ].add( weight * weight * recomb_opp );
-
+            record_local_recomb_events( x_start, x_end, weight, recomb_opp, event->recomb_event_base(), event->get_descendants() );
         }
     }
 }
 
+
+
+void CountModel::record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, Descendants_t descendants ) {
+
+    size_t first_index = size_t( x_start / local_recording_interval_ );
+    size_t last_index = size_t( 1 + x_end / local_recording_interval_ );
+    double first_interval = min( (first_index+1)*local_recording_interval_, x_end ) - x_start;
+    double last_interval = x_end - max( (last_index-1)*local_recording_interval_, x_start );
+    double opp_density = weight * opportunity / (x_end - x_start);
+    double interval = first_interval;
+
+    // ensure the count vectors are large enough; if not add space for 10Mb worth of samples
+    if (local_recomb_opportunity.size() < last_index) {
+        size_t new_size = local_recomb_opportunity.size() + (size_t)(1e7 / local_recording_interval_);
+        local_recomb_opportunity.resize( new_size );
+        for (int sample = 0; sample < sample_size_; ++sample) {
+            local_recomb_counts[ sample ].resize( new_size );
+        }
+    }
+
+    // store opportunity
+    for (size_t index = first_index; index < last_index; ++index) {
+
+        if (index == last_index - 1)
+            interval = last_interval;
+        local_recomb_opportunity[ index ] += interval * opp_density;
+        interval = local_recording_interval_;
+
+    }
+
+    // record recombination event, if any
+    if (event_base > 0)
+    {
+        // count the number of descendants, for normalisation
+        int descendant = 0, num_descendants = 0;
+        Descendants_t data = descendants;
+        while (get_next_descendant( data, descendant )) {
+            ++num_descendants;
+        }
+
+        // store the count.  Note: the 'descendant' values are 1-based!
+        size_t index = size_t( event_base / local_recording_interval_ );
+        descendant = 0;
+        data = descendants;
+        while (get_next_descendant( data, descendant )) {
+            assert (descendant > 0);
+            assert (descendant < sample_size_);
+            local_recomb_counts[ descendant-1 ][ index ] += weight / num_descendants;
+        }
+    }
+};
+
+
+void CountModel::dump_local_recomb_logs( ostream& stream ) {
+
+    // find last nonzero entry
+    size_t last_idx = local_recomb_opportunity.size();
+    while (last_idx > 0 && local_recomb_opportunity[ last_idx-1 ] == 0.0) {
+        --last_idx;
+    }
+
+    // write header
+    stream << "locus\topportunity";
+    for (int sample = 0; sample < sample_size_; ++sample) {
+        stream << "\t" << sample+1;
+    }
+    stream << "\n";
+
+    // write data
+    for (size_t idx = 0; idx < last_idx; ++idx) {
+        stream << fixed << idx * local_recording_interval_
+               << "\t"
+               << scientific << local_recomb_opportunity[ idx ];
+        for (int sample = 0; sample < sample_size_; ++sample) {
+            stream << "\t"
+                   << local_recomb_counts[ sample ][ idx ];
+        }
+        stream << "\n";
+    }
+}

@@ -22,6 +22,7 @@
 
 
 #include "particleContainer.hpp"
+#include <ostream>
 
 #ifndef COUNT
 #define COUNT
@@ -62,6 +63,7 @@ class CountModel: public Model {
         CountModel(const Model& model, double lag = 0, double minimal_lag_update_ratio = 0.10 ) : Model( model ){
             this->const_lag_ = lag;
             this->const_minimal_lag_update_ratio_ = minimal_lag_update_ratio;
+            this->sample_size_ = model.sample_size();
         };
         ~CountModel(){};
 
@@ -77,12 +79,14 @@ class CountModel: public Model {
         // DEBUG
         void print_recomb_count();
         vector<double> check_lags() const {return lags;}
+        void dump_local_recomb_logs( ostream& stream );
 
     private:
         // Initialisation
         void init_coal_and_recomb();
         void init_migr();
         void init_lags();
+        void init_local_recomb();
 
         // Reset parameters
         void reset_recomb_rate( Model *model );
@@ -92,7 +96,7 @@ class CountModel: public Model {
 
         void update_all_counts( EvolutionaryEvent** event_ptr, double weight, vector<double>& update_to, size_t epoch_idx );
         void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
-
+        void record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, Descendants_t descendants );
         //
         // Members
         //
@@ -111,6 +115,8 @@ class CountModel: public Model {
         vector < vector < vector<TwoDoubles> > >  total_mig_count;
         vector < vector <TwoDoubles> >            total_mig_opportunity;
         vector < vector <TwoDoubles> >            total_mig_weight;
+        vector < double >                local_recomb_opportunity;
+        vector < vector < double > >     local_recomb_counts;
 
         vector < double > counted_to;
         vector < double > lags;
@@ -121,6 +127,9 @@ class CountModel: public Model {
         double update_param_threshold_;
         double update_param_interval_;
 
+        double local_recording_interval_ = 100;
+        int sample_size_;
+    
         // DEBUG
         void print_pop_size();
         void print_change_time();

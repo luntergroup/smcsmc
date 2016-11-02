@@ -24,6 +24,7 @@
 #include <climits> // INT_MAX
 #include "particle.hpp"
 #include "pfparam.hpp"
+#include "descendants.hpp"
 
 
 /*! \brief Initialize a new ForestState.  A copy of model/random_generator is made if own_m_and_rg==True; either way the objects are not stolen
@@ -138,8 +139,7 @@ void ForestState::clear_eventContainer(){
 
 void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm){
 
-    //dout << endl;
-    ForestStatedout << "Start Recording " << endl;
+    //ForestStatedout << "Start Recording " << endl;
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
     double start_height, end_height;
@@ -177,11 +177,11 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
                 recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
                 recomb_event->set_recomb_event_pos( recomb_pos );
+                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) );  // calculate signature for descendants subtended by node
             }
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             recomb_opp_x_within_smcsmc += end_base - start_base;
-            ForestStatedout <<"";
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -204,13 +204,12 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-            ForestStatedout <<"";
             assert(migrcoal_event->print_event());
         }
     }
 
     //assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
-    ForestStatedout << "Finish recording of event." << endl;
+    //ForestStatedout << "Finish recording of event." << endl;
 
     return;
 }
@@ -218,13 +217,8 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
 
 void ForestState::record_Recombevent_b4_extension (){
 
-    dout << endl;
-    ForestStatedout << " Build new genealogy, compute the recombination opportunity at each level " << endl;
-
     // iterate over time intervals (but do NOT prune branches at this stage)
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
-        ForestStatedout << " * * Time interval: " << (*ti).start_height() << " - " << (*ti).end_height() << " " ;
-        dout << ", with " << ti.contemporaries_->numberOfLocalContemporaries() << " local Contemporaries, " << ti.contemporaries_->numberOfLocalContemporaries() << " * " << "( " << (*ti).end_height() << " - " << (*ti).start_height() << ")" << std::endl;
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.contemporaries_->numberOfLocalContemporaries();
         if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
@@ -234,7 +228,8 @@ void ForestState::record_Recombevent_b4_extension (){
             //assert( start_height_epoch == ti.forest()->model().getTimeIdx( start_height ) );
             size_t end_height_epoch = start_height_epoch;
             void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base(), contemporaries );  // no event for now
+            // no event for now            
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base(), contemporaries );
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
         }
     }
@@ -244,14 +239,8 @@ void ForestState::record_Recombevent_b4_extension (){
 void ForestState::resample_recombination_position(void) {
     // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
     this->resampleNextBase();
-    newForestdout << " after resampleNextBase rec_bases_ are" << endl;
-    for (size_t ii =0 ; ii < this ->rec_bases_.size(); ii++){
-        dout << this ->rec_bases_[ii] << " ";
-    }
-    newForestdout <<endl;
     // then, create private event records, in effect re-doing the work of record_Recombevent_b4_extension
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
-        newForestdout << "at epoch " << epoch <<endl;
         if (record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
@@ -260,11 +249,9 @@ void ForestState::resample_recombination_position(void) {
                 break;
             }
             do {
-                newForestdout << "make a copy of current event and modify the end_base member" <<endl;
                 // make a copy of current event and modify the end_base member
                 void* event_mem = Arena::allocate( epoch );
                 EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
-                newForestdout << " we are modifying event: " << endl;
                 new_event->end_base_ = this->next_base();        // friend function access
                 // splice into event tree, and update pointers
                 new_event->add_leaf_to_tree( new_chain );
@@ -282,7 +269,6 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
     size_t epoch_i = this->writable_model()->current_time_idx_;
     if (!(record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
         return;
-    dout << "current_time_idx_ =  " << epoch_i << " = [" << this->writable_model()->getCurrentTime() << "," << this->writable_model()->getNextTime() << endl;
     // find the EvolutionaryEvent to add this event to.
     EvolutionaryEvent* event = eventTrees[ epoch_i ];
     while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
@@ -291,6 +277,7 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
     }
     assert (event->start_base() == this->current_base());
     event->set_recomb_event_time( event_height );
+    event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
 }
 
 
@@ -375,12 +362,9 @@ inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node
  * @ingroup group_pf_resample
  */
 double ForestState::calculate_likelihood( ) {
-    //dout << "calculate_likelihood function, root is " << this->local_root() << endl;
     valarray<double> marginalLikelihood = cal_partial_likelihood_infinite(this->local_root());
-    dout << "marginal likelihood is " << marginalLikelihood[0] <<  "," << marginalLikelihood[1] << endl;
     double prior[2] = {0.5,0.5};
     double likelihood = marginalLikelihood[0]*prior[0] + marginalLikelihood[1]*prior[1];
-    dout << "ForestState::calculate_likelihood( ) likelihood is " << likelihood << endl;
     return likelihood;
 }
 
@@ -457,12 +441,10 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight, bool recordEvents ) {
 
     double updated_to = this->site_where_weight_was_updated();
-    dout << "Particle current base is at " << this->current_base() << " weight is updated to " << updated_to <<endl;
     assert (updated_to >= this->current_base());
     double likelihood = 1.0;
 
     while ( updated_to < extend_to ) {
-        dout << "  Now at " <<this->current_base()<< " updated_to " << updated_to << " and extending to " << extend_to << endl;
         /*!
          * First, update the likelihood up to either extend_to or the end of this state
          */
@@ -476,23 +458,23 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
 
-		if(model().biased_sampling) {
-		    // store importance sampling correction for the weight of the particle
-		    // positional importance factors are stored in importance_weight_predata and applied to the particle weight with the likelihood
-		    if(update_to == extend_to) {
-				IS_positional_adjustor_no_recombination((update_to - updated_to),
-					getLocalTreeLength() * model().recombination_rate(),
-					getWeightedLocalTreeLength() * model().recombination_rate());
-		    } else {
-				assert(update_to == this->next_base());
-				IS_positional_adjustor_at_recombination((update_to - updated_to),
-					getLocalTreeLength() * model().recombination_rate(),
-					getWeightedLocalTreeLength() * model().recombination_rate());
-		    }
-		}
-
-        dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
-        dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
+        if(model().biased_sampling) {
+            // store importance sampling correction for the weight of the particle
+            // positional importance factors are stored in importance_weight_predata and applied to the particle weight with the likelihood
+            if(update_to == extend_to) {
+                IS_positional_adjustor_no_recombination((update_to - updated_to),
+                                                        getLocalTreeLength() * model().recombination_rate(),
+                                                        getWeightedLocalTreeLength() * model().recombination_rate());
+            } else {
+                assert(update_to == this->next_base());
+                IS_positional_adjustor_at_recombination((update_to - updated_to),
+                                                        getLocalTreeLength() * model().recombination_rate(),
+                                                        getWeightedLocalTreeLength() * model().recombination_rate());
+            }
+        }
+        
+        //dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
+        //dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
 
         updated_to = update_to;                // rescues the invariant
 
@@ -500,10 +482,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
         if ( updated_to < extend_to ) {
-			// a recombination has occurred
-			dout << "    We are about to sample the next genealogy and the particle weight is " << this->weight() << endl;
+            // a recombination has occurred
             double rec_height = this->sampleNextGenealogy( recordEvents );
-            dout << "    We have sampled the next genealogy and the particle weight is " << this->weight() << endl;
             this->sampleRecSeqPosition( recordEvents );
 
             if (recordEvents) {
@@ -525,49 +505,49 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
     }
     assert (updated_to == extend_to);
     if (updateWeight) {
-		// update weights for extension of ARG
-		dout << "Particle weight is " << weight() << endl;
-		dout << "The likelihood is " << likelihood << endl;
-		dout << "The IWP is " << importance_weight_predata() << endl;
+        // update weights for extension of ARG
+        dout << "Particle weight is " << weight() << endl;
+        dout << "The likelihood is " << likelihood << endl;
+        dout << "The IWP is " << importance_weight_predata() << endl;
         this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
         dout << "The updated particle weight is " << weight() << endl;
         if (model().biased_sampling) {
-			dout << "Delayed particle weight is " << delayed_weight() << endl;
-			dout << "The likelihood is " << likelihood << endl;
-			dout << "The IWP is " << importance_weight_predata() << endl;
-	        this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
-	        dout << "The updated delayed particle weight is " << delayed_weight() << endl;
-	        //// DEBUG
-	        dout << "Particle weight is " << weight() << endl;
-	        dout << "delayed weight is " << delayed_weight() << endl;
-	        dout << "total_delayed_adjustment is " << total_delayed_adjustment << endl;
-	        if( !delayed_adjustments.empty() ) {
-				dout << "next df should be applied at base " << delayed_adjustments.top().application_position << endl;
-		    }
-		    dout << " lhs is " << std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <<
-		    " rhs is " << .001 * this->weight() << endl;
-	        ////
-	        assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
-	        this->reset_importance_weight_predata();
+            dout << "Delayed particle weight is " << delayed_weight() << endl;
+            dout << "The likelihood is " << likelihood << endl;
+            dout << "The IWP is " << importance_weight_predata() << endl;
+            this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
+            dout << "The updated delayed particle weight is " << delayed_weight() << endl;
+            //// DEBUG
+            dout << "Particle weight is " << weight() << endl;
+            dout << "delayed weight is " << delayed_weight() << endl;
+            dout << "total_delayed_adjustment is " << total_delayed_adjustment << endl;
+            if( !delayed_adjustments.empty() ) {
+                dout << "next df should be applied at base " << delayed_adjustments.top().application_position << endl;
+            }
+            dout << " lhs is " << std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <<
+                " rhs is " << .001 * this->weight() << endl;
+            ////
+            assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+            this->reset_importance_weight_predata();
 	    // update weights for application positions passed during extension
-	        if( !delayed_adjustments.empty() ) {
-		        while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
-					dout << "Need to apply a df to the delayed weight" << endl;
-					dout << " delayed_adjustments has " << delayed_adjustments.size() << " elements" << endl;
-					dout << " The top element has pos " << delayed_adjustments.top().application_position <<
-					" and factor " << delayed_adjustments.top().importance_factor << endl;
-					total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
-					this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top().importance_factor );
-					delayed_adjustments.pop();
-					dout << " particle weight is now " << weight() << endl;
-					dout << " delayed weight is now " << delayed_weight() << endl;
-					dout << " total_delayed_adjustment is now " << total_delayed_adjustment << endl;
-					assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
-				}
-				dout << "DELAY" << endl;
-				dout << "*current position is " << this->current_base() << endl;
-				dout << "*next DelayFactor to be applied at " << delayed_adjustments.top().application_position << endl;
-			}
+            if( !delayed_adjustments.empty() ) {
+                while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
+                    dout << "Need to apply a df to the delayed weight" << endl;
+                    dout << " delayed_adjustments has " << delayed_adjustments.size() << " elements" << endl;
+                    dout << " The top element has pos " << delayed_adjustments.top().application_position <<
+                        " and factor " << delayed_adjustments.top().importance_factor << endl;
+                    total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
+                    this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top().importance_factor );
+                    delayed_adjustments.pop();
+                    dout << " particle weight is now " << weight() << endl;
+                    dout << " delayed weight is now " << delayed_weight() << endl;
+                    dout << " total_delayed_adjustment is now " << total_delayed_adjustment << endl;
+                    assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+                }
+                dout << "DELAY" << endl;
+                dout << "*current position is " << this->current_base() << endl;
+                dout << "*next DelayFactor to be applied at " << delayed_adjustments.top().application_position << endl;
+            }
         }
     }
     this->setSiteWhereWeightWasUpdated( extend_to );
@@ -589,25 +569,6 @@ std::string ForestState::newick(Node *node) {
   }
 
   return tree.str();
-
-  //if(node->in_sample()){
-    //std::ostringstream label_strm;
-    //label_strm<<node->label();
-    //return label_strm.str();
-  //}
-  //else{
-    //Node *left = this->trackLocalNode(node->first_child());
-    //double t1 = node->height() - left->height();
-    //std::ostringstream t1_strm;
-    //t1_strm << t1 / (4 * this->model().default_pop_size);
-
-    //Node *right = this->trackLocalNode(node->second_child());
-    //double t2 = node->height() - right->height();
-    //std::ostringstream t2_strm;
-    //t2_strm << t2 / (4 * this->model().default_pop_size);
-
-    //return "("+this->newick(left)+":"+t1_strm.str()+","+ this->newick(right)+":"+t2_strm.str() +")";
-  //}
 }
 
 

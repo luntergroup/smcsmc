@@ -22,9 +22,11 @@
 */
 
 
-#include "forest.h"
+#include "scrm/src/node.h"
+#include "scrm/src/forest.h"
 #include "arena.hpp"
 #include "general.hpp"
+#include "descendants.hpp"
 
 
 #ifndef EventRecorder
@@ -182,6 +184,13 @@ public:
         double base_ = event_data_ == -1 ? a.recomb_pos : end_base_;
         double height = event_data_ == 0 ? a.recomb_pos : end_height;
         return (base0 <= base_) && ( (base_ < base1) || isEndOfSeq ) && (height0 <= height) && (height < height1); }
+    double recomb_event_base() const {
+        if (!is_recomb_event()) return -1;
+        return event_data_ == -1 ? a.recomb_pos : end_base_; }
+    void set_descendants( const Descendants_t descendants_ ) {
+        descendants = descendants_; }
+    Descendants_t get_descendants() const {
+        return this->descendants; }
     size_t get_population() const {
         assert (is_coalmigr());
         return a.coal_migr_population; }
@@ -210,10 +219,7 @@ public:
     /* Adds (newly made, refcount==1) this to tree */
     void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
         if (parent_) {
-            dout <<"we are here"<<std::endl;
-            dout << "(*eventptr_location)->ref_counter " <<(*eventptr_location)->ref_counter_ <<std::endl;
             // this is a tree; replace existing tree off eventptr_location with this
-            dout << "            bool lost_event = !(*eventptr_location)->decrease_refcount_is_zero(); "<< std::endl;
             bool eventIsLost = (*eventptr_location)->decrease_refcount_is_zero();
             // decrease_refcount_is_zero returns TRUE, when ref count is zero, in which case, eventIsLost is TRUE
             // decrease_refcount_is_zero returns FALSE, when ref count is not zero, in which case, eventIsLost is FALSE
@@ -221,7 +227,6 @@ public:
             // eventIsLost should always be false! which means ref count should never be zero!
             // assertion fails, when eventIsLost is TRUE, i.e. the ref_count is zero.
             assert (!eventIsLost);  // *eventptr_location should be referenced elsewhere
-
             _unused(eventIsLost);
         } else {
             // this is a single node; splice into existing tree
@@ -260,26 +265,29 @@ private:
       A( size_t p ): coal_migr_population( p ) {}
       A(): coal_migr_population( 0 ) {}
     } a;
+
     // helper variables for the update algorithm (put here for packing / alignment)
     EvolutionaryEvent* parent_;
     double posterior_;
+    short children_updated_;
+    short ref_counter_;
+
+    // remainder of core variables
+    short weight;         // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
+    short event_data_ ;   // -2 == no event; otherwise type-specific meaning:
+                          // recomb:    -1 == event at top edge (time-wise sampling)
+                          //             0 == event at right-hand edge (sequence-wise sampling)
+                          // coal/migr: -1 == coalescent event;
+                          //             0..: migration to this population index
+    Descendants_t descendants;     // descendants of lineage where recombination occurred
+    
     void set_posterior ( const double posterior ){ this->posterior_ =  posterior; }
     double posterior () const { return this->posterior_; }
-
-    short children_updated_;
     void set_children_updated ( const short children ){ this->children_updated_ = children; }
     short children_updated() const { return this->children_updated_; }
-    // remainder of core variables
-    short weight;            // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
-    short event_data_ ;   // -2 == no event; otherwise type-specific meaning:
-                             // recomb:    -1 == event at top edge (time-wise sampling)
-                             //             0 == event at right-hand edge (sequence-wise sampling)
-                             // coal/migr: -1 == coalescent event;
-                             //             0..: migration to this population index
     void set_event_data ( const short event_data ){ this->event_data_ = event_data; }
     short event_data() const { return this->event_data_; }
 
-    short ref_counter_ ;
     void set_ref_counter ( const short ref_counter ){ this->ref_counter_ = ref_counter; }
     short ref_counter() const { return this->ref_counter_; }
 

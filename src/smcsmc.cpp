@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+#include "coalevent.hpp" // DEBUG
 
 #include "general.hpp"
 #include "count.hpp"
@@ -390,6 +391,8 @@ void pfARG_core(PfParam &pfARG_para,
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     clog << " Inference step completed." << endl;
 
+    countNe->dump_local_recomb_logs( clog );
+    
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 
     countNe->log_counts( pfARG_para );
