@@ -158,6 +158,28 @@ public:
         assert( to_population != a.coal_migr_population );
         assert( to_population >= 0 );
         event_data_ = to_population; }
+    void repr( std::ostream& stream ) const {
+        if (is_recomb()) {
+            stream << "Rw" << std::setw(1) << weight << "[" << std::fixed << std::setprecision(2) << std::setw(10) 
+                   << start_base_ << "," << std::setw(10) << end_base_ << "]x["
+                   << std::setw(10) << start_height << "," << std::setw(10) << end_height << "]";
+            if (!is_no_event()) {
+                if (event_data_ == -1) {
+                    stream << " x=" << a.recomb_pos << " *";
+                } else {
+                    stream << " t=" << a.recomb_pos << " *";
+                }
+            }
+        } else if (is_coalmigr()) {
+            stream << "T" << std::setw(1) << a.coal_migr_population << "w" << weight << "("
+                   << std::fixed << std::setprecision(2) << std::setw(10) << end_base_ << ")x["
+                   << std::setw(10) << start_height << "," << std::setw(10) << end_height << "]";
+            if (is_coal_event())  stream << " c*";
+            if (is_migr_event())  stream << " m*";
+        } else {
+            stream << "?? nothing ??";
+        }
+    }
     double coal_opportunity() const {
         assert (is_coalmigr());
         return weight * (end_height - start_height); }
@@ -174,23 +196,31 @@ public:
         assert (is_recomb());
         return weight * (end_height - start_height) * (end_base_ - start_base_); }
     double recomb_opportunity_between( double height0, double height1, double base0, double base1) const {
-        return weight * std::max(0.0, std::min(height1,end_height) - std::max(height0,start_height)) * std::max(0.0, std::min(base1,end_base_) - std::max(base0,start_base_)); }
+        return weight * std::max(0.0, std::min(height1,end_height) - std::max(height0,start_height))
+                      * std::max(0.0, std::min(base1,end_base_) - std::max(base0,start_base_)); }
     bool recomb_event_overlaps_opportunity_t( double recomb_t_position ) const {
         return ( start_height <= recomb_t_position && recomb_t_position <= end_height ); }
     bool recomb_event_overlaps_opportunity_x( double recomb_x_position ) const {
         return ( start_base_ <= recomb_x_position && recomb_x_position <= end_base_ ); }
     int recomb_event_count_between( double height0, double height1, double base0, double base1, bool isEndOfSeq ) const {
         if (!is_recomb_event()) return 0;
-        double base_ = event_data_ == -1 ? a.recomb_pos : end_base_;
+        double base_ = event_data_ == -1 ? a.recomb_pos : start_base_;
         double height = event_data_ == 0 ? a.recomb_pos : end_height;
         return (base0 <= base_) && ( (base_ < base1) || isEndOfSeq ) && (height0 <= height) && (height < height1); }
     double recomb_event_base() const {
         if (!is_recomb_event()) return -1;
-        return event_data_ == -1 ? a.recomb_pos : end_base_; }
+        // recombination events are recorded in the sequence segment following the event (arbitrary choice).  Therefore,
+        // the sequence position of the recombination event is the start of the current event record's sequence segment
+        // (for events that occur when sweeping in the x direction)
+        return event_data_ == -1 ? a.recomb_pos : start_base_; } 
     void set_descendants( const Descendants_t descendants_ ) {
         descendants = descendants_; }
     Descendants_t get_descendants() const {
         return this->descendants; }
+    double get_start_base() const {
+        return start_base_; }
+    double get_end_base() const {
+        return end_base_; }
     size_t get_population() const {
         assert (is_coalmigr());
         return a.coal_migr_population; }

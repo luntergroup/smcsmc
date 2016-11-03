@@ -162,22 +162,20 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
     for (int i=0; i<2; i++) {
 
         if (states_[i] == 2) {
-            // DEBUG this part of code is taking out, to test results...
-
             // node i is tracing an existing non-local branch; opportunities for recombination
             if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
-            //EvolutionaryEvent* recomb_event = new EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
-            // create event (on stack), so that we can append events to existing ones.  (Only done for recombinations; should check whether it happens at any frequency)
             void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, start_base, end_base, 1 );
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                end_height, end_height_epoch,
+                                                                                start_base, end_base, 1 );
             double recomb_pos = -1;
             if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
                 recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
                 recomb_event->set_recomb_event_pos( recomb_pos );
-                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) );  // calculate signature for descendants subtended by node
+                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) );  // calculate signature for descendants of node
             }
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
@@ -198,10 +196,15 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             }
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
             void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* migrcoal_event = new(event_mem) EvolutionaryEvent(start_height, start_height_epoch, end_height, end_height_epoch, start_base, active_node(i)->population(), weight);
-            // Record any events
-            if (coal_event) migrcoal_event->set_coal_event();
-            if (migr_event) migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
+            EvolutionaryEvent* migrcoal_event = new(event_mem) EvolutionaryEvent(start_height, start_height_epoch,
+                                                                                 end_height, end_height_epoch,
+                                                                                 start_base, active_node(i)->population(), weight);
+            if (coal_event) {
+                migrcoal_event->set_coal_event();
+            }
+            if (migr_event) {
+                migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
+            }
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             assert(migrcoal_event->print_event());
@@ -209,7 +212,6 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
     }
 
     //assert ( recomb_opp_x_within_smcsmc == recomb_opp_x_within_scrm );
-    //ForestStatedout << "Finish recording of event." << endl;
 
     return;
 }
@@ -229,8 +231,12 @@ void ForestState::record_Recombevent_b4_extension (){
             size_t end_height_epoch = start_height_epoch;
             void* event_mem = Arena::allocate( start_height_epoch );
             // no event for now            
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch, end_height, end_height_epoch, this->current_base(), this->next_base(), contemporaries );
+            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                end_height, end_height_epoch,
+                                                                                this->current_base(), this->next_base(), contemporaries );
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            //cout << "GENERATE Rw" << contemporaries << " [" << this->current_base() << "," << this->next_base()
+            //     << "]x[" << start_height << "," << end_height << "]" << endl;
         }
     }
 }

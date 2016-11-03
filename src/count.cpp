@@ -493,14 +493,18 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
             total_recomb_count[epoch_idx][ 0 ].add( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end, isEndOfSeq ) );
             total_recomb_opportunity[epoch_idx][ 0 ].add( weight * recomb_opp );
             total_recomb_weight[ epoch_idx ][ 0 ].add( weight * weight * recomb_opp );
-            record_local_recomb_events( x_start, x_end, weight, recomb_opp, event->recomb_event_base(), event->get_descendants() );
+            double local_x_start = max( x_start, event->get_start_base() );
+            double local_x_end = min( x_end, event->get_end_base() );
+            record_local_recomb_events( local_x_start, local_x_end, weight, recomb_opp,
+                                        event->recomb_event_base(), event->get_descendants() );
         }
     }
 }
 
 
 
-void CountModel::record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, Descendants_t descendants ) {
+void CountModel::record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base,
+                                             Descendants_t descendants ) {
 
     size_t first_index = size_t( x_start / local_recording_interval_ );
     size_t last_index = size_t( 1 + x_end / local_recording_interval_ );
@@ -560,21 +564,61 @@ void CountModel::dump_local_recomb_logs( ostream& stream ) {
     }
 
     // write header
-    stream << "locus\topportunity";
+    stream << "locus\tsize\topp_per_nt";
     for (int sample = 0; sample < sample_size_; ++sample) {
         stream << "\t" << sample+1;
     }
     stream << "\n";
 
     // write data
-    for (size_t idx = 0; idx < last_idx; ++idx) {
-        stream << fixed << idx * local_recording_interval_
-               << "\t"
-               << scientific << local_recomb_opportunity[ idx ];
-        for (int sample = 0; sample < sample_size_; ++sample) {
-            stream << "\t"
-                   << local_recomb_counts[ sample ][ idx ];
+    size_t idx = 0;
+    while (idx < last_idx) {
+        double current_opportunity = local_recomb_opportunity[ idx ];
+        int num_indices = 0, first_idx = idx;
+        double total_count = 0;
+        do {
+            for (int sample = 0; sample < sample_size_; ++sample) {
+                total_count += local_recomb_counts[ sample ][ idx ];
+            }
+            ++num_indices;
+            ++idx;
+        } while (total_count == 0.0 &&
+                 idx < last_idx &&
+                 abs(local_recomb_opportunity[ idx ] - current_opportunity) < 1e-7 * current_opportunity);
+        // summarize streak of null counts
+        int streak = num_indices - 1;
+        if (total_count == 0) {
+            // loop was ended because of changing opportunity, or end-of-data
+            ++streak;
         }
-        stream << "\n";
+        if (streak > 0) {
+            stream << fixed << setprecision(0)
+                   << first_idx * local_recording_interval_
+                   << "\t"
+                   << streak * local_recording_interval_
+                   << "\t"
+                   << scientific << setprecision(5)
+                   << current_opportunity / local_recording_interval_;
+            for (int sample = 0; sample < sample_size_; ++sample) {
+                stream << "\t" << 0.0;
+            }
+            stream << "\n";
+            // point to first index that needs processing
+            idx = first_idx + streak;
+        } else {
+            // streak == 0 && total_count > 0 && idx == first_idx + 1
+            // (i.e. we found a single nonzero-count line)
+            stream << fixed << setprecision(0)
+                   << first_idx * local_recording_interval_
+                   << "\t"
+                   << local_recording_interval_
+                   << "\t"
+                   << scientific << setprecision(5)
+                   << local_recomb_opportunity[ first_idx ] / local_recording_interval_;
+            for (int sample = 0; sample < sample_size_; ++sample) {
+                stream << "\t" << local_recomb_counts[ sample ][ first_idx ] / local_recording_interval_;
+            }
+            stream << "\n";
+        } 
     }
 }
