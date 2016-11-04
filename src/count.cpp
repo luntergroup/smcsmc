@@ -532,16 +532,16 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
 
     }
 
-    // record recombination event, if any
-    if (event_base > 0)
-    {
+    // record recombination event, if any, if it falls within the segment
+    if (x_start <= event_base && event_base <= x_end) {
+
         // count the number of descendants, for normalisation
         int descendant = 0, num_descendants = 0;
         Descendants_t data = descendants;
         while (get_next_descendant( data, descendant )) {
             ++num_descendants;
         }
-
+        
         // store the count.  Note: the 'descendant' values are 1-based!
         size_t index = size_t( event_base / local_recording_interval_ );
         descendant = 0;
