@@ -64,6 +64,7 @@ void Segment::prepare(){
                 int seglen   = strtol( tmp_line.substr( first_tab_pos+1, second_tab_pos-first_tab_pos ).c_str(),
                                        NULL, 0 );
                 if (segstart >= data_start_ + seqlen_) {
+                    // simulate end-of-file to bail out of the loop
                     tmp_line = "";
                     break;
                 }

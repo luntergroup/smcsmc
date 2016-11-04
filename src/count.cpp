@@ -511,7 +511,6 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
     double first_interval = min( (first_index+1)*local_recording_interval_, x_end ) - x_start;
     double last_interval = x_end - max( (last_index-1)*local_recording_interval_, x_start );
     double opp_density = weight * opportunity / (x_end - x_start);
-    double interval = first_interval;
 
     // ensure the count vectors are large enough; if not add space for 10Mb worth of samples
     if (local_recomb_opportunity.size() < last_index) {
@@ -522,14 +521,15 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
         }
     }
 
-    // store opportunity
-    for (size_t index = first_index; index < last_index; ++index) {
-
-        if (index == last_index - 1)
-            interval = last_interval;
-        local_recomb_opportunity[ index ] += interval * opp_density;
-        interval = local_recording_interval_;
-
+    // store differential opportunity
+    if (first_index == last_index - 1) {
+        local_recomb_opportunity[ first_index ]   += first_interval * opp_density;
+        local_recomb_opportunity[ first_index+1 ] -= first_interval * opp_density;
+    } else {
+        local_recomb_opportunity[ first_index ]   += first_interval * opp_density;
+        local_recomb_opportunity[ first_index+1 ] += (local_recording_interval_ - first_interval) * opp_density;
+        local_recomb_opportunity[ last_index-1 ]  += (last_interval - local_recording_interval_) * opp_density;
+        local_recomb_opportunity[ last_index ]    -= last_interval * opp_density;
     }
 
     // record recombination event, if any, if it falls within the segment
@@ -570,13 +570,15 @@ void CountModel::dump_local_recomb_logs( ostream& stream ) {
     }
     stream << "\n";
 
-    // write data
+    // write data; convert local recomb opportunity CHANGES into absolute
+    // recomb opportunity on-the-fly.  (Todo: change name of local_rec_opp.)
     size_t idx = 0;
+    double current_opportunity = 0.0;
     while (idx < last_idx) {
-        double current_opportunity = local_recomb_opportunity[ idx ];
         int num_indices = 0, first_idx = idx;
         double total_count = 0;
         do {
+            current_opportunity += local_recomb_opportunity[ idx ];
             for (int sample = 0; sample < sample_size_; ++sample) {
                 total_count += local_recomb_counts[ sample ][ idx ];
             }
@@ -584,10 +586,10 @@ void CountModel::dump_local_recomb_logs( ostream& stream ) {
             ++idx;
         } while (total_count == 0.0 &&
                  idx < last_idx &&
-                 abs(local_recomb_opportunity[ idx ] - current_opportunity) < 1e-7 * current_opportunity);
+                 abs(local_recomb_opportunity[ idx ]) < 1e-4 * current_opportunity);
         // summarize streak of null counts
         int streak = num_indices - 1;
-        if (total_count == 0) {
+        if (total_count == 0.0) {
             // loop was ended because of changing opportunity, or end-of-data
             ++streak;
         }
@@ -614,7 +616,7 @@ void CountModel::dump_local_recomb_logs( ostream& stream ) {
                    << local_recording_interval_
                    << "\t"
                    << scientific << setprecision(5)
-                   << local_recomb_opportunity[ first_idx ] / local_recording_interval_;
+                   << current_opportunity / local_recording_interval_;
             for (int sample = 0; sample < sample_size_; ++sample) {
                 stream << "\t" << local_recomb_counts[ sample ][ first_idx ] / local_recording_interval_;
             }
