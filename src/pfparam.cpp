@@ -119,7 +119,7 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-calibrate_lag"){
             this->calibrate_lag = true;
             this->lag_fraction = readNextInput<double>();
-            if ( this->lag_fraction > 1.0 || this->lag_fraction < 0.0 ){
+            if ( this->lag_fraction < 0.0 ){
                 throw OutOfRange ("-calibrate_lag", *argv_i );
             }
         } else if ( *argv_i == "-online" ){
