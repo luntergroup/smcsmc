@@ -82,7 +82,8 @@ void PfParam::parse(int argc, char *argv[]) {
             for (int i=0; i<last_epoch; i++) {
                 if (record_event_in_epoch.size() <= i) {
                     // extend vector, and set default: record both recomb and coal/migr events
-                    record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+                    record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT
+                                                     | PfParam::RECORD_RECOMB_EVENT );
                 }
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
@@ -290,20 +291,20 @@ void PfParam::convert_scrm_input (){
 void PfParam::finalize(){
 
     this->ESSthreshold = this->N * this->ESS();
-    this->TMRCA_NAME   = out_NAME_prefix + "TMRCA";
-    this->WEIGHT_NAME  = out_NAME_prefix + "WEIGHT";
-    this->outFileName   = out_NAME_prefix + ".out";
-    this->log_NAME     = out_NAME_prefix + ".log";
-    //this->SURVIVOR_NAME= out_NAME_prefix + "SURVIVOR";
-    this->Resample_NAME= out_NAME_prefix + "Resample";
+    this->TMRCA_NAME             = out_NAME_prefix + "TMRCA";
+    this->WEIGHT_NAME            = out_NAME_prefix + "WEIGHT";
+    this->outFileName            = out_NAME_prefix + ".out";
+    this->log_NAME               = out_NAME_prefix + ".log";
+    this->recombination_map_NAME = out_NAME_prefix + ".recomb";
+    this->Resample_NAME          = out_NAME_prefix + "Resample";
 
     // remove any existing files with these names
     remove( this->TMRCA_NAME.c_str() );
-    remove( this->WEIGHT_NAME.c_str());
+    remove( this->WEIGHT_NAME.c_str() );
     remove( this->outFileName.c_str() );
-    remove( this->log_NAME.c_str()   );
-    //remove( this->SURVIVOR_NAME.c_str());
-    remove( this->Resample_NAME.c_str());
+    remove( this->log_NAME.c_str() );
+    remove( this->recombination_map_NAME.c_str() );
+    remove( this->Resample_NAME.c_str() );
 
     this->finalize_scrm_input();
 

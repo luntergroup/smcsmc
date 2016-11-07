@@ -79,7 +79,7 @@ class CountModel: public Model {
         // DEBUG
         void print_recomb_count();
         vector<double> check_lags() const {return lags;}
-        void dump_local_recomb_logs( ostream& stream );
+        void dump_local_recomb_logs( ostream& stream, double locus_length );
 
     private:
         // Initialisation

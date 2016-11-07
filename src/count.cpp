@@ -555,13 +555,10 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
 };
 
 
-void CountModel::dump_local_recomb_logs( ostream& stream ) {
+void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) {
 
     // find last nonzero entry
-    size_t last_idx = local_recomb_opportunity.size();
-    while (last_idx > 0 && local_recomb_opportunity[ last_idx-1 ] == 0.0) {
-        --last_idx;
-    }
+    size_t last_idx = min( local_recomb_opportunity.size(), (size_t)(locus_length / local_recording_interval_) );
 
     // write header
     stream << "locus\tsize\topp_per_nt";

@@ -391,7 +391,9 @@ void pfARG_core(PfParam &pfARG_para,
     countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
     clog << " Inference step completed." << endl;
 
-    countNe->dump_local_recomb_logs( clog );
+    ofstream recombFile(pfARG_para.get_recombination_map_filename(), ios::out | ios::app | ios::binary);
+    countNe->dump_local_recomb_logs( recombFile, model->loci_length() );
+    recombFile.close();
     
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
 

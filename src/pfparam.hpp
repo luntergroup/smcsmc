@@ -124,6 +124,7 @@ class PfParam{
                           double weight);
 
     void append_resample_file( int position, double ESS ) const;
+    const char* get_recombination_map_filename() const { return recombination_map_NAME.c_str(); }
 
     // ------------------------------------------------------------------
     // PfParameters
@@ -260,6 +261,7 @@ class PfParam{
     bool log_bool;
     string out_NAME_prefix;
     string outFileName;
+    string recombination_map_NAME;
     string log_NAME;
     string TMRCA_NAME;
     string WEIGHT_NAME;
