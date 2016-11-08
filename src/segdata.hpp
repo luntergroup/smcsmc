@@ -80,10 +80,11 @@ struct NoDataError : public InvalidSeg{
 };
 
 
-enum Segment_State {SEGMENT_INVARIANT, SEGMENT_MISSING};
+enum Segment_State {SEGMENT_INVARIANT, SEGMENT_MISSING, SEGMENT_INVARIANT_PARTIAL};
 
-class Segment{
-    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut, double data_start = 1 );
+class Segment {
+    Segment( string file_name , size_t nsam, double seqlen, double num_of_mut,
+             double data_start = 1, double max_segment_length = 1e99 );
     ~Segment(){};
 
     friend class PfParam;
@@ -97,6 +98,7 @@ class Segment{
     const size_t nsam_;
     const double data_start_;
     const double seqlen_;
+    const double max_segment_length_;
     double segment_start_;
     double segment_length_;
     Segment_State segment_state_;
@@ -108,11 +110,6 @@ class Segment{
     string tmp_str;
     vector <string> buffer_lines;
     size_t current_line_index_;
-
-    // Line related
-    size_t field_start;
-    size_t field_end;
-    int field_index;
 
     // Methods
     void prepare();

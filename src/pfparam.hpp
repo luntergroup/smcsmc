@@ -132,7 +132,7 @@ class PfParam{
     size_t N;            /*!< \brief Number of particles */
     int    EM_steps;     /*!< \brief Number of EM iterations */
     double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
-
+    double max_segment_length_factor_;  /*!< \brief Allow segments of max length   mslf / (4 Ne rho) */
     bool   useCap;
     double Ne_cap;
 

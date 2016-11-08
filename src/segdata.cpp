@@ -25,8 +25,10 @@
 #include "segdata.hpp"
 using namespace std;
 
-Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut, double data_start )
-    : file_name_(file_name), nsam_(nsam), data_start_(data_start), seqlen_(seqlen)
+Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut,
+                  double data_start, double max_segment_length )
+    : file_name_(file_name), nsam_(nsam), data_start_(data_start),
+      seqlen_(seqlen), max_segment_length_(max_segment_length)
 {
 
     num_of_expected_mutations_ = 0;
@@ -104,65 +106,100 @@ void Segment::read_new_line(){
     /*! Read Segment data, extract mutation site and haplotype
      */
 
-    this->field_start = 0;
-    this->field_end   = 0;
-    this->field_index = 0;
+    size_t field_start = 0;
+    size_t field_end = 0;
+    int field_index = 0;
 
-    this->segment_start_ += this->segment_length_;
-    // check for genetic break, see if starts from a new chrom
-    // todo
+    // move to beginning of next segment
+    segment_start_ += segment_length_;
 
-    if ( this->empty_file() ){
+    // check for genetic break, see if starts from a new chrom (todo)
+
+    if ( empty_file() ){
         return;
     }
 
-    if ( this->current_line_index_ == this->buffer_lines.size() ) {
-        this->end_data_ = true;
+    if ( current_line_index_ == buffer_lines.size() ) {
+        end_data_ = true;
         return;
     }
 
     string tmp_line = this->buffer_lines[this->current_line_index_];
     int new_seg_start = -1;
+    int new_seg_end = -1;
 
     while ( field_end < tmp_line.size() ){
-        field_end = min ( tmp_line.find('\t',field_start), tmp_line.find('\n', field_start) );
+        
+        field_end = min( tmp_line.find('\t',field_start),
+                         tmp_line.find('\n',field_start) );
         this->tmp_str = tmp_line.substr( field_start, field_end - field_start );
-        if ( field_index == 0 ) {
+        switch (field_index) {
+        case 0:
             if (this->genetic_break_){    // Genetic break! reset segMent_start
                 this->segment_start_ = data_start_;
             }
             new_seg_start = strtol( tmp_str.c_str(), NULL, 0 );  // check values when we know the length
-        } else if ( field_index == 1 ) {
+            break;
+        case 1:
             this->segment_length_ =  strtol( tmp_str.c_str(), NULL, 0 );
             // check that current segment_start_ is inside the new segment
             if (new_seg_start > segment_start_) {
+                // new segment starts beyond end of previous segment (=segment_start_)
                 throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
             }
             if (new_seg_start + segment_length_ < segment_start_) {
+                // new segment ends before start of new segment
                 throw InvalidSegmentStartPosition(tmp_str, to_string(this->segment_start_));
             }
-            // tweak the length so that the endpoint is where we want it to be
-            int new_seg_end = new_seg_start + segment_length_;
-            segment_start_ = max( (int)segment_start_, new_seg_start );
+            new_seg_end = new_seg_start + segment_length_;
+            // at this point, new_seg_start <= segment_start_ < new_seg_end.
+            // calculate segment length so that the next segment covers all bases (but see below)
             segment_length_ = new_seg_end - segment_start_;
-        } else if ( field_index == 2 ) {
+            break;
+        case 2:
             this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
-        } else if ( field_index == 3 ) {
+            break;
+        case 3:
             this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false;
-        } else if ( field_index == 4 ) {
+            break;
+        case 4:
             this->chrom_ = strtol( tmp_str.c_str(), NULL, 0);
-        } else if ( field_index == 5 ) {
+            break;
+        case 5:
             this->extract_field_VARIANT();
+            break;
+        default:
+            throw WrongNumberOfEntry(tmp_str);
         }
         field_start = field_end+1;
         field_index++;
     }
 
-    if ( current_line_index_ > 0 && current_line_index_ % 300 == 0 ){
-        cout << "\r" << " Particle filtering step" << setw(4) << int((segment_end() * 100) / seqlen_)
-             << "% completed." << flush;
+    // if a very long segment is encountered, feed this to the inference machinery in small
+    // pieces; otherwise events don't get evaluated and pruned causing high memory usage
+    if (segment_length_ > max_segment_length_) {
+
+        // reduce this segment to the maximum allowable size
+        segment_length_ = max_segment_length_;
+
+        // ensure that likelihood for invariance is charged appropriately, but that no
+        // likelihood for a mutation is charged at the end of the segment, as this should
+        // be accounted for only at the actual end of the segment.  However if the segment
+        // is missing, the initial and final sections should be treated the same.
+        if (segment_state_ == SEGMENT_INVARIANT)
+            segment_state_ = SEGMENT_INVARIANT_PARTIAL;
+        
+    } else {
+        
+        // ordinary case -- advance a line
+
+        if ( current_line_index_ > 0 && current_line_index_ % 300 == 0 ){
+            cout << "\r" << " Particle filtering step" << setw(4) << int((segment_end() * 100) / seqlen_)
+                 << "% completed." << flush;
+        }
+        this->current_line_index_++;
+
     }
-    this->current_line_index_++;
 }
 
 

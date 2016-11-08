@@ -189,6 +189,7 @@ void PfParam::init(){
     #endif
 
     this->original_recombination_rate_ = 0;
+    this->max_segment_length_factor_ = 16.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
     this->lag              = 0.0;
     this->calibrate_lag    = false;
@@ -320,11 +321,13 @@ void PfParam::finalize(){
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
+    int max_seg_len = (int)(max_segment_length_factor_ / (model.recombination_rate() * 4 * model.default_pop_size()));
     this->Segfile = new Segment( this->input_SegmentDataFileName,
                                  this->default_nsam,
                                  (double)this->model.loci_length(),
                                  this->default_num_mut,
-                                 this->start_position );
+                                 this->start_position,
+                                 max_seg_len );
 }
 
 

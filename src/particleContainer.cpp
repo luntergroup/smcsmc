@@ -392,11 +392,16 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
     update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
 
     //Update weight for seeing mutation at the position
-    //Extend ARGs and update weight for not seeing mutations along the equences
+    //Extend ARGs and update weight for not seeing mutations along the sequences
     this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) );
 
     dout << " Update state weight at a SNP "<<endl;
-    this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
+    if (Segfile->segment_state() == SEGMENT_INVARIANT) {
+        // ensure that if this segment is a partial segment, and does not end in a mutation
+        // even though data is not missing (state == SEGMENT_INVARIANT_PARTIAL), the mutation
+        // is not accounted for here, but only when the last partial segment is processed.
+        this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
+    }
 
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
 

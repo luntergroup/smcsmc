@@ -198,7 +198,7 @@ class Population:
                 integral = 0
                 try:
                     while True:
-                        newpos, length, height = gen.next()
+                        newpos, length, height = next(gen)
                         # generate complete segments until current overlaps endpoint of [newpos, newpos+length)
                         while pos + self.segsize < newpos + length:
                             # add height over appropriate subinterval
@@ -217,7 +217,7 @@ class Population:
             def merge(self, gen1, gen2):
                 for pos, length, height in gen1:
                     try:
-                        pos2, length2, height2 = gen2.next()
+                        pos2, length2, height2 = next(gen2)
                     except StopIteration:
                         pos2, length2, height2 = pos1, length1, 0
                     assert pos == pos2 and length == length2
