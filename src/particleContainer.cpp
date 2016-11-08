@@ -72,7 +72,7 @@ ParticleContainer::ParticleContainer(Model* model,
  * @ingroup group_pf_update
  * \brief Update the current state to the next state, at the given site, update all particles to it's latest genealogy state.  Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state ){
+void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
     dout << endl<<" We are extending particles" << endl<<endl;
 
  	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
@@ -82,7 +82,7 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to, Seg
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         dout << " before extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
-        (void)this->particles[particle_i]->extend_ARG ( mutation_rate, extend_to, segment_state);
+        particles[particle_i]->extend_ARG ( mutation_rate, extend_to );
         dout << " after extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
     }
     /*! normalize the probability upon until the mutation */
@@ -110,51 +110,79 @@ bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const ve
 }
 
 
+void ParticleContainer::update_data_status_at_leaf_nodes( const vector<int>& data_at_tips ) {
+
+    vector<int> haplotype_at_tips;
+    calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
+
+    for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+
+        particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
+
+    }
+}
+
+
+int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const {
+
+    // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
+    // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
+    // a 0/1 configuration arbitrarily.
+    
+    haplotype_at_tips = data_at_tips;
+    int num_configurations = 1;
+    for (int i=0; i < data_at_tips.size(); i+=2) {
+        if (data_at_tips[i] == 2) {
+            num_configurations *= 2;
+            assert (data_at_tips[i+1] == 2);
+            haplotype_at_tips[i] = 0;    // initialize phase vector
+            haplotype_at_tips[i+1] = 1;
+        } else {
+            assert (data_at_tips[i+1] != 2);
+        }
+    }
+    return num_configurations;
+}
+
+
 /*! \brief Update particle weight according to the haplotype or genotype data
  *	@ingroup group_pf_update
  */
 void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
 
-	// first check if there are any (unphased) genotypes in the data
-	vector<int> haplotype_at_tips = data_at_tips;
-	int num_haplotypes = 1;
-	for (int i=0; i < data_at_tips.size(); i+=2) {
-		if (data_at_tips[i] == 2) {
-			num_haplotypes *= 2;
-			assert (data_at_tips[i+1] == 2);
-			haplotype_at_tips[i] = 0;    // initialize phase vector
-			haplotype_at_tips[i+1] = 1;
-		} else {
-			assert (data_at_tips[i+1] != 2);
-		}
-	}
-	double normalization_factor = 1.0 / num_haplotypes;
+    vector<int> haplotype_at_tips;
+    int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
+    double normalization_factor = 1.0 / num_configurations;
 
-	// now update the weights of all particles, by calculating the likelihood of the data over the previous segment
-	for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
-		double likelihood_of_haplotype_at_tips = 0;
-		do {
-			particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
-			likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
-		} while ((num_haplotypes > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
-		likelihood_of_haplotype_at_tips *= normalization_factor;
+    // now update the weights of all particles, by calculating the likelihood of the data over the previous segment
+    for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+        double likelihood_of_haplotype_at_tips = 0;
+        do {
+
+            particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
+            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
+
+        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
+
+        likelihood_of_haplotype_at_tips *= normalization_factor;
+
         dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << "*" << particles[particle_i]->importance_weight_predata() << endl;
         // the following assertion checks appropriate importance factors have been accounted for
         //   if we ever change the emission factor of the sampling distribution, this assertion should fail
         assert( particles[particle_i]->importance_weight_predata() == 1 );
         this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight()
-                                                      * likelihood_of_haplotype_at_tips
-                                                      * particles[particle_i]->importance_weight_predata() );
+                                                        * likelihood_of_haplotype_at_tips
+                                                        * particles[particle_i]->importance_weight_predata() );
         this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight()
-                                                      * likelihood_of_haplotype_at_tips
-                                                      * particles[particle_i]->importance_weight_predata() );
+                                                       * likelihood_of_haplotype_at_tips
+                                                       * particles[particle_i]->importance_weight_predata() );
         this->particles[particle_i]->reset_importance_weight_predata();
-		dout << "particle " << particle_i << " done" << endl;
-	}
+        dout << "particle " << particle_i << " done" << endl;
+    }
 
     this->store_normalization_factor();
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
-	dout << endl;
+    dout << endl;
 }
 
 
@@ -359,16 +387,19 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
-    #ifndef _REJECTION
+
+    // Assign presence/absence status of data to each of the leaf nodes of all the particles
+    update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
+
     //Update weight for seeing mutation at the position
     //Extend ARGs and update weight for not seeing mutations along the equences
-    this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) , Segfile->segment_state() );
+    this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) );
 
     dout << " Update state weight at a SNP "<<endl;
     this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
 
-    #endif
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
+
     //Update the cumulated probabilities, as well as computing the effective sample size
     this->update_cum_sum_array_find_ESS( weight_cum_sum );
 }

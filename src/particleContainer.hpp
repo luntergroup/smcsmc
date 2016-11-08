@@ -59,7 +59,7 @@ class ParticleContainer {
         // Methods
         //
         void update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum);
-        void extend_ARGs( double mutation_rate, double extend_to, Segment_State segment_state );
+        void extend_ARGs( double mutation_rate, double extend_to );
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
         bool appendingStuffToFile(double x_end, const PfParam &pfparam);
@@ -80,6 +80,8 @@ class ParticleContainer {
         //
         // Methods
         //
+        void update_data_status_at_leaf_nodes( const vector<int>& data_at_tips );
+        int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
         void update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips);
         bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
         void store_normalization_factor();

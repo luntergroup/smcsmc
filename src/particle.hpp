@@ -146,7 +146,7 @@ class ForestState : public Forest{
         BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
 
         // Extend
-        double extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight=true, bool recordEvents=true );
+        double extend_ARG ( double mutation_rate, double extend_to, bool updateWeight=true, bool recordEvents=true );
 
         // Record events
         void record_Recombevent_b4_extension ( );

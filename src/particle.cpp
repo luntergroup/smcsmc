@@ -444,7 +444,7 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 }
 
 
-double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment_State segment_state, bool updateWeight, bool recordEvents ) {
+double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool updateWeight, bool recordEvents ) {
 
     double updated_to = this->site_where_weight_was_updated();
     assert (updated_to >= this->current_base());
@@ -458,9 +458,8 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         // calculate the total tree length of the subtree over leaf nodes that carry data.
         double localTreeBranchLength = this->trackLocalTreeBranchLength();
         // for leaf nodes that carry no data, there is no evidence for presence or absence of mutations on corresponding branches.
-        // This is accounted for in the calculation of localTreeBranchLength.  In addition, a segment can be explicitly marked as
-        // having 'missing data' (segment_state != SEGMENT_INVARIANT), in which case ALL branches are considered uninformative.
-        assert ( (segment_state == SEGMENT_INVARIANT) || (localTreeBranchLength == 0 ));
+        // This is accounted for in trackLocalTreeBranchLength.
+
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
 
@@ -480,7 +479,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, Segment
         }
         
         //dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
-        //dout << ( ( segment_state == SEGMENT_INVARIANT ) ? ", as invariant.": ", as missing data" ) << endl;
 
         updated_to = update_to;                // rescues the invariant
 

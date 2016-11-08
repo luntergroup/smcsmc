@@ -54,7 +54,7 @@ class Population:
             raise ValueError("Expected {} migration commands; got {}".format(len(change_points),migration_commands))
 
 
-    def simulate(self):
+    def simulate(self, missing_leaves = []):
 
         num_loci = 1
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
@@ -102,7 +102,7 @@ class Population:
         if returnvalue > 0:
             raise ValueError("Problem executing " + command)
 
-        self.convert_scrm_to_seg( scrmfilename, filename )
+        self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves )
 
         self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
         
@@ -110,7 +110,7 @@ class Population:
         os.unlink( scrmfilename )
 
 
-    def convert_scrm_to_seg(self, infilename, outfilename ):
+    def convert_scrm_to_seg(self, infilename, outfilename, missing_leaves ):
         # convert scrm output file to .seg file
 
         scrmfile = open(infilename, "r")
@@ -123,7 +123,11 @@ class Population:
             elif type(data) == type([]):
                 if positions == None:
                     raise ValueError("Unexpected output from scrm -- not 'positions' line found")
-                data.append(line.strip())
+                dataline = line.strip()
+                # make data go missing...
+                if len(data) in missing_leaves:
+                    dataline = '.' * len(dataline)
+                data.append(dataline)
                 if len(data[-1]) != len(positions):
                     raise ValueError("Unexpected number of mutations: got {}, expected {}".format(len(data[-1]),len(positions)))
         scrmfile.close()
@@ -137,7 +141,7 @@ class Population:
         positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
         positions.append( int(self.sequence_length) )
         
-        outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = ".." ) )
+        outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = "." * len(data) ) )
         for idx in range(len(positions) - 1):
             outfile.write( row.format( pos=positions[idx],
                                        distance = positions[idx+1] - positions[idx],
@@ -269,6 +273,25 @@ class Pop1Migr(Population):
                             additional_commands = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) ),
                             **kwargs)
 
+class Pop4(Population):
+
+    def __init__(self,
+                 change_points        = [.01, 0.06, 0.2,  1, 2],
+                 population_sizes     = [0.1, 1,    0.5,  1, 2],
+                 migration_commands   = [None, None, None, None, None],
+                 num_samples          = 4,
+                 **kwargs):
+
+        nsam = kwargs.get('num_samples', defaults['num_samples'])
+        
+        Population.__init__(self,
+                            change_points = change_points,
+                            population_sizes = population_sizes,
+                            migration_commands = migration_commands,
+                            num_samples = num_samples,
+                            **kwargs)
+
+        
 
 #
 # main code for standalone execution
