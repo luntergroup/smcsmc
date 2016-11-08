@@ -79,7 +79,7 @@ class Population:
 
         # make file name if required
         if self.filename == None:
-            filename = command.replace(' ','_') + ".scrmdata"
+            filename = command.replace(' ','_') + ".seg"
         else:
             filename = self.filename
 
@@ -88,8 +88,13 @@ class Population:
                                                      args = command,
                                                      seed = ' '.join(map(str,self.seed)))
 
-        # print Newick trees; use 10 digits precision; limit exact LD window to 300 kb
-        command += " -T -p 10 -l 300000 > " + filename + ".tmp"
+        # print Newick trees;
+        # print TMRCA and local tree length for each segment;
+        # use 10 digits precision;
+        # limit exact LD window to 300 kb
+        # output
+        scrmfilename = filename + ".scrm"
+        command += " -T -L -p 10 -l 300000 > " + scrmfilename
 
         # execute
         returnvalue = subprocess.check_call(command, shell=True)
@@ -97,8 +102,18 @@ class Population:
         if returnvalue > 0:
             raise ValueError("Problem executing " + command)
 
+        self.convert_scrm_to_seg( scrmfilename, filename )
+
+        self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
+        
+        # done; remove scrm output file
+        os.unlink( scrmfilename )
+
+
+    def convert_scrm_to_seg(self, infilename, outfilename ):
         # convert scrm output file to .seg file
-        scrmfile = open(filename + ".tmp", "r")
+
+        scrmfile = open(infilename, "r")
         data = None
         positions = None
         for line in scrmfile:
@@ -116,7 +131,7 @@ class Population:
         if data == None or len(data) != self.num_samples:
             raise ValueError("Unexpected data from scrm")
 
-        outfile = open(filename,'w')
+        outfile = open(outfilename,'w')
         row = "{pos}\t{distance}\tT\tF\t1\t{genotype}\n"
 
         positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
@@ -129,9 +144,104 @@ class Population:
                                        genotype = ''.join( [sequence[idx] for sequence in data] ) ) )
         outfile.close()
 
-        # done; remove scrm output file
-        os.unlink( filename + ".tmp" )
 
+    def convert_scrm_to_recomb(self, infilename, outfilename, segsize = 100, fourne = 40000 ):
+        # convert scrm output file to .recomb file
+
+        scrmfile = open(infilename, "r")
+        pos = 0
+        recombinations = []
+        treelengths = []
+        for line in scrmfile:
+            if line.startswith('['):
+                # newick line; parse segment length and add to recombination positions
+                segment = int(line[1:].split(']')[0])
+                recombinations.append( segment )
+            elif line.startswith('time'):
+                # tmrca + total tree length line
+                treelengths.append( float(line[:-1].split()[2]) * fourne )
+
+        if len(recombinations) != len(treelengths):
+            raise ValueError("Unexpected number of tree lengths; got {}, expected {}".format(len(treelengths),len(recombinations)))
+        scrmfile.close()
+
+        # now convert to segments.  this is done by a series of generators, that each generate a sequence of (pos, segment_size, value)
+        # or (pos, segment_size, value1, valud2) tuples.  The first two generators use the list just read in to do this, the others
+        # consume data from an upstream generator.  In this way it is relatively straightforward to do a fairly complex transformation
+        # of the data: convert into segments, discretize to 100 bp blocks, and merge blocks with the same value together (and add a header).
+        # it's possibly not the simplest way to do this, but it nicely separates the various steps of the transformation.  This style is
+        # also very memory-efficient -- no intermediate data stores are necessary; a trivial advantage in this case, but nice for very large
+        # data sets.
+        class Conversion:
+            def __init__(self, lengths, heights, segsize):
+                self.lengths = lengths
+                self.heights = heights
+                self.segsize = segsize
+            def segment_gen_opp(self):
+                pos = 0
+                for idx, length in enumerate(self.lengths):
+                    yield pos, length, self.heights[idx]
+                    pos += length
+            def segment_gen_rec(self):
+                pos = 0
+                for idx, length in enumerate(self.lengths):
+                    yield pos, length-1, 0
+                    pos += length-1
+                    yield pos, 1, 1 
+                    pos += 1
+            def segment_discretize(self, gen):
+                pos = 0
+                integral = 0
+                try:
+                    while True:
+                        newpos, length, height = gen.next()
+                        # generate complete segments until current overlaps endpoint of [newpos, newpos+length)
+                        while pos + self.segsize < newpos + length:
+                            # add height over appropriate subinterval
+                            if newpos < pos + self.segsize:
+                                integral += height * (pos + self.segsize - max(pos, newpos))
+                            # report current interval
+                            yield pos, self.segsize, integral / float(self.segsize)
+                            # next interval
+                            pos += self.segsize
+                            integral = 0
+                        # cannot generate further segments -- add last bit of current, and get new one
+                        integral += max(0, min( pos + self.segsize, newpos + length) - max( pos, newpos )) * height
+                except StopIteration:
+                    # no further segments -- yield last one, and end
+                    yield pos, self.segsize, integral / float(self.segsize)
+            def merge(self, gen1, gen2):
+                for pos, length, height in gen1:
+                    try:
+                        pos2, length2, height2 = gen2.next()
+                    except StopIteration:
+                        pos2, length2, height2 = pos1, length1, 0
+                    assert pos == pos2 and length == length2
+                    yield pos, length, height, height2
+            def collapse(self, gen):
+                pos, length, height1, height2 = "locus", "size", "opp_per_nt", "recomb"
+                for newpos, newlength, newheight1, newheight2 in gen:
+                    if newheight1 == height1 and newheight2 == height2:
+                        length += newlength
+                    else:
+                        yield pos, length, height1, height2
+                        pos, length, height1, height2 = newpos, newlength, newheight1, newheight2
+                yield pos, length, height1, height2
+
+        conversion = Conversion(recombinations, treelengths, segsize)
+
+        opportunity =   conversion.segment_discretize( conversion.segment_gen_opp() )
+        recombination = conversion.segment_discretize( conversion.segment_gen_rec() )
+        combined =      conversion.merge( opportunity, recombination )
+        collapsed =     conversion.collapse( combined )
+
+        # output list
+        outfile = open( outfilename, 'w' )
+        for pos, length, opp, rec in collapsed:
+            outfile.write( "{pos}\t{length}\t{opp}\t{rec}\n".format(pos=pos, length=length, opp=opp, rec=rec))
+        outfile.close()
+                             
+        
 
 #
 # some models

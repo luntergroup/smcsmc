@@ -513,7 +513,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
     double opp_density = weight * opportunity / (x_end - x_start);
 
     // ensure the count vectors are large enough; if not add space for 10Mb worth of samples
-    if (local_recomb_opportunity.size() < last_index) {
+    if (local_recomb_opportunity.size() <= last_index) {
         size_t new_size = local_recomb_opportunity.size() + (size_t)(1e7 / local_recording_interval_);
         local_recomb_opportunity.resize( new_size );
         for (int sample = 0; sample < sample_size_; ++sample) {
@@ -571,6 +571,7 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) 
     // recomb opportunity on-the-fly.  (Todo: change name of local_rec_opp.)
     size_t idx = 0;
     double current_opportunity = 0.0;
+    // invariant: current_opportunity = sum (0 <= i < idx) local_recomb_opportunity[i]
     while (idx < last_idx) {
         int num_indices = 0, first_idx = idx;
         double total_count = 0;
@@ -587,7 +588,8 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) 
         // summarize streak of null counts
         int streak = num_indices - 1;
         if (total_count == 0.0) {
-            // loop was ended because of changing opportunity, or end-of-data
+            // loop was ended because of changing opportunity, or end-of-data,
+            // rather than a nonzero count, so the zero-count streak includes idx-1
             ++streak;
         }
         if (streak > 0) {
@@ -603,7 +605,10 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) 
             }
             stream << "\n";
             // point to first index that needs processing
-            idx = first_idx + streak;
+            while (idx < first_idx + streak) {
+                current_opportunity += local_recomb_opportunity[ idx ];
+                ++idx;
+            }
         } else {
             // streak == 0 && total_count > 0 && idx == first_idx + 1
             // (i.e. we found a single nonzero-count line)
