@@ -555,13 +555,13 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
 };
 
 
-void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) {
+void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration ) {
 
     // find last nonzero entry
     size_t last_idx = min( local_recomb_opportunity.size(), (size_t)(locus_length / local_recording_interval_) );
 
     // write header
-    stream << "locus\tsize\topp_per_nt";
+    stream << "iter\tlocus\tsize\topp_per_nt";
     for (int sample = 0; sample < sample_size_; ++sample) {
         stream << "\t" << sample+1;
     }
@@ -593,7 +593,9 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) 
             ++streak;
         }
         if (streak > 0) {
-            stream << fixed << setprecision(0)
+            stream << iteration
+                   << "\t"
+                   << fixed << setprecision(0)
                    << first_idx * local_recording_interval_
                    << "\t"
                    << streak * local_recording_interval_
@@ -612,7 +614,9 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length ) 
         } else {
             // streak == 0 && total_count > 0 && idx == first_idx + 1
             // (i.e. we found a single nonzero-count line)
-            stream << fixed << setprecision(0)
+            stream << iteration
+                   << "\t" 
+                   << fixed << setprecision(0)
                    << first_idx * local_recording_interval_
                    << "\t"
                    << local_recording_interval_
