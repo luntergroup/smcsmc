@@ -561,11 +561,13 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
     size_t last_idx = min( local_recomb_opportunity.size(), (size_t)(locus_length / local_recording_interval_) );
 
     // write header
-    stream << "iter\tlocus\tsize\topp_per_nt";
-    for (int sample = 0; sample < sample_size_; ++sample) {
-        stream << "\t" << sample+1;
+    if (iteration == 0) {
+        stream << "iter\tlocus\tsize\topp_per_nt";
+        for (int sample = 0; sample < sample_size_; ++sample) {
+            stream << "\t" << sample+1;
+        }
+        stream << "\n";
     }
-    stream << "\n";
 
     // write data; convert local recomb opportunity CHANGES into absolute
     // recomb opportunity on-the-fly.  (Todo: change name of local_rec_opp.)
