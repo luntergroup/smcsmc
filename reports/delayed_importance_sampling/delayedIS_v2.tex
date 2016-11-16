@@ -1,0 +1,202 @@
+\documentclass{article}
+
+
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+
+
+
+\title{Delayed Sequential Importance Sampling}
+
+\begin{document}
+\maketitle
+
+\noindent Consider the standard sequential importance sampling with resampling (SIR) algorithm:\\
+
+\textbf{Algorithm 1} Sequential Importance Resampling
+\begin{itemize}
+\item Sample $X_t^{(i)} \sim q( \cdot | X_{t-1}^{(i)})$
+\item $w(X_{1:t}^{(i)}) \propto W(X_{1:t-1}^{(i)}) \cdot g(X_t^{(i)}, y_t) \cdot
+  f(X_t^{(i)} | X_{t-1}^{(i)}) / q(X_t^{(i)} | X_{t-1}^{(i)})$
+\item $W(X_{1:t}^{(i)}) = w(X_{1:t}^{(i)}) / \sum_{j=1}^N w(X_{1:t}^{(j)})$
+\item If $ESS < N/2$:\\
+resample proportional to $\{W(X_{1:t}^{(i)})\}_{i=1,...,N}$\\
+$\forall i$ set $W(X_{1:t}^{(i)}) = 1/N$
+\end{itemize}
+
+\vspace{1cm}
+
+\noindent Target distribution: $p(X_{1:t},y_{1:t}) = g(X_1, y_1) \cdot \prod_{j=2}^t [f(X_j|X_{j-1}) \cdot g(X_j, y_j)]$\\\\
+\noindent Proposal distribution: $q(X_{1:t})= q(X_1) \cdot \prod_{j=2}^t q(X_j|X_{j-1})$\\\\
+\vspace{1cm}
+
+\noindent We have chosen a broad proposal distribution $q( \cdot | X_{t-1}^{(i)} )$ which produces samples with 
+relatively low $ f(X_t^{(i)} | X_{t-1}^{(i)}) $, which may have high $ g(X_t^{(i)}, y_{t:t+\delta}) $.
+The SIR algorithm above would quickly kill off these particles with low $ f(X_t^{(i)} | X_{t-1}^{(i)}) $
+before we collected the support from $y_{t:t+\delta}$. This is primarily due to the low informativity of
+our data leading to a large $\delta$ meaning we are likely to meet the
+$ESS < N/2$ condition well before iteration $t+\delta$. Our solution to this problem
+is to delay the presumed penalty of $ f(X_t^{(i)} | X_{t-1}^{(i)}) $ until iteration
+$t+\delta$. We will still track the weights as before, now denoted $w_T(X_{1:t}^{(i)})$.
+Applying these weights to the particles gives a sample from the target distribution. 
+We will also track weights $w_D(X_{1:t}^{(i)})$ and all resampling decisions will be made
+according to these delayed weights. Applying these weights to the particles
+gives a sample from an intermediate resampling distribution.\\
+
+\vspace{1cm}
+\noindent Resampling distribution: $r(X_{1:t})= \prod_{j=1}^{t} [ g(X_j, y_j) ]
+                                   \cdot \prod_{j=2}^{t-\delta} [ f(X_j | X_{j-1} ) ]
+                                   \cdot \prod_{j=t-\delta+1}^{t} [ q(X_j | X_{j-1} ) ]$
+\vspace{1cm}
+
+\textbf{Algorithm 2} Delayed Sequential Importance Resampling
+\begin{itemize}
+\item Sample $X_t^{(i)} \sim q( \cdot | X_{t-1}^{(i)})$
+\item $w_T(X_{1:t}^{(i)}) \propto W_T(X_{1:t-1}^{(i)}) \cdot g(X_t^{(i)}, y_t) \cdot
+  f(X_t^{(i)} | X_{t-1}^{(i)}) / q(X_t^{(i)} | X_{t-1}^{(i)})$\\
+  $w_D(X_{1:t}^{(i)}) \propto W_D(X_{1:t-1}^{(i)}) \cdot g(X_t^{(i)}, y_t) \cdot
+  f(X_{t-\delta}^{(i)} | X_{t-1-\delta}^{(i)}) / q(X_{t-\delta}^{(i)} | X_{t-1-\delta}^{(i)})$
+\item $W_T(X_{1:t}^{(i)}) = w_T(X_{1:t}^{(i)}) / \sum_{j=1}^N w_T(X_{1:t}^{(j)})$\\
+  $W_D(X_{1:t}^{(i)}) = w_D(X_{1:t}^{(i)}) / \sum_{j=1}^N w_D(X_{1:t}^{(j)})$
+\item If $ESS_D < N/2$:\\
+  resample proportional to $\{W_D(X_{1:t}^{(i)})\}_{i=1,...,N}$\\
+  $\forall i$ set $W_T(X_{1:t}^{(i)}) = \frac{W_T(X_{1:t}^{(i)})/W_D(X_{1:t}^{(i)})} {\sum_{j=1}^N W_T(X_{1:t}^{(j)})/W_D(X_{1:t}^{(j)})}$\\
+  $\forall i$ set $W_D(X_{1:t}^{(i)}) = 1/N$\\
+\end{itemize}
+
+\vspace{1cm}
+
+\noindent Note that for any $t$
+$$W_T(X_{1:t}^{(i)}) = W_D(X_{1:t}^{(i)}) \cdot \prod_{k=t-\delta}^{t-1} \frac{ f(X_{k+1}^{(i)} | X_{k}^{(i)}) }{ q(X_{k+1}^{(i)} | X_{k}^{(i)}) }$$
+\noindent Define $A_t^{(i)} := \prod_{k=t-\delta}^{t-1} \frac{ f(X_{k+1}^{(i)} | X_{k}^{(i)}) }{ q(X_{k+1}^{(i)} | X_{k}^{(i)}) }$, then 
+the resampling step of \textbf{Algorithm 2} becomes
+\begin{itemize}
+\item If $ESS_D < N/2$:\\
+  resample proportional to $\{W_D(X_{1:t}^{(i)})\}_{i=1,...,N}$\\
+  $\forall i$ set $W_T(X_{1:t}^{(i)}) = \frac{ A_t^{(i)} } { \sum_{j=1}^N A_t^{(j)} }$\\
+  $\forall i$ set $W_D(X_{1:t}^{(i)}) = 1/N$\\
+\end{itemize}
+
+\noindent This method is similar to a lookahead strategy where the expected future states
+are approximated by one sample. The main distinction is that a lookahead
+strategy considers the data ahead of the position where the particles are being resampled.
+Our delayed importance sampling looks at the data before the position where the
+particles are being resampled. We delay the transition influence rather than looking
+ahead at the emission influence. If we were less concerned with the time required
+to extend particles at each resampling step and then discard these extensions,
+a lookahead strategy would lead to a better approximation. For a fixed computing time
+we should consider whether more particles or a more involved rasampling step (lookahead)
+would most benefit our approximation. \\
+
+\noindent Now consider the distributions described above in the more specific case of SMC$^2$. 
+$f(X_{1:k})$ and $q(X_{1:k})$ are
+probability distributions of sequences of trees where the tree index $1,...,k$ corresponds to a nucleotide. 
+Both $f()$ and $q()$ are memoryless, so they can be factored into spatial components:
+$f(X_{1:k})=f(X_1) \cdot f(X_2|X_1) \cdot f(X_3|X_2) \cdot \ldots \cdot f(X_k|X_{k-1})$.
+To simplify notation, consider spatial components where either no recombination has occured or
+a single recombination has occured in the final nucleotide position. We will now change our indices
+so that $X_t$ is the tree at the beginning of this spatial component and $X_{t+1}$ is the tree
+at the end of this spatial component. Now,
+
+\begin{equation}
+ f(X_{t+1}|X_{t}) = \begin{cases}
+  \exp(- L \cdot B \cdot \rho), & \text{ if } X_{t+1} = X_{t} \\
+  B \cdot \rho \cdot \exp(- L \cdot B \cdot \rho), & \text{ otherwise }
+ \end{cases}
+\end{equation}
+
+\noindent where $L$ is the number of nucleotides that the spatial component $X_t,X_{t+1}$ spans,
+B is the total branch length of the tree $X_t$, and $\rho$ is the recombination rate. \\
+
+\noindent We wish to over sample recombination events in specified time sections of the tree space.
+To this end, we define out proposal distribution $q()$ such that
+
+\begin{equation}
+ q(X_{t+1}|X_{t}) = \begin{cases}
+  \exp(- L \cdot B' \cdot \rho), & \text{ if } X_{t+1} = X_{t} \\
+  B' \cdot \rho \cdot \exp(- L \cdot B' \cdot \rho), & \text{ otherwise }
+ \end{cases}
+\end{equation}
+
+\noindent where $B'$ is a rescaled branch length of tree $X_t$. 
+
+\begin{align}
+B' = \sum_{i} r_i \cdot B_i 
+\end{align}
+
+\noindent In the above equation, $r_i$ is the specified focus ratio for time section $i$, and
+$B_i$ is the branch length of $X_t$ which lies in time section $i$. Time sections of interest will be
+given a focus ratio $r > 1$. \\
+
+\noindent Both $f()$ and $q()$ can be factored into a spatial and a temporal component.
+The spatial component describing the probability of a recombination occuring at the nucleotide 
+position of tree $X_{t+1}$. The temporal component describing the probability (given a recombination
+occurs at the specified nucleotide position) that the recombination occurs at a particular point in time.
+
+\begin{align}
+f_{\text{temporal}}(X_{t+1}|X_{t}) &= 1 \\
+f_{\text{spatial}}(X_{t+1}|X_{t}) &= (B \cdot \rho)^{\mathbbm{1}(X_{t+1} \neq X_{t})} \cdot \exp(- L \cdot B \cdot \rho) \\
+q_{\text{temporal}}(X_{t+1}|X_{t}) &= (\frac {B'} {r_i \cdot B})^{\mathbbm{1}(X_{t+1} \neq X_{t})} \text{for recombination in time section $i$} \\
+q_{\text{spatial}}(X_{t+1}|X_{t}) &= (B' \cdot \rho)^{\mathbbm{1}(X_{t+1} \neq X_{t})} \cdot \exp(- L \cdot B' \cdot \rho)
+\end{align}
+
+\noindent Now the importance weight $f()/q()$ can be written as
+\begin{align}
+\frac{f()}{q()} = \frac{ f_{\text{temporal}}() }{ q_{\text{temporal}}() } \cdot \frac{ f_{\text{spatial}}() }{ q_{\text{spatial}}() }
+\end{align}
+
+\noindent We scale the $r_i$'s so the average tree (under our best guess at the demographic model)
+has $B=B'$. This results in the number of sampled recombination events approximately equal to 
+the number of recombination events expected under the transition. For the average tree under $f(X)$,
+$\frac{ f_{\text{spatial}} }{ q_{\text{spatial}} } \approx 1$. Of course this does not hold for all trees.
+Still, due to this scaling, when a recombination event is sampled the temporal factor has a 
+stronger influence than the spatial factor on the importance weight. 
+The goal of delayed importance sampling is to delay the penalty of sampling a recombination event
+in one of the up-weighted sections in order to collect evidence in support of the new tree 
+before resampling discards the particle based solely on its likelihood under the transition distribution. 
+As such, it is sufficient to delay only the temporal factor. \\
+
+\noindent The amount of data needed to provide sufficient support for or against an event in the tree
+is dependent on the time of the event (see section on fixed-lag). As such, the delay imposed on a 
+recombination event is dependent on the epoch in which that event occurred. We use a delay of
+$\text{lag}_{\text{epoch} j}/2$. \\
+
+% wait, temp is stronger influence when there is a recombination, but when there isn't, spatial is the stronger factor...
+% hopefully scaling keeps this close to one
+% write a few examples...
+
+\noindent Now consider the algorithm for SMC$^2$ with delayed IS
+
+\begin{itemize}
+\item Extend particles to next variant
+ \begin{itemize}
+ \item Update $w_T$ appropriately
+ \item Update $w_D$ to include $f_{\text{spatial}}/q_{\text{spatial}}$ and $g$
+ \item Store $f_{\text{temporal}}/q_{\text{temporal}}$ in a priority queue
+ \item Update $A$ so it reflects everything in the priority queue
+ \end{itemize}
+\item Additioanl weight management
+ \begin{itemize}
+ \item Normalize $W_T$
+ \item Update $w_D$ to include elements of priority queue with application position less than current variant position and remove these from the queue
+ \item Normalize $W_D$
+ \end{itemize}
+\item Extract events and opportunities weigthed by $W_T$
+\item If $ESS_D<N/2$ resample
+ \begin{itemize}
+ \item Resample particles according to $W_D$
+ \item Set $ W_D(X_{1:t}^{(i)}) = 1/N $
+ \item Set $ W_T(X_{1:t}^{(i)}) = A_t^{(i)} / \sum_{j=1}^N A_t^{(j)} $
+ \end{itemize}
+\end{itemize}
+
+
+
+\end{document}
