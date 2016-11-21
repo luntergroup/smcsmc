@@ -8,7 +8,7 @@ from test_generic import *
 import populationmodels
 
 
-        
+
 #
 # TestTwoSample is a fragile test -- expect the test to fail
 # if the random seed is changed.  This is because the test is
@@ -57,7 +57,7 @@ class TestTwoSample(TestGeneric):
             assert( len(results[typ][int(epoch)]['estimates']) == int(it) )
             results[typ][int(epoch)]['estimates'].append( float(ne) )
         return results
-            
+
     # actual test
     def test_inference(self):
         self.em = 4
@@ -66,8 +66,10 @@ class TestTwoSample(TestGeneric):
         self.infer( case = 1 )
 
         # Ne target ranges for the varous epochs
-        target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 11000]
-        target_max = [1e+10, 2000, 2000, 4000, 5000, 5500, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11000, 11500, 13000]
+        #target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 11000]
+        #target_max = [1e+10, 2000, 2000, 4000, 5000, 5500, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11000, 11500, 13000]
+        target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 9000]
+        target_max = [1e+10, 2000, 2000, 4000, 5000, 6000, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11500, 11500, 13000]
         results = self.readResults()
 
         out_of_range = 0
