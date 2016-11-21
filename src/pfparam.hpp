@@ -86,6 +86,106 @@ struct WrongType : public InvalidInput{
 };
 
 
+class RecombBiasSegment {
+public:
+    RecombBiasSegment() {};
+    void set_data(int locus, int size, double rate, vector<double>& leaf_rel_rates ) {
+        _locus = locus;
+        _size = size;
+        _rate = rate;
+        _leaf_rel_rates = leaf_rel_rates;
+    }
+    int get_locus() const                  { return _locus; }
+    int get_size() const                   { return _size; }
+    int get_end() const                    { return _locus + _size; }
+    int get_num_leaves() const             { return _leaf_rel_rates.size(); }
+    double get_rate() const                { return _rate; }
+    double get_leaf_rate( int leaf ) const { return _leaf_rel_rates[leaf]; }
+    void adjust_start_pos( int start_pos ) {
+        int end = get_end() - start_pos;
+        _locus = max(0, _locus - start_pos);
+        _size = end - _locus;
+    }
+    friend std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs);
+    friend std::ostream& operator<<(std::ostream& str, const RecombBiasSegment& rbs) {
+        str << rbs._locus << "\t" << rbs._size << "\t" << rbs._rate;
+        for (double rrate : rbs._leaf_rel_rates) str << "\t" << rrate;
+        return str;
+    }
+protected:
+    int _locus, _size;
+    double _rate;
+    vector<double> _leaf_rel_rates;
+};
+
+
+inline std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs) {
+    std::string line, elt;
+    try {
+        if (std::getline(str,line)) {
+            std::stringstream iss(line);
+            if ( !std::getline(iss, elt, '\t' ) ) throw InvalidInput("Parse error on 1st element");
+            rbs._locus = std::stoi( elt );
+            if ( !std::getline(iss, elt, '\t' ) ) throw InvalidInput("Parse error on 2nd element");
+            rbs._size = std::stoi( elt );
+            if ( !std::getline(iss, elt, '\t' ) ) throw InvalidInput("Parse error on 3rd element");
+            rbs._rate = std::stod( elt );
+            rbs._leaf_rel_rates.clear();
+            while ( std::getline(iss, elt, '\t' ) ) { rbs._leaf_rel_rates.push_back( std::stod( elt ) ); }
+        }
+    } catch (const InvalidInput& e) {
+        throw e;
+    } catch (...) {
+        throw InvalidInput("Problem reading or parsing recombination guide file");
+    }
+    return str;
+}
+
+
+class RecombinationBias {
+public:
+    RecombinationBias() : _true_rate(-1), _num_leaves(-1) {};
+    void set_rate( double rate ) {
+        assert( _bias_segments.size() == 0 );
+        _true_rate = rate;
+    }
+    void set_num_leaves( int num_leaves ) {
+        assert( _bias_segments.size() == 0 );
+        _num_leaves = num_leaves;
+    }
+    void parse_recomb_bias_file( string filename, int start_pos ) {
+        ifstream in_file( filename.c_str(), std::ifstream::in );
+        if (!in_file.is_open()) throw InvalidInput("Recombination guide file could not be opened.");
+        string header;
+        std::getline(in_file, header);
+        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line in recombination guide file");
+        RecombBiasSegment tmp;
+        while (in_file >> tmp) {
+            assert( segment.get_num_leaves() == _num_leaves );
+            assert( segment.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
+            if (tmp.get_end() > start_pos) {
+                tmp.adjust_start_pos( start_pos );
+                _bias_segments.push_back( tmp );
+            }
+        }
+    }
+    const RecombBiasSegment& get_recomb_bias_segment( int idx ) const {
+        return _bias_segments[idx];
+    }
+    const void set_model_rates( Model& model ) {
+        for (const RecombBiasSegment& rbs : _bias_segments) {
+            if (rbs.get_locus() < model.loci_length()) {
+                model.setRecombinationRate( rbs.get_rate(), false, false, rbs.get_locus() );
+            }
+        }
+    }
+private:
+    double _true_rate;
+    int _num_leaves;
+    vector<RecombBiasSegment> _bias_segments;
+};
+
+
 /*!
  * \brief smcsmc parameters
  */
@@ -151,6 +251,7 @@ class PfParam{
     Model model;
     MersenneTwister *rg ;
     vector<int> record_event_in_epoch;
+    RecombinationBias recomb_bias;
 
     static const int RECORD_RECOMB_EVENT = 1;
     static const int RECORD_COALMIGR_EVENT = 2;
@@ -254,6 +355,7 @@ class PfParam{
 
     // Segdata related
     string input_SegmentDataFileName;
+    string input_RecombinationBiasFileName;
 
     // ------------------------------------------------------------------
     // Output Related

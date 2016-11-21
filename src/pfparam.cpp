@@ -107,6 +107,9 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-seg"  ){
             this->nextArg();
             this->input_SegmentDataFileName = *argv_i;
+        } else if ( *argv_i == "-guide" ) {
+            this->nextArg();
+            this->input_RecombinationBiasFileName = *argv_i;
         } else if ( *argv_i == "-startpos" ) {
             this->start_position = readNextInput<double>();
             if (start_position < 1) {
@@ -217,6 +220,7 @@ void PfParam::init(){
     this->setHelp(false);
     this->setVersion(false);
     this->input_SegmentDataFileName = "";
+    this->input_RecombinationBiasFileName = "";
     this->pattern = "";
     this->record_event_in_epoch.clear();
 }
@@ -328,6 +332,15 @@ void PfParam::finalize(){
                                  this->default_num_mut,
                                  this->start_position,
                                  max_seg_len );
+
+    /* set true rate, and number of samples, in RecombinationBias */
+    recomb_bias.set_rate( model.recombination_rate() );
+    recomb_bias.set_num_leaves( default_nsam );
+    if (input_RecombinationBiasFileName.size() > 0) {
+        recomb_bias.parse_recomb_bias_file( input_RecombinationBiasFileName,
+                                            start_position );
+        recomb_bias.set_model_rates( model );
+    }
 }
 
 
@@ -357,8 +370,10 @@ void PfParam::writeLog(ostream * writeTo){
         //(*writeTo) << "Resample saved in file: " << Resample_NAME << "\n";
     //}
 
-    (*writeTo) << "Segment Data file: " ;
-    (*writeTo) << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
+    (*writeTo) << "Segment Data file: " 
+               << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
+    (*writeTo) << "Recombination bias file: "
+               << (input_RecombinationBiasFileName.size() == 0 ? "None" : input_RecombinationBiasFileName.c_str() ) << "\n";
     (*writeTo) << setw(15) <<     " EM steps =" << setw(10) << EM_steps                    << "\n";
     if (lag > 0){
         (*writeTo) << setw(15) << "Constant lag =" << setw(10) << lag                      << "\n";
@@ -491,6 +506,7 @@ void PfParam::helpOption(){
     cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
     cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
     cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
+    cout << setw(10)<<"-guide"  << setw(5) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;    
     cout << setw(10)<<"-startpos"<<setw(5) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
     cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;

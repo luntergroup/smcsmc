@@ -14,6 +14,8 @@
 
 typedef uint64_t Descendants_t;
 
+static const Descendants_t NO_DESCENDANTS = 0;
+
 
 
 inline Descendants_t get_descendants( const Node* node ) {

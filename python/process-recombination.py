@@ -46,21 +46,24 @@ class LocalRecombination:
             self.smoothed_data.append( self._smooth_leaf( leaf, alpha ) )
 
     def write_data(self, outfile):
-        headerline = "locus\tsize" + ''.join(["\t{}".format(leaf+1) for leaf in range(self.leaves)]) + "\n"
+        headerline = "locus\tsize\trecomb_rate" + ''.join(["\t{}".format(leaf+1) for leaf in range(self.leaves)]) + "\n"
         outfile.write(headerline)
         start, curvalues = None, None
         for idx in range(len(self.smoothed_data[0])):
             values = [ self.smoothed_data[leaf][idx] for leaf in range(self.leaves) ]
             if values != curvalues:
                 if start != None:
-                    dataline = "{}\t{}".format(start * self.step,
-                                               (idx - start) * self.step)
-                    dataline += ''.join(["\t{:12.6e}".format(v) for v in curvalues]) + "\n"
-                    outfile.write(dataline)
+                    self._write_line(outfile, curvalues, start, idx)
                 start, curvalues = idx, values
-        dataline = "{}\t{}".format(start * self.step,
-                            (idx + 1 - start) * self.step)
-        dataline += ''.join(["\t{:12.6e}".format(v) for v in curvalues]) + "\n"
+        self._write_line(outfile, curvalues, start, idx+1)
+            
+    def _write_line(self, outfile, curvalues, start, idx):
+        rate = sum(curvalues)
+        curvalues = [ v / rate for v in curvalues ]
+        dataline = "{}\t{}\t{:12.6e}".format(start * self.step,
+                                             (idx - start) * self.step,
+                                             rate)
+        dataline += ''.join(["\t{:5.3f}".format(v) for v in curvalues]) + "\n"
         outfile.write(dataline)
             
     def _encode(self, value):

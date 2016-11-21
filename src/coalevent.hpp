@@ -72,44 +72,54 @@ extern double recomb_opp; //DEBUG
 class EvolutionaryEvent {
 public:
     // Constructor for a recombination opportunity
-    explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double start_base, double end_base, int weight, EvolutionaryEvent* parent = NULL ) :
-                       start_height(start_height),
-                       end_height(end_height),
-                       start_base_(start_base),
-                       end_base_(end_base),
-                       a( 0 ),
-                       parent_(parent),
-                       weight(weight) {
-                          if (parent_) parent_->increase_refcount();
-                          assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) );
-                          this->init();
-                       };
+    explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height,
+                                size_t end_height_epoch, double start_base, double end_base, int weight,
+                                EvolutionaryEvent* parent = NULL ) :
+        start_height(start_height),
+        end_height(end_height),
+        start_base_(start_base),
+        end_base_(end_base),
+        a( 0 ),
+        parent_(parent),
+        weight(weight),
+        descendants( NO_DESCENDANTS )
+    {
+        if (parent_) parent_->increase_refcount();
+        assert((start_height <= end_height) && (start_base <= end_base) && (start_base >= 0) );
+        this->init();
+    };
     // Constructor for migration/coalescence opportunity
     explicit EvolutionaryEvent( double start_height, size_t start_height_epoch, double end_height, size_t end_height_epoch, double end_base, size_t population_index, int weight, EvolutionaryEvent* parent = NULL ) :
-                       start_height(start_height),
-                       end_height(end_height),
-                       start_base_(-1),
-                       end_base_(end_base),
-                       a( population_index ),
-                       parent_(parent),
-                       weight(weight) {
-                          if (parent_) parent_->increase_refcount();
-                          assert(start_height <= end_height);
-                          this->init();
-                       };
+        start_height(start_height),
+        end_height(end_height),
+        start_base_(-1),
+        end_base_(end_base),
+        a( population_index ),
+        parent_(parent),
+        weight(weight),
+        descendants( NO_DESCENDANTS )
+    {
+        if (parent_) parent_->increase_refcount();
+        assert(start_height <= end_height);
+        this->init();
+    };
     // Copy constructor
     EvolutionaryEvent( const EvolutionaryEvent& obj ) :
-                       start_height(obj.start_height),
-                       end_height(obj.end_height),
-                       start_base_(obj.start_base_),
-                       end_base_(obj.end_base_),
-                       a( obj.a.coal_migr_population ),
-                       parent_(obj.parent_),
-                       weight(obj.weight),
-                       event_data_(obj.event_data_) {
-                           if(parent_) parent_->increase_refcount();
-                           this->set_ref_counter( (short) 1 );
-                       }
+        start_height(obj.start_height),
+        end_height(obj.end_height),
+        start_base_(obj.start_base_),
+        end_base_(obj.end_base_),
+        a( obj.a.coal_migr_population ),
+        parent_(obj.parent_),
+        weight(obj.weight),
+        event_data_(obj.event_data_),
+        descendants( obj.descendants )
+    {
+        if(parent_) parent_->increase_refcount();
+        this->init();
+        event_data_ = obj.event_data_;
+        children_updated_ = obj.children_updated_;
+    }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
         std::cout << "Destructor is called -- problem!" << std::endl;
