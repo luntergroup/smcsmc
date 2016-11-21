@@ -16,7 +16,7 @@ class TestGeneric(unittest.TestCase):
         self.tmax = 4
         self.seed = (3647837471,)
         self.success = False
-        
+
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
         if self.success and 'caseprefix' in self.__dict__:
@@ -31,7 +31,7 @@ class TestGeneric(unittest.TestCase):
         if not self.success:
             # tell derived class that test failed, so don't delete intermediate files
             self.__class__.success = False
-            
+
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
@@ -85,4 +85,4 @@ class TestGeneric(unittest.TestCase):
             assert( len(results[typ][int(epoch)]['estimates']) == int(it) )
             results[typ][int(epoch)]['estimates'].append( float(ne) )
         return results
-            
+
