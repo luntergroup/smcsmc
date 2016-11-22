@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
 
 bool is_height_in_tree( const Forest& forest, double height ) {
     for (auto it = forest.getNodes()->iterator(); it.good(); ++it) {
-        if ( abs( it.height() - height ) <= .000001 && it.local() ){
+        if ( (abs( it.height() - height ) < 1e-6) && ((*it)->countChildren( true ) > 0 ) ){
             return true;
         }
     }
