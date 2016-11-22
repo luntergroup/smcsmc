@@ -28,9 +28,9 @@ function test_smcsmc_specific {
   for i in `seq ${begin} ${end}`; do
     echo -n "."
     scrmCMD=" $@ 1 ${recomb_seqlen} -T -l 0 -seed ${i}"
-    ../scrm ${scrmCMD} | grep ";" | sed -e "s/\[.*\]//g" > scrm_tmp_tree
+    ./scrm ${scrmCMD} | grep ";" | sed -e "s/\[.*\]//g" > scrm_tmp_tree
     smcsmcCMD=" -nsam $@ -Np 1 ${recomb_seqlen} -seed ${i}"
-    ../smcsmcSCRM ${smcsmcCMD} | grep ");" > smcsmc_tmp_tree
+    ./smcsmcSCRM ${smcsmcCMD} | grep ");" > smcsmc_tmp_tree
     diff <(head -1 scrm_tmp_tree) <(head -1 smcsmc_tmp_tree)
     if [ $? -ne 0 ]; then
       echo ""
@@ -49,8 +49,8 @@ function test_smcsmc_specific {
       echo ""
       echo "Failed at random seed: " ${i}
       echo "Testing for Last tree in scrm and smcsmc."
-      echo "../scrm ${scrmCMD}"
-      echo "../smcsmcSCRM ${smcsmcCMD}"
+      echo "./scrm ${scrmCMD}"
+      echo "./smcsmcSCRM ${smcsmcCMD}"
       exit 1
     fi
   done

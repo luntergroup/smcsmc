@@ -5,7 +5,7 @@
 
 testObj=smcsmc
 testObjDbg=smcsmc_dbg
-source test_binaries.src
+source tests/test_binaries.src
 
 begin=1
 end=2
