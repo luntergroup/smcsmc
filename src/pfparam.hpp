@@ -155,16 +155,19 @@ public:
     }
     void parse_recomb_bias_file( string filename, int start_pos ) {
         ifstream in_file( filename.c_str(), std::ifstream::in );
-        if (!in_file.is_open()) throw InvalidInput("Recombination guide file could not be opened.");
+        if (!in_file.is_open()) {
+            cout << "Problem opening file " << filename << endl;
+            throw InvalidInput("Recombination guide file could not be opened.");
+        }
         string header;
         std::getline(in_file, header);
         if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
-            assert( segment.get_num_leaves() == _num_leaves );
-            assert( segment.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
+            assert( tmp.get_num_leaves() == _num_leaves );
             if (tmp.get_end() > start_pos) {
                 tmp.adjust_start_pos( start_pos );
+                assert( tmp.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
                 _bias_segments.push_back( tmp );
             }
         }

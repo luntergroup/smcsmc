@@ -29,20 +29,6 @@
 #include "model_summary.hpp"
 #include <set>
 
-#ifdef GPERF
-#include <gperftools/heap-profiler.h>
-#endif
-
-/*!
- * Global variables for debugging the number of times that ForestState was constructed and removed.
- */
-int new_forest_counter    = 0; // DEBUG
-int delete_forest_counter = 0; // DEBUG
-int recombination_counter = 0; // DEBUG
-int recombination_event_called = 0;
-double recomb_opp = 0; // DEBUG
-int node_created = 0;
-int node_deleted = 0;
 
 /*!
  * Global variable for the memory arena
@@ -58,11 +44,6 @@ void pfARG_core(PfParam &pfARG_para,
 int main(int argc, char *argv[]){
 
     bool print_update_count = false; // DEBUG
-
-    #ifdef GPERF
-    //std::cout << "Starting heap profiling..." << std::endl;
-    //HeapProfilerStart("smcsmc_gprofile");
-    #endif
 
     try {
         /*! Extract pfARG parameters */
@@ -104,20 +85,11 @@ int main(int argc, char *argv[]){
         /*! Clean up */
         delete countNe;
         delete arena;
-        //cout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-        #ifdef GPERF
-        //HeapProfilerStop();
-        //std::cout << "Stopped heap profiling." << std::endl;
-        #endif
         return exit_success;
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cout << "Error: " << e.what() << std::endl;
-        #ifdef GPERF
-        //HeapProfilerStop();
-        //std::cout << "Stopped heap profiling." << std::endl;
-        #endif
         return EXIT_FAILURE;
     }
 }
@@ -137,8 +109,7 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
     // we want to change model attributes inside this function only
     model.biased_sampling = false;
 
-    //// Simulating trees in order to calibrate lag and bias ratios
-    // lag calibration
+    // Simulating trees in order to calibrate lag and bias ratios
     const int num_epochs = model.change_times().size();
     vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
     int num_epochs_not_done = num_epochs;
@@ -206,32 +177,20 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
 }
 
 
-void pfARG_core(PfParam &pfARG_para,
-                CountModel *countNe,
-                bool print_update_count ) {
+void calibrate_bias_ratios(Model* model, double top_t_value) {
 
-    recombination_counter = 0; // DEBUG
-    recomb_opp = 0;// DEBUG
-
-    int who = RUSAGE_SELF;     // PROFILING
-    struct rusage usage;       // PROFILING
-    struct rusage *p = &usage; // PROFILING
-
-    Model *model         = &pfARG_para.model;
-    MersenneTwister *rg  = pfARG_para.rg;
-    size_t Nparticles    = pfARG_para.N ;
-    Segment *Segfile     = pfARG_para.Segfile;
-    double mutation_rate = model->mutation_rate();
+    if (!model->biased_sampling) return;
+    
     clog << "model has bias heights " << model->bias_heights() << endl;
     clog << "model has bias strengths " << model->bias_strengths() << endl;
 
-    // bias ratio calibration
     int Num_bias_ratio_simulation_trees = 10000;
-    ModelSummary model_summary = ModelSummary(model, pfARG_para.top_t());
+    ModelSummary model_summary = ModelSummary(model, top_t_value);
     for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
       model_summary.addTree();
     }
     model_summary.finalize();
+    
     clog << "Information from pre-sequence-analysis tree simulation:" << endl;
     clog << "    model_summary.times_: " << model_summary.times_ << endl;
     clog << "    avg B: " << model_summary.avg_B() << endl;
@@ -242,22 +201,30 @@ void pfARG_core(PfParam &pfARG_para,
     clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
     clog << "    tree count: " << model_summary.tree_count_ << endl;
 
-    if(model->biased_sampling) {
-        model->clearBiasRatios();
-        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
-            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
-        }
-        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
-        assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
+    model->clearBiasRatios();
+    for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
+        model->addToBiasRatios( model_summary.getBiasRatio(idx) );
     }
-    //// Done with calibration
+    clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
+    assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
+}
 
 
+void pfARG_core(PfParam &pfARG_para,
+                CountModel *countNe,
+                bool print_update_count ) {
 
-    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
+    Model *model         = &pfARG_para.model;
+    MersenneTwister *rg  = pfARG_para.rg;
+    size_t Nparticles    = pfARG_para.N ;
+    Segment *Segfile     = pfARG_para.Segfile;
+    double mutation_rate = model->mutation_rate();
+
+    calibrate_bias_ratios( model, pfARG_para.top_t() );
+
+    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;    
     Segfile->read_new_line();
     /*! Initial particles */
-    //double initial_position = 0;
     ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch,
                                      Nparticles,
                                      Segfile->segment_start(),
@@ -267,12 +234,11 @@ void pfARG_core(PfParam &pfARG_para,
     dout<<"######### finished initial particle building"<<endl;
 
     valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
-    //#ifdef _SCRM
-    //current_states.print_particle_newick();
-    //#endif
+
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
+
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
     model->lags_to_application_delays( median_survival );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
@@ -288,55 +254,8 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through seg data */
     bool force_update = false;
     do{
-        getrusage(who,p);            // PROFILING
-        process(p, Segfile->segment_start()); // PROFILING
-
-        /*! A particle path, where x-----o is a ForestState.
-         *  The particle weight is the weight at the ForestState 6
-         *  Even though the particle has extended to state 6,
-         *  which means the Weight has included upto Segfile->site()
-         *
-         * The ForestState we are intested in is upon until backbase,
-         * which is state 2 in this case.
-         *
-         * Update count step should include all the coalescent events of
-         * State 0, 1, and 2
-         *
-         * backbase is the sequence position that the current mutation "Segfile->site()" go back lag
-         *
-         * previous_backbase is the sequence position that the previous mutation "Segfile->site()" go back lag
-         *
-         *  \verbatim
-
-           remove all the state prior to the minimum of
-            current_printing_base and
-                previous_backbase
-                .                      backbase                     Segfile->site()
-                .                      .                            .
-                .                      .     3                      .
-                .                      .     x---o              6   .
-                .                  2   .     |   |              x-------o
-                .                  x---------o   |              |   .
-                .                  |   .         |              |   .
-             0  .                  |   .         x---o          |   .
-             x---------o           |   .         4   |          |   .
-                .      |           |   .             x----------o   .
-                .      |           |   .             5              .
-                .      x-----------o   .                            .
-                .      1               .-------------lag------------.
-                .                      .                            .
-                Count::update_e_count( .                            ParticleContainer::update_state_to_data(
-           x_start = previous_backbase .                              mutation data comes in here
-           x_end = backbase            .
-                                       .
-                                       ParticleContainer::appendingStuffToFile(
-                                           x_end = backbase,
-          \endverbatim
-         */
-
-        dout <<"current base is at "<<Segfile->segment_start()<<" and it is ";
-        dout << (Segfile->end_data()? "YES":"NOT");
-        dout << " the end of data "<<endl;
+        dout <<"current base is at "<<Segfile->segment_start()<<" and it is "
+            << (Segfile->end_data()? "":"NOT") << " the end of data "<<endl;
 
         valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
 
@@ -352,14 +271,18 @@ void pfARG_core(PfParam &pfARG_para,
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
 
         /*! Reset population sizes in the model */
-        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model, pfARG_para.useCap, pfARG_para.Ne_cap, pfARG_para.online_bool, force_update = false, false );
+        countNe->reset_model_parameters( min(Segfile->segment_end(), (double)model->loci_length()), model,
+                                         pfARG_para.useCap, pfARG_para.Ne_cap, pfARG_para.online_bool,
+                                         force_update = false, false );
 
         if ( pfARG_para.ESS() == 1 ) {
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
         }
         /*! ESS resampling. Filtering step*/
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para, Nparticles);
+        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),
+                                                                        (double)model->loci_length()),
+                                      pfARG_para, Nparticles);
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
@@ -376,26 +299,21 @@ void pfARG_core(PfParam &pfARG_para,
     clog << "Got to end of sequence" << endl;
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
-    // EXDEND THE ARG TO THE END OF THE SEQUENCE AS MISSING DATA ...
-    //bool with_data_to_the_end = true;
-    //current_states.extend_ARGs( sequence_end, model->mutation_rate(),  with_data_to_the_end); // DEBUG
-    // In case the rest of the sequence is too long, this needs some "ghost" snp ... invariants
-    // should include coalescent events as well ...
 
-    //current_states.cumulate_recomb_opportunity_at_seq_end( sequence_end ); // This is to make up the recomb opportunities till the end of the sequence.
     dout << endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
 
     // This is mandatory, as the previous resampling step will set particle probabilities to ones.
     current_states.normalize_probability();
 
-    countNe->extract_and_update_count( current_states , sequence_end, true ); // Segfile->end_data()
+    countNe->extract_and_update_count( current_states , sequence_end, true );
     clog << " Inference step completed." << endl;
 
     ofstream recombFile(pfARG_para.get_recombination_map_filename(), ios::out | ios::app | ios::binary);
     countNe->dump_local_recomb_logs( recombFile, model->loci_length(), pfARG_para.EMcounter() );
     recombFile.close();
     
-    countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap, true, force_update = true, true); // This is mandatory for EM steps
+    countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap,
+                                    true, force_update = true, true); // This is mandatory for EM steps
 
     countNe->log_counts( pfARG_para );
 
@@ -403,17 +321,7 @@ void pfARG_core(PfParam &pfARG_para,
     current_states.appendingStuffToFile( sequence_end, pfARG_para);
 
     current_states.print_ln_normalization_factor();
-
-    //#ifdef _SCRM
-        //current_states.print_particle_newick();
-    //#endif
-    current_states.clear(); // This line is sufficient to clear the memory.
+    current_states.clear();
     Segfile->reset_data_to_first_entry();
 
-    dout << "Actual recombination "<<recombination_counter<<endl;// DEBUG
-    dout << "Actual recombination recorder called "<<recombination_event_called<<endl;// DEBUG
-    dout << "Actual node_created "<<node_created<<endl;// DEBUG
-    dout << "Actual node_deleted "<<node_deleted<<endl;// DEBUG
-    dout << "Actual recomb op is "<<recomb_opp <<endl;
-
-} // End of void pfARG_core( ... )
+}

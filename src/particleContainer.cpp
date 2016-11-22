@@ -294,20 +294,14 @@ ParticleContainer::~ParticleContainer() {}
  * Proper particleContatiner destructor, remove pointers of the ForestState
  */
 void ParticleContainer::clear(){
-    // When this is called, this should be the difference between number of forestStates ever built minus ones have already been removed. this should be equal to the size for particles.
-     clog<<"Forest state was created " << new_forest_counter << " times" << endl;  // DEBUG
-     clog<<"Forest state destructor was called " << delete_forest_counter << " times" << endl; // DEBUG
-
-    dout << "ParticleContainer clear() is called" << endl;
     for (size_t i = 0; i < this->particles.size(); i++){
         if (this->particles[i]!=NULL){
             delete this->particles[i];
             this->particles[i]=NULL;
-            }
         }
-    this->particles.clear();
-    dout << "Particles are deleted" << endl;
     }
+    this->particles.clear();
+}
 
 
 /*!
