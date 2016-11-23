@@ -514,7 +514,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
 
     // ensure the count vectors are large enough; if not add space for 10Mb worth of samples
     if (local_recomb_opportunity.size() <= last_index) {
-        size_t new_size = local_recomb_opportunity.size() + (size_t)(1e7 / local_recording_interval_);
+        size_t new_size = last_index + 1 + (size_t)(1e7 / local_recording_interval_);
         local_recomb_opportunity.resize( new_size );
         for (int sample = 0; sample < sample_size_; ++sample) {
             local_recomb_counts[ sample ].resize( new_size );
