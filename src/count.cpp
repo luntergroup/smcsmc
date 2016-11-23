@@ -548,7 +548,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
         data = descendants;
         while (get_next_descendant( data, descendant )) {
             assert (descendant > 0);
-            assert (descendant < sample_size_);
+            assert (descendant <= sample_size_);
             local_recomb_counts[ descendant-1 ][ index ] += weight / num_descendants;
         }
     }
