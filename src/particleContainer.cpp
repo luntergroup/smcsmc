@@ -385,10 +385,10 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
     // Assign presence/absence status of data to each of the leaf nodes of all the particles
     update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
 
-    //Update weight for seeing mutation at the position
     //Extend ARGs and update weight for not seeing mutations along the sequences
     this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) );
 
+    //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;
     if (Segfile->segment_state() == SEGMENT_INVARIANT) {
         // ensure that if this segment is a partial segment, and does not end in a mutation

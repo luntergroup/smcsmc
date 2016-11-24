@@ -478,13 +478,16 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
         if ( updated_to < extend_to ) {
-            // a recombination has occurred
+            // a recombination has occurred (or the recombination rate has changed)
             double rec_height = this->sampleNextGenealogy( recordEvents );
             this->sampleRecSeqPosition( recordEvents );
 
             if (recordEvents) {
                 this->record_Recombevent_b4_extension();
-                this->record_Recombevent_atNewGenealogy(rec_height);
+                if (rec_height > 0.0) {
+                    // actual recombination -- record it
+                    this->record_Recombevent_atNewGenealogy(rec_height);
+                }
             }
 
         #ifdef _SCRM

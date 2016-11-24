@@ -177,8 +177,11 @@ public:
     }
     const void set_model_rates( Model& model ) {
         for (const RecombBiasSegment& rbs : _bias_segments) {
+            double mutation_rate = model.mutation_rate();
             if (rbs.get_locus() < model.loci_length()) {
+                // need to set the mutation rate as well, otherwise it get default value -1
                 model.setRecombinationRate( rbs.get_rate(), false, false, rbs.get_locus() );
+                model.setMutationRate( mutation_rate, false, false, rbs.get_locus() );
             }
         }
     }
