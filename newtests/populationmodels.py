@@ -105,7 +105,7 @@ class Population:
         self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves )
 
         self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
-        
+
         # done; remove scrm output file
         os.unlink( scrmfilename )
 
@@ -140,7 +140,7 @@ class Population:
 
         positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
         positions.append( int(self.sequence_length) )
-        
+
         outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = "." * len(data) ) )
         for idx in range(len(positions) - 1):
             outfile.write( row.format( pos=positions[idx],
@@ -191,7 +191,7 @@ class Population:
                 for idx, length in enumerate(self.lengths):
                     yield pos, length-1, 0
                     pos += length-1
-                    yield pos, 1, 1 
+                    yield pos, 1, 1
                     pos += 1
             def segment_discretize(self, gen):
                 pos = 0
@@ -244,8 +244,8 @@ class Population:
         for pos, length, opp, rec in collapsed:
             outfile.write( "{pos}\t{length}\t{opp}\t{rec}\n".format(pos=pos, length=length, opp=opp, rec=rec))
         outfile.close()
-                             
-        
+
+
 
 #
 # some models
@@ -265,7 +265,7 @@ class Pop1Migr(Population):
                  **kwargs):
 
         nsam = kwargs.get('num_samples', defaults['num_samples'])
-        
+
         Population.__init__(self,
                             change_points = change_points,
                             population_sizes = population_sizes,
@@ -283,7 +283,7 @@ class Pop4(Population):
                  **kwargs):
 
         nsam = kwargs.get('num_samples', defaults['num_samples'])
-        
+
         Population.__init__(self,
                             change_points = change_points,
                             population_sizes = population_sizes,
@@ -291,11 +291,72 @@ class Pop4(Population):
                             num_samples = num_samples,
                             **kwargs)
 
-        
+
+class PopSingleConst(Population):
+
+    def __init__(self,
+                 change_points        = [.5, 1.0],
+                 population_sizes     = [1, 1],
+                 migration_commands   = [None, None],
+                 num_samples          = 2,
+                 **kwargs):
+
+        nsam = kwargs.get('num_samples', defaults['num_samples'])
+
+        Population.__init__(self,
+                            change_points = change_points,
+                            population_sizes = population_sizes,
+                            migration_commands = migration_commands,
+                            num_samples = num_samples,
+                            **kwargs)
+        self.target_min = [0,     9500, 9500]
+        self.target_max = [1e+10, 11500, 11500]
+
+
+class PopSingleExpand(Population):
+
+    def __init__(self,
+                 change_points        = [.5, 1.0],
+                 population_sizes     = [5, 1],
+                 migration_commands   = [None, None],
+                 num_samples          = 2,
+                 **kwargs):
+
+        nsam = kwargs.get('num_samples', defaults['num_samples'])
+
+        Population.__init__(self,
+                            change_points = change_points,
+                            population_sizes = population_sizes,
+                            migration_commands = migration_commands,
+                            num_samples = num_samples,
+                            **kwargs)
+        self.target_min = [0,     49000, 9500]
+        self.target_max = [1e+10, 51000, 11500]
+
+
+class PopSingleShrink(Population):
+
+    def __init__(self,
+                 change_points        = [.5, 1.0],
+                 population_sizes     = [ 5, 10],
+                 migration_commands   = [None, None],
+                 num_samples          = 2,
+                 **kwargs):
+
+        nsam = kwargs.get('num_samples', defaults['num_samples'])
+
+        Population.__init__(self,
+                            change_points = change_points,
+                            population_sizes = population_sizes,
+                            migration_commands = migration_commands,
+                            num_samples = num_samples,
+                            **kwargs)
+        self.target_min = [0,     49000, 95000]
+        self.target_max = [1e+10, 51000, 115000]
 
 #
 # main code for standalone execution
-# 
+#
 if __name__ == "__main__":
     models = {"Pop1": Sim1,
               "Pop1Migr": Sim1Migr}
