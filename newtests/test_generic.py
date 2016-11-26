@@ -9,6 +9,13 @@ import populationmodels
 
 class TestGeneric(unittest.TestCase):
 
+    # remove simulated data
+    @classmethod
+    def tearDownClass(cls):
+        if cls.segfile != None and cls.success:
+            os.unlink( cls.segfile )
+            cls.filename = None
+
     # called every time an instance of TestGeneric is made -- set inference defaults
     def setUp(self):
         self.np = 1000
