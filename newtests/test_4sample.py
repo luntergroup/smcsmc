@@ -29,12 +29,12 @@ class TestMissingData1(TestGeneric):
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate( missing_leaves = [0] )
 
-    # remove simulated data
-    @classmethod
-    def tearDownClass(cls):
-        if cls.segfile != None and cls.success:
-            os.unlink( cls.segfile )
-            cls.filename = None
+    ## remove simulated data
+    #@classmethod
+    #def tearDownClass(cls):
+        #if cls.segfile != None and cls.success:
+            #os.unlink( cls.segfile )
+            #cls.filename = None
 
     # actual test
     def test_inference(self):
@@ -83,12 +83,12 @@ class TestMissingDataAll(TestGeneric):
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate( missing_leaves = [0,1,2,3] )
 
-    # remove simulated data
-    @classmethod
-    def tearDownClass(cls):
-        if cls.segfile != None and cls.success:
-            os.unlink( cls.segfile )
-            cls.filename = None
+    ## remove simulated data
+    #@classmethod
+    #def tearDownClass(cls):
+        #if cls.segfile != None and cls.success:
+            #os.unlink( cls.segfile )
+            #cls.filename = None
 
     # actual test
     def test_inference(self):
@@ -118,7 +118,7 @@ class TestMissingDataAll(TestGeneric):
         self.assertTrue( out_of_range < 3 )
         self.success = True
 
-        
+
 
 if __name__ == "__main__":
     unittest.main()
