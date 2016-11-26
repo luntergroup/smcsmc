@@ -15,7 +15,7 @@ import populationmodels
 # run over very little data (10 Mb)
 #
 
-class TestTwoSample(TestGeneric):
+class TestTwoSampleSingleConst(TestGeneric):
 
     # Called by unittest.main when TestTwoSample is created.
     # Responsible for per-class creation of simulated data.
@@ -26,7 +26,7 @@ class TestTwoSample(TestGeneric):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.Pop1( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
+        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
@@ -58,6 +58,26 @@ class TestTwoSample(TestGeneric):
             results[typ][int(epoch)]['estimates'].append( float(ne) )
         return results
 
+    def build_command(self):
+        nsamopt = "-nsam {}".format(self.pop.num_samples)
+        topt = "-t {}".format(self.pop.mutations)
+        ropt = "-r {} {}".format(self.pop.recombinations,self.pop.sequence_length)
+        npopt = "-Np {np}".format(np=self.np)
+        emopt = "-EM {em}".format(em=self.em)
+        seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
+        segopt = "-seg {}".format( self.segfile )
+        command = "../smcsmc {nsam} {t} {r} {np} {em} {seed} {seg}".format(
+            nsam = nsamopt,
+            t = topt,
+            r = ropt,
+            np = npopt,
+            em = emopt,
+            seed = seedopt,
+            seg = segopt)
+        for time in self.pop.change_points:
+            command += " -eN {time} 1".format(time=time)
+        return command
+
     # actual test
     def test_inference(self):
         self.em = 4
@@ -66,10 +86,8 @@ class TestTwoSample(TestGeneric):
         self.infer( case = 1 )
 
         # Ne target ranges for the varous epochs
-        #target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 11000]
-        #target_max = [1e+10, 2000, 2000, 4000, 5000, 5500, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11000, 11500, 13000]
-        target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 9000]
-        target_max = [1e+10, 2000, 2000, 4000, 5000, 6000, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11500, 11500, 13000]
+        target_min = self.pop.target_min
+        target_max = self.pop.target_max
         results = self.readResults()
 
         out_of_range = 0
@@ -88,6 +106,42 @@ class TestTwoSample(TestGeneric):
         self.assertTrue( out_of_range < 3 )
         self.success = True
 
+
+
+class TestTwoSampleSingleExpand(TestTwoSampleSingleConst):
+
+    # Called by unittest.main when TestTwoSample is created.
+    # Responsible for per-class creation of simulated data.
+    # It is implemented as a class method to avoid simulating the same data multiple times
+    @classmethod
+    def setUpClass(cls):
+        cls.prefix = "2sampleSingleExpand"
+        cls.segfile = cls.prefix + ".seg"
+        cls.seqlen = 1e7
+        cls.scrmpath = "../scrm"
+        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
+        cls.success = True   # set ourselves up for success
+
+        print ("simulating for",cls.prefix,"...")
+        cls.pop.simulate()
+
+
+class TestTwoSampleSingleShrink(TestTwoSampleSingleConst):
+
+    # Called by unittest.main when TestTwoSample is created.
+    # Responsible for per-class creation of simulated data.
+    # It is implemented as a class method to avoid simulating the same data multiple times
+    @classmethod
+    def setUpClass(cls):
+        cls.prefix = "2sampleSingleExpand"
+        cls.segfile = cls.prefix + ".seg"
+        cls.seqlen = 1e7
+        cls.scrmpath = "../scrm"
+        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
+        cls.success = True   # set ourselves up for success
+
+        print ("simulating for",cls.prefix,"...")
+        cls.pop.simulate()
 
 if __name__ == "__main__":
     unittest.main()
