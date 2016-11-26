@@ -133,7 +133,7 @@ class TestTwoSampleSingleShrink(TestTwoSampleSingleConst):
     # It is implemented as a class method to avoid simulating the same data multiple times
     @classmethod
     def setUpClass(cls):
-        cls.prefix = "2sampleSingleExpand"
+        cls.prefix = "2sampleSingleShrink"
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
