@@ -680,6 +680,7 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
             return upper_end - length_left / model().bias_ratios()[time_idx];
         }
     }
+    throw std::runtime_error("This should never happen...");
 }
 
 

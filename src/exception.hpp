@@ -43,8 +43,9 @@ struct InvalidInput : std::exception {
         this->reason   = "";
     }
     virtual ~InvalidInput() throw() {}
-    virtual const char* what () noexcept {
-        if (throwMsg.size() == 0) throwMsg = src + " " + reason;
+    virtual const char* what () const noexcept {
+        if (throwMsg.size() == 0) 
+            const_cast<InvalidInput*>(this)->throwMsg = src + " " + reason;
         return throwMsg.c_str();
     }
 };
