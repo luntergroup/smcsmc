@@ -456,17 +456,19 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
         likelihood *= likelihood_of_segment;
 
         if(model().biased_sampling) {
-            // store importance sampling correction for the weight of the particle
-            // positional importance factors are stored in importance_weight_predata and applied to the particle weight with the likelihood
+            // Store importance sampling correction for the weight of the particle.
+            // Positional importance factors are stored in importance_weight_predata and applied to
+            // the particle weight with the likelihood at the end of extend_ARG().
+
             if(update_to == extend_to) {
-                IS_positional_adjustor_no_recombination((update_to - updated_to),
-                                                        getLocalTreeLength() * model().recombination_rate(),
-                                                        getWeightedLocalTreeLength() * model().recombination_rate());
+                IS_positional_adjustor_no_recombination( updated_to, update_to,
+                                                         getLocalTreeLength(),
+                                                         getWeightedLocalTreeLength() );
             } else {
                 assert(update_to == this->next_base());
-                IS_positional_adjustor_at_recombination((update_to - updated_to),
-                                                        getLocalTreeLength() * model().recombination_rate(),
-                                                        getWeightedLocalTreeLength() * model().recombination_rate());
+                IS_positional_adjustor_at_recombination( updated_to, update_to,
+                                                         getLocalTreeLength(),
+                                                         getWeightedLocalTreeLength() );
             }
         }
         
@@ -683,24 +685,45 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
 }
 
 
-void ForestState::IS_positional_adjustor_no_recombination(double x, double rate_trans, double rate_prop) {
-	this->modify_importance_weight_predata( std::exp( -rate_trans * x )/std::exp( -rate_prop * x ) );
-}
 
 /**
- * Function for calculating the importance sampling adjustor once we've
- * sampled a seq position from our biased sampler.
+ * Function for adjusting the importance weight predata when we've
+ * either hit a variant or a change in the mutation or recombination rate.
  *
- * \return the importance weight adjustor needed to correct for biased sampling along seq.
- *
+ * Note: This assumes any change in the recombination rate is imposed in our sampler
+ *       and not part of the transition distribution
  */
-void ForestState::IS_positional_adjustor_at_recombination(double x, double rate_trans, double rate_prop) {
-    double transition_prob = rate_trans * std::exp( - rate_trans * x );
-    double proposal_prob = rate_prop * std::exp( - rate_prop * x );
-    this->modify_importance_weight_predata( transition_prob/proposal_prob );
+void ForestState::IS_positional_adjustor_no_recombination(double updated_to, double update_to, double B, double time_scaled_B) {
+    /// Temporarily set true recombination rate here, need to decide which class should own this
+    double true_recombination_rate = 5e-9;
+    ///
+    double transition_prob = std::exp( - (update_to - updated_to) * true_recombination_rate * B );
+    double proposal_prob = std::exp( - (update_to - updated_to) * model().recombination_rate() * time_scaled_B );
+	this->modify_importance_weight_predata( transition_prob / proposal_prob );
 }
 
-void ForestState::IS_TreePoint_adjustor(TreePoint rec_point) {
+
+/**
+ * Function for adjusting the importance weight predata when we've
+ * sampled a recombination seq position from our biased sampler.
+ */
+void ForestState::IS_positional_adjustor_at_recombination(double updated_to, double update_to, double B, double time_scaled_B) {
+    /// Temporarily set true recombination rate here, need to decide which class should own this
+    double true_recombination_rate = 5e-9;
+    ///
+    double transition_prob = (update_to - updated_to) * true_recombination_rate * B *
+                                std::exp( - (update_to - updated_to) * true_recombination_rate * B );
+    double proposal_prob = (update_to - updated_to) * model().recombination_rate() * time_scaled_B *
+                                std::exp( - (update_to - updated_to) * model().recombination_rate() * time_scaled_B );
+    this->modify_importance_weight_predata( transition_prob / proposal_prob );
+}
+
+
+/**
+ * Function for adjusting the particle weight and the delayed adjustments prioirty queue
+ * of weights to be applied to the delayed particle weight at the specified sequence position
+ */
+void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
 
     //// DEBUG
     dout << "Inside IS_TreePoint_adjustor" << endl;
