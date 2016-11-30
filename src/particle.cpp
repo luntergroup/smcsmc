@@ -573,6 +573,27 @@ std::string ForestState::newick(Node *node) {
 }
 
 
+/**
+ * Function for sampling the sequence position of the next recombination event
+ *
+ */
+
+void ForestState::sampleRecSeqPosition( bool recordEvents ) {
+
+  if( model().biased_sampling ) {
+
+    this->sampleBiasedRecSeqPosition( recordEvents );
+    return;
+  }
+
+  this->sampleNextBase();
+
+  assert( this->printTree() );
+  this->calcSegmentSumStats();
+
+}
+
+
 //// biased sampling
 
 /**
@@ -693,12 +714,15 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
  * Note: This assumes any change in the recombination rate is imposed in our sampler
  *       and not part of the transition distribution
  */
-void ForestState::IS_positional_adjustor_no_recombination(double updated_to, double update_to, double B, double time_scaled_B) {
+void ForestState::IS_positional_adjustor_no_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length) {
     /// Temporarily set true recombination rate here, need to decide which class should own this
     double true_recombination_rate = 5e-9;
     ///
-    double transition_prob = std::exp( - (update_to - updated_to) * true_recombination_rate * B );
-    double proposal_prob = std::exp( - (update_to - updated_to) * model().recombination_rate() * time_scaled_B );
+    double sequence_distance_in_basepairs = update_to - updated_to;
+    // Below are the probabilities of NOT sampling a recombination along sequence_distance_in_basepairs
+    // under the transition distribution (prior) and the proposal (scrm's simulation) distribution.
+    double transition_prob = std::exp( - sequence_distance_in_basepairs * true_recombination_rate * branch_length );
+    double proposal_prob = std::exp( - sequence_distance_in_basepairs * model().recombination_rate() * time_scaled_branch_length );
 	this->modify_importance_weight_predata( transition_prob / proposal_prob );
 }
 
@@ -707,14 +731,18 @@ void ForestState::IS_positional_adjustor_no_recombination(double updated_to, dou
  * Function for adjusting the importance weight predata when we've
  * sampled a recombination seq position from our biased sampler.
  */
-void ForestState::IS_positional_adjustor_at_recombination(double updated_to, double update_to, double B, double time_scaled_B) {
+void ForestState::IS_positional_adjustor_at_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length) {
     /// Temporarily set true recombination rate here, need to decide which class should own this
     double true_recombination_rate = 5e-9;
     ///
-    double transition_prob = (update_to - updated_to) * true_recombination_rate * B *
-                                std::exp( - (update_to - updated_to) * true_recombination_rate * B );
-    double proposal_prob = (update_to - updated_to) * model().recombination_rate() * time_scaled_B *
-                                std::exp( - (update_to - updated_to) * model().recombination_rate() * time_scaled_B );
+    double sequence_distance_in_basepairs = update_to - updated_to;
+    // Below are the probabilities of sampling a recombination on the tree at position sequence_distance_in_basepairs
+    // under the transition distribution (prior) and the proposal (scrm's simulation) distribution.
+    // The probability of the position of the recombination on the tree is handled in IS_TreePoint_adjustor.
+    double transition_prob = std::exp( - sequence_distance_in_basepairs * true_recombination_rate * branch_length ) *
+                             ( 1 - std::exp( - true_recombination_rate * branch_length ) );
+    double proposal_prob = std::exp( - sequence_distance_in_basepairs * model().recombination_rate() * time_scaled_branch_length ) *
+                           ( 1 - std::exp( - model().recombination_rate() * time_scaled_branch_length ) );
     this->modify_importance_weight_predata( transition_prob / proposal_prob );
 }
 
@@ -867,25 +895,5 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
     return sampleBiasedPoint(node->first_child(), length_left);
   else
     return sampleBiasedPoint(node->second_child(), length_left - tmp);
-}
-
-/**
- * Function for sampling the sequence position of the next recombination event
- *
- */
-
-void ForestState::sampleRecSeqPosition( bool recordEvents ) {
-
-  if( model().biased_sampling ) {
-
-    this->sampleBiasedRecSeqPosition( recordEvents );
-    return;
-  }
-
-  this->sampleNextBase();
-
-  assert( this->printTree() );
-  this->calcSegmentSumStats();
-
 }
 
