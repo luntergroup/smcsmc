@@ -184,9 +184,9 @@ class ForestState : public Forest{
 	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
 	void modify_importance_weight_predata(double adjustment) {importance_weight_predata_ *= adjustment;}
 
-	void IS_positional_adjustor_no_recombination(double x, double rate_trans, double rate_prop);
-	void IS_positional_adjustor_at_recombination(double x, double rate_trans, double rate_prop);
-	void IS_TreePoint_adjustor( TreePoint tp );
+	void IS_positional_adjustor_no_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length);
+	void IS_positional_adjustor_at_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length);
+	void IS_TreePoint_adjustor( const TreePoint & tp );
 
 	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
 	void sampleBiasedRecSeqPosition(bool recordEvents);
