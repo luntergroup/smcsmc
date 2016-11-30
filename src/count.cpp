@@ -204,11 +204,18 @@ void CountModel::init_lags(){
 
     this->counted_to.clear();
     this->lags.clear();
-    for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
+    // if there is only one epoch, set the lag to 20kb
+    if( change_times_.size() == 1 ) {
         this->counted_to.push_back( (double)0 );
-        double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
-        double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ;
-        this->lags.push_back( lag_i );
+        this->lags.push_back( 20000 );
+    // otherwise use the upper time boundary to scale lags
+    } else {
+        for (size_t epoch_idx = 0 ; epoch_idx < change_times_.size(); epoch_idx++){
+            this->counted_to.push_back( (double)0 );
+            double top_t = epoch_idx == (change_times_.size() -1) ? change_times_[change_times_.size()-1] : change_times_[epoch_idx+1];
+            double lag_i = this->const_lag_ > 0 ? this->const_lag_ : double(4) / (this->recombination_rate() * top_t) ;
+            this->lags.push_back( lag_i );
+        }
     }
 }
 
