@@ -222,7 +222,7 @@ void ForestState::record_Recombevent_b4_extension (){
             //assert( start_height_epoch == ti.forest()->model().getTimeIdx( start_height ) );
             size_t end_height_epoch = start_height_epoch;
             void* event_mem = Arena::allocate( start_height_epoch );
-            // no event for now            
+            // no event for now
             EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
                                                                                 end_height, end_height_epoch,
                                                                                 this->current_base(), this->next_base(), contemporaries );
@@ -460,18 +460,9 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
             // Positional importance factors are stored in importance_weight_predata and applied to
             // the particle weight with the likelihood at the end of extend_ARG().
 
-            if(update_to == extend_to) {
-                IS_positional_adjustor_no_recombination( updated_to, update_to,
-                                                         getLocalTreeLength(),
-                                                         getWeightedLocalTreeLength() );
-            } else {
-                assert(update_to == this->next_base());
-                IS_positional_adjustor_at_recombination( updated_to, update_to,
-                                                         getLocalTreeLength(),
-                                                         getWeightedLocalTreeLength() );
-            }
+            IS_positional_adjustor(updated_to, update_to, extend_to);
         }
-        
+
         //dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
 
         updated_to = update_to;                // rescues the invariant
@@ -479,7 +470,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
         /*!
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
-        if ( updated_to < extend_to ) {
+        if ( updated_to < extend_to ) { // !!Where do we create an event if we have reached the variant at extend_to?
             // a recombination has occurred (or the recombination rate has changed)
             double rec_height = this->sampleNextGenealogy( recordEvents );
             this->sampleRecSeqPosition( recordEvents );
@@ -498,7 +489,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
                 cout << this->newick(this->local_root()) << ";" << endl;
             }
         #endif
-
         }
 
         this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
@@ -507,47 +497,23 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
     assert (updated_to == extend_to);
     if (updateWeight) {
         // update weights for extension of ARG
-        dout << "Particle weight is " << weight() << endl;
-        dout << "The likelihood is " << likelihood << endl;
-        dout << "The IWP is " << importance_weight_predata() << endl;
         this->setParticleWeight( this->weight() * likelihood * importance_weight_predata() );
-        dout << "The updated particle weight is " << weight() << endl;
         if (model().biased_sampling) {
-            dout << "Delayed particle weight is " << delayed_weight() << endl;
-            dout << "The likelihood is " << likelihood << endl;
-            dout << "The IWP is " << importance_weight_predata() << endl;
+
             this->setDelayedWeight( this->delayed_weight() * likelihood * importance_weight_predata() );
-            dout << "The updated delayed particle weight is " << delayed_weight() << endl;
-            //// DEBUG
-            dout << "Particle weight is " << weight() << endl;
-            dout << "delayed weight is " << delayed_weight() << endl;
-            dout << "total_delayed_adjustment is " << total_delayed_adjustment << endl;
-            if( !delayed_adjustments.empty() ) {
-                dout << "next df should be applied at base " << delayed_adjustments.top().application_position << endl;
-            }
-            dout << " lhs is " << std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <<
-                " rhs is " << .001 * this->weight() << endl;
-            ////
             assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
             this->reset_importance_weight_predata();
+
 	    // update weights for application positions passed during extension
             if( !delayed_adjustments.empty() ) {
                 while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
-                    dout << "Need to apply a df to the delayed weight" << endl;
-                    dout << " delayed_adjustments has " << delayed_adjustments.size() << " elements" << endl;
-                    dout << " The top element has pos " << delayed_adjustments.top().application_position <<
-                        " and factor " << delayed_adjustments.top().importance_factor << endl;
+
                     total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
                     this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top().importance_factor );
                     delayed_adjustments.pop();
-                    dout << " particle weight is now " << weight() << endl;
-                    dout << " delayed weight is now " << delayed_weight() << endl;
-                    dout << " total_delayed_adjustment is now " << total_delayed_adjustment << endl;
+
                     assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
                 }
-                dout << "DELAY" << endl;
-                dout << "*current position is " << this->current_base() << endl;
-                dout << "*next DelayFactor to be applied at " << delayed_adjustments.top().application_position << endl;
             }
         }
     }
@@ -707,44 +673,37 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
 }
 
 
-
 /**
- * Function for adjusting the importance weight predata when we've
- * either hit a variant or a change in the mutation or recombination rate.
+ * Function for adjusting the importance weight predata to account for the probability of hitting
+ *  a recombination at this sequence position
  *
  * Note: This assumes any change in the recombination rate is imposed in our sampler
- *       and not part of the transition distribution
+ *       and not part of the transition distribution. We should add a feature for a
+ *       known recombination map; we'll need to compare inferred_model and proposal_model for this
  */
-void ForestState::IS_positional_adjustor_no_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length) {
-    /// Temporarily set true recombination rate here, need to decide which class should own this
+void ForestState::IS_positional_adjustor( double previously_updated_to, double update_to, double extend_to) {
+    /// !!Temporarily set true recombination rate here, need to decide which class should own this
+    // Should create an inferred_model to refer to
     double true_recombination_rate = 5e-9;
     ///
-    double sequence_distance_in_basepairs = update_to - updated_to;
-    // Below are the probabilities of NOT sampling a recombination along sequence_distance_in_basepairs
-    // under the transition distribution (prior) and the proposal (scrm's simulation) distribution.
-    double transition_prob = std::exp( - sequence_distance_in_basepairs * true_recombination_rate * branch_length );
-    double proposal_prob = std::exp( - sequence_distance_in_basepairs * model().recombination_rate() * time_scaled_branch_length );
-	this->modify_importance_weight_predata( transition_prob / proposal_prob );
-}
+    if (update_to == extend_to || update_to == model().getCurrentSequencePosition() ){
+        // We have NOT sampled a recombination at this position
+        double sequence_distance_without_rec = update_to - previously_updated_to;
+        double transition_prob = std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
+        double proposal_prob = std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
+        this->modify_importance_weight_predata( transition_prob / proposal_prob );
+    } else {
+        // We have sampled a recombination at this position
+        double sequence_distance_without_rec = ( update_to - 1 ) - previously_updated_to;
+        double transition_prob = std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
+                                 ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );
+        double proposal_prob = std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
+                                 ( 1 - std::exp( model().recombination_rate() * getWeightedLocalTreeLength() ) );
+        this->modify_importance_weight_predata( transition_prob / proposal_prob );
+        // We actually want to delay the ( 1 - e^__ ) factors:
+        //   return the ratio to be passed on to the IS_TreePoint_adjustor?
 
-
-/**
- * Function for adjusting the importance weight predata when we've
- * sampled a recombination seq position from our biased sampler.
- */
-void ForestState::IS_positional_adjustor_at_recombination(double updated_to, double update_to, double branch_length, double time_scaled_branch_length) {
-    /// Temporarily set true recombination rate here, need to decide which class should own this
-    double true_recombination_rate = 5e-9;
-    ///
-    double sequence_distance_in_basepairs = update_to - updated_to;
-    // Below are the probabilities of sampling a recombination on the tree at position sequence_distance_in_basepairs
-    // under the transition distribution (prior) and the proposal (scrm's simulation) distribution.
-    // The probability of the position of the recombination on the tree is handled in IS_TreePoint_adjustor.
-    double transition_prob = std::exp( - sequence_distance_in_basepairs * true_recombination_rate * branch_length ) *
-                             ( 1 - std::exp( - true_recombination_rate * branch_length ) );
-    double proposal_prob = std::exp( - sequence_distance_in_basepairs * model().recombination_rate() * time_scaled_branch_length ) *
-                           ( 1 - std::exp( - model().recombination_rate() * time_scaled_branch_length ) );
-    this->modify_importance_weight_predata( transition_prob / proposal_prob );
+    }
 }
 
 
