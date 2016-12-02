@@ -187,6 +187,11 @@ class ForestState : public Forest{
     void IS_positional_adjustor( double updated_to, double update_to, double extend_to );
 	void IS_TreePoint_adjustor( const TreePoint & tp );
 
+    double compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec );
+    double compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec );
+    double compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec );
+    double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
+
 	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
 	void sampleBiasedRecSeqPosition(bool recordEvents);
 

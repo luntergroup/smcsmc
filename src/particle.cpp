@@ -463,14 +463,12 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
             IS_positional_adjustor(updated_to, update_to, extend_to);
         }
 
-        //dout << " Likelihood of no mutations in segment of length " << (update_to - updated_to) << " is " << likelihood_of_segment ;
-
         updated_to = update_to;                // rescues the invariant
 
         /*!
          * Next, if we haven't reached extend_to now, add a new state and iterate
          */
-        if ( updated_to < extend_to ) { // !!Where do we create an event if we have reached the variant at extend_to?
+        if ( updated_to < extend_to ) {
             // a recombination has occurred (or the recombination rate has changed)
             double rec_height = this->sampleNextGenealogy( recordEvents );
             this->sampleRecSeqPosition( recordEvents );
@@ -489,6 +487,14 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
                 cout << this->newick(this->local_root()) << ";" << endl;
             }
         #endif
+
+        } else {
+            // if we have reached the variant, we need to record recombination opportunity
+            if ( updated_to == extend_to ){
+                if (recordEvents) {
+                    this->record_Recombevent_b4_extension();
+                }
+            }
         }
 
         this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
@@ -682,23 +688,17 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
  *       known recombination map; we'll need to compare inferred_model and proposal_model for this
  */
 void ForestState::IS_positional_adjustor( double previously_updated_to, double update_to, double extend_to) {
-    /// !!Temporarily set true recombination rate here, need to decide which class should own this
-    // Should create an inferred_model to refer to
-    double true_recombination_rate = 5e-9;
-    ///
     if (update_to == extend_to || update_to == model().getCurrentSequencePosition() ){
         // We have NOT sampled a recombination at this position
         double sequence_distance_without_rec = update_to - previously_updated_to;
-        double transition_prob = std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
-        double proposal_prob = std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
+        double transition_prob = compute_positional_component_of_transitional_prob_of_no_recombination( sequence_distance_without_rec );
+        double proposal_prob = compute_positional_component_of_proposal_prob_of_no_recombination( sequence_distance_without_rec );
         this->modify_importance_weight_predata( transition_prob / proposal_prob );
     } else {
         // We have sampled a recombination at this position
         double sequence_distance_without_rec = ( update_to - 1 ) - previously_updated_to;
-        double transition_prob = std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
-                                 ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );
-        double proposal_prob = std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
-                                 ( 1 - std::exp( model().recombination_rate() * getWeightedLocalTreeLength() ) );
+        double transition_prob = compute_positional_component_of_transitional_prob_of_recombination( sequence_distance_without_rec );
+        double proposal_prob = compute_positional_component_of_proposal_prob_of_recombination( sequence_distance_without_rec );
         this->modify_importance_weight_predata( transition_prob / proposal_prob );
         // We actually want to delay the ( 1 - e^__ ) factors:
         //   return the ratio to be passed on to the IS_TreePoint_adjustor?
@@ -706,6 +706,31 @@ void ForestState::IS_positional_adjustor( double previously_updated_to, double u
     }
 }
 
+double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ) {
+    /// !!Temporarily set true recombination rate here, need to decide which class should own this
+    // Should create an inferred_model to refer to
+    double true_recombination_rate = 5e-9;
+    ///
+    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
+}
+
+double ForestState::compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec ) {
+    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
+}
+
+double ForestState::compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec ) {
+    /// !!Temporarily set true recombination rate here, need to decide which class should own this
+    // Should create an inferred_model to refer to
+    double true_recombination_rate = 5e-9;
+    ///
+    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
+                                 ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );
+}
+
+double ForestState::compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec ) {
+    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
+                                 ( 1 - std::exp( model().recombination_rate() * getWeightedLocalTreeLength() ) );
+}
 
 /**
  * Function for adjusting the particle weight and the delayed adjustments prioirty queue
