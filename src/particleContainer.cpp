@@ -54,9 +54,9 @@ ParticleContainer::ParticleContainer(Model* model,
             TmrcaState tmrca( 0, new_state->local_root()->height() );
             new_state->TmrcaHistory.push_back ( tmrca );
         }
-	new_state->setParticleWeight( 1.0/Num_of_states );
-	new_state->setDelayedWeight( 1.0/Num_of_states );
-	this->particles.push_back(new_state);
+        new_state->setParticleWeight( 1.0/Num_of_states );
+        new_state->setDelayedWeight( 1.0/Num_of_states );
+        this->particles.push_back(new_state);
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){
             new_state->include_haplotypes_at_tips(first_allelic_state);
@@ -75,7 +75,7 @@ ParticleContainer::ParticleContainer(Model* model,
 void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
     dout << endl<<" We are extending particles" << endl<<endl;
 
- 	for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
+        for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*!
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
@@ -92,21 +92,21 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
 
 bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const {
 
-	// find the next haplotype that is compatible with the genotype encoded in data_at_tips
-	for (int i=0; i<haplotype_at_tips.size(); i+=2) {
+        // find the next haplotype that is compatible with the genotype encoded in data_at_tips
+        for (int i=0; i<haplotype_at_tips.size(); i+=2) {
 
-		if (data_at_tips[i] != 2) continue;   // phased site -- ignore
-		if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
-			haplotype_at_tips[i] = 1;
-			haplotype_at_tips[i+1] = 0;
-			return true;
-		}
-		haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
-		haplotype_at_tips[i+1] = 1;
+                if (data_at_tips[i] != 2) continue;   // phased site -- ignore
+                if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
+                        haplotype_at_tips[i] = 1;
+                        haplotype_at_tips[i+1] = 0;
+                        return true;
+                }
+                haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
+                haplotype_at_tips[i+1] = 1;
 
-	}
-	// we fell through, so we have considered all haplotypes; stop main loop
-	return false;
+        }
+        // we fell through, so we have considered all haplotypes; stop main loop
+        return false;
 }
 
 
@@ -128,7 +128,7 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
     // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
     // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
     // a 0/1 configuration arbitrarily.
-    
+
     haplotype_at_tips = data_at_tips;
     int num_configurations = 1;
     for (int i=0; i < data_at_tips.size(); i+=2) {
@@ -146,7 +146,7 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
 
 
 /*! \brief Update particle weight according to the haplotype or genotype data
- *	@ingroup group_pf_update
+ *      @ingroup group_pf_update
  */
 void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
 
@@ -166,17 +166,13 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << "*" << particles[particle_i]->importance_weight_predata() << endl;
+        dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << endl;
         // the following assertion checks appropriate importance factors have been accounted for
         //   if we ever change the emission factor of the sampling distribution, this assertion should fail
-        assert( particles[particle_i]->importance_weight_predata() == 1 );
         this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight()
-                                                        * likelihood_of_haplotype_at_tips
-                                                        * particles[particle_i]->importance_weight_predata() );
+                                                        * likelihood_of_haplotype_at_tips );
         this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight()
-                                                       * likelihood_of_haplotype_at_tips
-                                                       * particles[particle_i]->importance_weight_predata() );
-        this->particles[particle_i]->reset_importance_weight_predata();
+                                                       * likelihood_of_haplotype_at_tips );
         dout << "particle " << particle_i << " done" << endl;
     }
 
@@ -227,16 +223,16 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
         if ( sample_count[old_state_index] > 0 ) {
             ForestState * current_state = this->particles[old_state_index];
-	    if (flush) current_state->flushOldRecombinations();
+            if (flush) current_state->flushOldRecombinations();
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
             if( !model->biased_sampling ){
-			    current_state->setParticleWeight( 1.0/number_of_particles );
-			} else {
+                            current_state->setParticleWeight( 1.0/number_of_particles );
+                        } else {
                 assert( sum_of_delayed_weights != 0 );
-			    current_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-			    current_state->setParticleWeight( current_state->delayed_weight()*current_state->total_delayed_adjustment );
-		    }
+                            current_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
+                            current_state->setParticleWeight( current_state->delayed_weight()*current_state->total_delayed_adjustment );
+                    }
             this->particles.push_back(current_state);
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
@@ -256,11 +252,11 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                     new_copy_state->resample_recombination_position();
                 }
                 if( !model->biased_sampling ) {
-				    new_copy_state->setParticleWeight( 1.0/number_of_particles );
-				} else {
+                                    new_copy_state->setParticleWeight( 1.0/number_of_particles );
+                                } else {
                     assert( sum_of_delayed_weights != 0 );
-				    new_copy_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-			        new_copy_state->setParticleWeight( new_copy_state->delayed_weight()*new_copy_state->total_delayed_adjustment );
+                                    new_copy_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
+                                new_copy_state->setParticleWeight( new_copy_state->delayed_weight()*new_copy_state->total_delayed_adjustment );
                 }
                 this->particles.push_back(new_copy_state);
             }
@@ -325,26 +321,26 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 
     //check for the cum weight
     if( !model->biased_sampling ){
-	    dout << "### particle weights ";
-	    for (size_t i=0;i<Num_of_states;i++){
-	        dout << this->particles[i]->weight()<<"  ";
-	        } dout << std::endl<<std::endl;
+            dout << "### particle weights ";
+            for (size_t i=0;i<Num_of_states;i++){
+                dout << this->particles[i]->weight()<<"  ";
+                } dout << std::endl<<std::endl;
 
-	    dout << "### updated cum sum of particle weight ";
-	    for (size_t i=0;i<weight_cum_sum.size();i++){
-	        dout << weight_cum_sum[i]<<"  ";
-	        } dout << std::endl;
-	} else {
-	    dout << "### delayed particle weights ";
-	    for (size_t i=0;i<Num_of_states;i++){
-	        dout << this->particles[i]->delayed_weight()<<"  ";
-	        } dout << std::endl<<std::endl;
+            dout << "### updated cum sum of particle weight ";
+            for (size_t i=0;i<weight_cum_sum.size();i++){
+                dout << weight_cum_sum[i]<<"  ";
+                } dout << std::endl;
+        } else {
+            dout << "### delayed particle weights ";
+            for (size_t i=0;i<Num_of_states;i++){
+                dout << this->particles[i]->delayed_weight()<<"  ";
+                } dout << std::endl<<std::endl;
 
-	    dout << "### updated cum sum of delayed particle weight ";
-	    for (size_t i=0;i<weight_cum_sum.size();i++){
-	        dout << weight_cum_sum[i]<<"  ";
-	        } dout << std::endl;
-	}
+            dout << "### updated cum sum of delayed particle weight ";
+            for (size_t i=0;i<weight_cum_sum.size();i++){
+                dout << weight_cum_sum[i]<<"  ";
+                } dout << std::endl;
+        }
 
     this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
     }
@@ -354,24 +350,24 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
  * Normalize the particle weight, inorder to prevent underflow problem
  */
 void ParticleContainer::normalize_probability(){
-	//// DEBUG
-	dout << "Normalize particle weights" << endl;
-	////
+        //// DEBUG
+        dout << "Normalize particle weights" << endl;
+        ////
     double total_probability = 0;
     for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ){
         assert( this->particles[particle_i]->importance_weight_predata() == 1);
         total_probability += this->particles[particle_i]->weight();
         }
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ){
-		dout << " Before normalization" << endl;
-		dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
-		dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
+                dout << " Before normalization" << endl;
+                dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
+                dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() / total_probability);
         this->particles[particle_i]->setDelayedWeight(this->particles[particle_i]->delayed_weight() / total_probability); // should be conditional on biased_sampling
         //// DEBUG
         dout << " After normalization" << endl;
-	    dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
-	    dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
+            dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
+            dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
         ////
         }
     }
@@ -557,18 +553,9 @@ bool ParticleContainer::appendingStuffToFile( double x_end, const PfParam &pfpar
 // set_particles_with_random_weight() has not been updated for use with delayed IS
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        //this->particles[i]->setParticleWeight( this->random_generator()->sample() );
         this->particles[i]->setParticleWeight( this->particles[i]->random_generator()->sample() );
-        this->particles[i]->reset_importance_weight_predata();
         }
     }
-
-//// We need to decide at the tail of the data, until the end of the sequence, whether to perform recombination or not, extend arg from the prior? or ?
-//void ParticleContainer::cumulate_recomb_opportunity_at_seq_end( double loci_length ){
-    //for (size_t i = 0; i < this->particles.size(); i++){
-        //this->particles[i]->record_the_final_recomb_opportunity ( loci_length );
-    //}
-//}
 
 
 void ParticleContainer::print_particle_probabilities(){
@@ -579,22 +566,15 @@ void ParticleContainer::print_particle_probabilities(){
     }
 
 
-//void ParticleContainer::print_particle_newick(){
-    //for (size_t i = 0; i < this->particles.size(); i++){
-        //cout << this->particles[i]->scrmTree << ";" << endl;
-    //}
-//}
-
-
 void ParticleContainer::store_normalization_factor() {
-	temp_sum_of_weights = 0;
-	for( size_t i = 0; i < this->particles.size(); i++){
-		temp_sum_of_weights += this->particles[i]->weight();
+        temp_sum_of_weights = 0;
+        for( size_t i = 0; i < this->particles.size(); i++){
+                temp_sum_of_weights += this->particles[i]->weight();
     }
-	ln_normalization_factor_ += log( temp_sum_of_weights );
+        ln_normalization_factor_ += log( temp_sum_of_weights );
 }
 
 
 void ParticleContainer::print_ln_normalization_factor(){
-	clog << "Our likelihood measure is " << ln_normalization_factor() << endl;
+        clog << "Our likelihood measure is " << ln_normalization_factor() << endl;
 }

@@ -85,25 +85,25 @@ struct BranchLengthData {
 class DelayedFactor {
 
     public:
-	    DelayedFactor(double pos, double factor);
+            DelayedFactor(double pos, double factor);
 
-	    // Members
-	    double application_position;
-	    double importance_factor;
-	    void print_info() const;
+            // Members
+            double application_position;
+            double importance_factor;
+            void print_info() const;
 
 };
 
 class CompareDFs {
-	public:
-		bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
-		    return lhs.application_position > rhs.application_position;
-		}
+        public:
+                bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
+                    return lhs.application_position > rhs.application_position;
+                }
 };
 
 inline DelayedFactor::DelayedFactor( double pos, double factor) {
-	this->application_position = pos;
-	this->importance_factor = factor;
+        this->application_position = pos;
+        this->importance_factor = factor;
 }
 
 // DEBUG delayedIS
@@ -176,37 +176,31 @@ class ForestState : public Forest{
         const vector < int >& record_event_in_epoch;
 
 
-	//// biased sampling
+        //// biased sampling
 
-	double importance_weight_predata_ = 1; //incremental reset whenever weights are updated
+        double imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to, double update_to, bool sampled_recombination);
+        void IS_TreePoint_adjustor( const TreePoint & tp );
 
-	double importance_weight_predata() const {return importance_weight_predata_;}
-	void reset_importance_weight_predata() {importance_weight_predata_ = 1;}
-	void modify_importance_weight_predata(double adjustment) {importance_weight_predata_ *= adjustment;}
+        double compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec );
+        double compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec );
+        double compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec );
+        double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
 
-    void IS_positional_adjustor( double updated_to, double update_to, double extend_to );
-	void IS_TreePoint_adjustor( const TreePoint & tp );
+        TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
+        void sampleBiasedRecSeqPosition(bool recordEvents);
 
-    double compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
+        double getWeightedLocalTreeLength() const;
+        double getWeightedLengthBelow( Node* node ) const;
+        double WeightedBranchLengthAbove( Node* node ) const;
+        double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
 
-	TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
-	void sampleBiasedRecSeqPosition(bool recordEvents);
+        //// delayed IS
 
-	double getWeightedLocalTreeLength() const;
-	double getWeightedLengthBelow( Node* node ) const;
-	double WeightedBranchLengthAbove( Node* node ) const;
-	double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
+        std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
+        double total_delayed_adjustment = 1;  // this is the product over the factors in delayed_adjustments
 
-	//// delayed IS
-
-	std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
-	double total_delayed_adjustment = 1;  // this is the product over the factors in delayed_adjustments
-
-	// below are overloaded
-	void sampleRecSeqPosition( bool recordEvents = false );
+        // below are overloaded
+        void sampleRecSeqPosition( bool recordEvents = false );
 
 
         // Debugging tools
