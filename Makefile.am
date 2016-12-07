@@ -111,7 +111,7 @@ shared_SOURCES = $(smcsmc_src) $(scrm_src)
 smcsmc_shared_SOURCES = $(shared_SOURCES)
 
 # Binary sources
-smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/debug/usage_ghost.cpp src/smcsmc.cpp
+smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/smcsmc.cpp
 smcsmcSCRM_SOURCES      = $(smcsmc_SOURCES)
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 

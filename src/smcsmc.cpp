@@ -20,12 +20,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-#include "coalevent.hpp" // DEBUG
 
 #include "general.hpp"
 #include "count.hpp"
 #include "arena.hpp"
-#include "debug/usage.hpp"
+#include "usage.hpp"
 #include "model_summary.hpp"
 #include <set>
 
