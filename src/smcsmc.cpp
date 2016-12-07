@@ -227,7 +227,6 @@ void pfARG_core(PfParam &pfARG_para,
     ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch,
                                      Nparticles,
                                      Segfile->segment_start(),
-                                     pfARG_para.heat_bool,
                                      pfARG_para.Segfile->empty_file(),
                                      pfARG_para.Segfile->allelic_state_at_Segment_end);
     dout<<"######### finished initial particle building"<<endl;
@@ -262,9 +261,6 @@ void pfARG_core(PfParam &pfARG_para,
          *      In this case, we will be update till Segfile->site()
          */
         current_states.update_state_to_data( mutation_rate, (double)model->loci_length(), Segfile, weight_cum_sum);
-
-        /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */
-        current_states.appendingStuffToFile( min(Segfile->segment_end(), (double)model->loci_length()), pfARG_para);
 
         /*! UPDATE CUM COUNT AND OPPORTUNITIES ACCORDING TO THE PARTICLE WEIGHT */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
@@ -315,9 +311,6 @@ void pfARG_core(PfParam &pfARG_para,
                                     true, force_update = true, true); // This is mandatory for EM steps
 
     countNe->log_counts( pfARG_para );
-
-    /*! WRITE TMRCA AND BL TO FILE, This is used when generating the heatmap */
-    current_states.appendingStuffToFile( sequence_end, pfARG_para);
 
     current_states.print_ln_normalization_factor();
     current_states.clear();

@@ -841,8 +841,9 @@ void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
     }
     assert( time_section_idx <= model().bias_ratios().size() );
 
-    // calculate the importance weight: the ratio of the desired probability density of sampling this time point, over
-    // the probability density of the actual, biased, sampling distribution that was used.
+    // calculate the importance weight: the ratio of the desired probability density of sampling this time point
+    // ( 1 / localTreeLength ) over the probability density of the actual sampling distribution that
+    // was used ( bias_ratio / weightedLocalTreeLength ).
     double bias_ratio = model().bias_ratios()[ time_section_idx ];
     double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
 

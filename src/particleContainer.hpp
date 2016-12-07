@@ -50,7 +50,6 @@ class ParticleContainer {
                           const vector<int>& record_event_in_epoch,
                           size_t Num_of_states,
                           double initial_position,
-                          bool heat_bool,
                           bool emptyFile,
                           vector <int> first_allelic_state);  // this is used to create the particle initial states
         ~ParticleContainer(); //Destuctor needs to free memory of each particles that the pointers are pointing to...
@@ -62,7 +61,6 @@ class ParticleContainer {
         void extend_ARGs( double mutation_rate, double extend_to );
         void set_particles_with_random_weight();
         void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
-        bool appendingStuffToFile(double x_end, const PfParam &pfparam);
         void cumulate_recomb_opportunity_at_seq_end( double seqend );
         void normalize_probability();
         void clear();
@@ -111,7 +109,6 @@ class ParticleContainer {
         double ESS_;
         RandomGenerator* random_generator_; // This is for particle filter only,
         double current_printing_base_;
-        bool heat_bool_ ;
         double ln_normalization_factor_;
         double temp_sum_of_weights;
         Model* model;

@@ -40,7 +40,6 @@ void PfParam::reInit(){
     if ( this->rg != NULL ){
         delete this->rg;
     }
-    //this->model.change_times_.clear();
     this->init();
 }
 
@@ -136,10 +135,7 @@ void PfParam::parse(int argc, char *argv[]) {
             this->out_NAME_prefix = *argv_i;
         } else if ( *argv_i == "-log"   ){
             this->log_bool  = true;
-        } else if ( *argv_i == "-heat"  ){
-            this->heat_bool = true;
         } else if (*argv_i == "-h" || *argv_i == "-help") {
-            //Help_header();
             this->setHelp(true);
         } else if (*argv_i == "-v" || *argv_i == "-version") {
             this->setVersion(true);
@@ -201,9 +197,7 @@ void PfParam::init(){
     this->ESS_             = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
-    this->heat_bool        = false;
     this->online_bool      = false;
-    this->heat_seq_window  = 400;
     this->EM_steps         = 0;
     this->EM_bool          = false;
 
@@ -296,20 +290,16 @@ void PfParam::convert_scrm_input (){
 void PfParam::finalize(){
 
     this->ESSthreshold = this->N * this->ESS();
-    this->TMRCA_NAME             = out_NAME_prefix + "TMRCA";
-    this->WEIGHT_NAME            = out_NAME_prefix + "WEIGHT";
     this->outFileName            = out_NAME_prefix + ".out";
     this->log_NAME               = out_NAME_prefix + ".log";
     this->recombination_map_NAME = out_NAME_prefix + ".recomb";
-    this->Resample_NAME          = out_NAME_prefix + "Resample";
+    this->resample_NAME          = out_NAME_prefix + ".resample";
 
     // remove any existing files with these names
-    remove( this->TMRCA_NAME.c_str() );
-    remove( this->WEIGHT_NAME.c_str() );
     remove( this->outFileName.c_str() );
     remove( this->log_NAME.c_str() );
     remove( this->recombination_map_NAME.c_str() );
-    remove( this->Resample_NAME.c_str() );
+    remove( this->resample_NAME.c_str() );
 
     this->finalize_scrm_input();
 
@@ -361,14 +351,6 @@ void PfParam::writeLog(ostream * writeTo){
     (*writeTo) << "###########################\n";
     this->printVersion(writeTo);
     (*writeTo) << "smcsmc parameters: \n";
-    if (this->heat_bool){
-        (*writeTo) << "TMRCA saved in file: "  << TMRCA_NAME  << "\n";
-        (*writeTo) << "WEIGHT saved in file: " << WEIGHT_NAME << "\n";
-        //(*writeTo) << "BL saved in file: "     << BL_NAME     << "\n";
-    }
-    //if (this->hist_bool){
-        //(*writeTo) << "Resample saved in file: " << Resample_NAME << "\n";
-    //}
 
     (*writeTo) << "Segment Data file: " 
                << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
@@ -489,11 +471,9 @@ void PfParam::appendToOutFile( size_t EMstep,
 
 
 void PfParam::append_resample_file( int position, double ESS) const {
-    string file_name = Resample_NAME;
+    string file_name = resample_NAME;
     ofstream resample_file( file_name.c_str(), ios::out | ios::app | ios::binary );
-    resample_file << "Resampling at position " << position
-                  << " ; ESS is " << ESS
-                  << endl;
+    resample_file << position << "\t" << ESS << endl;
     resample_file.close();
 }
 
@@ -513,7 +493,6 @@ void PfParam::helpOption(){
     cout << setw(10)<<"-xr"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
     cout << setw(10)<<"-xc"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
     cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(10)<<"-heat"   << setw(5) << " "   << "  --  " << "Generate *TMRCA and *WEIGHT for heatmap" << endl;
     cout << setw(10)<<"-v"      << setw(5) << " "   << "  --  " << "Display timestamp and git versions" << endl;
 };
 
@@ -529,9 +508,7 @@ void PfParam::helpExample(){
 
 
 void PfParam::printHelp(){
-    cout << "smcsmc" << endl;
-    cout << "  version: " << VERSION << endl;
-    cout << "  authored by Sha (Joe) Zhu and Gerton Lunter " <<endl;
+    cout << "smcsmc --  Sha (Joe) Zhu, Donna Henderson and Gerton Lunter -- Version " << VERSION << endl;
     this->helpOption();
     this->helpExample();
 };

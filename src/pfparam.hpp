@@ -250,7 +250,6 @@ class PfParam{
     double lag_fraction;
     bool online_bool;
     double start_position;
-    bool heat_bool;
 
     Segment * Segfile;
     Param *SCRMparam;
@@ -371,10 +370,7 @@ class PfParam{
     string outFileName;
     string recombination_map_NAME;
     string log_NAME;
-    string TMRCA_NAME;
-    string WEIGHT_NAME;
-    string Resample_NAME;
-    int heat_seq_window;
+    string resample_NAME;
 
     // ------------------------------------------------------------------
     // Version Info

@@ -33,10 +33,8 @@ ParticleContainer::ParticleContainer(Model* model,
                                      const vector<int>& record_event_in_epoch,
                                      size_t Num_of_states,
                                      double initial_position,
-                                     bool heat_bool,
                                      bool emptyFile,
                                      vector <int> first_allelic_state) {
-    this->heat_bool_ = heat_bool;
     this->random_generator_ = rg;
     this->set_ESS(0);
     this->ln_normalization_factor_ = 0;
@@ -50,10 +48,6 @@ ParticleContainer::ParticleContainer(Model* model,
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
-        if ( this->heat_bool_ ) {
-            TmrcaState tmrca( 0, new_state->local_root()->height() );
-            new_state->TmrcaHistory.push_back ( tmrca );
-        }
         new_state->setParticleWeight( 1.0/Num_of_states );
         new_state->setDelayedWeight( 1.0/Num_of_states );
         this->particles.push_back(new_state);
@@ -447,94 +441,6 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
     resampledout << "Sample counts: " ;
     for (size_t i=0;i<sample_count.size();i++){dout << sample_count[i]<<"  ";}  dout << std::endl;
     assert(sample_count.sum() == sample_size);
-    }
-
-
-bool ParticleContainer::appendingStuffToFile( double x_end, const PfParam &pfparam){
-    // Record the TMRCA and weight when a heatmap is generated
-    if (!pfparam.heat_bool){
-        return true;
-        }
-           /*!
-             *  \verbatim
-           remove all the state prior to the minimum of
-            current_printing_base and
-                previous_backbase
-                .                      backbase                     Segfile->site()
-                .                      .                            .
-                .                      .     3                      .
-                .                      .     x---o              6   .
-                .                  2   .     |   |              x-------o
-                .                  x---------o   |              |   .
-                .                  |   .         |              |   .
-             0  .                  |   .         x---o          |   .
-             x---------o           |   .         4   |          |   .
-                .      |           |   .             x----------o   .
-                .      |           |   .             5              .
-                .      x-----------o   .                            .
-                .      1               .-------------lag------------.
-                .                      .                            .
-                Count::update_e_count( .                            ParticleContainer::update_state_to_data(
-           x_start = previous_backbase .                              mutation data comes in here
-           x_end = backbase            .
-                                       .
-                                       ParticleContainer::appendingStuffToFile(
-                                           x_end = backbase,
-          \endverbatim
-         *
-         * Likelihood of the particle is updated up until state 6, but because of the lagging we are using
-         * report the TMRCA up until state 2
-         *
-         */
-    if (x_end < this->current_printing_base()){
-        return true;
-        }
-    do {
-        //this->set_current_printing_base(x_end);
-
-        if (this->current_printing_base() > 0){
-
-            ofstream TmrcaOfstream   ( pfparam.TMRCA_NAME.c_str()    , ios::out | ios::app | ios::binary);
-            ofstream WeightOfstream  ( pfparam.WEIGHT_NAME.c_str()   , ios::out | ios::app | ios::binary); ;
-            //ofstream BLOfstream      ( pfparam.BL_NAME.c_str()       , ios::out | ios::app | ios::binary);;
-            //ofstream SURVIVORstream  ( pfparam.SURVIVOR_NAME.c_str() , ios::out | ios::app | ios::binary);
-
-            TmrcaOfstream  << this->current_printing_base();
-            WeightOfstream << this->current_printing_base();
-            //BLOfstream     << this->current_printing_base();
-            //SURVIVORstream << this->current_printing_base();
-
-            for ( size_t i = 0; i < this->particles.size(); i++){
-                ForestState * current_state_ptr = this->particles[i];
-                WeightOfstream <<"\t" << current_state_ptr->weight();
-
-                //TmrcaOfstream  << "\t" << current_state_ptr->local_root()->height() / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                double current_tmrca = current_state_ptr->local_root()->height();
-                for (size_t tmrca_i = current_state_ptr->TmrcaHistory.size(); tmrca_i > 0; tmrca_i--){
-                    if (current_state_ptr->TmrcaHistory[tmrca_i].base < this->current_printing_base()){
-                        break;
-                        }
-                    current_tmrca = current_state_ptr->TmrcaHistory[tmrca_i].tmrca ;
-                    }
-                TmrcaOfstream  << "\t" << current_tmrca / (4 * current_state_ptr->model().default_pop_size()); // Normalize by 4N0
-
-                //BLOfstream     << "\t" << current_state_ptr->local_tree_length()    / (4 * current_state_ptr->model().default_pop_size); // Normalize by 4N0
-                current_state_ptr=NULL;
-                }
-
-            TmrcaOfstream  << endl;
-            WeightOfstream << endl;
-            //BLOfstream     << endl;
-            //SURVIVORstream << endl;
-
-            TmrcaOfstream.close();
-            WeightOfstream.close();
-            //BLOfstream.close();
-            //SURVIVORstream.close();
-            }
-        this->set_current_printing_base(this->current_printing_base() + pfparam.heat_seq_window);
-        } while ( this->current_printing_base() < x_end);
-    return true;
     }
 
 
