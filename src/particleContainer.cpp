@@ -275,7 +275,6 @@ void ParticleContainer::resample(valarray<int> & sample_count){
 
     resampledout << "There are " << this->particles.size() << "particles in total." << endl;
     resampledout << " ****************************** End of making list of new particles ****************************** " << std::endl;
-    assert(this->check_state_orders());
     }
 
 
@@ -349,28 +348,17 @@ void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & we
 /*!
  * Normalize the particle weight, inorder to prevent underflow problem
  */
-void ParticleContainer::normalize_probability(){
-        //// DEBUG
-        dout << "Normalize particle weights" << endl;
-        ////
+void ParticleContainer::normalize_probability() {
+
     double total_probability = 0;
-    for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ){
-        assert( this->particles[particle_i]->importance_weight_predata() == 1);
+    for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ) {
         total_probability += this->particles[particle_i]->weight();
-        }
-    for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ){
-                dout << " Before normalization" << endl;
-                dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
-                dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
+    }
+    for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ) {
         this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() / total_probability);
         this->particles[particle_i]->setDelayedWeight(this->particles[particle_i]->delayed_weight() / total_probability); // should be conditional on biased_sampling
-        //// DEBUG
-        dout << " After normalization" << endl;
-            dout << "   particle weight is " << this->particles[particle_i]->weight() << " and delayed weight is " << this->particles[particle_i]->delayed_weight() << endl;
-            dout << "   the total delayed adjustment is " << this->particles[particle_i]->total_delayed_adjustment << endl;
-        ////
-        }
     }
+}
 
 
 void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){

@@ -92,9 +92,9 @@ scrm_debug_src = src/scrm/src/random/constant_generator.cc src/scrm/src/random/c
                  src/scrm/src/random/constant_generator.h
 
 debug_src = src/scrm/src/random/constant_generator.cc \
-            src/scrm/src/random/constant_generator.h \
-            src/debug/particle-debug.cpp \
-            src/debug/count-debug.cpp
+            src/scrm/src/random/constant_generator.h
+#            src/debug/particle-debug.cpp \
+#            src/debug/count-debug.cpp
 
 smcsmc_src = src/coalevent.cpp \
              src/particle.cpp \
