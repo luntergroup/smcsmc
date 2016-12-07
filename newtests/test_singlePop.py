@@ -14,43 +14,29 @@ class TestGenericSinglePop(TestGeneric):
     # It is implemented as a class method to avoid simulating the same data multiple times
     @classmethod
     def setUpClass(cls):
-        #pass
         cls.prefix = "2sampleSingleConst"
         cls.segfile = cls.prefix + ".seg"
-        cls.seqlen = 1e7
+        cls.seqlen = 1e8
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
+        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile,
+                                                   sequence_length = cls.seqlen,
+                                                   scrmpath=cls.scrmpath )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
-    def build_command(self):
-        nsamopt = "-nsam {}".format(self.pop.num_samples)
-        topt = "-t {}".format(self.pop.mutations)
-        ropt = "-r {} {}".format(self.pop.recombinations,self.pop.sequence_length)
-        npopt = "-Np {np}".format(np=self.np)
-        emopt = "-EM {em}".format(em=self.em)
-        seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
-        segopt = "-seg {}".format( self.segfile )
-        command = "../smcsmc {nsam} {t} {r} {np} {em} {seed} {seg}".format(
-            nsam = nsamopt,
-            t = topt,
-            r = ropt,
-            np = npopt,
-            em = emopt,
-            seed = seedopt,
-            seg = segopt)
+    def setUp(self):
+        print ("called TestGenericSinglePop.setUp()")
+        TestGeneric.setUp(self)
+        self.popt = None        # use the model's change points for inference
 
-        for time in self.pop.change_points:
-            command += " -eN {time} 1".format(time=time)
-        return command
 
     # actual test
     def test_inference(self):
-        self.em = 4
-        self.np = 1000
+        self.em = 10
+        self.np = 200
         self.seed = (3647837471,)
         self.infer( case = 1 )
 
@@ -76,7 +62,7 @@ class TestGenericSinglePop(TestGeneric):
         self.success = True
 
 
-
+@unittest.skip("Runs too slow")
 class TestTwoSampleSingleExpand(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -84,13 +70,16 @@ class TestTwoSampleSingleExpand(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath)
+        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath)
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestTwoSampleSingleShrink(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -98,13 +87,16 @@ class TestTwoSampleSingleShrink(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
+        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestThreeSampleSingleConst(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -112,13 +104,17 @@ class TestThreeSampleSingleConst(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=3 )
+        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile,
+                                                   sequence_length = cls.seqlen,
+                                                   scrmpath=cls.scrmpath,
+                                                   num_samples=3 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestThreeSampleSingleExpand(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -126,13 +122,17 @@ class TestThreeSampleSingleExpand(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=3 )
+        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath,
+                                                    num_samples=3 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestThreeSampleSingleShrink(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -140,12 +140,16 @@ class TestThreeSampleSingleShrink(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=3 )
+        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath,
+                                                    num_samples=3 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
+@unittest.skip("Runs too slow")
 class TestFourSampleSingleConst(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -153,13 +157,17 @@ class TestFourSampleSingleConst(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=4 )
+        cls.pop = populationmodels.PopSingleConst( filename = cls.segfile,
+                                                   sequence_length = cls.seqlen,
+                                                   scrmpath=cls.scrmpath,
+                                                   num_samples=4 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestFourSampleSingleExpand(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -167,13 +175,17 @@ class TestFourSampleSingleExpand(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=4 )
+        cls.pop = populationmodels.PopSingleExpand( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath,
+                                                    num_samples=4 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")
         cls.pop.simulate()
 
 
+@unittest.skip("Runs too slow")
 class TestFourSampleSingleShrink(TestGenericSinglePop):
     @classmethod
     def setUpClass(cls):
@@ -181,7 +193,10 @@ class TestFourSampleSingleShrink(TestGenericSinglePop):
         cls.segfile = cls.prefix + ".seg"
         cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath, num_samples=4 )
+        cls.pop = populationmodels.PopSingleShrink( filename = cls.segfile,
+                                                    sequence_length = cls.seqlen,
+                                                    scrmpath=cls.scrmpath,
+                                                    num_samples=4 )
         cls.success = True   # set ourselves up for success
 
         print ("simulating for",cls.prefix,"...")

@@ -20,8 +20,10 @@ class TestGeneric(unittest.TestCase):
     def setUp(self):
         self.np = 1000
         self.em = 0
+        self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
         self.seed = (3647837471,)
+        self.smcsmc_change_points = None
         self.success = False
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
@@ -45,20 +47,30 @@ class TestGeneric(unittest.TestCase):
         nsamopt = "-nsam {}".format(self.pop.num_samples)
         topt = "-t {}".format(self.pop.mutations)
         ropt = "-r {} {}".format(self.pop.recombinations,self.pop.sequence_length)
-        popt = "-p 1*3+15*4+1"
         npopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
-        tmaxopt = "-tmax {tmax}".format(tmax=self.tmax)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.segfile )
-        return "../smcsmc {nsam} {t} {r} {np} {em} {p} {tmax} {seed} {seg}".format(
+        if self.popt:
+            # use -p / -tmax pattern to specify epochs for inference
+            epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
+                                                    tmax = self.tmax)
+        else:
+            if self.smcsmc_change_points != None:
+                # use explicit epochs for inference
+                epochs = self.smcsmc_change_points
+            else:
+                # use model epochs for inference
+                epochs = self.pop.change_points
+            epochopt = " ".join(["-eN {time} 1".format(time=time)
+                                 for time in epochs])
+        return "../smcsmc {nsam} {t} {r} {np} {em} {epochs} {seed} {seg}".format(
             nsam = nsamopt,
             t = topt,
             r = ropt,
             np = npopt,
             em = emopt,
-            p = popt,
-            tmax = tmaxopt,
+            epochs = epochopt,
             seed = seedopt,
             seg = segopt)
 
