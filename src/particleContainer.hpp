@@ -2,7 +2,7 @@
  * smcsmc is short for particle filters for ancestral recombination graphs.
  * This is a free software for demographic inference from genome data with particle filters.
  *
- * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
+ * Copyright (C) 2013-2017 Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
  *
  * This file is part of smcsmc.
  *
@@ -57,11 +57,10 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum);
+        void update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_partial_sum);
         void extend_ARGs( double mutation_rate, double extend_to );
         void set_particles_with_random_weight();
-        void ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
-        void cumulate_recomb_opportunity_at_seq_end( double seqend );
+        void ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
         void normalize_probability();
         void clear();
         void print_particle_probabilities();
@@ -89,8 +88,8 @@ class ParticleContainer {
         void resample_for_check(valarray<int> & sample_count);
         void shifting(int number_of_particles);
         void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
-        void systematic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size);
-        void update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum);
+        void systematic_resampling(std::valarray<double> partial_sum, std::valarray<int>& sample_count, int sample_size);
+        void update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum);
 
         //
         // Setters and getters:

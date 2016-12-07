@@ -2,7 +2,7 @@
  * smcsmc is short for particle filters for ancestral recombination graphs.
  * This is a free software for demographic inference from genome data with particle filters.
  *
- * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
+ * Copyright (C) 2013-2017 Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
  *
  * This file is part of smcsmc.
  *
@@ -48,8 +48,8 @@ ParticleContainer::ParticleContainer(Model* model,
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
-        new_state->setParticleWeight( 1.0/Num_of_states );
-        new_state->setDelayedWeight( 1.0/Num_of_states );
+        new_state->setPosteriorWeight( 1.0/Num_of_states );
+        new_state->setPilotWeight( 1.0/Num_of_states );
         this->particles.push_back(new_state);
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){
@@ -75,9 +75,9 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
          * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
-        dout << " before extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
+        dout << " before extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
         particles[particle_i]->extend_ARG ( mutation_rate, extend_to );
-        dout << " after extend ARG particle weight is " << this->particles[particle_i]->weight() << endl;
+        dout << " after extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
     }
     /*! normalize the probability upon until the mutation */
     //this->normalize_probability(); // This normalization doesn't seem to do much ...
@@ -160,13 +160,13 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        dout << "updated weight =" << particles[particle_i]->weight() << "*" << likelihood_of_haplotype_at_tips << endl;
+        dout << "updated weight =" << particles[particle_i]->posteriorWeight() << "*" << likelihood_of_haplotype_at_tips << endl;
         // the following assertion checks appropriate importance factors have been accounted for
         //   if we ever change the emission factor of the sampling distribution, this assertion should fail
-        this->particles[particle_i]->setParticleWeight( particles[particle_i]->weight()
-                                                        * likelihood_of_haplotype_at_tips );
-        this->particles[particle_i]->setDelayedWeight( particles[particle_i]->delayed_weight()
-                                                       * likelihood_of_haplotype_at_tips );
+        this->particles[particle_i]->setPosteriorWeight( particles[particle_i]->posteriorWeight()
+                                                         * likelihood_of_haplotype_at_tips );
+        this->particles[particle_i]->setPilotWeight( particles[particle_i]->pilotWeight()
+                                                     * likelihood_of_haplotype_at_tips );
         dout << "particle " << particle_i << " done" << endl;
     }
 
@@ -179,7 +179,7 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
-void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state)
+void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state)
 {
     dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << pfparam.ESSthreshold <<endl;
     double ESS_diff = pfparam.ESSthreshold - this->ESS();
@@ -187,7 +187,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_cum_sum, valarray
         resampledout<<" ESS_diff = " << ESS_diff<<endl;
         resampledout << " ### PROGRESS: ESS resampling" << endl;
         pfparam.append_resample_file( mutation_at, ESS() );
-        this->systematic_resampling( weight_cum_sum, sample_count, num_state);
+        this->systematic_resampling( weight_partial_sum, sample_count, num_state);
         this->resample(sample_count);
     }
 }
@@ -211,7 +211,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     double sum_of_delayed_weights = 0;
     if( model->biased_sampling ) {
         for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
-            sum_of_delayed_weights += particles[old_state_index]->delayed_weight();
+            sum_of_delayed_weights += particles[old_state_index]->pilotWeight();
         }
     }
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
@@ -221,12 +221,12 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             // we need at least one copy of this particle; it keeps its own random generator
             resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
             if( !model->biased_sampling ){
-                            current_state->setParticleWeight( 1.0/number_of_particles );
-                        } else {
+                current_state->setPosteriorWeight( 1.0/number_of_particles );
+            } else {
                 assert( sum_of_delayed_weights != 0 );
-                            current_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-                            current_state->setParticleWeight( current_state->delayed_weight()*current_state->total_delayed_adjustment );
-                    }
+                current_state->setPilotWeight( 1.0/number_of_particles * sum_of_delayed_weights );
+                current_state->setPosteriorWeight( current_state->pilotWeight()*current_state->total_delayed_adjustment );
+            }
             this->particles.push_back(current_state);
             // create new copy of the resampled particle
             for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
@@ -242,15 +242,15 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 dout <<"making particle finished" << endl; // DEBUG
 
                 // Resample the recombination position if particle has not hit end of sequence, and give particle its own event history
-                if ( new_copy_state->current_base() < new_copy_state->next_base() ){
+                if ( new_copy_state->current_base() < new_copy_state->next_base() ) {
                     new_copy_state->resample_recombination_position();
                 }
                 if( !model->biased_sampling ) {
-                                    new_copy_state->setParticleWeight( 1.0/number_of_particles );
-                                } else {
+                    new_copy_state->setPosteriorWeight( 1.0/number_of_particles );
+                } else {
                     assert( sum_of_delayed_weights != 0 );
-                                    new_copy_state->setDelayedWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-                                new_copy_state->setParticleWeight( new_copy_state->delayed_weight()*new_copy_state->total_delayed_adjustment );
+                    new_copy_state->setPilotWeight( 1.0/number_of_particles * sum_of_delayed_weights );
+                    new_copy_state->setPosteriorWeight( new_copy_state->pilotWeight()*new_copy_state->total_delayed_adjustment );
                 }
                 this->particles.push_back(new_copy_state);
             }
@@ -298,45 +298,20 @@ void ParticleContainer::clear(){
  * @ingroup group_pf_update
  * \brief Calculate the effective sample size, and update the cumulative weight of the particles
  */
-void ParticleContainer::update_cum_sum_array_find_ESS(std::valarray<double> & weight_cum_sum){
+void ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum){
     double wi_sum=0;
     double wi_sq_sum=0;
     double Num_of_states = this->particles.size();
-    weight_cum_sum=0; //Reinitialize the cum sum array
+    weight_partial_sum=0;
 
     for (size_t i=0; i < Num_of_states ;i++){
-        //update the cum sum array
-        double w_i = model->biased_sampling ? this->particles[i]->delayed_weight() : this->particles[i]->weight();
-        weight_cum_sum[i+1]=weight_cum_sum[i]+w_i;
-        wi_sum = wi_sum + w_i;
-        wi_sq_sum = wi_sq_sum + w_i * w_i;
-        }
-
-    //check for the cum weight
-    if( !model->biased_sampling ){
-            dout << "### particle weights ";
-            for (size_t i=0;i<Num_of_states;i++){
-                dout << this->particles[i]->weight()<<"  ";
-                } dout << std::endl<<std::endl;
-
-            dout << "### updated cum sum of particle weight ";
-            for (size_t i=0;i<weight_cum_sum.size();i++){
-                dout << weight_cum_sum[i]<<"  ";
-                } dout << std::endl;
-        } else {
-            dout << "### delayed particle weights ";
-            for (size_t i=0;i<Num_of_states;i++){
-                dout << this->particles[i]->delayed_weight()<<"  ";
-                } dout << std::endl<<std::endl;
-
-            dout << "### updated cum sum of delayed particle weight ";
-            for (size_t i=0;i<weight_cum_sum.size();i++){
-                dout << weight_cum_sum[i]<<"  ";
-                } dout << std::endl;
-        }
-
-    this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
+        double w_i = model->biased_sampling ? this->particles[i]->pilotWeight() : this->particles[i]->posteriorWeight();
+        weight_partial_sum[i+1] = weight_partial_sum[i] + w_i;
+        wi_sum += w_i;
+        wi_sq_sum += w_i * w_i;
     }
+    this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
+}
 
 
 /*!
@@ -346,16 +321,16 @@ void ParticleContainer::normalize_probability() {
 
     double total_probability = 0;
     for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ) {
-        total_probability += this->particles[particle_i]->weight();
+        total_probability += this->particles[particle_i]->posteriorWeight();
     }
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ) {
-        this->particles[particle_i]->setParticleWeight( this->particles[particle_i]->weight() / total_probability);
-        this->particles[particle_i]->setDelayedWeight(this->particles[particle_i]->delayed_weight() / total_probability); // should be conditional on biased_sampling
+        this->particles[particle_i]->setPosteriorWeight( this->particles[particle_i]->posteriorWeight() / total_probability);
+        this->particles[particle_i]->setPilotWeight(this->particles[particle_i]->pilotWeight() / total_probability); // should be conditional on biased_sampling
     }
 }
 
 
-void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_cum_sum ){
+void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_partial_sum ){
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
@@ -377,8 +352,8 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
 
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
 
-    //Update the cumulated probabilities, as well as computing the effective sample size
-    this->update_cum_sum_array_find_ESS( weight_cum_sum );
+    // Update the accumulated probabilities, as well as computing the effective sample size
+    this->update_partial_sum_array_find_ESS( weight_partial_sum );
 }
 
 
@@ -400,26 +375,26 @@ void ParticleContainer::trivial_resampling( std::valarray<int> & sample_count, s
  * @ingroup group_systematic
  * \brief Use systematic resampling \cite Doucet2008 to generate sample count for each particle
  */
-void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std::valarray<int>& sample_count, int sample_size){
+void ParticleContainer::systematic_resampling(std::valarray<double> partial_sum, std::valarray<int>& sample_count, int sample_size){
     size_t interval_j = 0;
     size_t sample_i = 0;
     size_t N = sample_size;
     //double u_j = rand() / double(RAND_MAX) / N;
     double u_j = this->random_generator()->sample() / N;
-    double cumsum_normalization = cum_sum[cum_sum.size()-1];
+    double partial_sum_normalization = partial_sum[partial_sum.size()-1];
 
     resampledout << "systematic sampling procedure on interval:" << std::endl;
     resampledout << " ";
-    for (size_t i=0;i<cum_sum.size();i++){dout <<  (cum_sum[i]/cumsum_normalization )<<"  ";}dout << std::endl;
+    for (size_t i=0;i<partial_sum.size();i++){dout <<  (partial_sum[i]/partial_sum_normalization )<<"  ";}dout << std::endl;
 
     sample_count[sample_i] = 0;
     while (sample_i < N) {
-        resampledout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (cum_sum[interval_j]/ cumsum_normalization) << " and " << std::setw(10)<< (cum_sum[interval_j+1]/ cumsum_normalization) << " ? ";
+        resampledout << "Is " <<  u_j<<" in the interval of " << std::setw(10)<< (partial_sum[interval_j]/ partial_sum_normalization) << " and " << std::setw(10)<< (partial_sum[interval_j+1]/ partial_sum_normalization) << " ? ";
         /* invariants: */
-        assert( (cum_sum[interval_j] / cumsum_normalization) < u_j );
+        assert( (partial_sum[interval_j] / partial_sum_normalization) < u_j );
         assert( sample_i < N );
-        /* check whether u_j is in the interval [ cum_sum[interval_j], cum_sum[interval_j+1] ) */
-        if ( (sample_i == N) || cum_sum[interval_j+1] / cumsum_normalization > u_j ) {
+        /* check whether u_j is in the interval [ partial_sum[interval_j], partial_sum[interval_j+1] ) */
+        if ( (sample_i == N) || partial_sum[interval_j+1] / partial_sum_normalization > u_j ) {
             sample_count[interval_j] += 1;
             sample_i += 1;
             dout << "  yes, update sample count of particle " << interval_j<<" to " << sample_count[interval_j] <<std::endl;
@@ -447,15 +422,15 @@ void ParticleContainer::systematic_resampling(std::valarray<double> cum_sum, std
 // set_particles_with_random_weight() has not been updated for use with delayed IS
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        this->particles[i]->setParticleWeight( this->particles[i]->random_generator()->sample() );
+        this->particles[i]->setPosteriorWeight( this->particles[i]->random_generator()->sample() );
         }
     }
 
 
 void ParticleContainer::print_particle_probabilities(){
     for (size_t i = 0; i < this->particles.size(); i++){
-        clog<<"weight = "<<this->particles[i]->weight()<<endl;
-        if( model->biased_sampling ) {clog<<"delayed weight = "<<this->particles[i]->delayed_weight()<<endl;}
+        clog<<"weight = "<<this->particles[i]->posteriorWeight()<<endl;
+        if( model->biased_sampling ) {clog<<"pilot weight = "<<this->particles[i]->pilotWeight()<<endl;}
         }
     }
 
@@ -463,7 +438,7 @@ void ParticleContainer::print_particle_probabilities(){
 void ParticleContainer::store_normalization_factor() {
         temp_sum_of_weights = 0;
         for( size_t i = 0; i < this->particles.size(); i++){
-                temp_sum_of_weights += this->particles[i]->weight();
+                temp_sum_of_weights += this->particles[i]->posteriorWeight();
     }
         ln_normalization_factor_ += log( temp_sum_of_weights );
 }

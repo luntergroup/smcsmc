@@ -2,7 +2,7 @@
  * smcsmc is short for particle filters for ancestral recombination graphs.
  * This is a free software for demographic inference from genome data with particle filters.
  *
- * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
+ * Copyright (C) 2013-2017 Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
  *
  * This file is part of smcsmc.
  *
@@ -37,8 +37,8 @@ ForestState::ForestState( Model* model,
             : Forest( model, random_generator ),
               record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
-    this->setParticleWeight( 1.0 );
-    this->setDelayedWeight( 1.0 );
+    this->setPosteriorWeight( 1.0 );
+    this->setPilotWeight( 1.0 );
     this->total_delayed_adjustment = 1.0;
     this->setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
@@ -57,8 +57,8 @@ ForestState::ForestState( Model* model,
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
-    setParticleWeight( copied_state.weight() );
-    setDelayedWeight( copied_state.delayed_weight() );
+    setPosteriorWeight( copied_state.posteriorWeight() );
+    setPilotWeight( copied_state.pilotWeight() );
     this->total_delayed_adjustment = copied_state.total_delayed_adjustment;
     this->delayed_adjustments = copied_state.delayed_adjustments;
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
@@ -75,7 +75,7 @@ ForestState::ForestState( const ForestState & copied_state )
     for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
         this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
     }
-    dout << "current particle's weight is " << this->weight()<<endl;
+    dout << "current particle's weight is " << this->posteriorWeight()<<endl;
 }
 
 
@@ -499,21 +499,21 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
     assert (updated_to == extend_to);
     if (updateWeight) {
         // update weights for extension of ARG
-        this->setParticleWeight( this->weight() * likelihood * imp_weight_simulation_to_pilot_dist );
+        this->setPosteriorWeight( this->posteriorWeight() * likelihood * imp_weight_simulation_to_pilot_dist );
         if (model().biased_sampling) {
 
-            this->setDelayedWeight( this->delayed_weight() * likelihood * imp_weight_simulation_to_pilot_dist );
-            assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+            this->setPilotWeight( this->pilotWeight() * likelihood * imp_weight_simulation_to_pilot_dist );
+            assert( std::abs(this->posteriorWeight() - this->pilotWeight() * this->total_delayed_adjustment) <= .001 * this->posteriorWeight() );
 
         // update weights for application positions passed during extension
             if( !delayed_adjustments.empty() ) {
                 while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
 
                     total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
-                    this->setDelayedWeight( this->delayed_weight() * delayed_adjustments.top().importance_factor );
+                    this->setPilotWeight( this->pilotWeight() * delayed_adjustments.top().importance_factor );
                     delayed_adjustments.pop();
 
-                    assert( std::abs(this->weight() - this->delayed_weight() * this->total_delayed_adjustment) <= .001 * this->weight() );
+                    assert( std::abs(this->posteriorWeight() - this->pilotWeight() * this->total_delayed_adjustment) <= .001 * this->posteriorWeight() );
                 }
             }
         }
@@ -789,9 +789,9 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
   if ( node != this->local_root() ) {
     if ( length_left < WeightedBranchLengthAbove(node) ) {
       assert( node->local() );
-      dout << " before IS_TP the weight is " << this->weight() << endl;
+      dout << " before IS_TP the weight is " << this->posteriorWeight() << endl;
       this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
-      dout << " Straight after IS_TP the weight is " << this->weight() << endl;
+      dout << " Straight after IS_TP the weight is " << this->posteriorWeight() << endl;
       //this is the end of iterating through nodes, so we update here
       return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
     }
@@ -848,7 +848,7 @@ void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
     double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
 
     // update the particle weight so we have a correctly weighted sample of the target distribution
-    setParticleWeight( weight() * importance_weight );
+    setPosteriorWeight( posteriorWeight() * importance_weight );
 
     // delay applying the importance weight to the distribution used for resampling particles, by
     // storing it in the priority queue
@@ -862,6 +862,6 @@ void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
 
     // update the total delayed adjustment (for checking only)
     total_delayed_adjustment *= importance_weight;
-    assert( std::abs(weight() - delayed_weight() * total_delayed_adjustment) <= .001 * weight() );
+    assert( std::abs(posteriorWeight() - pilotWeight() * total_delayed_adjustment) <= .001 * posteriorWeight() );
 }
 

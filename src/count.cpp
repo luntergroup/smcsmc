@@ -2,7 +2,7 @@
  * smcsmc is short for particle filters for ancestral recombination graphs.
  * This is a free software for demographic inference from genome data with particle filters.
  *
- * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
+ * Copyright (C) 2013-2017 Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
  *
  * This file is part of smcsmc.
  *
@@ -366,7 +366,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 
         for (int epoch_idx = change_times_.size()-1; epoch_idx >= (int)first_epoch_to_update; epoch_idx--) {
 
-            update_all_counts( &thisState->eventTrees[ epoch_idx ], thisState->weight(), update_to, epoch_idx );
+            update_all_counts( &thisState->eventTrees[ epoch_idx ], thisState->posteriorWeight(), update_to, epoch_idx );
 
         }
     }

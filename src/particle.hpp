@@ -2,7 +2,7 @@
  * smcsmc is short for particle filters for ancestral recombination graphs.
  * This is a free software for demographic inference from genome data with particle filters.
  *
- * Copyright (C) 2013, 2014 Sha (Joe) Zhu and Gerton Lunter
+ * Copyright (C) 2013-2017 Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
  *
  * This file is part of smcsmc.
  *
@@ -157,10 +157,10 @@ class ForestState : public Forest{
         // Setters and getters:
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
-        void setParticleWeight(double weight) { this->particle_weight_ = weight; }
-        double weight() const { return this->particle_weight_; }
-        void setDelayedWeight(double weight) { this->delayed_weight_ = weight; }
-        double delayed_weight() const { return this->delayed_weight_; }
+        void setPosteriorWeight(double weight) { this->posterior_weight_ = weight; }
+        double posteriorWeight() const { return this->posterior_weight_; }
+        void setPilotWeight(double weight) { this->pilot_weight_ = weight; }
+        double pilotWeight() const { return this->pilot_weight_; }
 
 
         // What does this do?
@@ -170,8 +170,8 @@ class ForestState : public Forest{
         vector < EvolutionaryEvent* > eventTrees;
         vector < TmrcaState > TmrcaHistory;
         double site_where_weight_was_updated_;
-        double particle_weight_;
-        double delayed_weight_;
+        double posterior_weight_;
+        double pilot_weight_;
         bool owning_model_and_random_generator;
         const vector < int >& record_event_in_epoch;
 
