@@ -480,20 +480,22 @@ void PfParam::append_resample_file( int position, double ESS) const {
 
 void PfParam::helpOption(){
     cout << "Options:" << endl;
-    cout << setw(10)<<"-Np"     << setw(5) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
-    cout << setw(10)<<"-ESS"    << setw(5) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
-    cout << setw(10)<<"-p"      << setw(5) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
-    cout << setw(10)<<"-tmax"   << setw(5) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
-    cout << setw(10)<<"-EM"     << setw(5) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
-    cout << setw(10)<<"-seg"    << setw(5) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
-    cout << setw(10)<<"-guide"  << setw(5) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;    
-    cout << setw(10)<<"-startpos"<<setw(5) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
-    cout << setw(10)<<"-o"      << setw(5) << "STR" << "  --  " << "Prefix for output files" << endl;
-    cout << setw(10)<<"-online" << setw(5) << " "   << "  --  " << "Perform online EM" << endl;
-    cout << setw(10)<<"-xr"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
-    cout << setw(10)<<"-xc"     << setw(5) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
-    cout << setw(10)<<"-log"    << setw(5) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(10)<<"-v"      << setw(5) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+    cout << setw(15)<<"-Np"            << setw(8) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
+    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
+    cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
+    cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
+    cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
+    cout << setw(15)<<"-seg"           << setw(8) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
+    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;    
+    cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
+    cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
+    cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
+    cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
+    cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
+    cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
+    cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
 };
 
 
