@@ -119,6 +119,7 @@ void PfParam::parse(int argc, char *argv[]) {
         // ------------------------------------------------------------------
         } else if ( *argv_i == "-lag"    ){
             this->lag = this->readNextInput<double>();
+            this->calibrate_lag = false;
         } else if ( *argv_i == "-calibrate_lag"){
             this->calibrate_lag = true;
             this->lag_fraction = readNextInput<double>();
@@ -191,8 +192,8 @@ void PfParam::init(){
     this->max_segment_length_factor_ = 16.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
     this->lag              = 0.0;
-    this->calibrate_lag    = false;
-    this->lag_fraction     = 0.0;
+    this->calibrate_lag    = true;
+    this->lag_fraction     = 4.0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_             = 0.5;
     this->ESS_default_bool = true;
