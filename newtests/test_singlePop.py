@@ -16,7 +16,7 @@ class TestGenericSinglePop(TestGeneric):
     def setUpClass(cls):
         cls.prefix = "2sampleSingleConst"
         cls.segfile = cls.prefix + ".seg"
-        cls.seqlen = 1e8
+        cls.seqlen = 1e7
         cls.scrmpath = "../scrm"
         cls.pop = populationmodels.PopSingleConst( filename = cls.segfile,
                                                    sequence_length = cls.seqlen,
@@ -31,11 +31,12 @@ class TestGenericSinglePop(TestGeneric):
         print ("called TestGenericSinglePop.setUp()")
         TestGeneric.setUp(self)
         self.popt = None        # use the model's change points for inference
+        self.npop = 1
 
 
     # actual test
     def test_inference(self):
-        self.em = 10
+        self.em = 5
         self.np = 200
         self.seed = (3647837471,)
         self.infer( case = 1 )
@@ -47,6 +48,7 @@ class TestGenericSinglePop(TestGeneric):
 
         out_of_range = 0
         for epoch, emresults in enumerate(results['Coal']):
+            print(`epoch` + `emresults` )
             # get the last EM estimate
             result = emresults['estimates'][-1]
 

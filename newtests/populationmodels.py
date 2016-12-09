@@ -95,7 +95,7 @@ class Population:
         # output
         scrmfilename = filename + ".scrm"
         command += " -T -L -p 10 -l 300000 > " + scrmfilename
-
+        print(command)
         # execute
         returnvalue = subprocess.check_call(command, shell=True)
 
@@ -316,9 +316,9 @@ class PopSingleConst(Population):
 class PopSingleExpand(Population):
 
     def __init__(self,
-                 change_points        = [.5, 1.0],
-                 population_sizes     = [5, 1],
-                 migration_commands   = [None, None],
+                 change_points        = [0, .5, 1.0],
+                 population_sizes     = [5, 5, 1],
+                 migration_commands   = [None, None, None],
                  num_samples          = 2,
                  **kwargs):
 
@@ -334,11 +334,39 @@ class PopSingleExpand(Population):
         self.target_max = [1e+10, 51000, 11500]
 
 
+class TwoPopUniDirMigr(Population):
+
+    def __init__(self,
+                 change_points        = [0, .5, 1.0],
+                 population_sizes     = [5, 5, 1],
+                 migration_commands   = ["-em 0 2 1 1", "-em 0.5 2 1 1", "-em 1.0 2 1 1"],
+                 num_samples          = 8,
+                 **kwargs):
+
+        nsam = kwargs.get('num_samples', defaults['num_samples'])
+
+        Population.__init__(self,
+                            change_points = change_points,
+                            population_sizes = population_sizes,
+                            migration_commands = migration_commands,
+                            num_samples = num_samples,
+                            additional_commands = "-I 2 {} {}".format( int(num_samples/2), int(num_samples/2) ),
+                            **kwargs)
+        self.target_min = [[0,     49000, 9500],
+                           [0,     49000, 9500]]
+        self.target_max = [[1e+10, 51000, 11500],
+                           [1e+10, 51000, 11500]]
+        self.migr_target_min = [[0, 0, 0],
+                                [0, 0, 0]]
+        self.migr_target_max = [[3e-5, 3e-5, 3e-5],
+                                [3e-5, 3e-5, 3e-5]]
+
+
 class PopSingleShrink(Population):
 
     def __init__(self,
-                 change_points        = [.5, 1.0],
-                 population_sizes     = [ 5, 10],
+                 change_points        = [0, .5, 1.0],
+                 population_sizes     = [5,  5, 10],
                  migration_commands   = [None, None],
                  num_samples          = 2,
                  **kwargs):

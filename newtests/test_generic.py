@@ -25,6 +25,7 @@ class TestGeneric(unittest.TestCase):
         self.seed = (3647837471,)
         self.smcsmc_change_points = None
         self.success = False
+        self.npop = 1
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
@@ -51,6 +52,13 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.segfile )
+        addopt = self.pop.additional_commands
+        migropt = ""
+        if len(self.pop.migration_commands) > 0:
+            for migration_command in self.pop.migration_commands:
+                if migration_command != None:
+                    migropt += " " + migration_command
+
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
             epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
@@ -64,7 +72,7 @@ class TestGeneric(unittest.TestCase):
                 epochs = self.pop.change_points
             epochopt = " ".join(["-eN {time} 1".format(time=time)
                                  for time in epochs])
-        return "../smcsmc {nsam} {t} {r} {np} {em} {epochs} {seed} {seg}".format(
+        return "../smcsmc {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr}".format(
             nsam = nsamopt,
             t = topt,
             r = ropt,
@@ -72,7 +80,9 @@ class TestGeneric(unittest.TestCase):
             em = emopt,
             epochs = epochopt,
             seed = seedopt,
-            seg = segopt)
+            seg = segopt,
+            add = addopt,
+            migr = migropt)
 
     # helper -- run smcsmc
     def infer(self, case = 0):
@@ -89,19 +99,27 @@ class TestGeneric(unittest.TestCase):
     # helper -- parse results of smcsmc run
     def readResults(self):
         results = {'Coal':[],    # type -> epoch -> {'start' -> # ,'end' -> # ,'estimates' -> iteration -> # }
-                   'Recomb':[]}
+                   'Recomb':[],
+                   'Migr':[]}
         for line in open(self.outfile):
             elts = line.strip().split()
             if elts[0] == "Iter": continue
-            it, epoch, start, end, typ, ne = elts[0],elts[1],elts[2],elts[3],elts[4],elts[10]
+            it, epoch, start, end, typ, from_pop, to_pop, rate, ne = elts[0],elts[1],elts[2],elts[3],elts[4],elts[5],elts[6],elts[9],elts[10]
             if int(epoch) == -1:
                 # recombination rate is assigned to epoch -1
                 epoch = 0
+                frop_pop = 0
             if len(results[typ]) <= int(epoch):
                 results[typ].append( {'start': float(start),
                                       'end': float(end),
-                                      'estimates': []} )
-            assert( len(results[typ][int(epoch)]['estimates']) == int(it) )
-            results[typ][int(epoch)]['estimates'].append( float(ne) )
+                                      'estimates': [[] for i in range(self.npop)]} )  # the length of the estimates should be number of populations,
+            #print ( `len(results[typ][int(epoch)]['estimates'][0])` + " " + `it` )
+            #assert( len(results[typ][int(epoch)]['estimates'][0]) == int(it) )
+            if typ == "Coal":
+                results[typ][int(epoch)]['estimates'][int(from_pop)].append( float(ne) )
+            elif typ == "Migr":
+                results[typ][int(epoch)]['estimates'][int(from_pop)].append( float(rate) )
+            print(typ)
+            print(results[typ])
         return results
 
