@@ -41,6 +41,9 @@ class TestGenericSinglePop(TestGeneric):
         self.seed = (3647837471,)
         self.infer( case = 1 )
 
+        # Store results in db
+        self.resultsToMySQL()
+        
         # Ne target ranges for the varous epochs
         target_min = self.pop.target_min
         target_max = self.pop.target_max
@@ -48,7 +51,6 @@ class TestGenericSinglePop(TestGeneric):
 
         out_of_range = 0
         for epoch, emresults in enumerate(results['Coal']):
-            print(`epoch` + `emresults` )
             # get the last EM estimate
             result = emresults['estimates'][-1]
 
@@ -56,7 +58,7 @@ class TestGenericSinglePop(TestGeneric):
             print ("Checking epoch",epoch,result,target_min[epoch],target_max[epoch])
             #self.assertTrue( result >= target_min[epoch] )
             #self.assertTrue( result <= target_max[epoch] )
-            if result < target_min[epoch] or result > target_max[epoch]:
+            if result[0] < target_min[epoch] or result[0] > target_max[epoch]:
                 print ("Out of range!")
                 out_of_range += 1
 
