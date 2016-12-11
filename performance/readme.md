@@ -1,11 +1,11 @@
-## Performance reports
+# Performance reports
 
-# Overview
+## Overview
 
 A [CGATReport](https://www.cgat.org/downloads/public/CGATReport) document summarizing
 the performance of `smcsmc`
 
-# Setup
+## Setup
 
 Install using
 ```

@@ -31,6 +31,7 @@ class Population:
                  population_sizes     = [0.1, 1, 0.5, 1, 2],
                  migration_commands   = [None, None, None, None, None],
                  additional_commands  = "",
+                 npop                 = 1,
                  seed                 = (3647837471,),
                  filename             = None,
                  scrmpath             = defaults['scrmpath'] ):
@@ -44,6 +45,7 @@ class Population:
         self.population_sizes = population_sizes
         self.migration_commands = migration_commands
         self.additional_commands = additional_commands
+        self.npop = npop
         self.seed = seed
         self.filename = filename
         self.scrmpath = scrmpath
@@ -88,17 +90,16 @@ class Population:
                                                      args = command,
                                                      seed = ' '.join(map(str,self.seed)))
 
-        # print Newick trees;
-        # print TMRCA and local tree length for each segment;
-        # use 10 digits precision;
-        # limit exact LD window to 300 kb
-        # output
+        # -T        print Newick trees;
+        # -L        print TMRCA and local tree length for each segment;
+        # -p 10     use 10 digits precision;
+        # -l 30000  limit exact LD window to 300 kb
         scrmfilename = filename + ".scrm"
         command += " -T -L -p 10 -l 300000 > " + scrmfilename
-        print(command)
+        self.simulate_command = command
+
         # execute
         returnvalue = subprocess.check_call(command, shell=True)
-
         if returnvalue > 0:
             raise ValueError("Problem executing " + command)
 
@@ -122,7 +123,7 @@ class Population:
                 data = []
             elif type(data) == type([]):
                 if positions == None:
-                    raise ValueError("Unexpected output from scrm -- not 'positions' line found")
+                    raise ValueError("Unexpected output from scrm -- no 'positions' line found")
                 dataline = line.strip()
                 # make data go missing...
                 if len(data) in missing_leaves:
@@ -242,6 +243,7 @@ class Population:
         # output list
         outfile = open( outfilename, 'w' )
         for pos, length, opp, rec in collapsed:
+            if type(opp) == float: opp = "{:11.2f}".format(opp)
             outfile.write( "{pos}\t{length}\t{opp}\t{rec}\n".format(pos=pos, length=length, opp=opp, rec=rec))
         outfile.close()
 
@@ -271,6 +273,7 @@ class Pop1Migr(Population):
                             population_sizes = population_sizes,
                             migration_commands = migration_commands,
                             additional_commands = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) ),
+                            npop = 2,
                             **kwargs)
 
 class Pop4(Population):
@@ -351,6 +354,7 @@ class TwoPopUniDirMigr(Population):
                             migration_commands = migration_commands,
                             num_samples = num_samples,
                             additional_commands = "-I 2 {} {}".format( int(num_samples/2), int(num_samples/2) ),
+                            npop = 2,
                             **kwargs)
         self.target_min = [[0,     49000, 9500],
                            [0,     49000, 9500]]

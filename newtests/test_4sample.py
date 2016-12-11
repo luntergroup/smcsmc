@@ -12,35 +12,22 @@ from test_generic import *
 # Test if we can properly handle missing data
 #
 
-class TestMissingData1(TestGeneric):
+class TestMissingDataOne(TestGeneric):
 
-    # Called by unittest.main when TestTwoSample is created.
-    # Responsible for per-class creation of simulated data.
-    # It is implemented as a class method to avoid simulating the same data multiple times
-    @classmethod
-    def setUpClass(cls):
-        cls.prefix = "4sample_missing1"
-        cls.segfile = cls.prefix + ".seg"
-        cls.seqlen = 1e7
-        cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.Pop4( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
-        cls.success = True   # set ourselves up for success
-
-        print ("simulating for",cls.prefix,"...")
-        cls.pop.simulate( missing_leaves = [0] )
-
-    ## remove simulated data
-    #@classmethod
-    #def tearDownClass(cls):
-        #if cls.segfile != None and cls.success:
-            #os.unlink( cls.segfile )
-            #cls.filename = None
-
-    # actual test
-    def test_inference(self):
+    def setUp(self):
+        TestGeneric.setUp(self, "testdata/4sample_missingone")
+        self.seqlen = 1e7
+        self.missing_leaves = [0]
+        self.pop = populationmodels.Pop4( sequence_length = self.seqlen,
+                                          scrmpath=self.scrmpath )
+        
+        # set default inference parameters
         self.em = 4
         self.np = 1000
-        self.seed = (3647837471,)
+        self.seed = (1,)
+        
+    # actual test
+    def test_inference(self):
         self.infer( case = 1 )
 
         # Ne target ranges for the varous epochs
@@ -51,7 +38,7 @@ class TestMissingData1(TestGeneric):
         out_of_range = 0
         for epoch, emresults in enumerate(results['Coal']):
             # get the last EM estimate
-            result = emresults['estimates'][-1]
+            result = emresults['estimates'][0][-1]
 
             # see if it is within range
             print ("Checking epoch",epoch,result,target_min[epoch],target_max[epoch])
@@ -68,33 +55,21 @@ class TestMissingData1(TestGeneric):
 
 class TestMissingDataAll(TestGeneric):
 
-    # Called by unittest.main when TestTwoSample is created.
-    # Responsible for per-class creation of simulated data.
-    # It is implemented as a class method to avoid simulating the same data multiple times
-    @classmethod
-    def setUpClass(cls):
-        cls.prefix = "4sample_missing4"
-        cls.segfile = cls.prefix + ".seg"
-        cls.seqlen = 1e7
-        cls.scrmpath = "../scrm"
-        cls.pop = populationmodels.Pop4( filename = cls.segfile, sequence_length = cls.seqlen, scrmpath=cls.scrmpath )
-        cls.success = True   # set ourselves up for success
-
-        print ("simulating for",cls.prefix,"...")
-        cls.pop.simulate( missing_leaves = [0,1,2,3] )
-
-    ## remove simulated data
-    #@classmethod
-    #def tearDownClass(cls):
-        #if cls.segfile != None and cls.success:
-            #os.unlink( cls.segfile )
-            #cls.filename = None
-
-    # actual test
-    def test_inference(self):
+    def setUp(self):
+        TestGeneric.setUp(self, "testdata/4sample_missingall")
+        self.seqlen = 1e7
+        self.missing_leaves = [0,1,2,3]
+        self.pop = populationmodels.Pop4( sequence_length = self.seqlen,
+                                          scrmpath=self.scrmpath )
+        
+        # set default inference parameters
         self.em = 4
         self.np = 1000
-        self.seed = (3647837471,)
+        self.seed = (1,)
+
+        
+    # actual test
+    def test_inference(self):
         self.infer( case = 1 )
 
         # Ne target ranges for the varous epochs
@@ -105,7 +80,7 @@ class TestMissingDataAll(TestGeneric):
         out_of_range = 0
         for epoch, emresults in enumerate(results['Coal']):
             # get the last EM estimate
-            result = emresults['estimates'][-1]
+            result = emresults['estimates'][0][-1]
 
             # see if it is within range
             print ("Checking epoch",epoch,result,target_min[epoch],target_max[epoch])
@@ -117,7 +92,6 @@ class TestMissingDataAll(TestGeneric):
 
         self.assertTrue( out_of_range < 3 )
         self.success = True
-
 
 
 if __name__ == "__main__":
