@@ -103,8 +103,8 @@ class Population:
         if returnvalue > 0:
             raise ValueError("Problem executing " + command)
 
+        # generate the .seg and .seg.recomb files
         self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves )
-
         self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
 
         # done; remove scrm output file
@@ -252,150 +252,137 @@ class Population:
 #
 # some models
 #
-class Pop1(Population):
+class Pop2(Population):
 
     def __init__(self, **kwargs):
         Population.__init__(self, **kwargs)
 
 
-class Pop1Migr(Population):
-
-    def __init__(self,
-                 change_points        = [.01, 0.06, 0.2, 0.6,  1, 2],
-                 population_sizes     = [0.1, 1,    0.5, None, 1, 2],
-                 migration_commands   = [None, None, None, "-ej 0.6 2 1", None, None],
-                 **kwargs):
-
-        nsam = kwargs.get('num_samples', defaults['num_samples'])
-
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            additional_commands = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) ),
-                            npop = 2,
-                            **kwargs)
-
 class Pop4(Population):
 
-    def __init__(self,
-                 change_points        = [.01, 0.06, 0.2,  1, 2],
-                 population_sizes     = [0.1, 1,    0.5,  1, 2],
-                 migration_commands   = [None, None, None, None, None],
-                 num_samples          = 4,
-                 **kwargs):
+    def __init__(self, **kwargs):
 
-        nsam = kwargs.get('num_samples', defaults['num_samples'])
+        pop4_defaults = {'change_points': [.01, 0.06, 0.2,  1, 2],
+                         'population_sizes': [0.1, 1,    0.5,  1, 2],
+                         'migration_commands': [None, None, None, None, None],
+                         'num_samples': 4}
 
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            num_samples = num_samples,
-                            **kwargs)
+        # set kwargs to Pop4-default values, but allow caller to override
+        for key, value in pop4_defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
+
+class Pop2Migr(Population):
+
+    def __init__(self, **kwargs):
+
+        pop2migr_defaults = {'change_points':    [0.01, 0.06, 0.2, 0.6,  1, 2],
+                             'population_sizes': [0.1,  1,    0.5, None, 1, 2],
+                             'migration_commands': [None, None, None, "-ej 0.6 2 1", None, None],
+                             'num_samples': 4,
+                             'npop': 2}
+
+        nsam = kwargs.get('num_samples', pop2migr_defaults['num_samples'])
+        addl = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) )
+        pop1migr_defaults['additional_commands'] = addl
+
+        # set kwargs to default values, but allow caller to override
+        for key, value in pop2migr_defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 
 class PopSingleConst(Population):
 
-    def __init__(self,
-                 change_points        = [.5, 1.0],
-                 population_sizes     = [1, 1],
-                 migration_commands   = [None, None],
-                 num_samples          = 2,
-                 **kwargs):
+    def __init__(self, **kwargs):
 
-        nsam = kwargs.get('num_samples', defaults['num_samples'])
+        defaults = {'change_points':    [.5, 1.0],
+                    'population_sizes': [1, 1],
+                    'migration_commands': [None, None],
+                    'num_samples': 2}
 
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            num_samples = num_samples,
-                            **kwargs)
-        self.target_min = [0,     9500, 9500]
-        self.target_max = [1e+10, 11500, 11500]
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 
 class PopSingleExpand(Population):
 
-    def __init__(self,
-                 change_points        = [0, .5, 1.0],
-                 population_sizes     = [5, 5, 1],
-                 migration_commands   = [None, None, None],
-                 num_samples          = 2,
-                 **kwargs):
+    def __init__(self, **kwargs):
 
-        nsam = kwargs.get('num_samples', defaults['num_samples'])
+        defaults = {'change_points':    [0, .5, 1.0],
+                    'population_sizes': [5, 5, 1],
+                    'migration_commands': [None, None, None],
+                    'num_samples': 2}
 
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            num_samples = num_samples,
-                            **kwargs)
-        self.target_min = [0,     49000, 9500]
-        self.target_max = [1e+10, 51000, 11500]
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 
 class TwoPopUniDirMigr(Population):
 
-    def __init__(self,
-                 change_points        = [0, .5, 1.0],
-                 population_sizes     = [5, 5, 1],
-                 migration_commands   = ["-em 0 2 1 1", "-em 0.5 2 1 1", "-em 1.0 2 1 1"],
-                 num_samples          = 8,
-                 **kwargs):
+    def __init__(self, **kwargs):
+
+        defaults = {'change_points':    [0, .5, 1.0],
+                    'population_sizes': [5, 5, 1],
+                    'migration_commands': ["-em 0 2 1 1", "-em 0.5 2 1 1", "-em 1.0 2 1 1"],
+                    'num_samples': 8}
 
         nsam = kwargs.get('num_samples', defaults['num_samples'])
+        addl = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) )
+        defaults['additional_commands'] = addl
 
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            num_samples = num_samples,
-                            additional_commands = "-I 2 {} {}".format( int(num_samples/2), int(num_samples/2) ),
-                            npop = 2,
-                            **kwargs)
-        self.target_min = [[0,     49000, 9500],
-                           [0,     49000, 9500]]
-        self.target_max = [[1e+10, 51000, 11500],
-                           [1e+10, 51000, 11500]]
-        self.migr_target_min = [[0, 0, 0],
-                                [0, 0, 0]]
-        self.migr_target_max = [[3e-5, 3e-5, 3e-5],
-                                [3e-5, 3e-5, 3e-5]]
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 
 class PopSingleShrink(Population):
 
-    def __init__(self,
-                 change_points        = [0, .5, 1.0],
-                 population_sizes     = [5,  5, 10],
-                 migration_commands   = [None, None],
-                 num_samples          = 2,
-                 **kwargs):
+    def __init__(self, **kwargs):
 
-        nsam = kwargs.get('num_samples', defaults['num_samples'])
+        defaults = {'change_points':    [.5, 1.0],
+                    'population_sizes': [5, 10],
+                    'migration_commands': [None, None],
+                    'num_samples': 2}
 
-        Population.__init__(self,
-                            change_points = change_points,
-                            population_sizes = population_sizes,
-                            migration_commands = migration_commands,
-                            num_samples = num_samples,
-                            **kwargs)
-        self.target_min = [0,     49000, 95000]
-        self.target_max = [1e+10, 51000, 115000]
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 #
 # main code for standalone execution
 #
 if __name__ == "__main__":
-    models = {"Pop1": Sim1,
-              "Pop1Migr": Sim1Migr}
+    models = {"Pop2": Pop2,
+              "Pop2Migr": Pop2Migr}
     labels = str(tuple(models.keys())).replace("'","")
     parser = OptionParser()
     parser.add_option("-o", "--output", dest="outfile", help="write data to FILE.seg", metavar="FILE.seg")
-    parser.add_option("-m", "--model", dest="model", help="choose model {}".format(labels), default = "Pop1")
+    parser.add_option("-m", "--model", dest="model", help="choose model {}".format(labels), default = "Pop2")
     parser.add_option("-n", "--numsamples", type="int", dest="num_samples", help="number of samples to simulate")
     parser.add_option("-l", "--seqlen", type="int", dest="seqlen", help="sequence length", default = 1e6)
     parser.add_option("-s", "--seed", type="int", dest="seed", help="random number seed", default = 1)

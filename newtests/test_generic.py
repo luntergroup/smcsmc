@@ -6,11 +6,12 @@ import subprocess
 import itertools
 
 try:
-    from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, create_engine
+    from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Table, MetaData, create_engine
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.sql import func
     Base = declarative_base()
+    Session = sessionmaker()
 except:
     Base = None
 
@@ -130,6 +131,39 @@ class TestGeneric(unittest.TestCase):
         returnvalue = subprocess.check_call(cmd, shell = True)
         self.assertTrue( returnvalue == 0 )
 
+    # actual test.  However, should not be run on the TestGeneric class itself, as there is 
+    # nothing to test
+    def test_inference(self):
+
+        if self.__class__.__name__ == "TestGeneric": 
+            return
+
+        # Generate data, and perform inference
+        self.infer( case = 1 )
+
+        # Store results in db
+        self.resultsToMySQL()
+
+        # Read results from .out file
+        results = self.readResults()
+
+        # Check results and count out-of-range epochs
+        out_of_range = 0
+        for epoch, emresults in enumerate(results['Coal']):
+
+            # get the last EM estimate (for 'population' 0)
+            results = emresults['estimates'][0]
+            result = results[-1]
+            print ("Checking epoch",epoch,results,self.target_min[epoch],self.target_max[epoch])
+
+            # see if it is within range
+            if result < self.target_min[epoch] or result > self.target_max[epoch]:
+                print ("Out of range!")
+                out_of_range += 1
+
+        self.assertTrue( out_of_range <= self.max_out_of_range )
+        self.success = True
+
     # helper -- parse results of smcsmc run
     def readResults(self):
         results = {'Coal':[],    # type -> epoch -> {'start' -> # ,'end' -> # ,'estimates' -> from_pop -> iteration -> # }
@@ -167,43 +201,57 @@ class TestGeneric(unittest.TestCase):
         # make a connection
         engine = create_engine(dbtype + db)
 
-        # create tables, if they don't already exist.  Just defining them does the trick.
-        class Experiment(Base):
-            __tablename__ = "experiment"
-            id = Column(Integer, primary_key=True)
-            date = Column(DateTime, default=func.now())
-            simulate_command = Column(String)
-            inference_command = Column(String)
-            np = Column(Integer)
-            num_samples = Column(Integer)
-            sequence_length = Column(Float)
-            recombination_rate = Column(Float)
-            mutation_rate = Column(Float)
-            dataseed = Column(Integer)
-            infseed = Column(Integer)
-        class Result(Base):
-            __tablename__ = "result"
-            id = Column(Integer, primary_key=True)
-            exp_id = Column(Integer, ForeignKey("experiment.id"))
-            iter = Column(Integer)
-            epoch = Column(Integer)
-            start = Column(Float)
-            end = Column(Float)
-            type = Column(String)
-            frm = Column(Integer)
-            to = Column(Integer)
-            opp = Column(Float)
-            count = Column(Float)
-            rate = Column(Float)
-            ne = Column(Float)
-            ess = Column(Float)
+        # load or create tables
+        if engine.dialect.has_table(engine, "experiment"):
 
-        # commit tables; and create session to add data
-        Base.metadata.create_all(engine, checkfirst=True)
-        Sessionmaker = sessionmaker(bind=engine)
+            # reflect the database tables we use, using metadata
+            metadata = MetaData(bind=engine)
+            class Experiment(Base):
+                __table__ = Table('experiment', metadata, autoload=True)
+            class Result(Base):
+                __table__ = Table('result', metadata, autoload=True)
+
+        else:
+
+            # create tables.  Just declaring them does the trick
+            class Experiment(Base):
+                __tablename__ = "experiment"
+                keep_existing = True
+                id = Column(Integer, primary_key=True)
+                date = Column(DateTime, default=func.now())
+                simulate_command = Column(String)
+                inference_command = Column(String)
+                np = Column(Integer)
+                num_samples = Column(Integer)
+                sequence_length = Column(Float)
+                recombination_rate = Column(Float)
+                mutation_rate = Column(Float)
+                dataseed = Column(Integer)
+                infseed = Column(Integer)
+            class Result(Base):
+                __tablename__ = "result"
+                keep_existing = True
+                id = Column(Integer, primary_key=True)
+                exp_id = Column(Integer, ForeignKey("experiment.id"))
+                iter = Column(Integer)
+                epoch = Column(Integer)
+                start = Column(Float)
+                end = Column(Float)
+                type = Column(String)
+                frm = Column(Integer)
+                to = Column(Integer)
+                opp = Column(Float)
+                count = Column(Float)
+                rate = Column(Float)
+                ne = Column(Float)
+                ess = Column(Float)
+
+            # commit tables
+            Base.metadata.create_all(engine, checkfirst=True)
 
         # add data for this experiment
-        session = Sessionmaker()
+        Session.configure(bind=engine)
+        session = Session()
         this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=self.pop.sequence_length,
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
@@ -212,7 +260,7 @@ class TestGeneric(unittest.TestCase):
         session.commit()         # this also sets this_exp.id
 
         # add results
-        session = Sessionmaker()
+        session = Session()
         with open(self.outfile) as f:
             for line in f:
                 elts = line.strip().split()
