@@ -35,6 +35,7 @@ class TestMigration(TestGeneric):
 
         # Call test_inference on parent class to generate data, perform inference, and check population sizes
         TestGeneric.test_inference(self)
+        self.success = False
 
         # Read results from .out file (again)
         results = self.readResults()

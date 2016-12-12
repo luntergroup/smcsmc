@@ -19,13 +19,13 @@ import populationmodels
 
 
 # All tests are derived from TestGeneric.  A class implementing a test should
-#
-# 1. implement a setUp(self) method that
+# implement a setUp(self) method that
 #    - calls TestGeneric.setUp( "prefix" )
+#    - sets inference targets for population sizes (target_min, target_max, max_out_of_range)
 #    - optionally modifies or sets further parameters
 #    - assigns a Population to self.pop
-#
-# 2. implement at least one test_xxx method that calls infer()
+# It can optionally overload test_inference() or add more test_xxx methods, to perform
+# tests using the population model.
 #
 # infer() can be called multiple times, but should each have their own unique case
 # number. These all use the same generated data, and should be run in series.
