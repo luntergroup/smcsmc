@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import unittest
 import os
+import time
 import subprocess
 import itertools
 
@@ -35,12 +36,14 @@ import populationmodels
 class TestGeneric(unittest.TestCase):
 
     # called every time an instance of TestGeneric is made -- set inference defaults
-    def setUp(self, prefix = None):
-        # these two must be set by deriving class:
+    def setUp(self, prefix = None, name = None):
+        # these must be set by deriving class:
         self.prefix = prefix
+        self.name = name
         self.pop = None
         # the following are all default values, and may be changed:
         self.scrmpath = "../scrm"
+        self.smcsmcpath = "../smcsmc"
         self.np = 1000
         self.em = 0
         self.seed = (3647837471,)
@@ -48,10 +51,12 @@ class TestGeneric(unittest.TestCase):
         self.tmax = 4
         self.smcsmc_change_points = None
         self.missing_leaves = []
+        self.filename_disambiguator = ""
         # state:
         self.simulated = False
         self.success = False
         self.cases = []
+        self.smcsmc_runtime = -1
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
@@ -74,7 +79,7 @@ class TestGeneric(unittest.TestCase):
         particlesopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
-        segopt = "-seg {}".format( self.prefix + ".seg" )
+        segopt = "-seg {}".format( self.pop.filename )
         addopt = self.pop.additional_commands
         migropt = " ".join( [ cmd for cmd in self.pop.migration_commands if cmd != None ] )
 
@@ -91,7 +96,8 @@ class TestGeneric(unittest.TestCase):
                 epochs = self.pop.change_points
             epochopt = " ".join(["-eN {time} 1".format(time=time)
                                  for time in epochs])
-        self.inference_command = "../smcsmc {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr}".format(
+        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr}".format(
+            smcsmc = self.smcsmcpath,
             nsam = nsamopt,
             t = topt,
             r = ropt,
@@ -109,10 +115,15 @@ class TestGeneric(unittest.TestCase):
         if self.simulated: return
         if not self.pop: raise ValueError("Must define population before simulating")
         if not self.prefix: raise ValueError("Must define prefix before simulating")
-        print ("simulating for",self.__class__.__name__,"...")
-        self.pop.filename = self.prefix + ".seg"
+        self.pop.filename = self.prefix + self.filename_disambiguator + ".seg"
+        print ("simulating for",self.__class__.__name__," to ",self.pop.filename)
         pathname = os.path.dirname(self.pop.filename)
-        os.makedirs(pathname, exist_ok=True)
+        if pathname != '' and not os.path.exists(pathname):
+            try:
+                os.makedirs(pathname)
+            except:
+                # to cope with race conditions when multiple tests are run in parallel
+                pass
         self.pop.simulate( self.missing_leaves )
         self.simulated = True
     
@@ -121,15 +132,19 @@ class TestGeneric(unittest.TestCase):
         self.simulate()
         if case in self.cases: raise ValueError("Must run case " + str(case) + " only once")
         self.cases.append(case)
-        self.caseprefix = self.prefix + str(case)
+        self.caseprefix = "{}_C{}".format(self.pop.filename[:-4], case)
+        if os.path.exists(self.caseprefix): raise ValueError("File {} already exists".format(self.caseprefix))
         print (" running smcsmc for",self.__class__.__name__,", case",case,"...")
         self.outfile = self.caseprefix + ".out"
         cmd = "{cmd} -o {caseprefix} > {caseprefix}.stdout 2> {caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
         print (" command:",cmd)
+        start = time.clock()
         returnvalue = subprocess.check_call(cmd, shell = True)
+        end = time.clock()
         self.assertTrue( returnvalue == 0 )
+        self.smcsmc_runtime = end-start
 
     # actual test.  However, should not be run on the TestGeneric class itself, as there is 
     # nothing to test
@@ -173,7 +188,7 @@ class TestGeneric(unittest.TestCase):
             for line in f:
                 elts = line.strip().split()
                 if elts[0] == "Iter": continue
-                it, epoch, start, end, typ, from_pop, to_pop, rate, ne = elts[0],elts[1],elts[2],elts[3],elts[4],elts[5],elts[6],elts[9],elts[10]
+                it, epoch, start, end, typ, from_pop, to_pop, _, _, rate, ne = elts[:11]
                 if int(epoch) == -1:
                 # recombination rate is assigned to epoch -1
                     epoch = 0
@@ -216,21 +231,22 @@ class TestGeneric(unittest.TestCase):
             # create tables.  Just declaring them does the trick
             class Experiment(Base):
                 __tablename__ = "experiment"
-                keep_existing = True
                 id = Column(Integer, primary_key=True)
                 date = Column(DateTime, default=func.now())
+                name = Column(String)
                 simulate_command = Column(String)
                 inference_command = Column(String)
                 np = Column(Integer)
                 num_samples = Column(Integer)
-                sequence_length = Column(Float)
+                sequence_length = Column(Integer)
+                missing_leaves = Column(String)
                 recombination_rate = Column(Float)
                 mutation_rate = Column(Float)
                 dataseed = Column(Integer)
                 infseed = Column(Integer)
+                smcsmc_runtime = Column(Float)
             class Result(Base):
                 __tablename__ = "result"
-                keep_existing = True
                 id = Column(Integer, primary_key=True)
                 exp_id = Column(Integer, ForeignKey("experiment.id"))
                 iter = Column(Integer)
@@ -252,10 +268,12 @@ class TestGeneric(unittest.TestCase):
         # add data for this experiment
         Session.configure(bind=engine)
         session = Session()
-        this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=self.pop.sequence_length,
+        name = self.name if self.name != None else self.prefix.split('/')[-1]
+        this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=int(self.pop.sequence_length),
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
-                               inference_command = self.inference_command )
+                               missing_leaves = str(self.missing_leaves),
+                               inference_command = self.inference_command, name = name, smcsmc_runtime = self.smcsmc_runtime )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id
 
@@ -271,5 +289,7 @@ class TestGeneric(unittest.TestCase):
                                      type = elts[4], frm = int(elts[5]), to = int(elts[6]), opp=float(elts[7]), count=float(elts[8]),
                                      rate = float(elts[9]), ne = float(elts[10]), ess = float(elts[11]) ) )
         session.commit()
+        session.close()
+        
 
 

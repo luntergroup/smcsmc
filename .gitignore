@@ -79,3 +79,12 @@ tests/tmplagNe
 testCoverage/
 *gcda
 *gcno
+
+# Test output
+newtests/resultsdb
+newtests/testdata/
+performance/experiments/data/
+performance/experiments/experimentsdb
+_build
+_cache
+_static

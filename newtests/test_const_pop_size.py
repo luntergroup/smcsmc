@@ -26,13 +26,13 @@ class TestConstPopSize(TestGeneric):
         # set targets
         self.target_min = [9000] * 17
         self.target_max = [11000] * 17
-        self.max_out_of_range = 3
+        self.max_out_of_range = -1
 
 
 class TestConstPopSize_ThreeEpochs(TestConstPopSize):
 
-    def setUp(self):
-        TestGeneric.setUp(self, "testdata/constpopsize_3epochs")
+    def setUp(self, name = "testdata/constpopsize_3epochs"):
+        TestGeneric.setUp(self, name)
         self.seqlen = 1e7
         self.missing_leaves = []
         self.popt = None                     # don't use epoch pattern for inference
@@ -50,7 +50,7 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
         # set targets
         self.target_min = [9000] * 3
         self.target_max = [11000] * 3
-        self.max_out_of_range = 1
+        self.max_out_of_range = -1
 
 
 class TestConstPopSize_MissingData(TestConstPopSize):

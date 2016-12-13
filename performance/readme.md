@@ -10,9 +10,16 @@ the performance of `smcsmc`
 Install using
 ```
 pip install CGATReport
+pip install future
+sudo apt-get install python-tk
 ```
 
-Performance data is collected in a SQLite database in `data/`.  `generate/` contains
-scripts to generate this data.  `report/` contains scripts to generate the report.
+Experiments are defined by Python scripts in `experiments/`.  When run, these store
+their results in a mysql database `experiments/experimentsdb`.
+
+These results are accessed by CGATReport using scripts in `trackers/`.  The document
+itself is `contents.rst`.
+
+To view the document, type `make html` and point a browser to `_build/html/contents.html`.
 
 
