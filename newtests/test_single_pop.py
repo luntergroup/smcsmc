@@ -21,9 +21,11 @@ class TestGenericSinglePop(TestGeneric):
         self.np = 200
         self.seed = (1,)
 
-        # set default expectations for population sizes
-        self.target_min = [0] * 5        # 5 epochs for default model
-        self.target_max = [1e10] * 5
+        # set targets
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(5):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
         self.max_out_of_range = 0
 
 
@@ -40,9 +42,11 @@ class TestTwoSampleSingleExpand(TestGenericSinglePop):
         self.np = 200
         self.seed = (1,)
 
-        # set default expectations for population sizes
-        self.target_min = [0] * 5        # 5 epochs for default model
-        self.target_max = [1e10] * 5
+        # set targets
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(5):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
         self.max_out_of_range = 0
 
 

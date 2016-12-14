@@ -20,12 +20,14 @@ class TestConstPopSize(TestGeneric):
         
         # set default inference parameters
         self.em = 4
-        self.np = 1000
+        self.np = 100
         self.seed = (1,)
 
         # set targets
-        self.target_min = [9000] * 17
-        self.target_max = [11000] * 17
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(17):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':0, 'max':100000, 'truth':10000})
         self.max_out_of_range = -1
 
 
@@ -44,14 +46,15 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
         
         # set default inference parameters
         self.em = 4
-        self.np = 1000
+        self.np = 100
         self.seed = (1,)
 
         # set targets
-        self.target_min = [9000] * 3
-        self.target_max = [11000] * 3
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(3):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
         self.max_out_of_range = -1
-
 
 class TestConstPopSize_MissingData(TestConstPopSize):
 
@@ -61,7 +64,6 @@ class TestConstPopSize_MissingData(TestConstPopSize):
         # identical to TestConstPopSize, except for name, and for running inference without any data
         self.prefix = "testdata/constpopsize_missingdata"
         self.missing = [0,1]
-
 
 class TestConstPopSize_ThreeEpochs_MissingData(TestConstPopSize_ThreeEpochs):
 

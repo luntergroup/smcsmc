@@ -26,9 +26,11 @@ class TestMissingDataOne(TestGeneric):
         self.np = 1000
         self.seed = (1,)
 
-        # set inference targets
-        self.target_min = [0,     1000, 1000, 2000, 4000, 4500, 7000, 6000, 7000, 6000, 5000, 5000, 6000, 7000, 9000, 9500, 11000]
-        self.target_max = [1e+10, 2000, 2000, 4000, 5000, 5500, 9000, 7000, 9000, 8000, 7000, 7000, 7500, 8500, 11000, 11500, 13000]
+        # set targets
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(17):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
         self.max_out_of_range = 0
         
 
@@ -46,9 +48,11 @@ class TestMissingDataAll(TestGeneric):
         self.np = 1000
         self.seed = (1,)
 
-        # set inference targets
-        self.target_min = [9800,  9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800, 9800,  9800, 9800]
-        self.target_max = [10200,  10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200, 10200,  10200, 10200]
+        # set targets
+        self.targets = []
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        for idx in range(3):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
         self.max_out_of_range = 3
         
 

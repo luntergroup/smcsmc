@@ -126,7 +126,7 @@ class TestGeneric(unittest.TestCase):
                 pass
         self.pop.simulate( self.missing_leaves )
         self.simulated = True
-    
+
     # helper -- run smcsmc
     def infer(self, case = 0):
         self.simulate()
@@ -146,11 +146,11 @@ class TestGeneric(unittest.TestCase):
         self.assertTrue( returnvalue == 0 )
         self.smcsmc_runtime = end-start
 
-    # actual test.  However, should not be run on the TestGeneric class itself, as there is 
+    # actual test.  However, should not be run on the TestGeneric class itself, as there is
     # nothing to test
     def test_inference(self):
 
-        if self.__class__.__name__ == "TestGeneric": 
+        if self.__class__.__name__ == "TestGeneric":
             return
 
         # Generate data, and perform inference
@@ -164,16 +164,41 @@ class TestGeneric(unittest.TestCase):
 
         # Check results and count out-of-range epochs
         out_of_range = 0
-        for epoch, emresults in enumerate(results['Coal']):
+        for result in results:
 
-            # get the last EM estimate (for 'population' 0)
-            results = emresults['estimates'][0]
-            result = results[-1]
-            print ("Checking epoch",epoch,results,self.target_min[epoch],self.target_max[epoch])
+            if result['type'] == "Coal":
 
-            # see if it is within range
-            if result < self.target_min[epoch] or result > self.target_max[epoch]:
-                print ("Out of range!")
+                estimate = result['ne'][-1]
+                epoch = result['epoch']
+                pop = result['pop']
+                print ("Checking Ne of population",pop,"in epoch",epoch)
+                # extract the target range from the population model
+                this_parameter = (item for item in self.targets if item["type"] == "Coal" and str(item["pop"]) == pop and str(item["epoch"]) == epoch).next()
+
+            elif result['type'] == "Recomb":
+
+                estimate = result['rate'][-1]
+                print ("Checking recombination rate")
+                # extract the target range
+                this_parameter = (item for item in self.targets if item["type"] == "Recomb").next()
+
+            elif result['type'] == "Migr":
+
+                estimate = result['rate'][-1]
+                epoch = result['epoch']
+                from_pop = result['from_pop']
+                to_pop = result['to_pop']
+                print ("Checking migration rate from pop",from_pop,"to pop",to_pop,"in epoch",result['epoch'],)
+                # extract the target range
+                this_parameter = (item for item in self.targets if item["type"] == "Migr" and item["from_pop"] == from_pop and item["to_pop"] == to_pop and item["epoch"] == epoch).next()
+
+            target_min = this_parameter['min']
+            target_max = this_parameter['max']
+            truth      = this_parameter['truth']
+
+            print ("  Truth",truth,"; Estimate",estimate,"; Range",target_min,target_max)
+            if estimate < target_min or estimate > target_max:
+                print("  ** Out of range! **")
                 out_of_range += 1
 
         self.assertTrue( out_of_range <= self.max_out_of_range )
@@ -181,30 +206,37 @@ class TestGeneric(unittest.TestCase):
 
     # helper -- parse results of smcsmc run
     def readResults(self):
-        results = {'Coal':[],    # type -> epoch -> {'start' -> # ,'end' -> # ,'estimates' -> from_pop -> iteration -> # }
-                   'Recomb':[],
-                   'Migr':[]}
+        results = []
+
         with open(self.outfile) as f:
             for line in f:
                 elts = line.strip().split()
                 if elts[0] == "Iter": continue
                 it, epoch, start, end, typ, from_pop, to_pop, _, _, rate, ne = elts[:11]
-                if int(epoch) == -1:
-                # recombination rate is assigned to epoch -1
-                    epoch = 0
-                    frop_pop = 0
-                if len(results[typ]) <= int(epoch):
-                    # there is one estimate of population size or migration per population
-                    # (TODO: in fact, there are more for migration, except for two-population models)
-                    # (TODO: not storing recombination estimates for now)
-                    results[typ].append( {'start': float(start),
-                                          'end': float(end),
-                                          'estimates': [[] for i in range(self.pop.npop)]} )  
-                if typ == "Coal":
-                    result = float(ne)
-                elif typ == "Migr" or typ == "Recomb":
-                    result = float(rate)
-                results[typ][int(epoch)]['estimates'][int(from_pop)].append( result )
+
+                if int(it) == 0:
+                # this is the first time we've seen this parameter, create a dictionary
+                    if typ == "Coal":
+                        results.append( {'type' :'Coal', 'pop': from_pop, 'epoch': epoch, 'start': start, 'end': end, 'ne': [float(ne)]} )
+                    elif typ == "Recomb":
+                        results.append( {'type' :'Recomb', 'rate': [float(rate)]} )
+                    elif typ == "Migr":
+                        results.append( {'type' :'Migr', 'from_pop': from_pop, 'to_pop': to_pop, 'epoch': epoch, 'start': start, 'end': end, 'rate': [float(rate)]} )
+                else:
+                # append this parameter estimate to the list within the correct dictionary
+                # first extract the correct dictionary, then append it
+                    if typ == "Coal":
+                        result = (item for item in results if item['type'] == "Coal" and item['pop'] == from_pop and item['epoch'] == epoch).next()
+                        result['ne'].append( float(ne) )
+
+                    elif typ == "Recomb":
+                        result = (item for item in results if item['type'] == "Recomb").next()
+                        result['rate'].append( float(rate) )
+
+                    elif typ == "Migr":
+                        result = (item for item in results if item['type'] == "Migr" and item['from_pop'] == from_pop and item['to_pop'] == to_pop and item['epoch'] == epoch).next()
+                        result['rate'].append( float(rate) )
+
         return results
 
     # helper -- store results in mysql database
@@ -212,7 +244,7 @@ class TestGeneric(unittest.TestCase):
 
         # bail out of SQLAlchemy not installed
         if Base == None: return
-        
+
         # make a connection
         engine = create_engine(dbtype + db)
 
@@ -290,6 +322,6 @@ class TestGeneric(unittest.TestCase):
                                      rate = float(elts[9]), ne = float(elts[10]), ess = float(elts[11]) ) )
         session.commit()
         session.close()
-        
+
 
 
