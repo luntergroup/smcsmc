@@ -24,9 +24,10 @@ datapath = "data/"
 #
 ###################################################################################
 
-this_module_path = os.path.dirname(inspect.getfile(inspect.currentframe()))
-sys.path.append( this_module_path + '/../../newtests' )
+
+sys.path.extend( ["../../newtests"] )
 import test_const_pop_size
+
 
 # name of this experiment
 experiment_name = "constpopsize_3epochs_lengthdependence"
@@ -48,7 +49,6 @@ experiment_pars = [{'length':seqlen, 'simseed':simseed, 'smcseed':smcseed,'missi
                            [(seqln, 1000+rep,  1000+rep, True)
                             for seqln, rep in
                             itertools.product(seqlens, range(inference_reps))])]
-                           
 
 
 # run a single experiment
@@ -108,9 +108,12 @@ if __name__ == "__main__":
 
     if args.jobs == 1:
         for i in map( run_experiment_map, experiment_pars ):
-            print "Finished experiment ",i
+            pass
     else:
         pool = Pool(processes = args.jobs)
-        for i in pool.imap_unordered( run_experiment_map, experiment_pars ):
-            print "Finished experiment ",i
-        pool.terminate()
+        p = pool.map_async(run_experiment_map, experiment_pars )
+        try:
+            results = p.get(100000)
+            pool.terminate()
+        except KeyboardInterrupt:
+            print "Received keyboard interrupt -- stopping"

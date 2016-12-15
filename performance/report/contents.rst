@@ -14,12 +14,13 @@ Population size inference for varying amounts of input data
    :layout: row
    :width: 200
 
-First attempt at plotting
-	   
+   First plots
+
 .. report:: TrackerConstPopSize.ConstpopsizeLengthdependence
-   :render: table
+   :render: table            
 
-
+   Table of results
+            
 ==================
 Indices and Tables
 ==================

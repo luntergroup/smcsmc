@@ -2,9 +2,8 @@ from CGATReport.Tracker import TrackerSQL
 import sys
 import inspect, os
 
-# the toplevel script can be in different locations, so we must use absolute paths names in sys.path
-this_module_path = os.path.dirname(inspect.getfile(inspect.currentframe()))
-sys.path.append( this_module_path + "/../experiments" )
+sys.path.extend( [ "../experiments"] )
+#import constpopsize_bylength_cfg
 import constpopsize_bylength_experiment
 
 
