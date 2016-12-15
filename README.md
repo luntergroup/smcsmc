@@ -17,7 +17,7 @@ make
 
 ## Experimental -- CGATReport
 
-I had to install `virtualenv` and `libfreetype6-dev` before starting.  The package `libxft-dev` is apparently needed too on Ubuntu 14.
+I had to install `virtualenv` and `libfreetype6-dev` before starting.  The packages `python-tk` and `libxft-dev` may also be required.
         
 To install:        
 ```
@@ -38,9 +38,10 @@ To run, go to `performance/experiments` and run (one of) the scripts, to create 
 ```
         cd performance
         source env/bin/activate
+        cd report
         make html
 ```
-and point a browser to performance/_build/html/contents.html
+and point a browser to performance/report/_build/html/contents.html
 
                         
 ##Package status

@@ -32,6 +32,9 @@ import test_const_pop_size
 # name of this experiment
 experiment_name = "constpopsize_3epochs_lengthdependence"
 
+# class
+experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
+
 # parameters for this experiment
 inference_reps = 5
 seqlens = [1e6, 2e6, 5e6, 10e6, 20e6]
@@ -59,7 +62,7 @@ def run_experiment_map( pars ):
 def run_experiment( length, simseed, smcseed, missing ):
     if have_result( length, simseed, smcseed, missing ):
         return "L={} SeqSeed={} SmcSeed={} -- skipped".format(length, simseed, smcseed)
-    e = test_const_pop_size.TestConstPopSize_ThreeEpochs( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
+    e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( datapath + experiment_name )
     # set simulation parameters
     e.pop.sequence_length = length
