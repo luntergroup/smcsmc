@@ -173,7 +173,7 @@ class TestGeneric(unittest.TestCase):
                 pop = result['pop']
                 print ("Checking Ne of population",pop,"in epoch",epoch)
                 # extract the target range from the population model
-                this_parameter = (item for item in self.targets if item["type"] == "Coal" and str(item["pop"]) == pop and str(item["epoch"]) == epoch).next()
+                this_parameter = (item for item in self.targets if item["type"] == "Coal" and item["pop"] == pop and item["epoch"] == epoch).next()
 
             elif result['type'] == "Recomb":
 
@@ -217,16 +217,16 @@ class TestGeneric(unittest.TestCase):
                 if int(it) == 0:
                 # this is the first time we've seen this parameter, create a dictionary
                     if typ == "Coal":
-                        results.append( {'type' :'Coal', 'pop': from_pop, 'epoch': epoch, 'start': start, 'end': end, 'ne': [float(ne)]} )
+                        results.append( {'type' :'Coal', 'pop': int(from_pop), 'epoch': int(epoch), 'start': float(start), 'end': float(end), 'ne': [float(ne)]} )
                     elif typ == "Recomb":
                         results.append( {'type' :'Recomb', 'rate': [float(rate)]} )
                     elif typ == "Migr":
-                        results.append( {'type' :'Migr', 'from_pop': from_pop, 'to_pop': to_pop, 'epoch': epoch, 'start': start, 'end': end, 'rate': [float(rate)]} )
+                        results.append( {'type' :'Migr', 'from_pop': int(from_pop), 'to_pop': int(to_pop), 'epoch': int(epoch), 'start': float(start), 'end': float(end), 'rate': [float(rate)]} )
                 else:
                 # append this parameter estimate to the list within the correct dictionary
                 # first extract the correct dictionary, then append it
                     if typ == "Coal":
-                        result = (item for item in results if item['type'] == "Coal" and item['pop'] == from_pop and item['epoch'] == epoch).next()
+                        result = (item for item in results if item['type'] == "Coal" and item['pop'] == int(from_pop) and item['epoch'] == int(epoch)).next()
                         result['ne'].append( float(ne) )
 
                     elif typ == "Recomb":
@@ -234,7 +234,7 @@ class TestGeneric(unittest.TestCase):
                         result['rate'].append( float(rate) )
 
                     elif typ == "Migr":
-                        result = (item for item in results if item['type'] == "Migr" and item['from_pop'] == from_pop and item['to_pop'] == to_pop and item['epoch'] == epoch).next()
+                        result = (item for item in results if item['type'] == "Migr" and item['from_pop'] == int(from_pop) and item['to_pop'] == int(to_pop) and item['epoch'] == int(epoch)).next()
                         result['rate'].append( float(rate) )
 
         return results
