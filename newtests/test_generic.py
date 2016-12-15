@@ -44,9 +44,9 @@ class TestGeneric(unittest.TestCase):
         # the following are all default values, and may be changed:
         self.scrmpath = "../scrm"
         self.smcsmcpath = "../smcsmc"
-        self.np = 1000
+        self.np = 100
         self.em = 0
-        self.seed = (3647837471,)
+        self.seed = (1,)
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
         self.smcsmc_change_points = None

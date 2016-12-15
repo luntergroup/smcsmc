@@ -14,7 +14,7 @@ Population structures
 
 defaults = {'N0': 10000,
             'mutation_rate': 2.5e-8,
-            'recombination_rate': 5e-9,
+            'recombination_rate': 1e-8,
             'sequence_length': 1e6,
             'num_samples': 2,
             'scrmpath': 'scrm'}
@@ -32,7 +32,7 @@ class Population:
                  migration_commands   = [None, None, None, None, None],
                  additional_commands  = "",
                  npop                 = 1,
-                 seed                 = (3647837471,),
+                 seed                 = (1,),
                  filename             = None,
                  scrmpath             = defaults['scrmpath'] ):
 
@@ -275,28 +275,6 @@ class Pop4(Population):
         Population.__init__(self, **kwargs)
 
 
-class Pop2Migr(Population):
-
-    def __init__(self, **kwargs):
-
-        pop2migr_defaults = {'change_points':    [0.01, 0.06, 0.2, 0.6,  1, 2],
-                             'population_sizes': [0.1,  1,    0.5, None, 1, 2],
-                             'migration_commands': [None, None, None, "-ej 0.6 2 1", None, None],
-                             'num_samples': 4,
-                             'npop': 2}
-
-        nsam = kwargs.get('num_samples', pop2migr_defaults['num_samples'])
-        addl = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) )
-        pop1migr_defaults['additional_commands'] = addl
-
-        # set kwargs to default values, but allow caller to override
-        for key, value in pop2migr_defaults.items():
-            if key not in kwargs:
-                kwargs[key] = value
-
-        Population.__init__(self, **kwargs)
-
-
 
 class PopSingleConst(Population):
 
@@ -305,7 +283,7 @@ class PopSingleConst(Population):
         defaults = {'change_points':    [.5, 1.0],
                     'population_sizes': [1, 1],
                     'migration_commands': [None, None],
-                    'num_samples': 2}
+                    'num_samples': 4}
 
         # set kwargs to default values, but allow caller to override
         for key, value in defaults.items():
@@ -320,10 +298,44 @@ class PopSingleExpand(Population):
 
     def __init__(self, **kwargs):
 
-        defaults = {'change_points':    [0, .5, 1.0],
-                    'population_sizes': [5, 5, 1],
+        defaults = {'change_points':    [0, .02],
+                    'population_sizes': [2, 1],
+                    'migration_commands': [None, None],
+                    'num_samples': 4}
+
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
+
+class PopSingleShrink(Population):
+
+    def __init__(self, **kwargs):
+
+        defaults = {'change_points':    [0, .02],
+                    'population_sizes': [.5, 1],
+                    'migration_commands': [None, None],
+                    'num_samples': 4}
+
+        # set kwargs to default values, but allow caller to override
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
+
+class PopSingleBottleneck(Population):
+
+    def __init__(self, **kwargs):
+
+        defaults = {'change_points':    [0, .02, .04],
+                    'population_sizes': [1, .5, 1],
                     'migration_commands': [None, None, None],
-                    'num_samples': 2}
+                    'num_samples': 4}
 
         # set kwargs to default values, but allow caller to override
         for key, value in defaults.items():
@@ -338,9 +350,9 @@ class TwoPopUniDirMigr(Population):
 
     def __init__(self, **kwargs):
 
-        defaults = {'change_points':    [0, .5, 1.0],
-                    'population_sizes': [5, 5, 1],
-                    'migration_commands': ["-em 0 2 1 1", "-em 0.5 2 1 1", "-em 1.0 2 1 1"],
+        defaults = {'change_points':    [0, .1, .5],
+                    'population_sizes': [1, 1, 1],
+                    'migration_commands': ["-em 0 2 1 1", "-em 0.1 2 1 1", "-em .5 2 1 1"],
                     'num_samples': 8}
 
         nsam = kwargs.get('num_samples', defaults['num_samples'])
@@ -355,22 +367,49 @@ class TwoPopUniDirMigr(Population):
         Population.__init__(self, **kwargs)
 
 
-
-class PopSingleShrink(Population):
+class TwoPopBiDirMigr(Population):
 
     def __init__(self, **kwargs):
 
-        defaults = {'change_points':    [.5, 1.0],
-                    'population_sizes': [5, 10],
-                    'migration_commands': [None, None],
-                    'num_samples': 2}
+        pop2migr_defaults = {'change_points':    [0,1],
+                             'population_sizes': [1,1],
+                             'migration_commands': ["-eM 0 1"],
+                             'num_samples': 8,
+                             'npop': 2}
+
+        nsam = kwargs.get('num_samples', pop2migr_defaults['num_samples'])
+        addl = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) )
+        pop1migr_defaults['additional_commands'] = addl
 
         # set kwargs to default values, but allow caller to override
-        for key, value in defaults.items():
+        for key, value in pop2migr_defaults.items():
             if key not in kwargs:
                 kwargs[key] = value
 
         Population.__init__(self, **kwargs)
+
+
+class TwoPopSplitNoMigr(Population):
+
+    def __init__(self, **kwargs):
+
+        pop2migr_defaults = {'change_points':    [0,.1,.5],
+                             'population_sizes': [1,1,1],
+                             'migration_commands': ["-ej 0.5 2 1"],
+                             'num_samples': 8,
+                             'npop': 2}
+
+        nsam = kwargs.get('num_samples', pop2migr_defaults['num_samples'])
+        addl = "-I 2 {} {} 0.0".format( int(nsam/2), int(nsam/2) )
+        pop1migr_defaults['additional_commands'] = addl
+
+        # set kwargs to default values, but allow caller to override
+        for key, value in pop2migr_defaults.items():
+            if key not in kwargs:
+                kwargs[key] = value
+
+        Population.__init__(self, **kwargs)
+
 
 
 #
