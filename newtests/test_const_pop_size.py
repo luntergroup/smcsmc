@@ -31,6 +31,35 @@ class TestConstPopSize(TestGeneric):
         self.max_out_of_range = -1
 
 
+
+class TestConstPopSize_ThreeEpochs(TestConstPopSize):
+
+    def setUp(self, name = "testdata/constpopsize_3epochs"):
+        TestGeneric.setUp(self, name)
+        self.seqlen = 1e7
+        self.missing_leaves = []
+        self.popt = None                            # don't use epoch pattern for inference
+        self.smcsmc_change_points = [1,2]           # but rather use three large
+
+        self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
+                                          population_sizes = [1, 1, 1, 1, 1],
+                                          scrmpath=self.scrmpath )
+        
+        # set default inference parameters
+        self.em = 4
+        self.np = 100
+        self.seed = (1,)
+
+        # set targets
+        self.targets = [{'type':"Recomb", 'min':2e-9, 'max':7e-8, 'truth':5e-9},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':0,     'max':100000, 'truth':10000},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':0,     'max':100000, 'truth':10000},
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':0,     'max':100000, 'truth':10000},]
+
+        self.max_out_of_range = -1
+        
+
+
 class TestConstPopSize_FourEpochs(TestConstPopSize):
 
     def setUp(self, name = "testdata/constpopsize_4epochs"):
@@ -58,6 +87,8 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
 
         self.max_out_of_range = -1
 
+
+
 class TestConstPopSize_MissingData(TestConstPopSize):
 
     def setUp(self):
@@ -66,6 +97,8 @@ class TestConstPopSize_MissingData(TestConstPopSize):
         # identical to TestConstPopSize, except for name, and for running inference without any data
         self.prefix = "testdata/constpopsize_missingdata"
         self.missing = [0,1]
+
+
 
 class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
 

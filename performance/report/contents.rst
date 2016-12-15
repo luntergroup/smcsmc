@@ -11,8 +11,8 @@ Population size inference for varying amounts of input data
    :render: sb-box-plot
    :function: 10000
    :yrange: 4000,20000
-   :track: missingData
-   :width: 200
+   :tracks: missingData
+   :width: 400
 
    When there is no data, there is no particle degeneracy, and inferred Ne values have very little variance.
 
@@ -20,8 +20,8 @@ Population size inference for varying amounts of input data
    :render: sb-box-plot
    :function: 10000
    :yrange: 4000,20000
-   :track: fixedData
-   :width: 200
+   :tracks: fixedData
+   :width: 400
 
    Results from running inference over different segments of a fixed input sequence.
    The inferred Ne values have now a considerable variance, because of particle degeneracy.
@@ -32,18 +32,18 @@ Population size inference for varying amounts of input data
    :render: sb-box-plot
    :function: 10000
    :yrange: 4000,20000
-   :track: fixedData
-   :width: 200
+   :tracks: variableData
+   :width: 400
 
    Resuls from running inference on different segments of different sequences, all simulaed
    under the same model.  The variance is now even higher due to the stochasticity
    of the coalescent process now contributing to the variance of the estimates.
 
 .. report:: TrackerConstPopSize.ConstpopsizeLengthdependence
-   :render: table            
+   :render: table
+         
+   Raw data table
 
-   Table of results
-            
 ==================
 Indices and Tables
 ==================

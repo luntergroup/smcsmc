@@ -25,7 +25,7 @@ datapath = "data/"
 ###################################################################################
 
 
-sys.path.extend( ["../../newtests"] )
+sys.path.extend( ["../../newtests","../newtests"] )
 import test_const_pop_size
 
 
