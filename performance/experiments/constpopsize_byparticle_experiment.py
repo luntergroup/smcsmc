@@ -30,59 +30,49 @@ import test_const_pop_size
 
 
 # name of this experiment
-experiment_name = "constpopsize_3epochs_lengthdependence"
+experiment_name = "constpopsize_3epochs_particledependence"
 
 # class
 experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 
 # parameters for this experiment
 inference_reps = 10
-seqlens = [1e6, 2e6, 5e6, 10e6, 20e6, 50e6, 100e6]
-experiment_pars = [{'length':seqlen, 'simseed':simseed, 'smcseed':smcseed,'missing':missing}
-                   for (seqlen, simseed, smcseed, missing) in (
+seqlen = 1e6
+particles = [50, 100, 200, 500, 1000]
+experiment_pars = [{'length':seqlen, 'seed':seed, 'numparticles':numparticles}
+                   for (seqlen, seed, numparticles) in (
                            # repetitions with unique data
-                           [(seqln, 1+rep, 1+rep, False)
-                            for seqln, rep in
-                            itertools.product(seqlens, range(inference_reps))] +
-                           # repetitions with fixed data (avoiding duplications)
-                           [(seqln, 1,     1+rep, False)
-                            for seqln, rep in
-                            itertools.product(seqlens, range(1, inference_reps))] +
-                           # repetitions with missing data.  Use seed to separate filenames
-                           [(seqln, 1000+rep,  1000+rep, True)
-                            for seqln, rep in
-                            itertools.product(seqlens, range(inference_reps))])]
-
+                           [(seqlen, 100+rep, np)
+                            for rep, np in itertools.product(range(inference_reps), particles)])]
 
 # run a single experiment
 def run_experiment_map( pars ):
     return run_experiment( **pars )
 
 
-def run_experiment( length, simseed, smcseed, missing ):
-    if have_result( length, simseed, smcseed, missing ):
-        return "L={} SeqSeed={} SmcSeed={} -- skipped".format(length, simseed, smcseed)
+def run_experiment( length, seed, numparticles ):
+    if have_result( length, seed, numparticles ):
+        return "np={} seed={} -- skipped".format(numparticles, seed)
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( datapath + experiment_name )
     # set simulation parameters
     e.pop.sequence_length = length
-    e.pop.seed = (simseed,)
+    e.pop.seed = (seed,)
     e.pop.scrmpath = scrmpath
-    if missing:
-        e.missing_leaves = [0,1]
-    e.filename_disambiguator = "_L{}_S{}_I{}_M{}".format(int(length),simseed,smcseed,missing)
+    e.filename_disambiguator = "_L{}_S{}_P{}".format(int(length),seed,numparticles)
     # set inference parameters
     e.seqlen = length
-    e.seed = (smcseed,)
+    e.seed = (seed,)
+    e.np = numparticles
     e.smcsmcpath = smcsmcpath
     # perform inference and store results
-    e.infer( case = smcseed )
+    e.infer( case = seed )
     e.resultsToMySQL( db = db )
     #e.success = True   # remove files
-    return "L={} SeqSeed={} SmcSeed={} missing={}".format(length, simseed, smcseed, missing)
+    return "np={} seed={}".format(numparticles, seed)
 
 
-def have_result( length, simseed, smcseed, missing ):
+def have_result( length, seed, numparticles ):
     """ see if the database already contains the required result """
     engine = create_engine("sqlite:///" + db)
     if not engine.dialect.has_table(engine, "experiment"):
@@ -92,12 +82,11 @@ def have_result( length, simseed, smcseed, missing ):
         __table__ = Table('experiment', metadata, autoload=True)
     Session = sessionmaker(bind=engine)
     session = Session()
-    missing_leaves = str( [0,1] if missing else [] )
     result = session.query(Experiment).filter_by(name = experiment_name,
                                                  sequence_length = length,
-                                                 dataseed = simseed,
-                                                 infseed = smcseed,
-                                                 missing_leaves = missing_leaves).first()
+                                                 dataseed = seed,
+                                                 infseed = seed,
+                                                 np = numparticles).first()
     session.commit()
     session.close()
     return result != None

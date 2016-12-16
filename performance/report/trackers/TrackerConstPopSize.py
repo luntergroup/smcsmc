@@ -16,40 +16,45 @@ class ConstpopsizeLengthdependence(TrackerSQL):
         return ["missingData","fixedData","variableData"]
 
     def getSlices(self):
-        # use the epoch times as slices, so that the lengths are represented as columns
+        # use the epoch start times as slices, so that the lengths are represented as columns
         statement = "SELECT result.start FROM result INNER JOIN experiment ON experiment.id = result.exp_id WHERE name = '{}'".format(experiment_name)
         times = sorted(list(set( self.getValues(statement) )))
         return [ "T"+str(int(t)) for t in times ]
     
     def __call__(self, track, slice):
-        # find the experiments (smcsmc runs) for this track - take name directly from module that generated them
+        # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
-        where = "experiment.name = '{}' AND result.start = {}".format(experiment_name,time)
+        where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(experiment_name, time)
         if track == "missingData": where += " AND experiment.missing_leaves = '[0, 1]'"
         elif track == "fixedData": where += " AND experiment.dataseed = 1"
         else:                      where += " AND experiment.missing_leaves = '[]' AND experiment.dataseed = infseed"
-        statement = "SELECT experiment.id FROM experiment INNER JOIN result ON experiment.id = result.exp_id WHERE {}".format(where)
-        expids = self.getValues(statement)
 
         # get last iteration
-        statement = "SELECT iter FROM result WHERE exp_id = {} AND type = 'Coal'".format(expids[0])
+        statement = "SELECT result.iter " \
+                    "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE {}".format(where)
         lastiter = sorted( self.getValues(statement) )[-1]
 
-        # get Ne estimates, at the last iteration, for all sequence lengths (and ALL experiments)
-        statement = "SELECT experiment.sequence_length, result.ne, result.exp_id " \
-                    "FROM result INNER JOIN experiment ON experiment.id = result.exp_id " \
-                    "WHERE result.type = 'Coal' AND result.iter = {}".format(lastiter)
+        print "track=",track," slice=",slice
+        print "lastiter=",lastiter
+        
+        # get sequence length and Ne estimates at the last iteration
+        statement = "SELECT experiment.sequence_length, result.ne " \
+                    "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE result.iter = {} AND {}".format(lastiter, where)
         values = self.get(statement)
 
+        print "values=",values
+
         # extract the unique sequence lengths, to serve as keys in the results
-        keys = sorted(list(set( v[0] for v in values if v[2] in expids )))
+        keys = sorted(list(set( v[0] for v in values )))
+        print "keys=",keys
 
         # build a dictionary { key: [ne values] }
         results = {}
         for sl in keys:
-            results[ int(sl) ] = [ne
-                                             for (sl0, ne, expid) in values
-                                             if sl0 == sl and expid in expids]
+            results[ int(sl) ] = [ne for (sl0, ne) in values if sl0 == sl]
+        print "results=",results
 
         return results
         
