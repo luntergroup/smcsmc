@@ -9,7 +9,8 @@ Contents
    :maxdepth: 1
 
    constpopsize_bylength.rst
-
+   constpopsize_byparticle.rst
+              
 ==================
 Index
 ==================

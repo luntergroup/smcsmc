@@ -37,7 +37,7 @@ experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 
 # parameters for this experiment
 inference_reps = 10
-seqlen = 1e6
+seqlen = 50e6
 particles = [50, 100, 200, 500, 1000]
 experiment_pars = [{'length':seqlen, 'seed':seed, 'numparticles':numparticles}
                    for (seqlen, seed, numparticles) in (
