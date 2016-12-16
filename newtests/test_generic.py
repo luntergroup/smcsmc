@@ -82,6 +82,7 @@ class TestGeneric(unittest.TestCase):
         segopt = "-seg {}".format( self.pop.filename )
         addopt = self.pop.additional_commands
         migropt = " ".join( [ cmd for cmd in self.pop.migration_commands if cmd != None ] )
+        pilotsopt = "-bias_heights 400 -bias_strengths 10 1"
 
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
@@ -96,7 +97,7 @@ class TestGeneric(unittest.TestCase):
                 epochs = self.pop.change_points
             epochopt = " ".join(["-eN {time} 1".format(time=time)
                                  for time in epochs])
-        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr}".format(
+        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr} {pilots}".format(
             smcsmc = self.smcsmcpath,
             nsam = nsamopt,
             t = topt,
@@ -107,7 +108,8 @@ class TestGeneric(unittest.TestCase):
             seed = seedopt,
             seg = segopt,
             add = addopt,
-            migr = migropt)
+            migr = migropt,
+            pilots = pilotsopt)
         return self.inference_command
 
     # helper -- generate simulated data, if this has not been done yet
