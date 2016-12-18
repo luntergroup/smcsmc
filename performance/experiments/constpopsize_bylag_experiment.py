@@ -30,7 +30,7 @@ import test_const_pop_size
 
 
 # name of this experiment
-experiment_name = "constpopsize_3epochs_particledependence"
+experiment_name = "constpopsize_3epochs_lagdependence"
 
 # class
 experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
@@ -38,23 +38,24 @@ experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 # parameters for this experiment
 inference_reps = 10
 seqlen = 50e6
-particles = [50, 100, 200, 500, 1000]
-experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles}
-                   for (seqlen, simseed, infseed, numparticles) in (
+particles = 500
+lagfactors = [0.5, 1.0, 2.0, 4.0, 8.0]
+experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 'lag':lag}
+                   for (seqlen, simseed, infseed, numparticles, lag) in (
                            # repetitions with unique data
-                           [(seqlen, 100+rep, 100+rep, np)
-                            for rep, np in itertools.product(range(inference_reps), particles)] +
+                           [(seqlen, 100+rep, 100+rep, particles, lag)
+                            for rep, lag in itertools.product(range(inference_reps), lagfactors)] +
                            # repetitions with fixed data
-                           [(seqlen, 100,     100+rep, np)
-                            for rep, np in itertools.product(range(1,inference_reps), particles)])]
+                           [(seqlen, 100,     100+rep, particles, lag)
+                            for rep, lag in itertools.product(range(1,inference_reps), lagfactors)])]
 
 # run a single experiment
 def run_experiment_map( pars ):
     return run_experiment( **pars )
 
 
-def run_experiment( length, simseed, infseed, numparticles ):
-    if have_result( length, simseed, infseed, numparticles ):
+def run_experiment( length, simseed, infseed, numparticles, lag ):
+    if have_result( length, simseed, infseed, numparticles, lag ):
         return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( datapath + experiment_name )
@@ -67,6 +68,7 @@ def run_experiment( length, simseed, infseed, numparticles ):
     e.seqlen = length
     e.seed = (infseed,)
     e.np = numparticles
+    e.lag = lag
     e.smcsmcpath = smcsmcpath
     # perform inference and store results
     e.infer( case = simseed )
@@ -75,7 +77,7 @@ def run_experiment( length, simseed, infseed, numparticles ):
     return
 
 
-def have_result( length, simseed, infseed, numparticles ):
+def have_result( length, simseed, infseed, numparticles, lag ):
     """ see if the database already contains the required result """
     engine = create_engine("sqlite:///" + db)
     if not engine.dialect.has_table(engine, "experiment"):
@@ -89,7 +91,8 @@ def have_result( length, simseed, infseed, numparticles ):
                                                  sequence_length = length,
                                                  dataseed = simseed,
                                                  infseed = infseed,
-                                                 np = numparticles).first()
+                                                 np = numparticles,
+                                                 lag = lag)).first()
     session.commit()
     session.close()
     return result != None

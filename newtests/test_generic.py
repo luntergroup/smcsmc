@@ -49,6 +49,7 @@ class TestGeneric(unittest.TestCase):
         self.seed = (1,)
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
+        self.lag = 4.0
         self.smcsmc_change_points = None
         self.missing_leaves = []
         self.filename_disambiguator = ""
@@ -76,6 +77,7 @@ class TestGeneric(unittest.TestCase):
         nsamopt = "-nsam {}".format(self.pop.num_samples)
         topt = "-t {}".format(self.pop.mutations)
         ropt = "-r {} {}".format(self.pop.recombinations,self.pop.sequence_length)
+        lagopt = "-calibrate_lag {}".format(self.lag)
         particlesopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
@@ -96,13 +98,14 @@ class TestGeneric(unittest.TestCase):
                 epochs = self.pop.change_points
             epochopt = " ".join(["-eN {time} 1".format(time=time)
                                  for time in epochs])
-        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {epochs} {seed} {seg} {migr}".format(
+        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {lag} {epochs} {seed} {seg} {migr}".format(
             smcsmc = self.smcsmcpath,
             nsam = nsamopt,
             t = topt,
             r = ropt,
             np = particlesopt,
             em = emopt,
+            lag = lagopt,
             epochs = epochopt,
             seed = seedopt,
             seg = segopt,
