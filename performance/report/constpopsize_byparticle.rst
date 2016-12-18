@@ -1,16 +1,28 @@
 .. Test documentation master file, created by
    sphinxreport-quickstart 
 
-*********
+**********************************************************
 Dependence of inferred Ne on amount of number of particles
-*********
+**********************************************************
 
 Population size inference with varying numbers of particles.
 These runs used 10 Mb of sequence, using 10 replicates, 5 EM iterations, and a constant population size of 10000.
 (see `constpopsize_byparticle_experiment.py`)
 
-No data
-=======
+=========
+Overview
+=========
+
+.. report:: TrackerGeneral.Experiment
+   :render: table
+   :tracks: constpopsize_3epochs_particledependence
+
+   Overview of experimental parameters
+                                 
+
+
+Unique data
+===========
 
 .. report:: TrackerConstPopSize.ConstpopsizeParticledependence
    :render: sb-box-plot

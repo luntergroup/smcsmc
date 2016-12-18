@@ -1,13 +1,24 @@
 .. Test documentation master file, created by
    sphinxreport-quickstart 
 
-*********
+*************************************************
 Dependence of inferred Ne on amount of input data
-*********
+*************************************************
 
 Population size inference for varying amounts of input data.
 These runs are with 100 particles, 10 replicates, 5 EM iterations, and a constant population size of 10000.
 (see `constpopsize_bylength_experiment.py`)
+
+=========
+Overview
+=========
+
+.. report:: TrackerGeneral.Experiment
+   :render: table
+   :tracks: constpopsize_3epochs_lengthdependence
+
+   Overview of experimental parameters
+                                 
 
 No data
 =======
