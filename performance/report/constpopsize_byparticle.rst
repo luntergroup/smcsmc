@@ -21,8 +21,8 @@ Overview
                                  
 
 
-Unique data
-===========
+Variable data
+==============
 
 .. report:: TrackerConstPopSize.ConstpopsizeParticledependence
    :render: sb-box-plot
@@ -30,18 +30,31 @@ Unique data
    :function: 10000         
    :mpl-figure: tight_layout=True
    :width: 300
+   :tracks: variableData     
    :groupby: none
    :yrange: 8000,10500
 
    Inference of a 3-epoch model on 10 Mb of sequence with varying numbers of particles.
 
 The bias is clearly due to undersampling, and increasing the number of particles mitigates the issue.
-   
 
-------------
+
+
+Fixed data
+=============
 
 .. report:: TrackerConstPopSize.ConstpopsizeParticledependence
-   :render: table
-         
-   Raw data table
+   :render: sb-box-plot
+   :layout: row
+   :function: 10000         
+   :mpl-figure: tight_layout=True
+   :width: 300
+   :tracks: fixedData
+   :groupby: none
+   :yrange: 8000,10500
+
+   Inference of a 3-epoch model on 10 Mb of sequence with varying numbers of particles, on fixed input data.
+
+Conclusion.
+
 

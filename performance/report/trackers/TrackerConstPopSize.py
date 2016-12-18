@@ -3,14 +3,11 @@ import sys
 import inspect, os
 
 sys.path.extend( [ "../experiments"] )
-from constpopsize_bylength_experiment import experiment_name as experiment_bylength
+from constpopsize_bylength_experiment   import experiment_name as experiment_bylength
 from constpopsize_byparticle_experiment import experiment_name as experiment_byparticle
-
+from constpopsize_bylag_experiment      import experiment_name as experiment_bylag
 
 class ConstpopsizeLengthdependence(TrackerSQL):
-
-    # table to query (all -- but this is not used I think)
-    #pattern = "(.*)$"
 
     # tracks and slices
     def getTracks(self):
@@ -54,7 +51,7 @@ class ConstpopsizeParticledependence(TrackerSQL):
 
     # tracks and slices
     def getTracks(self):
-        return ["variableData"]
+        return ["variableData","fixedData"]
 
     def getSlices(self):
         # use the epoch start times as slices, so that the lengths are represented as columns
@@ -66,7 +63,7 @@ class ConstpopsizeParticledependence(TrackerSQL):
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(experiment_byparticle, time)
-        if track == "fixedData": where += " AND experiment.dataseed = 1"
+        if track == "fixedData": where += " AND experiment.dataseed = 100"
         else:                    where += " AND experiment.dataseed = infseed"
 
         # get last iteration
@@ -86,4 +83,44 @@ class ConstpopsizeParticledependence(TrackerSQL):
         results = {}
         for np in keys:
             results[ int(np) ] = [ne for (np0, ne) in values if np0 == np]
+        return results
+
+
+
+class ConstpopsizeLagdependence(TrackerSQL):
+
+    # tracks and slices
+    def getTracks(self):
+        return ["fixedData","variableData"]
+
+    def getSlices(self):
+        # use the epoch start times as slices, so that the lengths are represented as columns
+        statement = "SELECT result.start FROM result INNER JOIN experiment ON experiment.id = result.exp_id WHERE name = '{}'".format(experiment_bylag)
+        times = sorted(list(set( self.getValues(statement) )))
+        return [ "T"+str(int(t)) for t in times ]
+    
+    def __call__(self, track, slice):
+        # generate the selector ('where') clause for this experiment, track and slice
+        time = float(slice[1:])
+        where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(experiment_bylag, time)
+        if track == "fixedData": where += " AND experiment.dataseed = 100"
+        else:                    where += " AND experiment.dataseed = infseed"
+
+        # get last iteration
+        statement = "SELECT result.iter " \
+                    "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE {}".format(where)
+        lastiter = sorted( self.getValues(statement) )[-1]
+        
+        # get lag and Ne estimates at the last iteration
+        statement = "SELECT experiment.lag, result.ne " \
+                    "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE result.iter = {} AND {}".format(lastiter, where)
+        values = self.get(statement)
+
+        # extract the lags to serve as keys in the results, and build dictionary { key : [ne values] }
+        keys = sorted(list(set( v[0] for v in values )))
+        results = {}
+        for lag in keys:
+            results[ lag ] = [ne for (lag0, ne) in values if lag0 == lag]
         return results

@@ -36,10 +36,10 @@ experiment_name = "constpopsize_3epochs_lagdependence"
 experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 
 # parameters for this experiment
-inference_reps = 10
+inference_reps = 30
 seqlen = 50e6
 particles = 500
-lagfactors = [0.5, 1.0, 2.0, 4.0, 8.0]
+lagfactors = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 'lag':lag}
                    for (seqlen, simseed, infseed, numparticles, lag) in (
                            # repetitions with unique data
