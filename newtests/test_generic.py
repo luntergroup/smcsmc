@@ -272,6 +272,7 @@ class TestGeneric(unittest.TestCase):
                 simulate_command = Column(String)
                 inference_command = Column(String)
                 np = Column(Integer)
+                lag = Column(Float)
                 num_samples = Column(Integer)
                 sequence_length = Column(Integer)
                 missing_leaves = Column(String)
@@ -307,7 +308,7 @@ class TestGeneric(unittest.TestCase):
         this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=int(self.pop.sequence_length),
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
-                               missing_leaves = str(self.missing_leaves),
+                               missing_leaves = str(self.missing_leaves), lag = self.lag,
                                inference_command = self.inference_command, name = name, smcsmc_runtime = self.smcsmc_runtime )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id

@@ -63,7 +63,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag ):
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
     e.pop.scrmpath = scrmpath
-    e.filename_disambiguator = "_L{}_S{}_I{}_P{}".format(int(length),simseed,infseed,numparticles)
+    e.filename_disambiguator = "_L{}_S{}_I{}_P{}_G{}".format(int(length),simseed,infseed,numparticles, lag)
     # set inference parameters
     e.seqlen = length
     e.seed = (infseed,)
@@ -92,7 +92,7 @@ def have_result( length, simseed, infseed, numparticles, lag ):
                                                  dataseed = simseed,
                                                  infseed = infseed,
                                                  np = numparticles,
-                                                 lag = lag)).first()
+                                                 lag = lag).first()
     session.commit()
     session.close()
     return result != None
