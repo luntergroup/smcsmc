@@ -7,6 +7,11 @@ Dependence of inferred Ne on lag
 
 Population size inference with variable lag (see `constpopsize_bylag_experiment.py`).
 
+Rationale: increasing the lag increases the amount of information extracted from the data, and improves convergence.
+However it also increases the variance of parameter estimates, so a balance should be struck.
+
+In addition it is possible that the choice of lag influences the amount of bias in the estimates.
+
 =========
 Overview
 =========
@@ -16,11 +21,23 @@ Overview
    :tracks: constpopsize_3epochs_lagdependence
 
    Overview of experimental parameters
-                                 
 
 
-Unique data
+Convergence
 ===========
+
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :render: sb-box-plot
+   :slices: T80000
+   :yrange: 9000,10000
+   :layout: row
+   :width: 200       
+
+   Speed of convergence for different lags (epoch T80000, fixed data; truth is not 10,000)
+
+      
+Variable data
+=============
 
 .. report:: TrackerConstPopSize.ConstpopsizeLagdependence
    :render: sb-box-plot

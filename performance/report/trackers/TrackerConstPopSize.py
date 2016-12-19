@@ -124,3 +124,45 @@ class ConstpopsizeLagdependence(TrackerSQL):
         for lag in keys:
             results[ lag ] = [ne for (lag0, ne) in values if lag0 == lag]
         return results
+
+
+
+class ConstpopsizeEMConvergence(TrackerSQL):
+
+    # tracks and slices.
+    def getTracks(self):
+        # use the lags as tracks
+        statement = "SELECT experiment.lag FROM experiment WHERE name = '{}'".format(experiment_bylag)
+        lags = sorted(list(set( self.getValues(statement) )))
+        return [ "L{:1.3f}".format(lag) for lag in lags ]
+
+    def getSlices(self):
+        # use the epoch start times as slices, so that the lengths are represented as columns
+        statement = "SELECT result.start FROM result INNER JOIN experiment ON experiment.id = result.exp_id WHERE name = '{}'".format(experiment_bylag)
+        times = sorted(list(set( self.getValues(statement) )))
+        return [ "T"+str(int(t)) for t in times ]
+    
+    def __call__(self, track, slice, options = "fixedData"):
+        # generate the selector ('where') clause for this experiment, track and slice
+        # use the 'data' option, supplied via :tracker:, to select either fixed or variable data
+        # (works with cgatreport-test, but not for the main html build - ?)
+        data = options
+        time = float(slice[1:])
+        lag = float(track[1:])
+        where = "experiment.name = '{}' AND result.start = {} AND experiment.lag = {} AND type = 'Coal'".format(experiment_bylag, time, lag)
+        if data == "fixedData": where += " AND experiment.dataseed = 100"
+        else:                   where += " AND experiment.dataseed = infseed"
+
+        # get iteration and Ne estimates
+        statement = "SELECT result.iter, result.ne " \
+                    "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE {}".format(where)
+        values = self.get(statement)
+
+        # extract the lags to serve as keys in the results, and build dictionary { key : [ne values] }
+        keys = sorted(list(set( v[0] for v in values )))
+        results = {}
+        for iterk in keys:
+            results[ iterk ] = [ne for (iterk0, ne) in values if iterk0 == iterk]
+        return results
+    
