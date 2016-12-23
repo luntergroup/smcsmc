@@ -103,7 +103,7 @@ bool is_height_in_tree( const Forest& forest, double height ) {
     return false;
 }
 
-vector<double> calculate_median_survival_distances( Model model, int Num_events = 200 ) {
+vector<double> calculate_median_survival_distances( Model model, int min_num_events_per_epoch = 200 ) {
 
     // we want to change model attributes inside this function only
     model.biased_sampling = false;
@@ -113,66 +113,85 @@ vector<double> calculate_median_survival_distances( Model model, int Num_events 
     vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
+    int iterations = 0;
+    const int max_iterations = 10000000;
+    const int max_safe_sample_size = 10;
+    size_t epoch_idx;
+    
     while ( num_epochs_not_done > 0 ) {
+
+      if (++iterations > max_iterations) break;
       Forest arg( &model, &randomgenerator );
+      bool has_node_in_incomplete_epoch = false;
       arg.buildInitialTree();
       std::set<double> original_node_heights;
       for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
           if (!(*it)->in_sample()) {
-              original_node_heights.insert( (*it)->height() );
+              double height = (*it)->height();
+              original_node_heights.insert( height );
+              for (epoch_idx = 0;
+                   epoch_idx+1 < model.change_times().size() && model.change_times()[ epoch_idx+1 ] <= height;
+                   ++epoch_idx) {}
+              if (survival_distances[epoch_idx].size() < min_num_events_per_epoch)
+                  has_node_in_incomplete_epoch = true;
           }
       }
+      // if this tree cannot contribute to an epoch that needs more counts, then try the next one
+      if (!has_node_in_incomplete_epoch) continue;
+
+      // evolve the tree, and see how long nodes at particular heights survive
       while( !original_node_heights.empty() && arg.next_base() < (model.loci_length() * 0.6) ) {
         arg.sampleNextGenealogy( false );
         arg.sampleRecSeqPosition( false );
         for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
           if( !is_height_in_tree( arg, *it ) ) {
-            //// add genomic position to the histogram fo survival for the appropriate epoch
-            // loop over change times to get appropriate index
-            size_t epoch_idx = 0;
-            while (epoch_idx+1 < model.change_times().size() && model.change_times().at(epoch_idx+1) <= *it) {
-                 epoch_idx++;
-            }
+            // add genomic position to the histogram fo survival for the appropriate epoch
+            for (epoch_idx = 0;
+                 epoch_idx+1 < model.change_times().size() && model.change_times()[ epoch_idx+1 ] <= *it;
+                 ++epoch_idx) {}
             survival_distances[epoch_idx].push_back( arg.current_base() );
-            if (survival_distances[epoch_idx].size() == Num_events) {
+            if (survival_distances[epoch_idx].size() == min_num_events_per_epoch) {
                 --num_epochs_not_done;
             }
-            //// remove height from the set
+            // remove height from the set
             original_node_heights.erase( *it );
             break;
           }
         }
       }
-      // Need to break if we have troublesome epochs due to large estimated population sizes
-      bool exists_highly_explored_epoch = false;
-      bool exists_insufficiently_explored_epoch = false;
-      for( size_t epoch_idx = 0; epoch_idx < num_epochs; epoch_idx++) {
-        if( survival_distances[epoch_idx].size() > 1000000 ) {
-          exists_highly_explored_epoch = true;
-        }
-        if( survival_distances[epoch_idx].size() < 3 ) {
-          exists_insufficiently_explored_epoch = true;
-        }
-      }
-      if ( exists_highly_explored_epoch && !exists_insufficiently_explored_epoch ) {
-        break;
-      }
     }
-    vector <double> median_survival;
-    clog << "ARGs simulated under model:" << endl;
-    for( size_t epoch_idx = 0; epoch_idx < survival_distances.size(); epoch_idx++ ) {
+    clog << "Median survival: " << iterations << " iterations; per-epoch counts";
+    for (size_t idx = 0; idx < survival_distances.size(); idx++ ) clog << " " << survival_distances[idx].size();
+    clog << endl;
+
+    // now deal with the possiblity that no or insufficient events have been sampled for an epoch
+    vector <double> median_survival_distances;
+    double earliest_survival_distance = -1;
+    for(epoch_idx = 0; epoch_idx < survival_distances.size(); epoch_idx++ ) {
         std::sort( survival_distances[epoch_idx].begin(), survival_distances[epoch_idx].end() );
         int median_idx = (survival_distances[epoch_idx].size()-1) / 2;
-        if (median_idx == -1) {
-            throw std::length_error("No survival_distance instances in epoch");
+        if (median_idx < max_safe_sample_size) {
+            // insufficiently many samples for a borderline-reliable estimate
+            median_survival_distances.push_back( -1 );
+        } else {
+            median_survival_distances.push_back( survival_distances[epoch_idx][ median_idx ] );
+            if (earliest_survival_distance < 0)
+                earliest_survival_distance = median_survival_distances.back();
         }
-        median_survival.push_back( survival_distances[epoch_idx][ median_idx ] );
-        clog << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
-        clog << "   These have a median survival distance of " << survival_distances[epoch_idx][ median_idx ]
-             << ", a minimum of " << *survival_distances[epoch_idx].begin()
-             << ", and a maximum of " << *survival_distances[epoch_idx].rbegin() << endl;
     }
-    return median_survival;
+    // supply reasonable defaults for epochs with insufficient samples
+    for( epoch_idx = 0; epoch_idx < survival_distances.size(); epoch_idx++ ) {
+        if (median_survival_distances[epoch_idx] < 0) {
+            if (epoch_idx > 0) {
+                median_survival_distances[epoch_idx] = median_survival_distances[epoch_idx - 1];
+            } else {
+                median_survival_distances[epoch_idx] = earliest_survival_distance;
+            }
+        }
+        clog << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
+        clog << "   Survival distance set to " << median_survival_distances[epoch_idx] << endl;
+    }
+    return median_survival_distances;
 }
 
 
