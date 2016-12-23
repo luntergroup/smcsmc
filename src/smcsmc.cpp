@@ -331,7 +331,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->log_counts( pfARG_para );
 
-    current_states.print_ln_normalization_factor();
+    clog << " Estimates log likelihood: " << current_states.ln_normalization_factor() << endl;
     current_states.clear();
     Segfile->reset_data_to_first_entry();
 

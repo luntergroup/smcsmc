@@ -64,7 +64,7 @@ class ParticleContainer {
         void normalize_probability();
         void clear();
         void print_particle_probabilities();
-        void print_ln_normalization_factor();
+        double ln_normalization_factor() const { return this->ln_normalization_factor_; }
 
         //
         // Debugging tools
@@ -99,7 +99,6 @@ class ParticleContainer {
         RandomGenerator* random_generator() const { return this->random_generator_; }
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
-        double ln_normalization_factor() const { return this->ln_normalization_factor_; }
 
         //
         // Members

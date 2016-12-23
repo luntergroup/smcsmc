@@ -132,7 +132,6 @@ void ForestState::clear_eventContainer(){
 
 void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm){
 
-    //ForestStatedout << "Start Recording " << endl;
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
     double start_height, end_height;
@@ -720,7 +719,7 @@ double ForestState::compute_positional_component_of_transitional_prob_of_recombi
 
 double ForestState::compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec ) {
     return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
-                                 ( 1 - std::exp( model().recombination_rate() * getWeightedLocalTreeLength() ) );
+                                 ( 1 - std::exp( - model().recombination_rate() * getWeightedLocalTreeLength() ) );
 }
 
 

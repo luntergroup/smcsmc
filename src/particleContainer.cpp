@@ -170,7 +170,6 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
         dout << "particle " << particle_i << " done" << endl;
     }
 
-    this->store_normalization_factor();
     this->normalize_probability(); // It seems to converge slower if it is not normalized ...
     dout << endl;
 }
@@ -320,12 +319,19 @@ void ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double> 
 void ParticleContainer::normalize_probability() {
 
     double total_probability = 0;
-    for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ ) {
+    for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ )
         total_probability += this->particles[particle_i]->posteriorWeight();
-    }
+
+    // check
+    if (total_probability <= 0) throw std::runtime_error("Zero or negative probabilities");
+    
+    // keep track of overall (log) posterior probability
+    ln_normalization_factor_ += log( total_probability );
+
+    // normalize
     for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ) {
         this->particles[particle_i]->setPosteriorWeight( this->particles[particle_i]->posteriorWeight() / total_probability);
-        this->particles[particle_i]->setPilotWeight(this->particles[particle_i]->pilotWeight() / total_probability); // should be conditional on biased_sampling
+        this->particles[particle_i]->setPilotWeight(     this->particles[particle_i]->pilotWeight()     / total_probability);
     }
 }
 
@@ -423,27 +429,15 @@ void ParticleContainer::systematic_resampling(std::valarray<double> partial_sum,
 void ParticleContainer::set_particles_with_random_weight(){
     for (size_t i = 0; i < this->particles.size(); i++){
         this->particles[i]->setPosteriorWeight( this->particles[i]->random_generator()->sample() );
-        }
     }
+}
 
 
 void ParticleContainer::print_particle_probabilities(){
     for (size_t i = 0; i < this->particles.size(); i++){
         clog<<"weight = "<<this->particles[i]->posteriorWeight()<<endl;
         if( model->biased_sampling ) {clog<<"pilot weight = "<<this->particles[i]->pilotWeight()<<endl;}
-        }
     }
-
-
-void ParticleContainer::store_normalization_factor() {
-        temp_sum_of_weights = 0;
-        for( size_t i = 0; i < this->particles.size(); i++){
-                temp_sum_of_weights += this->particles[i]->posteriorWeight();
-    }
-        ln_normalization_factor_ += log( temp_sum_of_weights );
 }
 
 
-void ParticleContainer::print_ln_normalization_factor(){
-        clog << "Our likelihood measure is " << ln_normalization_factor() << endl;
-}

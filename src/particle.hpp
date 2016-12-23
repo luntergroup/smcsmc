@@ -157,7 +157,7 @@ class ForestState : public Forest{
         // Setters and getters:
         void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
         double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
-        void setPosteriorWeight(double weight) { this->posterior_weight_ = weight; }
+        void setPosteriorWeight(double weight) { assert (weight > 0.0); this->posterior_weight_ = weight; }
         double posteriorWeight() const { return this->posterior_weight_; }
         void setPilotWeight(double weight) { this->pilot_weight_ = weight; }
         double pilotWeight() const { return this->pilot_weight_; }
