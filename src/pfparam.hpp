@@ -366,6 +366,7 @@ class PfParam{
     // Output Related
     // ------------------------------------------------------------------
     bool log_bool;
+    bool record_resample_file;
     string out_NAME_prefix;
     string outFileName;
     string recombination_map_NAME;

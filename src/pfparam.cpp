@@ -126,8 +126,8 @@ void PfParam::parse(int argc, char *argv[]) {
             if ( this->lag_fraction < 0.0 ){
                 throw OutOfRange ("-calibrate_lag", *argv_i );
             }
-        } else if ( *argv_i == "-online" ){
-            this->online_bool = true;
+            //} else if ( *argv_i == "-online" ){
+            //this->online_bool = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -136,6 +136,8 @@ void PfParam::parse(int argc, char *argv[]) {
             this->out_NAME_prefix = *argv_i;
         } else if ( *argv_i == "-log"   ){
             this->log_bool  = true;
+        } else if (*argv_i == "-record-ess" ) {
+            this->record_resample_file = true;
         } else if (*argv_i == "-h" || *argv_i == "-help") {
             this->setHelp(true);
         } else if (*argv_i == "-v" || *argv_i == "-version") {
@@ -212,6 +214,7 @@ void PfParam::init(){
     this->argc_            = 0;
     this->useCap           = false;
     this->Ne_cap           = 200000;
+    this->record_resample_file = false;
     this->setHelp(false);
     this->setVersion(false);
     this->input_SegmentDataFileName = "";
@@ -300,7 +303,8 @@ void PfParam::finalize(){
     remove( this->outFileName.c_str() );
     remove( this->log_NAME.c_str() );
     remove( this->recombination_map_NAME.c_str() );
-    remove( this->resample_NAME.c_str() );
+    if (record_resample_file)
+        remove( this->resample_NAME.c_str() );
 
     this->finalize_scrm_input();
 
@@ -472,10 +476,13 @@ void PfParam::appendToOutFile( size_t EMstep,
 
 
 void PfParam::append_resample_file( int position, double ESS) const {
+
+    if (!record_resample_file) return;
     string file_name = resample_NAME;
     ofstream resample_file( file_name.c_str(), ios::out | ios::app | ios::binary );
     resample_file << position << "\t" << ESS << endl;
     resample_file.close();
+
 }
 
 
@@ -490,12 +497,13 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;    
     cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
-    cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
+    //cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
     cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
     cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(15)<<"-record-ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
 };
 
