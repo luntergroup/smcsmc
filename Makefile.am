@@ -38,18 +38,22 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/s
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
+smcsmc_LDADD             = -lboost_iostreams
 
 # Debugger flags
 scrm_dbg_CXXFLAGS            = $(common_flags)
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
 smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
+smcsmc_dbg_LDADD             = -lboost_iostreams
 
 # Profiler flags
 smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
+smcsmc_prof_LDADD        = -lboost_iostreams
 
 # Gperf flags
 smcsmc_gperf_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -DGPERF -O3
-smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so
+smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams
+
 # Notes:
 #
 # - run "sudo apt-get install google-perftools libgoogle-perftools-dev"
@@ -59,7 +63,7 @@ smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so
 
 # Tester flags
 unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random --coverage
-unittests_LDADD          = -lcppunit -ldl
+unittests_LDADD          = -lcppunit -ldl -lboost_iostreams
 
 
 

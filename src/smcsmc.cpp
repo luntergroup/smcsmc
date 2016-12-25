@@ -26,7 +26,12 @@
 #include "arena.hpp"
 #include "usage.hpp"
 #include "model_summary.hpp"
+
 #include <set>
+#include <fstream>
+#include <iostream>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 
 /*!
@@ -322,9 +327,14 @@ void pfARG_core(PfParam &pfARG_para,
     countNe->extract_and_update_count( current_states , sequence_end, true );
     clog << " Inference step completed." << endl;
 
-    ofstream recombFile(pfARG_para.get_recombination_map_filename(), ios::out | ios::app | ios::binary);
-    countNe->dump_local_recomb_logs( recombFile, model->loci_length(), pfARG_para.EMcounter() );
-    recombFile.close();
+    {
+        // put in a scope to close the files automatically after dumping recomb logs
+        ofstream recombFile(pfARG_para.get_recombination_map_filename(), ios::out | ios::app | ios::binary);
+        boost::iostreams::filtering_ostream out;
+        out.push( boost::iostreams::gzip_compressor() );
+        out.push( recombFile );
+        countNe->dump_local_recomb_logs( out, model->loci_length(), pfARG_para.EMcounter() );
+    }
     
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap,
                                     true, force_update = true, true); // This is mandatory for EM steps

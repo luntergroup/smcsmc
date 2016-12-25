@@ -296,7 +296,7 @@ void PfParam::finalize(){
     this->ESSthreshold = this->N * this->ESS();
     this->outFileName            = out_NAME_prefix + ".out";
     this->log_NAME               = out_NAME_prefix + ".log";
-    this->recombination_map_NAME = out_NAME_prefix + ".recomb";
+    this->recombination_map_NAME = out_NAME_prefix + ".recomb.gz";
     this->resample_NAME          = out_NAME_prefix + ".resample";
 
     // remove any existing files with these names
