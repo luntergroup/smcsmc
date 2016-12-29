@@ -137,7 +137,7 @@ class ConstpopsizeEMConvergence(TrackerSQL):
         return [ "L{:1.3f}".format(lag) for lag in lags ]
 
     def getSlices(self):
-        # use the epoch start times as slices, so that the lengths are represented as columns
+        # use the epoch start times as slices, so that the EM iterations are represented as columns
         statement = "SELECT result.start FROM result INNER JOIN experiment ON experiment.id = result.exp_id WHERE name = '{}'".format(experiment_bylag)
         times = sorted(list(set( self.getValues(statement) )))
         return [ "T"+str(int(t)) for t in times ]
@@ -149,6 +149,7 @@ class ConstpopsizeEMConvergence(TrackerSQL):
         data = options
         time = float(slice[1:])
         lag = float(track[1:])
+
         where = "experiment.name = '{}' AND result.start = {} AND experiment.lag = {} AND type = 'Coal'".format(experiment_bylag, time, lag)
         if data == "fixedData": where += " AND experiment.dataseed = 100"
         else:                   where += " AND experiment.dataseed = infseed"
@@ -165,4 +166,3 @@ class ConstpopsizeEMConvergence(TrackerSQL):
         for iterk in keys:
             results[ iterk ] = [ne for (iterk0, ne) in values if iterk0 == iterk]
         return results
-    

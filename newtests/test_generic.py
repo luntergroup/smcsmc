@@ -62,10 +62,10 @@ class TestGeneric(unittest.TestCase):
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
         if self.success and self.prefix != None:
-            toplevel = itertools.product( [self.prefix],
+            toplevel = itertools.product( [self.pop.filename],
                                           [".seg",".seg.recomb"] )
-            percase = itertools.product( [self.prefix + str(case) for case in self.cases ],
-                                         ['.out','.log','.stdout','.stderr','.recomb','.resample'] )
+            percase = itertools.product( ["{}_C{}".format(self.pop.filename[:-4], case) for case in self.cases ],
+                                         ['.out','.log','.stdout','.stderr','.recomb.gz','.resample'] )
             for prefix, suffix in itertools.chain( toplevel, percase ):
                 try:
                     os.unlink( prefix + suffix )

@@ -39,7 +39,7 @@ experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 inference_reps = 50
 seqlen = 50e6
 particles = 500
-emiters = 15
+emiters = 30
 lagfactors = [0.5, 1.0, 2.0, 4.0, 8.0]
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 'lag':lag}
                    for (seqlen, simseed, infseed, numparticles, lag) in (
@@ -57,7 +57,7 @@ def run_experiment_map( pars ):
 
 def run_experiment( length, simseed, infseed, numparticles, lag ):
     if have_result( length, simseed, infseed, numparticles, lag ):
-        return
+        return "SKIPPED {} {} {} {} {}".format(length,simseed,infseed,numparticles,lag)
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( datapath + experiment_name )
     # set simulation parameters
@@ -75,8 +75,9 @@ def run_experiment( length, simseed, infseed, numparticles, lag ):
     # perform inference and store results
     e.infer( case = simseed )
     e.resultsToMySQL( db = db )
-    #e.success = True   # remove files
-    return
+    e.success = True   # remove files
+    e.tearDown()
+    return "FINISHED {} {} {} {} {}".format(length,simseed,infseed,numparticles,lag)
 
 
 def have_result( length, simseed, infseed, numparticles, lag ):

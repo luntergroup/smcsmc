@@ -29,7 +29,7 @@ Convergence
 .. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
    :render: sb-box-plot
    :slices: T80000
-   :yrange: 9000,10000
+   :yrange: 7000,10000
    :layout: row
    :width: 200       
 
@@ -47,7 +47,7 @@ Variable data
    :width: 300
    :groupby: none
    :tracks: variableData       
-   :yrange: 8000,10500
+   :yrange: 7000,11000
 
    Inference of a 3-epoch model on 10 Mb of sequence with variable lag around default of 4.0.
 
@@ -65,7 +65,7 @@ Fixed data
    :width: 300
    :groupby: none
    :tracks: fixedData       
-   :yrange: 8000,10500
+   :yrange: 7000,11000
 
    Inference of a 3-epoch model on 10 Mb of sequence with variable lag around default of 4.0.
 
