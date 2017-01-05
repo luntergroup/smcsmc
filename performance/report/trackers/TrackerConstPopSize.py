@@ -83,6 +83,12 @@ class ConstpopsizeParticledependence(TrackerSQL):
         results = {}
         for np in keys:
             results[ int(np) ] = [ne for (np0, ne) in values if np0 == np]
+
+        # failsafe: if just one result, return none
+        for key in results:
+            if len(results[key]) == 1:
+                results[key] = []
+                
         return results
 
 

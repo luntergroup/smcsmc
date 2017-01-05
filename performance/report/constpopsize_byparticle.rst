@@ -6,7 +6,7 @@ Dependence of inferred Ne on amount of number of particles
 **********************************************************
 
 Population size inference with varying numbers of particles.
-These runs used 10 Mb of sequence, using 10 replicates, 5 EM iterations, and a constant population size of 10000.
+These runs used 50 Mb of sequence, using 10 replicates, 5 EM iterations, and a constant population size of 10000.
 (see `constpopsize_byparticle_experiment.py`)
 
 =========
@@ -34,7 +34,7 @@ Variable data
    :groupby: none
    :yrange: 8000,10500
 
-   Inference of a 3-epoch model on 10 Mb of sequence with varying numbers of particles.
+   Inference of a 3-epoch model on 50 Mb of sequence with varying numbers of particles.
 
 The bias is clearly due to undersampling, and increasing the number of particles mitigates the issue.
 
@@ -53,8 +53,8 @@ Fixed data
    :groupby: none
    :yrange: 8000,10500
 
-   Inference of a 3-epoch model on 10 Mb of sequence with varying numbers of particles, on fixed input data.
+   Inference of a 3-epoch model on 50 Mb of sequence with varying numbers of particles, on fixed input data.
 
-Conclusion.
+
 
 
