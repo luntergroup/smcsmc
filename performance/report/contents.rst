@@ -10,7 +10,8 @@ Contents
 
    constpopsize_bylength.rst
    constpopsize_byparticle.rst
-   constpopsize_bylag.rst              
+   constpopsize_bylag.rst
+   constpopsize_byparticles2.rst   
               
 ==================
 Index

@@ -13,13 +13,14 @@ Experiments are defined by Python scripts in `experiments/`.  When run, these st
 their results in a mysql database `experiments/experimentsdb`.
 
 These results are accessed by CGATReport using scripts in `report/trackers/`.  The
-document itself is `contents.rst`.  It uses [ReStructuredText](http://docutils.sourceforge.net/docs/user/rst/quickref.html)
-See the [CGATReport Tutorials](https://www.cgat.org/downloads/public/CGATReport/documentation/Tutorials.html) for various
-examples.
+document itself is `contents.rst`.  It uses
+[ReStructuredText](http://docutils.sourceforge.net/docs/user/rst/quickref.html).  See the
+[CGATReport Tutorials](https://www.cgat.org/downloads/public/CGATReport/documentation/Tutorials.html)
+for various examples.
 
-Before you use `cgatreport`, be sure to activate the virtual environment, by going to the `performance` directory and
-running `source env/bin/activate` (virtualenv) or `source activate env` (conda/anaconda).  (Use `deactivate` or `source deactivate`
-to exit a virtual python environment.)
+Before you use `cgatreport`, be sure to activate the virtual environment, by going to the `performance`
+directory and running `source env/bin/activate` (virtualenv) or `source activate env` (conda/anaconda).
+(Use `deactivate` or `source deactivate` to exit a virtual python environment.)
         
 Plots can be tested using `cgatreport-test`, for example like this:
 
@@ -34,7 +35,7 @@ To view the full document, type `make html` in the `report` directory and point 
 ## Installation -- Linux
 
 I had to install `virtualenv` and `libfreetype6-dev` before starting.  The packages `python-tk` and `libxft-dev` may also be required.
-        
+
 To install:        
 ```
         git submodule init
@@ -49,9 +50,11 @@ To install:
         python setup.py install
 ```
 
+CGATReport used to complain that I hadn't set my `DISPLAY` variable.  To fix this, add the line `backend : TkAgg` to a file `matplotlibrc` in directory `$HOME/.matplotlib`.
+                
 ## Installation -- Mac
 
-This worked for me.  I had [Anaconda](https://docs.continuum.io/anaconda/install) and [Homebrew](http://brew.sh/) installed.
+I never got this to work...
 
 ```
         brew install freetype

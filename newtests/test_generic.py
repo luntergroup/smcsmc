@@ -52,6 +52,8 @@ class TestGeneric(unittest.TestCase):
         self.lag = 4.0
         self.smcsmc_change_points = None
         self.missing_leaves = []
+        self.bias_heights = [400]
+        self.bias_strengths = [10,1]
         self.filename_disambiguator = ""
         # state:
         self.simulated = False
@@ -84,7 +86,13 @@ class TestGeneric(unittest.TestCase):
         segopt = "-seg {}".format( self.pop.filename )
         addopt = self.pop.additional_commands
         migropt = " ".join( [ cmd for cmd in self.pop.migration_commands if cmd != None ] )
-        pilotsopt = "-bias_heights 400 -bias_strengths 10 1"
+        if self.bias_heights != None:
+            pilotsopt = "-bias_heights {} -bias_strengths {}".format(
+                ' '.join(map(str,self.bias_heights)),
+                ' '.join(map(str,self.bias_strengths))
+            )
+        else:
+            pilotsopt = ""
 
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
@@ -145,9 +153,9 @@ class TestGeneric(unittest.TestCase):
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
         print (" command:",cmd)
-        start = time.clock()
+        start = time.time()
         returnvalue = subprocess.check_call(cmd, shell = True)
-        end = time.clock()
+        end = time.time()
         self.assertTrue( returnvalue == 0 )
         self.smcsmc_runtime = end-start
 

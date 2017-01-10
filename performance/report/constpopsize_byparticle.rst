@@ -2,11 +2,10 @@
    sphinxreport-quickstart 
 
 **********************************************************
-Dependence of inferred Ne on amount of number of particles
+Dependence of inferred Ne on number of particles
 **********************************************************
 
 Population size inference with varying numbers of particles.
-These runs used 50 Mb of sequence, using 10 replicates, 5 EM iterations, and a constant population size of 10000.
 (see `constpopsize_byparticle_experiment.py`)
 
 =========
