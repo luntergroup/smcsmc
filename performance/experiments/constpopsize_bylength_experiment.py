@@ -1,20 +1,5 @@
-import sys
-import os
-import inspect
-import argparse
+import experiment_base
 import itertools
-from multiprocessing import Pool
-from sqlalchemy import Table, MetaData, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-Base = declarative_base()
-
-# various files and directory paths
-db = "experimentsdb"
-scrmpath = "../../scrm"
-smcsmcpath = "../../smcsmc"
-datapath = "data/"
 
 ###################################################################################
 #
@@ -25,19 +10,19 @@ datapath = "data/"
 ###################################################################################
 
 
-sys.path.extend( ["../../newtests","../newtests"] )
-import test_const_pop_size
+# parameters for this experiment
+inference_reps = 10
+seqlens = [1e6, 2e6, 5e6, 10e6, 20e6, 50e6, 100e6]
 
 
 # name of this experiment
 experiment_name = "constpopsize_3epochs_lengthdependence"
 
 # class
+import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
 
-# parameters for this experiment
-inference_reps = 10
-seqlens = [1e6, 2e6, 5e6, 10e6, 20e6, 50e6, 100e6]
+# define the experiments
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'smcseed':smcseed,'missing':missing}
                    for (seqlen, simseed, smcseed, missing) in (
                            # repetitions with unique data
@@ -54,69 +39,37 @@ experiment_pars = [{'length':seqlen, 'simseed':simseed, 'smcseed':smcseed,'missi
                             itertools.product(seqlens, range(inference_reps))])]
 
 
-# run a single experiment
-def run_experiment_map( pars ):
-    return run_experiment( **pars )
-
-
+# run an experiment; keyword parameters agree with those in experiment_pars
 def run_experiment( length, simseed, smcseed, missing ):
-    if have_result( length, simseed, smcseed, missing ):
-        return "L={} SeqSeed={} SmcSeed={} -- skipped".format(length, simseed, smcseed)
+    missing_leaves = str( [0,1] if missing else [] )
+    label = "L{}_S{}_I{}_M{}".format(int(length),simseed,smcseed,missing)
+    if experiment_base.have_result( name=experiment_name,
+                                    sequence_length=length,
+                                    dataseed=simseed,
+                                    infseed=smcseed,
+                                    missing_leaves=missing_leaves ):
+        print "Skipping " + label
+        return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
-    e.setUp( datapath + experiment_name )
+    e.setUp( experiment_base.datapath + experiment_name )
     # set simulation parameters
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
-    e.pop.scrmpath = scrmpath
-    if missing:
-        e.missing_leaves = [0,1]
-    e.filename_disambiguator = "_L{}_S{}_I{}_M{}".format(int(length),simseed,smcseed,missing)
+    e.pop.scrmpath = experiment_base.scrmpath
+    if missing: e.missing_leaves = [0,1]
+    e.filename_disambiguator = label
     # set inference parameters
     e.seqlen = length
     e.seed = (smcseed,)
-    e.smcsmcpath = smcsmcpath
+    e.bias_heights = None
+    e.smcsmcpath = experiment_base.smcsmcpath
     # perform inference and store results
     e.infer( case = smcseed )
-    e.resultsToMySQL( db = db )
-    #e.success = True   # remove files
-    return "L={} SeqSeed={} SmcSeed={} missing={}".format(length, simseed, smcseed, missing)
-
-
-def have_result( length, simseed, smcseed, missing ):
-    """ see if the database already contains the required result """
-    engine = create_engine("sqlite:///" + db)
-    if not engine.dialect.has_table(engine, "experiment"):
-        return False
-    metadata = MetaData(bind=engine)
-    class Experiment(Base):
-        __table__ = Table('experiment', metadata, autoload=True)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    missing_leaves = str( [0,1] if missing else [] )
-    result = session.query(Experiment).filter_by(name = experiment_name,
-                                                 sequence_length = length,
-                                                 dataseed = simseed,
-                                                 infseed = smcseed,
-                                                 missing_leaves = missing_leaves).first()
-    session.commit()
-    session.close()
-    return result != None
+    e.resultsToMySQL( db = experiment_base.db )
+    e.success = True   # remove files
+    print "Done " + label
 
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
-    parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
-    args = parser.parse_args()
-
-    if args.jobs == 1:
-        for i in map( run_experiment_map, experiment_pars ):
-            pass
-    else:
-        pool = Pool(processes = args.jobs)
-        p = pool.map_async(run_experiment_map, experiment_pars )
-        try:
-            results = p.get(100000)
-            pool.terminate()
-        except KeyboardInterrupt:
-            print "Received keyboard interrupt -- stopping"
+    experiment_base.run_experiment = run_experiment
+    experiment_base.main( experiment_name, experiment_pars )

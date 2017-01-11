@@ -6,7 +6,8 @@ Dependence of inferred Ne on number of particles
 **********************************************************
 
 Population size inference with varying numbers of particles.
-(see `constpopsize_byparticle_experiment.py`)
+(see `constpopsize_byparticle_experiment.py`).
+Runtime on bender with `-j 50` is about 15 minutes.
 
 =========
 Overview
@@ -23,7 +24,8 @@ Overview
 Variable data
 ==============
 
-.. report:: TrackerConstPopSize.ConstpopsizeParticledependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_particledependence
    :render: sb-box-plot
    :layout: row
    :function: 10000         
@@ -42,7 +44,8 @@ The bias is clearly due to undersampling, and increasing the number of particles
 Fixed data
 =============
 
-.. report:: TrackerConstPopSize.ConstpopsizeParticledependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_particledependence
    :render: sb-box-plot
    :layout: row
    :function: 10000         

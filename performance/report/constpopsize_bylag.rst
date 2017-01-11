@@ -6,6 +6,7 @@ Dependence of inferred Ne on lag
 **********************************************************
 
 Population size inference with variable lag (see `constpopsize_bylag_experiment.py`).
+On bender with `-j 50`, the experiment takes a few hours.
 
 Rationale: increasing the lag increases the amount of information extracted from the data, and improves convergence.
 However it also increases the variance of parameter estimates, and increases memory usage and runtime, so a balance should be struck.
@@ -36,6 +37,7 @@ Convergence
 ===========
 
 .. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_3epochs_lagdependence
    :render: sb-box-plot
    :slices: T80000
    :yrange: 6000,10000
@@ -48,7 +50,8 @@ Convergence
 Variable data
 =============
 
-.. report:: TrackerConstPopSize.ConstpopsizeLagdependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_lagdependence,column=lag
    :render: sb-box-plot
    :layout: row
    :function: 10000         
@@ -58,7 +61,7 @@ Variable data
    :tracks: variableData       
    :yrange: 6000,11000
 
-   Inference of a 3-epoch model on 10 Mb of sequence with variable lag around default of 4.0.
+   Inference of a 3-epoch model on 50 Mb of sequence with variable lag around default of 4.0.
 
 
    
@@ -66,7 +69,8 @@ Variable data
 Fixed data
 ===========
 
-.. report:: TrackerConstPopSize.ConstpopsizeLagdependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_lagdependence,column=lag
    :render: sb-box-plot
    :layout: row
    :function: 10000         
@@ -76,7 +80,7 @@ Fixed data
    :tracks: fixedData       
    :yrange: 6000,11000
 
-   Inference of a 3-epoch model on 10 Mb of sequence with variable lag around default of 4.0.
+   Inference of a 3-epoch model on 50 Mb of sequence with variable lag around default of 4.0.
 
 
    

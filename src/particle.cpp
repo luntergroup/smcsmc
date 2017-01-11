@@ -699,7 +699,7 @@ double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double pre
 double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ) {
     /// !!Temporarily set true recombination rate here, need to decide which class should own this
     // Should create an inferred_model to refer to
-    double true_recombination_rate = 5e-9;
+    double true_recombination_rate = model().recombination_rate();
     ///
     return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
 }
@@ -711,7 +711,7 @@ double ForestState::compute_positional_component_of_proposal_prob_of_no_recombin
 double ForestState::compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec ) {
     /// !!Temporarily set true recombination rate here, need to decide which class should own this
     // Should create an inferred_model to refer to
-    double true_recombination_rate = 5e-9;
+    double true_recombination_rate = model().recombination_rate();
     ///
     return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
                                  ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );

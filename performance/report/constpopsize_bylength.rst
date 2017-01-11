@@ -7,7 +7,7 @@ Dependence of inferred Ne on amount of input data
 
 Population size inference for varying amounts of input data.
 These runs are with 100 particles, 10 replicates, 5 EM iterations, and a constant population size of 10000.
-(see `constpopsize_bylength_experiment.py`)
+(see `constpopsize_bylength_experiment.py`).  Runtime on bender with `-j 50` is approximately 5 minutes.
 
 =========
 Overview

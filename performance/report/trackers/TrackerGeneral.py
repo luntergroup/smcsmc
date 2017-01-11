@@ -17,7 +17,9 @@ class Experiment(TrackerSQL):
                ['lag','lag',0],
                ['dataseed','sequence_seed',0],
                ['infseed','inference_seed',0],
-               ['missing_leaves','missing_leaves',0] ]
+               ['missing_leaves','missing_leaves',0],
+               ['smcsmc_version','smcsmc_version',0],
+               ['smcsmc_runtime','runtime',0] ]
                
     def getSlices(self):
         return [ field[1] for field in self.fields ]

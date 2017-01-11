@@ -25,7 +25,8 @@ Overview
 Convergence
 ===========
 
-.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence2
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_3epochs_particles2,track=np
    :render: sb-box-plot
    :slices: T0
    :yrange: 10000,11200
@@ -36,7 +37,8 @@ Convergence
    Speed of convergence for different numbers of particles (epoch T0)
 
 
-.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence2
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_3epochs_particles2,track=np
    :render: sb-box-plot
    :slices: T40000
    :yrange: 8000,11000
@@ -48,7 +50,8 @@ Convergence
 
 
    
-.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence2
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_3epochs_particles2,track=np
    :render: sb-box-plot
    :slices: T80000
    :yrange: 6000,10000
@@ -62,7 +65,8 @@ Convergence
 Variable data
 =============
 
-.. report:: TrackerConstPopSize.ConstpopsizeParticles2dependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_particles2    
    :render: sb-box-plot
    :layout: row
    :function: 10000         
@@ -77,7 +81,8 @@ Variable data
 Variable data - no pilot bias
 =============================
 
-.. report:: TrackerConstPopSize.ConstpopsizeParticles3dependence
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_3epochs_particles3
    :render: sb-box-plot
    :layout: row
    :function: 10000         

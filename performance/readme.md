@@ -10,10 +10,11 @@ For installation notes see the top-level readme.
 ## Usage
 
 Experiments are defined by Python scripts in `experiments/`.  When run, these store
-their results in a mysql database `experiments/experimentsdb`.
+their results in a mysql database `experiments/experimentsdb`.  Use `--force` to overwrite
+previous experiments.
 
-These results are accessed by CGATReport using scripts in `report/trackers/`.  The
-document itself is `contents.rst`.  It uses
+The results are accessed by CGATReport using scripts in `report/trackers/`.  The
+top-level document is `contents.rst`.  It uses
 [ReStructuredText](http://docutils.sourceforge.net/docs/user/rst/quickref.html).  See the
 [CGATReport Tutorials](https://www.cgat.org/downloads/public/CGATReport/documentation/Tutorials.html)
 for various examples.
@@ -29,7 +30,7 @@ cd report
 cgatreport-test --path=trackers -t TrackerConstPopSize.ConstpopsizeLengthdependence -r sb-box-plot -o yrange=4000,20000
 ```
                 
-To view the full document, type `make html` in the `report` directory and point a browser to `report/_build/html/contents.html`.
+To view the full document, type `make html` in the `report` directory and point a browser to `report/_build/html/contents.html`.  It seems necessary to remove the `_cache`, `_static` and `_build` directories, otherwise some cached data does not get re-made appropriately.
 
         
 ## Installation -- Linux

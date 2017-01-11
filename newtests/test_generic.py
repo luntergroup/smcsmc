@@ -60,6 +60,9 @@ class TestGeneric(unittest.TestCase):
         self.success = False
         self.cases = []
         self.smcsmc_runtime = -1
+        self.smcsmc_version = ""
+        self.scrm_version = ""
+        
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
@@ -152,7 +155,10 @@ class TestGeneric(unittest.TestCase):
         cmd = "{cmd} -o {caseprefix} > {caseprefix}.stdout 2> {caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
-        print (" command:",cmd)
+        versiondata = subprocess.Popen([self.smcsmcpath,"-v"],stdout=subprocess.PIPE).communicate()[0].split('\n')
+        if len(versiondata) >= 3:
+            self.smcsmc_version = versiondata[1].strip().split()[-1]
+            self.scrm_version   = versiondata[2].strip().split()[-1]
         start = time.time()
         returnvalue = subprocess.check_call(cmd, shell = True)
         end = time.time()
@@ -291,6 +297,8 @@ class TestGeneric(unittest.TestCase):
                 dataseed = Column(Integer)
                 infseed = Column(Integer)
                 smcsmc_runtime = Column(Float)
+                scrm_version = Column(String)
+                smcsmc_version = Column(String)
             class Result(Base):
                 __tablename__ = "result"
                 id = Column(Integer, primary_key=True)
@@ -318,7 +326,8 @@ class TestGeneric(unittest.TestCase):
         this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=int(self.pop.sequence_length),
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
-                               missing_leaves = str(self.missing_leaves), lag = self.lag,
+                               missing_leaves = str(self.missing_leaves), lag = self.lag, smcsmc_version = self.smcsmc_version,
+                               scrm_version = self.scrm_version,
                                inference_command = self.inference_command, name = name, smcsmc_runtime = self.smcsmc_runtime )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id
