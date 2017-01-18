@@ -157,10 +157,14 @@ void Segment::read_new_line(){
             segment_length_ = new_seg_end - segment_start_;
             break;
         case 2:
-            this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
+            if (this->tmp_str != "T" && this->tmp_str != "F") throw InvalidSeg("Expected T or F in .seg file column 3");
+            //this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
+            this->segment_state_ = SEGMENT_INVARIANT;  // ignore the value in the column; use per-sample data instead
             break;
         case 3:
-            this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false;
+            if (this->tmp_str != "T" && this->tmp_str != "F") throw InvalidSeg("Expected T or F in .seg file column 4");
+            //this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false;
+            this->genetic_break_ = false; // ignore the value in this column; assume no breaks
             break;
         case 4:
             this->chrom_ = strtol( tmp_str.c_str(), NULL, 0);
@@ -186,8 +190,9 @@ void Segment::read_new_line(){
         // likelihood for a mutation is charged at the end of the segment, as this should
         // be accounted for only at the actual end of the segment.  However if the segment
         // is missing, the initial and final sections should be treated the same.
-        if (segment_state_ == SEGMENT_INVARIANT)
+        if (segment_state_ == SEGMENT_INVARIANT) {
             segment_state_ = SEGMENT_INVARIANT_PARTIAL;
+        }
         
     } else {
         
@@ -216,7 +221,9 @@ void Segment::extract_field_VARIANT ( ) {
         switch (tmp_str[i]) {
             case '.': seg_content = -1; break;  // missing data
             case '/': seg_content = 2; break;   // unphased heterozygous genotype
-            default: seg_content = strtol( tmp_str.substr(i,1).c_str(), NULL, 0 );
+            case '0': seg_content = 0; break;
+            case '1': seg_content = 1; break;
+            default: throw InvalidSeg("Unknown character found in .seg file; expect one of '.', '/', '0' or '1'.");
         }
         allelic_state_at_Segment_end.push_back ( seg_content );
     }

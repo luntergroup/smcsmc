@@ -294,7 +294,7 @@ void pfARG_core(PfParam &pfARG_para,
                                          pfARG_para.useCap, pfARG_para.Ne_cap, pfARG_para.online_bool,
                                          force_update = false, false );
 
-        if ( pfARG_para.ESS() == 1 ) {
+        if ( pfARG_para.get_ESS_fraction() == 1 ) {
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
         }

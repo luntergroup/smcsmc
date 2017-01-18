@@ -263,8 +263,8 @@ class PfParam{
 
     double default_loci_length;
 
-    double ESS() const { return this-> ESS_;} // scaled between zero and one
-
+    double get_ESS_fraction() const { return this-> ESS_fraction; }
+    
     double top_t() const { return this->top_t_;}
 
     void increaseEMcounter() { this->EMcounter_++; }
@@ -356,7 +356,7 @@ class PfParam{
     // ------------------------------------------------------------------
     string pattern;     /*! population segement pattern */
     double top_t_;
-    double ESS_;   // scaled between zero and one
+    double ESS_fraction;   // scaled between zero and one
 
     // Segdata related
     string input_SegmentDataFileName;

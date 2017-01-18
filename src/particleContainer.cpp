@@ -169,8 +169,6 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
                                                      * likelihood_of_haplotype_at_tips );
         dout << "particle " << particle_i << " done" << endl;
     }
-
-    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
     dout << endl;
 }
 
@@ -178,13 +176,12 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
-void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state)
+void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count,
+                                       int mutation_at, const PfParam &pfparam, int num_state)
 {
-    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particle is " <<  num_state << ", and ESSthreshold is " << pfparam.ESSthreshold <<endl;
-    double ESS_diff = pfparam.ESSthreshold - this->ESS();
-    if ( ESS_diff > 1e-6 ) { // resample if the effective sample size is small, to check this step, turn the if statement off
-        resampledout<<" ESS_diff = " << ESS_diff<<endl;
-        resampledout << " ### PROGRESS: ESS resampling" << endl;
+    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particles is " <<  num_state
+         << "threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - this->ESS() << endl;
+    if ( this->ESS() + 1e-6 < pfparam.ESSthreshold ) {
         pfparam.append_resample_file( mutation_at, ESS() );
         this->systematic_resampling( weight_partial_sum, sample_count, num_state);
         this->resample(sample_count);
@@ -350,15 +347,17 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
     //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;
     if (Segfile->segment_state() == SEGMENT_INVARIANT) {
-        // ensure that if this segment is a partial segment, and does not end in a mutation
-        // even though data is not missing (state == SEGMENT_INVARIANT_PARTIAL), the mutation
-        // is not accounted for here, but only when the last partial segment is processed.
+        // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
+        // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
+        //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
+        //  missing data and therefore also does not end with a mutation).
         this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
     }
 
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
 
     // Update the accumulated probabilities, as well as computing the effective sample size
+    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
     this->update_partial_sum_array_find_ESS( weight_partial_sum );
 }
 
@@ -418,11 +417,11 @@ void ParticleContainer::systematic_resampling(std::valarray<double> partial_sum,
         sample_count[ interval_j ] = 0;
         }
 
-    resampledout << "systematic sampling procedue finished with total sample count " << sample_count.sum()<<std::endl;
+    resampledout << "systematic sampling procedure finished with total sample count " << sample_count.sum()<<std::endl;
     resampledout << "Sample counts: " ;
     for (size_t i=0;i<sample_count.size();i++){dout << sample_count[i]<<"  ";}  dout << std::endl;
     assert(sample_count.sum() == sample_size);
-    }
+}
 
 
 // set_particles_with_random_weight() has not been updated for use with delayed IS

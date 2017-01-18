@@ -65,9 +65,9 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-nsam" ){
             this->default_nsam = readNextInput<size_t>();
         } else if ( *argv_i == "-ESS"  ){
-            this->ESS_ = readNextInput<double>();
+            this->ESS_fraction = readNextInput<double>();
             this->ESS_default_bool = false;
-            if ( this->ESS() > 1.0 || this->ESS() < 0.0 ){
+            if ( this->ESS_fraction > 1.0 || this->ESS_fraction < 0.0 ){
                 throw OutOfRange ("-ESS", *argv_i );
             }
         } else if ( *argv_i == "-EM"   ){
@@ -191,13 +191,13 @@ void PfParam::init(){
     #endif
 
     this->original_recombination_rate_ = 0;
-    this->max_segment_length_factor_ = 16.0;  // allow segments of max length   mslf / (4 Ne rho)
+    this->max_segment_length_factor_ = 4.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
     this->lag_fraction     = 4.0;
     this->out_NAME_prefix  = "smcsmc";
-    this->ESS_             = 0.5;
+    this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;
     this->log_bool         = true; // Enable log by default
     this->online_bool      = false;
@@ -293,7 +293,7 @@ void PfParam::convert_scrm_input (){
 
 void PfParam::finalize(){
 
-    this->ESSthreshold = this->N * this->ESS();
+    this->ESSthreshold           = this->N * this->ESS_fraction;
     this->outFileName            = out_NAME_prefix + ".out";
     this->log_NAME               = out_NAME_prefix + ".log";
     this->recombination_map_NAME = out_NAME_prefix + ".recomb.gz";
@@ -369,7 +369,7 @@ void PfParam::writeLog(ostream * writeTo){
         (*writeTo) << setw(15) << "Online update = TRUE\n";
     }
     (*writeTo) << setw(15) <<             "N =" << setw(10) << N                           << "\n";
-    (*writeTo) << setw(15) <<           "ESS =" << setw(10) << ESS_;
+    (*writeTo) << setw(15) <<           "ESS =" << setw(10) << ESS_fraction;
     if (ESS_default_bool){ (*writeTo) << " (by default)";}                        (*writeTo) << "\n";
     //(*writeTo) << setw(15) <<        "buffer =" << setw(10) << buff_length                 << "\n";
 
