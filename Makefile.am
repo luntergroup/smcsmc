@@ -5,8 +5,8 @@ COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 
 distdir = $(PACKAGE)-$(VERSION)
 
-bin_PROGRAMS = smcsmc smcsmc_dbg
-check_PROGRAMS = unittests smcsmc_prof
+bin_PROGRAMS = smcsmc smcsmc_dbg smcsmc_static
+check_PROGRAMS = unittests smcsmc_prof smcsmc_gperf
 scrmcheck_PROGRAMS = scrm smcsmcSCRM smcsmcSCRM_dbg scrm_dbg
 scrmcheckdir = bindir
 
@@ -38,21 +38,26 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/s
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
-smcsmc_LDADD             = -lboost_iostreams
+smcsmc_LDADD             = -lboost_iostreams -lz
 
 # Debugger flags
 scrm_dbg_CXXFLAGS            = $(common_flags)
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
 smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
-smcsmc_dbg_LDADD             = -lboost_iostreams
+smcsmc_dbg_LDADD             = -lboost_iostreams -lz
 
 # Profiler flags
 smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
-smcsmc_prof_LDADD        = -lboost_iostreams
+smcsmc_prof_LDADD        = -lboost_iostreams -lz
+
+# Static flags
+smcsmc_static_CXXFLAGS   = $(smcsmc_CXXFLAGS)
+smcsmc_static_LDFLAGS    = -static -static-libgcc -static-libstdc++
+smcsmc_static_LDADD      = -lboost_iostreams -lz
 
 # Gperf flags
 smcsmc_gperf_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -DGPERF -O3
-smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams
+smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams -lz
 
 # Notes:
 #
@@ -63,7 +68,7 @@ smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams
 
 # Tester flags
 unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random --coverage
-unittests_LDADD          = -lcppunit -ldl -lboost_iostreams
+unittests_LDADD          = -lcppunit -ldl -lboost_iostreams -lz
 
 
 
@@ -123,6 +128,9 @@ scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 scrm_dbg_SOURCES  = $(scrm_debug_src) $(scrm_SOURCES)
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
 smcsmcSCRM_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
+
+# Static sources
+smcsmc_static_SOURCES = $(smcsmc_SOURCES)
 
 # Profiler sources
 smcsmc_prof_SOURCES = $(smcsmc_SOURCES)
