@@ -27,9 +27,12 @@ class Population:
                  recombination_rate   = defaults['recombination_rate'],
                  sequence_length      = defaults['sequence_length'],
                  num_samples          = defaults['num_samples'],
-                 change_points        = [.01, 0.06, 0.2, 1, 2],
-                 population_sizes     = [0.1, 1, 0.5, 1, 2],
-                 migration_commands   = [None, None, None, None, None],
+                 change_points        = [0, .01, 0.06, 0.2, 1, 2],
+                 population_sizes     = [1, 0.1, 1,    0.5, 1, 2],
+                 num_populations      = 1,
+                 sample_populations   = None,
+                 sample_times         = None,
+                 migration_commands   = [None, None, None, None, None, None],
                  additional_commands  = "",
                  npop                 = 1,
                  seed                 = (1,),
@@ -43,6 +46,9 @@ class Population:
         self.num_samples = num_samples
         self.change_points = change_points
         self.population_sizes = population_sizes
+        self.num_populations = num_populations
+        self.sample_populations = sample_populations    # encoded as sample_populations_ in scrm/model.h
+        self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
         self.migration_commands = migration_commands
         self.additional_commands = additional_commands
         self.npop = npop
@@ -50,31 +56,80 @@ class Population:
         self.filename = filename
         self.scrmpath = scrmpath
 
-        if len(population_sizes) != len(change_points):
-            raise ValueError("Expected {} population sizes; got {}".format(len(change_points),population_sizes))
-        if len(migration_commands) != len(change_points):
-            raise ValueError("Expected {} migration commands; got {}".format(len(change_points),migration_commands))
+
+    def finalize_and_validate(self):
+
+        # set defaults where necessary
+        if self.sample_populations is None:
+            self.sample_populations = [1] * self.num_samples
+        if self.sample_times is None:
+            self.sample_times = [0] * self.num_samples
+        
+        # check sanity of samples, their times, and their population
+        assert len(self.sample_populations) == self.num_samples
+        assert len(self.sample_times) == self.num_samples
+        assert min( self.sample_times ) == 0.0
+        populations = set( self.sample_populations )
+        assert populations == set( range( 1, self.num_populations + 1 ) )
+        for i in range(self.num_samples - 1):
+            assert self.sample_times[i] <= self.sample_times[i+1]
+            if self.sample_times[i] == self.sample_times[i+1]:
+                assert self.sample_populations[i+1] <= self.sample_populations[i]
+
+        # check sanity of population sizes through time
+        if len(self.population_sizes) != len(self.change_points):
+            raise ValueError("Expected {} population sizes; got {}".format(
+                len(self.change_points),self.population_sizes))
+        if len(self.migration_commands) != len(self.change_points):
+            raise ValueError("Expected {} migration commands; got {}".format(
+                len(self.change_points),self.migration_commands))
+
+        # require the population size at time 0 to be set explicitly
+        assert( self.change_points[0] == 0.0 )
 
 
+    def create_sample_command_line_options(self):
+
+        self.finalize_and_validate()
+        expression = ""
+        if self.num_populations == 1 and max( self.sample_times ) == 0.0:
+            return expression
+        times = sorted( list( set( self.sample_times ) ) )
+        for time in times:
+            popsizes = [ len( [ None
+                                for idx, sample_time in enumerate(sample_times)
+                                if sample_time == time and self.sample_populations[idx] == pop ] )
+                         for pop in range( 1, self.num_populations + 1 ) ]
+            if time == 0.0:
+                expression = "-I {} {}".format(self.num_populations,
+                                               " ".join(map(str,popsizes)))
+            else:
+                expression = expression + " -eI {} {}".format(time,
+                                                              " ".join(map(str,popsizes)))
+        return expression
+    
+        
     def simulate(self, missing_leaves = []):
 
         num_loci = 1
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
         self.recombinations = 4 * self.N0 * self.recombination_rate * self.sequence_length
 
-        command = "{nsam} {nloci} -t {muts} -r {recs} {seqlen} {add}".format(nsam = self.num_samples,
-                                                                             nloci = num_loci,
-                                                                             muts = self.mutations,
-                                                                             recs = self.recombinations,
-                                                                             seqlen = self.sequence_length,
-                                                                             add = self.additional_commands)
+        samples = self.create_sample_command_line_options()
+        command = "{nsam} {nloci} -t {muts} -r {recs} {seqlen} {samples} {add}".format(nsam = self.num_samples,
+                                                                                       nloci = num_loci,
+                                                                                       muts = self.mutations,
+                                                                                       recs = self.recombinations,
+                                                                                       seqlen = self.sequence_length,
+                                                                                       samples = samples,
+                                                                                       add = self.additional_commands)
 
         # add population structure and migration
         for i in range(len(self.change_points)):
             time = self.change_points[i]
             popsize = self.population_sizes[i]
             migration_command = self.migration_commands[i]
-            if popsize != None:
+            if popsize != None and (time > 0.0 or popsize != 1.0):
                 command += " -eN {time} {popsize}".format(time=time, popsize=popsize)
             if migration_command != None:
                 command += " " + migration_command
@@ -262,9 +317,9 @@ class Pop4(Population):
 
     def __init__(self, **kwargs):
 
-        pop4_defaults = {'change_points': [.01, 0.06, 0.2,  1, 2],
-                         'population_sizes': [0.1, 1,    0.5,  1, 2],
-                         'migration_commands': [None, None, None, None, None],
+        pop4_defaults = {'change_points':    [0, .01, 0.06, 0.2,  1, 2],
+                         'population_sizes': [1, .1,  1,    0.5,  1, 2],
+                         'migration_commands': [None, None, None, None, None, None],
                          'num_samples': 4}
 
         # set kwargs to Pop4-default values, but allow caller to override
@@ -280,9 +335,9 @@ class PopSingleConst(Population):
 
     def __init__(self, **kwargs):
 
-        defaults = {'change_points':    [.5, 1.0],
-                    'population_sizes': [1, 1],
-                    'migration_commands': [None, None],
+        defaults = {'change_points':    [0, .5, 1.0],
+                    'population_sizes': [1, 1,  1],
+                    'migration_commands': [None, None, None],
                     'num_samples': 4}
 
         # set kwargs to default values, but allow caller to override
@@ -373,7 +428,7 @@ class TwoPopBiDirMigr(Population):
 
         pop2migr_defaults = {'change_points':    [0,1],
                              'population_sizes': [1,1],
-                             'migration_commands': ["-eM 0 1"],
+                             'migration_commands': ["-eM 0 1",None],
                              'num_samples': 8,
                              'npop': 2}
 
@@ -395,7 +450,7 @@ class TwoPopSplitNoMigr(Population):
 
         pop2migr_defaults = {'change_points':    [0,.1,.5],
                              'population_sizes': [1,1,1],
-                             'migration_commands': ["-ej 0.5 2 1"],
+                             'migration_commands': [None,None,"-ej 0.5 2 1"],
                              'num_samples': 8,
                              'npop': 2}
 

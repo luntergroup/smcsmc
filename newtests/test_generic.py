@@ -49,6 +49,7 @@ class TestGeneric(unittest.TestCase):
         self.seed = (1,)
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
+        self.infer_recombination = True
         self.lag = 4.0
         self.smcsmc_change_points = None
         self.missing_leaves = []
@@ -79,6 +80,7 @@ class TestGeneric(unittest.TestCase):
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
+        self.pop.finalize_and_validate()
         nsamopt = "-nsam {}".format(self.pop.num_samples)
         topt = "-t {}".format(self.pop.mutations)
         ropt = "-r {} {}".format(self.pop.recombinations,self.pop.sequence_length)
@@ -87,6 +89,7 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
+        sampleopt = self.pop.create_sample_command_line_options()
         addopt = self.pop.additional_commands
         migropt = " ".join( [ cmd for cmd in self.pop.migration_commands if cmd != None ] )
         if self.bias_heights != None:
@@ -101,6 +104,10 @@ class TestGeneric(unittest.TestCase):
             # use -p / -tmax pattern to specify epochs for inference
             epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
                                                     tmax = self.tmax)
+            # extract the number of epochs from the pattern string:
+            # add up the Ns in the 'N*M' and 'N' patterns, which are separated with '+'es
+            num_epochs = sum( [ int(elt.split('*')[0])
+                                for elt in self.popt.split(' ')[1].split('+') ] )
         else:
             if self.smcsmc_change_points != None:
                 # use explicit epochs for inference
@@ -108,20 +115,29 @@ class TestGeneric(unittest.TestCase):
             else:
                 # use model epochs for inference
                 epochs = self.pop.change_points
+            num_epochs = len(epochs)
             epochopt = " ".join(["-eN {time} 1".format(time=time)
                                  for time in epochs])
-        self.inference_command = "{smcsmc} {nsam} {t} {add} {r} {np} {em} {lag} {epochs} {seed} {seg} {migr} {pilots}".format(
+
+        if self.infer_recombination:
+            recinfopt = ""
+        else:
+            recinfopt = "-xr 1-{}".format(num_epochs)
+            
+        self.inference_command = "{smcsmc} {nsam} {sample} {t} {r} {add} {recinf} {np} {em} {lag} {epochs} {seed} {seg} {migr} {pilots}".format(
             smcsmc = self.smcsmcpath,
             nsam = nsamopt,
+            sample = sampleopt,
             t = topt,
             r = ropt,
+            add = addopt,
+            recinf = recinfopt,
             np = particlesopt,
             em = emopt,
             lag = lagopt,
             epochs = epochopt,
             seed = seedopt,
             seg = segopt,
-            add = addopt,
             migr = migropt,
             pilots = pilotsopt)
         return self.inference_command
