@@ -56,6 +56,8 @@ class TestGeneric(unittest.TestCase):
         self.bias_heights = [400]
         self.bias_strengths = [10,1]
         self.filename_disambiguator = ""
+        self.int_parameter = 0
+        self.str_parameter = ""
         # state:
         self.simulated = False
         self.success = False
@@ -312,6 +314,8 @@ class TestGeneric(unittest.TestCase):
                 mutation_rate = Column(Float)
                 dataseed = Column(Integer)
                 infseed = Column(Integer)
+                int_parameter = Column(Integer)   # generic optional parameter
+                str_parameter = Column(String)    # generic optional parameter
                 smcsmc_runtime = Column(Float)
                 scrm_version = Column(String)
                 smcsmc_version = Column(String)
@@ -342,8 +346,9 @@ class TestGeneric(unittest.TestCase):
         this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples, sequence_length=int(self.pop.sequence_length),
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
-                               missing_leaves = str(self.missing_leaves), lag = self.lag, smcsmc_version = self.smcsmc_version,
-                               scrm_version = self.scrm_version,
+                               missing_leaves = str(self.missing_leaves), lag = self.lag,
+                               int_parameter = self.intpar, str_parameter = self.strpar,
+                               smcsmc_version = self.smcsmc_version, scrm_version = self.scrm_version,
                                inference_command = self.inference_command, name = name, smcsmc_runtime = self.smcsmc_runtime )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id

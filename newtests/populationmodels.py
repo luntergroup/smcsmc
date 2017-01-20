@@ -97,7 +97,7 @@ class Population:
         times = sorted( list( set( self.sample_times ) ) )
         for time in times:
             popsizes = [ len( [ None
-                                for idx, sample_time in enumerate(sample_times)
+                                for idx, sample_time in enumerate(self.sample_times)
                                 if sample_time == time and self.sample_populations[idx] == pop ] )
                          for pop in range( 1, self.num_populations + 1 ) ]
             if time == 0.0:
