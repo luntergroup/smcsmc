@@ -61,6 +61,7 @@ class TestGeneric(unittest.TestCase):
         # state:
         self.simulated = False
         self.success = False
+        self.debug = False
         self.cases = []
         self.smcsmc_runtime = -1
         self.smcsmc_version = ""
@@ -142,6 +143,8 @@ class TestGeneric(unittest.TestCase):
             seg = segopt,
             migr = migropt,
             pilots = pilotsopt)
+        if self.debug:
+            print (self.inference_command)
         return self.inference_command
 
     # helper -- generate simulated data, if this has not been done yet
@@ -158,7 +161,7 @@ class TestGeneric(unittest.TestCase):
             except:
                 # to cope with race conditions when multiple tests are run in parallel
                 pass
-        self.pop.simulate( self.missing_leaves )
+        self.pop.simulate( self.missing_leaves, self.debug )
         self.simulated = True
 
     # helper -- run smcsmc
@@ -347,7 +350,7 @@ class TestGeneric(unittest.TestCase):
                                dataseed=self.pop.seed[0], infseed=self.seed[0], simulate_command=self.pop.simulate_command,
                                recombination_rate = self.pop.recombination_rate, mutation_rate = self.pop.mutation_rate,
                                missing_leaves = str(self.missing_leaves), lag = self.lag,
-                               int_parameter = self.intpar, str_parameter = self.strpar,
+                               int_parameter = self.int_parameter, str_parameter = self.str_parameter,
                                smcsmc_version = self.smcsmc_version, scrm_version = self.scrm_version,
                                inference_command = self.inference_command, name = name, smcsmc_runtime = self.smcsmc_runtime )
         session.add( this_exp )

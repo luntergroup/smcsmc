@@ -43,6 +43,7 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
 
         self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
                                           population_sizes = [1, 1, 1],
+                                          change_points = [0,1,2],
                                           scrmpath=self.scrmpath )
         
         # set default inference parameters

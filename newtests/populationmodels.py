@@ -32,7 +32,7 @@ class Population:
                  num_populations      = 1,
                  sample_populations   = None,
                  sample_times         = None,
-                 migration_commands   = [None, None, None, None, None, None],
+                 migration_commands   = None,
                  additional_commands  = "",
                  npop                 = 1,
                  seed                 = (1,),
@@ -64,6 +64,8 @@ class Population:
             self.sample_populations = [1] * self.num_samples
         if self.sample_times is None:
             self.sample_times = [0] * self.num_samples
+        if self.migration_commands is None:
+            self.migration_commands = [None] * len(self.change_points)
         
         # check sanity of samples, their times, and their population
         assert len(self.sample_populations) == self.num_samples
@@ -109,7 +111,7 @@ class Population:
         return expression
     
         
-    def simulate(self, missing_leaves = []):
+    def simulate(self, missing_leaves = [], debug = False):
 
         num_loci = 1
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
@@ -152,6 +154,8 @@ class Population:
         scrmfilename = filename + ".scrm"
         command += " -T -L -p 10 -l 300000 > " + scrmfilename
         self.simulate_command = command
+        if debug:
+            print (self.simulate_command)
 
         # execute
         returnvalue = subprocess.check_call(command, shell=True)

@@ -61,7 +61,6 @@ def run_experiment( length, simseed, infseed, numparticles, bias, missing ):
     e.pop.seed = (simseed,)
     e.pop.change_points = [0, 0.01, 0.05, .1]
     e.pop.population_sizes = [1, 1, 1, 1]
-    e.pop.migration_commands = [None, None, None, None]
     e.pop.num_samples = leaves
     e.pop.sample_times = ([0] * (leaves/2)) + ([0.01] * (leaves/2))
     e.pop.populations = [1] * leaves
@@ -80,6 +79,7 @@ def run_experiment( length, simseed, infseed, numparticles, bias, missing ):
     e.bias_strenghts = [bias, 1]
     # perform inference and store results
     e.infer( case = simseed )
+    e.int_parameter = int(bias * 1000)
     e.resultsToMySQL( db = experiment_base.db )
     e.success = True   # remove files
     e.tearDown()
