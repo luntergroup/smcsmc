@@ -588,7 +588,7 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
     for ( size_t time_idx = node_time_idx; time_idx <= parent_node_time_idx; time_idx++) {
         double lower_end = max( model().bias_heights()[time_idx] , node->height() );
         double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
-        assert( upper_end > lower_end );
+        assert( upper_end >= lower_end );
         weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end );
     }
 
