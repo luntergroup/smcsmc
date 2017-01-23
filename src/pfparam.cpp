@@ -307,6 +307,9 @@ void PfParam::finalize(){
         remove( this->resample_NAME.c_str() );
 
     this->finalize_scrm_input();
+    if ( model.change_times().back() >= top_t_ * 40000 ) {
+        throw std::invalid_argument(std::string("Problem: -tmax must be larger than bottom of final epoch"));
+    }
 
     // if necessary, extend the vector specifying what epochs to collect events for,
     // and check it hasn't been made too large (which wouldn't strictly be a problem,
