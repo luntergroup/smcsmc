@@ -277,8 +277,16 @@ void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
 
 void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips)
 {
-    for (size_t j=0; j < haplotypes_at_tips.size();j++) {
-        this->nodes()->at(j)->set_mutation_state(haplotypes_at_tips[j]);
+    Node *leaf = this->nodes()->at(0);
+    assert( leaf->in_sample() );
+    assert( leaf->label() == 1 );
+    leaf->set_mutation_state( haplotypes_at_tips[0] );
+    for (size_t j = 1; j < haplotypes_at_tips.size(); j++) {
+        do {
+            leaf = leaf->next();
+        } while (!leaf->in_sample());
+        assert( leaf->label() == j+1 );
+        leaf->set_mutation_state( haplotypes_at_tips[j] );
     }
 }
 
