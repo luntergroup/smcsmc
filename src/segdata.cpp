@@ -198,7 +198,7 @@ void Segment::read_new_line(){
         
         // ordinary case -- advance a line
 
-        if ( current_line_index_ > 0 && current_line_index_ % 300 == 0 ){
+        if ( current_line_index_ > 0 && current_line_index_ % 2000 == 0 ){
             cout << "\r" << " Particle filtering step" << setw(4) << int((segment_end() * 100) / seqlen_)
                  << "% completed." << flush;
         }
