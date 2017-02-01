@@ -23,8 +23,6 @@ missing
 *.deps/
 test-driver
 *.o
-src/pf-ARG
-src/pf-ARG_dbg
 
 
 ## Tex compiles
@@ -51,14 +49,9 @@ src/pf-ARG_dbg
 
 *_exp
 smcsmc_dbg
+smcsmc_static
 smcsmc
-smcsmcRECOMBOFF
-smcsmcRECOMBOFF_dbg
 src/.dirstamp
-smcsmcSCRM
-smcsmcCount
-smcsmcHIST
-smcsmcNe
 unittests
 tests/unittest/.dirstamp
 doxygen_sqlite3.db

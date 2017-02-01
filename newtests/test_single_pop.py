@@ -14,7 +14,9 @@ class TestGenericSinglePop(TestGeneric):
     def setUp(self):
         TestGeneric.setUp(self, "testdata/2sampleSingleConst")
         self.seqlen = 1e7
-        self.pop = populationmodels.PopSingleConst( sequence_length = self.seqlen,
+        self.pop = populationmodels.PopSingleConst( change_points = [0, .5, 1.0],
+                                                    population_sizes = [1, 0.5,  1],
+                                                    sequence_length = self.seqlen,
                                                     scrmpath=self.scrmpath )
 
         # set default inference parameters
@@ -25,9 +27,7 @@ class TestGenericSinglePop(TestGeneric):
 
         # set targets
         self.targets = []
-        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
-        for idx in range(5):
-            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
+        self.targets.append({'type':"Recomb", 'min':3e-9, 'max':7e-9, 'truth':5e-9})
         self.max_out_of_range = 0
 
 
@@ -46,7 +46,7 @@ class TestTwoSampleSingleExpand(TestGenericSinglePop):
         self.seed = (1,)
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':5.13e-9, 'max':5.51e-9, 'truth':5e-9},
+        self.targets = [{'type':"Recomb", 'min':3e-9, 'max':7e-9, 'truth':5e-9},
                         {'type':"Coal", 'pop':0, 'epoch':0, 'min':0, 'max':3.5e9, 'truth':20000},
                         {'type':"Coal", 'pop':0, 'epoch':1, 'min':9252, 'max':10035, 'truth':10000}]
 
@@ -91,9 +91,9 @@ class TestEightSampleSingleExpand(TestGenericSinglePop):
         self.seed = (1,)
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':6.57e-9, 'max':6.87e-9, 'truth':5e-9},
-                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':20288, 'max':40042, 'truth':20000},
-                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':10608, 'max':11290, 'truth':10000}]
+        self.targets = [{'type':"Recomb", 'min':3e-9, 'max':7e-9, 'truth':5e-9},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':19500, 'max':20500, 'truth':20000},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'min': 9500, 'max':10500, 'truth':10000}]
 
         self.max_out_of_range = 0
 
