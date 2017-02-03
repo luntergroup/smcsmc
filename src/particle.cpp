@@ -37,10 +37,10 @@ ForestState::ForestState( Model* model,
             : Forest( model, random_generator ),
               record_event_in_epoch(record_event_in_epoch) {
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
-    this->setPosteriorWeight( 1.0 );
-    this->setPilotWeight( 1.0 );
-    this->total_delayed_adjustment = 1.0;
-    this->setSiteWhereWeightWasUpdated(0.0);
+    setPosteriorWeight( 1.0 );
+    setPilotWeight( 1.0 );
+    total_delayed_adjustment_ = 1.0;
+    setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
@@ -59,8 +59,8 @@ ForestState::ForestState( const ForestState & copied_state )
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
     setPosteriorWeight( copied_state.posteriorWeight() );
     setPilotWeight( copied_state.pilotWeight() );
-    this->total_delayed_adjustment = copied_state.total_delayed_adjustment;
-    this->delayed_adjustments = copied_state.delayed_adjustments;
+    total_delayed_adjustment_ = copied_state.total_delayed_adjustment_;
+    delayed_adjustments = copied_state.delayed_adjustments;
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     copyEventContainers ( copied_state );
     this->current_rec_ = copied_state.current_rec_;
@@ -71,11 +71,6 @@ ForestState::ForestState( const ForestState & copied_state )
         random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
         model_ = new Model( *model_ );
     }
-
-    for (size_t i = 0 ; i < copied_state.TmrcaHistory.size(); i++ ){
-        this->TmrcaHistory.push_back(copied_state.TmrcaHistory[i]);
-    }
-    dout << "current particle's weight is " << this->posteriorWeight()<<endl;
 }
 
 
@@ -109,7 +104,6 @@ ForestState::~ForestState() {
         random_generator_ = NULL;
         model_ = NULL;
     }
-    TmrcaHistory.clear();
     this->contemporaries_.clear();
     this->rec_bases_.clear();
 }
@@ -455,10 +449,12 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
          * First, update the likelihood up to either extend_to or the end of this state
          */
         double update_to = min( extend_to, this->next_base() );
-        // calculate the total tree length of the subtree over leaf nodes that carry data.
+
+        // Calculate the total tree length of the subtree over leaf nodes that carry data.
+        // For leaf nodes that carry no data, there is no evidence for
+        // presence or absence of mutations on corresponding branches.
+        // These branches do not contribute to localTreeBranchLength
         double localTreeBranchLength = this->trackLocalTreeBranchLength();
-        // for leaf nodes that carry no data, there is no evidence for presence or absence of mutations on corresponding branches.
-        // This is accounted for in trackLocalTreeBranchLength.
 
         double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
@@ -490,14 +486,6 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
                     this->record_Recombevent_atNewGenealogy(rec_height);
                 }
             }
-
-        #ifdef _SCRM
-            double segment_length_ = this->calcSegmentLength();
-            if ( segment_length_ > 1.0 ){ //  only print tree, whose segment length is at least 1
-                cout << this->newick(this->local_root()) << ";" << endl;
-            }
-        #endif
-
         }
 
         this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
@@ -506,22 +494,15 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
     assert (updated_to == extend_to);
     if (updateWeight) {
         // update weights for extension of ARG
-        this->setPosteriorWeight( this->posteriorWeight() * likelihood * imp_weight_simulation_to_pilot_dist );
+        this->adjustWeights( likelihood * imp_weight_simulation_to_pilot_dist );
         if (model().biased_sampling) {
 
-            this->setPilotWeight( this->pilotWeight() * likelihood * imp_weight_simulation_to_pilot_dist );
-            assert( std::abs(this->posteriorWeight() - this->pilotWeight() * this->total_delayed_adjustment) <= .001 * this->posteriorWeight() );
-
-        // update weights for application positions passed during extension
-            if( !delayed_adjustments.empty() ) {
-                while ( !delayed_adjustments.empty() && delayed_adjustments.top().application_position < extend_to) {
-
-                    total_delayed_adjustment = total_delayed_adjustment / delayed_adjustments.top().importance_factor;
-                    this->setPilotWeight( this->pilotWeight() * delayed_adjustments.top().importance_factor );
-                    delayed_adjustments.pop();
-
-                    assert( std::abs(this->posteriorWeight() - this->pilotWeight() * this->total_delayed_adjustment) <= .001 * this->posteriorWeight() );
-                }
+            // update weights for application positions passed during extension
+            while ( !delayed_adjustments.empty()
+                    && delayed_adjustments.top().application_position < extend_to ) {
+                
+                this->applyDelayedAdjustment();
+                
             }
         }
     }
@@ -848,27 +829,18 @@ void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
     }
     assert( time_section_idx <= model().bias_ratios().size() );
 
-    // calculate the importance weight: the ratio of the desired probability density of sampling this time point
-    // ( 1 / localTreeLength ) over the probability density of the actual sampling distribution that
-    // was used ( bias_ratio / weightedLocalTreeLength ).
+    // calculate the importance weight: the ratio of the desired probability density of sampling this time point,
+    //    1 / localTreeLength
+    // over the probability density of the actual sampling distribution that was used
+    //    bias_ratio / weightedLocalTreeLength.
+    //
     double bias_ratio = model().bias_ratios()[ time_section_idx ];
+    double delay = model().application_delays[indx];
     double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
 
-    // update the particle weight so we have a correctly weighted sample of the target distribution
-    setPosteriorWeight( posteriorWeight() * importance_weight );
+    // update the particle weight so we have a correctly weighted sample of the target distribution,
+    // but delay weighting the pilot weight, so that we can bias the particles towards certain events
+    adjustWeightsWithDelay( importance_weight, delay );
 
-    // delay applying the importance weight to the distribution used for resampling particles, by
-    // storing it in the priority queue
-    dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
-    delayed_adjustments.push(
-        DelayedFactor (
-            current_base() + model().application_delays.at(indx) ,
-            importance_weight
-        )
-    );
-
-    // update the total delayed adjustment (for checking only)
-    total_delayed_adjustment *= importance_weight;
-    assert( std::abs(posteriorWeight() - pilotWeight() * total_delayed_adjustment) <= .001 * posteriorWeight() );
 }
 

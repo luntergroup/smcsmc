@@ -40,10 +40,11 @@ ParticleContainer::ParticleContainer(Model* model,
     this->ln_normalization_factor_ = 0;
     this->set_current_printing_base(0);
     this->model = model;
-    bool make_copies_of_model_and_rg = false; // Set to true to use a random generator, and model per particle for multithreading (slower!)
+    bool make_copies_of_model_and_rg = false; // Set to true to use rg and model per particle, for multithreading
     dout << " --------------------   Particle Initial States   --------------------" << std::endl;
     for ( size_t i=0; i < Num_of_states ; i++ ){
-        ForestState* new_state = new ForestState( model, rg, record_event_in_epoch, make_copies_of_model_and_rg );  // create a new state, using scrm; scrm always starts at 0.
+        // create a new state, using scrm; scrm always starts at site 0.
+        ForestState* new_state = new ForestState( model, rg, record_event_in_epoch, make_copies_of_model_and_rg );  
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
@@ -72,15 +73,37 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
         for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*!
-         * For each particle, extend the current path until the the site such that the next genealogy change is beyond the mutation
+         * For each particle, extend the current path until the the site such that 
+         * the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         dout << " before extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
         particles[particle_i]->extend_ARG ( mutation_rate, extend_to );
         dout << " after extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
     }
-    /*! normalize the probability upon until the mutation */
-    //this->normalize_probability(); // This normalization doesn't seem to do much ...
+}
+
+
+int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips,
+                                                                  vector<int>& haplotype_at_tips ) const {
+
+    // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
+    // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
+    // a 0/1 configuration arbitrarily.
+
+    haplotype_at_tips = data_at_tips;
+    int num_configurations = 1;
+    for (int i=0; i < data_at_tips.size(); i+=2) {
+        if (data_at_tips[i] == 2) {
+            num_configurations *= 2;
+            assert (data_at_tips[i+1] == 2);
+            haplotype_at_tips[i] = 0;    // initialize phase vector
+            haplotype_at_tips[i+1] = 1;
+        } else {
+            assert (data_at_tips[i+1] != 2);
+        }
+    }
+    return num_configurations;
 }
 
 
@@ -108,34 +131,11 @@ void ParticleContainer::update_data_status_at_leaf_nodes( const vector<int>& dat
 
     vector<int> haplotype_at_tips;
     calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
-
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
 
         particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
 
     }
-}
-
-
-int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const {
-
-    // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
-    // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
-    // a 0/1 configuration arbitrarily.
-
-    haplotype_at_tips = data_at_tips;
-    int num_configurations = 1;
-    for (int i=0; i < data_at_tips.size(); i+=2) {
-        if (data_at_tips[i] == 2) {
-            num_configurations *= 2;
-            assert (data_at_tips[i+1] == 2);
-            haplotype_at_tips[i] = 0;    // initialize phase vector
-            haplotype_at_tips[i+1] = 1;
-        } else {
-            assert (data_at_tips[i+1] != 2);
-        }
-    }
-    return num_configurations;
 }
 
 
@@ -160,16 +160,10 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        dout << "updated weight =" << particles[particle_i]->posteriorWeight() << "*" << likelihood_of_haplotype_at_tips << endl;
         // the following assertion checks appropriate importance factors have been accounted for
         //   if we ever change the emission factor of the sampling distribution, this assertion should fail
-        this->particles[particle_i]->setPosteriorWeight( particles[particle_i]->posteriorWeight()
-                                                         * likelihood_of_haplotype_at_tips );
-        this->particles[particle_i]->setPilotWeight( particles[particle_i]->pilotWeight()
-                                                     * likelihood_of_haplotype_at_tips );
-        dout << "particle " << particle_i << " done" << endl;
+        this->particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
     }
-    dout << endl;
 }
 
 
@@ -198,9 +192,7 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, vala
  */
 void ParticleContainer::resample(valarray<int> & sample_count){
     dout << endl;
-    resampledout << " Recreate particles" << endl;
-    resampledout << " ****************************** Start making list of new states ****************************** " << std::endl;
-    resampledout << " will make total of " << sample_count.sum()<<" particle states" << endl;
+    resampledout << " *********** Recreate " << sample_count.sum() << " particles ****************" << endl;
     size_t number_of_particles = sample_count.size();
     bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
     // calculate the sum of the delayed weights, this should be invariant
@@ -221,7 +213,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
             } else {
                 assert( sum_of_delayed_weights != 0 );
                 current_state->setPilotWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-                current_state->setPosteriorWeight( current_state->pilotWeight()*current_state->total_delayed_adjustment );
+                current_state->setPosteriorWeight( current_state->pilotWeight()*current_state->total_delayed_adjustment_ );
             }
             this->particles.push_back(current_state);
             // create new copy of the resampled particle
@@ -237,7 +229,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
                 dout <<"making particle finished" << endl; // DEBUG
 
-                // Resample the recombination position if particle has not hit end of sequence, and give particle its own event history
+                // Resample the recombination position if particle has not hit end of sequence,
+                // and give particle its own event history
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ) {
                     new_copy_state->resample_recombination_position();
                 }
@@ -246,7 +239,7 @@ void ParticleContainer::resample(valarray<int> & sample_count){
                 } else {
                     assert( sum_of_delayed_weights != 0 );
                     new_copy_state->setPilotWeight( 1.0/number_of_particles * sum_of_delayed_weights );
-                    new_copy_state->setPosteriorWeight( new_copy_state->pilotWeight()*new_copy_state->total_delayed_adjustment );
+                    new_copy_state->setPosteriorWeight( new_copy_state->pilotWeight()*new_copy_state->total_delayed_adjustment_ );
                 }
                 this->particles.push_back(new_copy_state);
             }
@@ -263,9 +256,8 @@ void ParticleContainer::resample(valarray<int> & sample_count){
     }
     this -> particles.resize(number_of_particles);
 
-    resampledout << "There are " << this->particles.size() << "particles in total." << endl;
-    resampledout << " ****************************** End of making list of new particles ****************************** " << std::endl;
-    }
+    resampledout << " ***** There are " << this->particles.size() << "particles in total. *****" << endl;
+}
 
 
 
