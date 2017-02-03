@@ -536,16 +536,12 @@ std::string ForestState::newick(Node *node) {
 void ForestState::sampleRecSeqPosition( bool recordEvents ) {
 
   if( model().biased_sampling ) {
-
-    this->sampleBiasedRecSeqPosition( recordEvents );
-    return;
+      this->sampleBiasedRecSeqPosition( recordEvents );
+  } else {
+      this->sampleNextBase();
   }
-
-  this->sampleNextBase();
-
   assert( this->printTree() );
-  this->calcSegmentSumStats();
-
+  //this->calcSegmentSumStats();
 }
 
 
@@ -603,24 +599,18 @@ double ForestState::getWeightedLocalTreeLength() const {
  */
 
 double ForestState::getWeightedLengthBelow( Node* node ) const {
-    double weighted_length = 0;
 
     // for all children, add length between node and child, and length below child
+    double weighted_length = 0;
+    if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
+        weighted_length += WeightedBranchLengthAbove(node->first_child());     // add length above child
+        weighted_length += getWeightedLengthBelow(node->first_child());        // add length below child
 
-    if ( node->first_child() != NULL && node->first_child()->samples_below() > 0 ) {
-        // add length above child
-    weighted_length += WeightedBranchLengthAbove(node->first_child());
-    // add length below child
-    weighted_length += getWeightedLengthBelow(node->first_child());
     }
-
-    if ( node->second_child() !=NULL && node->second_child()->samples_below() > 0 ) {
-    // add length above child
-    weighted_length += WeightedBranchLengthAbove(node->second_child());
-    // add length below child
-    weighted_length += getWeightedLengthBelow(node->second_child());
+    if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
+        weighted_length += WeightedBranchLengthAbove(node->second_child());    // add length above child
+        weighted_length += getWeightedLengthBelow(node->second_child());       // add length below child
     }
-
     return weighted_length;
 }
 
@@ -636,26 +626,26 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
     assert( length_left <= WeightedBranchLengthAbove( node ) );
 
     // identify time section of the bottom of the branch (the node)
-    size_t node_time_idx = 0;
-    while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
+    size_t node_time_idx = 1;
+    while ( model().bias_heights()[ node_time_idx ] <= node->height() ) {
         node_time_idx++;
     }
 
     // identify the time section of the top of the branch (the parent node)
     size_t parent_node_time_idx = node_time_idx;
-    while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
+    while ( model().bias_heights()[ parent_node_time_idx ] <= node->parent_height() ) {
         parent_node_time_idx++;
     }
 
-    // loop over time sections present in branch (starting at the top) and subtract from length_left until the sampled height is reached
+    // loop over time sections present in branch (starting at the top) until the sampled height is reached
     for ( size_t time_idx = parent_node_time_idx; time_idx >= node_time_idx; --time_idx) {
-        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        double upper_end = min( model().bias_heights()[time_idx] , node->parent_height() );
+        double lower_end = max( model().bias_heights()[time_idx - 1] , node->height() );
         assert( upper_end > lower_end );
-        if( length_left >= model().bias_ratios()[time_idx] * (upper_end-lower_end) ) {
-            length_left -= model().bias_ratios()[time_idx] * (upper_end-lower_end);
+        if( length_left >= model().bias_ratios()[time_idx - 1] * (upper_end-lower_end) ) {
+            length_left -= model().bias_ratios()[time_idx - 1] * (upper_end-lower_end);
         } else {
-            return upper_end - length_left / model().bias_ratios()[time_idx];
+            return upper_end - length_left / model().bias_ratios()[time_idx - 1];
         }
     }
     throw std::runtime_error("This should never happen...");
@@ -721,19 +711,20 @@ double ForestState::compute_positional_component_of_proposal_prob_of_recombinati
  *
  */
 void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
-    double length = random_generator()->sampleExpoLimit(model().recombination_rate() * getWeightedLocalTreeLength(),
-                                                      model().getNextSequencePosition() - current_base());
-  if (length == -1) {
-    // No recombination until the model changes
-    set_next_base(model().getNextSequencePosition());
-    if (next_base() < model().loci_length()) writable_model()->increaseSequencePosition();
-  } else {
-    // Recombination in the sequence segment
-    set_next_base(current_base() + length);
-  }
 
-  assert(next_base() > current_base());
-  assert(next_base() <= model().loci_length());
+    double length = random_generator()->sampleExpoLimit(model().recombination_rate() * getWeightedLocalTreeLength(),
+                                                        model().getNextSequencePosition() - current_base());
+    if (length == -1) {
+        // No recombination until the model changes
+        set_next_base(model().getNextSequencePosition());
+        if (next_base() < model().loci_length())
+            writable_model()->increaseSequencePosition();
+    } else {
+        // Recombination in the sequence segment
+        set_next_base(current_base() + length);
+    }
+    assert(next_base() > current_base());
+    assert(next_base() <= model().loci_length());
 }
 
 
@@ -761,51 +752,51 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
 
     assert(model().biased_sampling);
 
-  if (node == NULL) {
-    // Called without arguments => initialization
-    assert( this->checkTreeLength() );
-
-    node = this->local_root();
-    length_left = random_generator()->sample() * getWeightedLocalTreeLength();
-    assert( 0 < length_left && length_left < getWeightedLocalTreeLength() );
-  }
-
-  assert( node->local() || node == this->local_root() );
-  assert( length_left >= 0 );
-  assert( length_left < (getWeightedLengthBelow(node) + WeightedBranchLengthAbove(node)) );
-
-  if ( node != this->local_root() ) {
-    if ( length_left < WeightedBranchLengthAbove(node) ) {
-      assert( node->local() );
-      dout << " before IS_TP the weight is " << this->posteriorWeight() << endl;
-      this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
-      dout << " Straight after IS_TP the weight is " << this->posteriorWeight() << endl;
-      //this is the end of iterating through nodes, so we update here
-      return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
+    if (node == NULL) {
+        // Called without arguments => initialization
+        assert( this->checkTreeLength() );
+        
+        node = this->local_root();
+        length_left = random_generator()->sample() * getWeightedLocalTreeLength();
+        assert( 0 < length_left && length_left < getWeightedLocalTreeLength() );
     }
-
-    length_left -= WeightedBranchLengthAbove(node);
+    
+    assert( node->local() || node == this->local_root() );
     assert( length_left >= 0 );
-  }
-
-  // At this point, we should have at least one local child
-  assert( node->first_child() != NULL );
-  assert( node->first_child()->local() || node->second_child()->local() );
-
-  // If we have only one local child, then give it the full length we have left.
-  if ( !node->first_child()->local() ) {
-    return sampleBiasedPoint(node->second_child(), length_left);
-  }
-  if ( node->second_child() == NULL || !node->second_child()->local() ) {
-    return sampleBiasedPoint(node->first_child(), length_left);
-  }
-
-  // If we have two local children, the look if we should go down left or right.
-  double tmp = WeightedBranchLengthAbove(node->first_child()) + getWeightedLengthBelow(node->first_child());
-  if ( length_left <= tmp )
-    return sampleBiasedPoint(node->first_child(), length_left);
-  else
-    return sampleBiasedPoint(node->second_child(), length_left - tmp);
+    assert( length_left < (getWeightedLengthBelow(node) + WeightedBranchLengthAbove(node)) );
+    
+    if ( node != this->local_root() ) {
+        if ( length_left < WeightedBranchLengthAbove(node) ) {
+            assert( node->local() );
+            dout << " before IS_TP the weight is " << this->posteriorWeight() << endl;
+            this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
+            dout << " Straight after IS_TP the weight is " << this->posteriorWeight() << endl;
+            //this is the end of iterating through nodes, so we update here
+            return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
+        }
+        
+        length_left -= WeightedBranchLengthAbove(node);
+        assert( length_left >= 0 );
+    }
+    
+    // At this point, we should have at least one local child
+    assert( node->first_child() != NULL );
+    assert( node->first_child()->local() || node->second_child()->local() );
+    
+    // If we have only one local child, then give it the full length we have left.
+    if ( !node->first_child()->local() ) {
+        return sampleBiasedPoint(node->second_child(), length_left);
+    }
+    if ( node->second_child() == NULL || !node->second_child()->local() ) {
+        return sampleBiasedPoint(node->first_child(), length_left);
+    }
+    
+    // If we have two local children, the look if we should go down left or right.
+    double tmp = WeightedBranchLengthAbove(node->first_child()) + getWeightedLengthBelow(node->first_child());
+    if ( length_left <= tmp )
+        return sampleBiasedPoint(node->first_child(), length_left);
+    else
+        return sampleBiasedPoint(node->second_child(), length_left - tmp);
 }
 
 
