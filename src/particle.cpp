@@ -36,6 +36,7 @@ ForestState::ForestState( Model* model,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
               record_event_in_epoch(record_event_in_epoch) {
+
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     setPosteriorWeight( 1.0 );
     setPilotWeight( 1.0 );
@@ -57,6 +58,7 @@ ForestState::ForestState( Model* model,
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              record_event_in_epoch( copied_state.record_event_in_epoch ) {
+
     setPosteriorWeight( copied_state.posteriorWeight() );
     setPilotWeight( copied_state.pilotWeight() );
     total_delayed_adjustment_ = copied_state.total_delayed_adjustment_;
@@ -74,7 +76,7 @@ ForestState::ForestState( const ForestState & copied_state )
 }
 
 
-void ForestState::copyEventContainers(const ForestState & copied_state ){
+void ForestState::copyEventContainers(const ForestState & copied_state ) {
     // Copy trees
     for (size_t i=0; i < copied_state.eventTrees.size() ; i++) {
         EvolutionaryEvent* new_event = copied_state.eventTrees[i];
@@ -99,7 +101,7 @@ void ForestState::init_EventContainers( Model * model ) {
 ForestState::~ForestState() {
     clear_eventContainer();
     if (owning_model_and_random_generator) {
-        delete random_generator_;     //MULTITRHREADING
+        delete random_generator_;
         delete model_;
         random_generator_ = NULL;
         model_ = NULL;
@@ -110,7 +112,8 @@ ForestState::~ForestState() {
 
 
 /*! Clear coalescent and recombination events recorded between two states.*/
-void ForestState::clear_eventContainer(){
+void ForestState::clear_eventContainer() {
+
     for (int i = eventTrees.size()-1 ; i>=0 ; --i) {
         if (eventTrees[i] && eventTrees[i]->decrease_refcount_is_zero()) {
             // We use placement new, so need to call destructor explicitly.
@@ -124,7 +127,7 @@ void ForestState::clear_eventContainer(){
 }
 
 
-void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm){
+void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm) {
 
     double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
@@ -161,7 +164,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
                 recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
                 recomb_event->set_recomb_event_pos( recomb_pos );
-                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) );  // calculate signature for descendants of node
+                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
             }
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
@@ -183,8 +186,8 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
             void* event_mem = Arena::allocate( start_height_epoch );
             EvolutionaryEvent* migrcoal_event = new(event_mem) EvolutionaryEvent(start_height, start_height_epoch,
-                                                                                 end_height, end_height_epoch,
-                                                                                 start_base, active_node(i)->population(), weight);
+                                                                                 end_height, end_height_epoch, start_base,
+                                                                                 active_node(i)->population(), weight);
             if (coal_event) {
                 migrcoal_event->set_coal_event();
             }
@@ -214,8 +217,8 @@ void ForestState::record_Recombevent_b4_extension (){
             void* event_mem = Arena::allocate( start_height_epoch );
             // no event for now
             EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
-                                                                                end_height, end_height_epoch,
-                                                                                this->current_base(), this->next_base(), contemporaries );
+                                                                                end_height, end_height_epoch, current_base(),
+                                                                                next_base(), contemporaries );
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
             //cout << "GENERATE Rw" << contemporaries << " [" << this->current_base() << "," << this->next_base()
             //     << "]x[" << start_height << "," << end_height << "]" << endl;
@@ -233,7 +236,7 @@ void ForestState::resample_recombination_position(void) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no (further) recombination opportunity has been recorded
-            if ( !old_event || !old_event->is_recomb() || !old_event->recomb_event_overlaps_opportunity_x( this->current_base() ) ) {
+            if ( !old_event || !old_event->is_recomb() || !old_event->recomb_event_overlaps_opportunity_x( current_base() ) ) {
                 break;
             }
             do {
@@ -245,7 +248,7 @@ void ForestState::resample_recombination_position(void) {
                 new_event->add_leaf_to_tree( new_chain );
                 new_chain = &(new_event->parent_);              // friend function access
                 old_event = old_event->parent();
-            } while ( old_event && old_event->is_recomb() && old_event->recomb_event_overlaps_opportunity_x( this->current_base() ) );
+            } while ( old_event && old_event->is_recomb() && old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
         }
     }
 }
@@ -320,35 +323,36 @@ void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips)
 
 inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node) {
 
-    valarray<double> part_lik(2);    // partial likelihood of data under this node conditional on current node being in state 0 or 1
-
+    valarray<double> part_lik(2);    // partial likelihood of data subtended by node, conditional on state at current node
+    
     // deal with the case that this node is a leaf node
     if ( node->first_child() == NULL ) {
       assert ( node->mutation_state() != 2);
       assert ( node->second_child() == NULL );          // if a node has no first child, it won't have a second child
-      assert ( node->in_sample() );                     // we only traverse the local tree, therefore the leaf node must be in our sample
+      assert ( node->in_sample() );                     // we only traverse the local tree, therefore leaf node must be in sample
       part_lik[0] = node->mutation_state() == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
-      part_lik[1] = node->mutation_state() == 0 ? 0.0 : 1.0;   // also encode state==-1 (missing data) as 1.0
+      part_lik[1] = node->mutation_state() == 0 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
       return part_lik;
     }
 
-    // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation, often in the magnitude of 10 to the power of negative 8.
+    // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation
     double mutation_rate = this->model().mutation_rate();
-    Node *left = trackLocalNode(node->first_child());   // jz_stable; for jz use Node *left = node->getLocalChild1();
-    Node *right = trackLocalNode(node->second_child()); // jz_stable; for jz use Node *right = node->getLocalChild2();
+    Node *left = trackLocalNode(node->first_child()); 
+    Node *right = trackLocalNode(node->second_child());
     double t_left = node->height() - left->height();
     double t_right = node->height() - right->height();
     assert (t_left >= 0 && t_right >= 0 && mutation_rate > 0);
-    double p_left = exp(-t_left * mutation_rate);   // probability that no mutation occurred along left branch.  Assume infinite sites model
-    double p_right = exp(-t_right * mutation_rate); // probability that no mutation occurred along left branch.  Assume infinite sites model
-    valarray<double> part_lik_left = cal_partial_likelihood_infinite(left);     // partial likelihoods of data under left and right children
+    double p_left = exp(-t_left * mutation_rate);   // probability that no mutation occurred along branch (infinite sites model)
+    double p_right = exp(-t_right * mutation_rate); // probability that no mutation occurred along branch (infinite sites model)
+    valarray<double> part_lik_left = cal_partial_likelihood_infinite(left);
     valarray<double> part_lik_right = cal_partial_likelihood_infinite(right);
 
-    part_lik[0] = ( part_lik_left[0]*p_left + part_lik_left[1]*(1-p_left) ) * ( part_lik_right[0]*p_right + part_lik_right[1]*(1-p_right) );
-    part_lik[1] = ( part_lik_left[1]*p_left + part_lik_left[0]*(1-p_left) ) * ( part_lik_right[1]*p_right + part_lik_right[0]*(1-p_right) );
+    part_lik[0] = ( part_lik_left[0]*p_left + part_lik_left[1]*(1-p_left) )
+        * ( part_lik_right[0]*p_right + part_lik_right[1]*(1-p_right) );
+    part_lik[1] = ( part_lik_left[1]*p_left + part_lik_left[0]*(1-p_left) )
+        * ( part_lik_right[1]*p_right + part_lik_right[0]*(1-p_right) );
 
     return part_lik;
-
 }
 
 
@@ -660,7 +664,8 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
  *       and not part of the transition distribution. We should add a feature for a
  *       known recombination map; we'll need to compare inferred_model and proposal_model for this
  */
-double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to, double update_to, bool sampled_recombination) {
+double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to,
+                                                                      double update_to, bool sampled_recombination) {
     double sequence_distance_without_rec = update_to - previously_updated_to;
     double transition_prob, proposal_prob;
     if (!sampled_recombination) {
@@ -675,7 +680,7 @@ double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double pre
     return transition_prob / proposal_prob;
 }
 
-double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ) {
+double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ){
     /// !!Temporarily set true recombination rate here, need to decide which class should own this
     // Should create an inferred_model to refer to
     double true_recombination_rate = model().recombination_rate();
