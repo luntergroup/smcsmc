@@ -173,13 +173,16 @@ private:
     double compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec );
     double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
     
-    TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
+    virtual TreePoint sampleBiasedPoint();
+    //virtual TreePoint sampleBiasedPoint_();
+    double sampleHeightOnWeightedBranch( Node* node, double length_left, double* bias_ratio) const;
+    double sampleBiasedPoint_recursive( Node* node, double& length_left, TreePoint& tp );
     double sampleBiasedRecSeqPosition();
     
     double getWeightedLocalTreeLength() const;
     double getWeightedLengthBelow( Node* node ) const;
     double WeightedBranchLengthAbove( Node* node ) const;
-    double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
+    //double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
 
     // What does this do?
     Node* trackLocalNode(Node *node) const;

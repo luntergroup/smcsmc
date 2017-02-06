@@ -545,7 +545,7 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
         ++time_idx;
     } while ( upper_end < node->parent_height() );
 
-    return (weighted_branch_length);
+    return weighted_branch_length;
 }
 
 /**
@@ -583,7 +583,7 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
 }
 
 
-double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
+double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left, double* bias_ratio) const {
 
     assert( length_left <= WeightedBranchLengthAbove( node ) );
 
@@ -599,12 +599,70 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
         if ( length_left >= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end ) ) {
             length_left -= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
         } else {
-            return lower_end + length_left / model().bias_ratios()[time_idx];
+            *bias_ratio = model().bias_ratios()[time_idx];
+            return lower_end + length_left / *bias_ratio;
         }
         ++time_idx;
     } while ( upper_end < node->parent_height() );
     throw std::runtime_error("This should never happen...");
 }
+
+
+TreePoint ForestState::sampleBiasedPoint() {
+
+    TreePoint tp;
+    double bias_ratio = 0.0;
+    double length_left = random_generator()->sample() * getWeightedLocalTreeLength();
+
+    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )
+        bias_ratio = sampleBiasedPoint_recursive( local_root()->first_child(), length_left, tp );
+    if ( length_left > 0 )
+        bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left, tp );
+
+    // compute importance weight
+    double sampled_density = bias_ratio / getWeightedLocalTreeLength();
+    double target_density = 1.0 / getLocalTreeLength();
+    double importance_weight = target_density / sampled_density;
+
+    // find appropriate delay
+    size_t indx = 0;
+    while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= tp.height())
+        indx++;
+    double delay = model().application_delays[indx];
+    
+    // enter the importance weight
+    adjustWeightsWithDelay( importance_weight, delay );
+
+    // done
+    return tp;
+}
+
+
+double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left, TreePoint& tp ) {
+
+    double bias_ratio = 0.0;
+    if ( length_left < WeightedBranchLengthAbove(node) ) {
+        // sample falls in branch above *node
+        assert( node->local() );
+        double sampled_height = sampleHeightOnWeightedBranch( node, length_left, &bias_ratio);
+        tp = TreePoint(node, sampled_height, false);
+        length_left = 0;
+        return bias_ratio;
+    }
+    length_left -= WeightedBranchLengthAbove(node);
+    if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
+        // enter first_child() recursively, and return if a sample was found
+        bias_ratio = sampleBiasedPoint_recursive( node->first_child(), length_left, tp );
+        if (length_left == 0)
+            return bias_ratio;
+    }
+    if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
+        // enter second_child() recursively; always return
+        bias_ratio = sampleBiasedPoint_recursive( node->second_child(), length_left, tp );
+    }
+    return bias_ratio;
+}
+
 
 
 /**
@@ -693,111 +751,4 @@ double ForestState::sampleBiasedRecSeqPosition() {
     return importance_rate_per_nuc;
 }
 
-
-/**
- * Uniformly samples a TreePoint on the local tree.
- *
- * Its arguments are meant to be used only when the function iteratively calls
- * itself. Just call it without any arguments if you want to sample a TreePoint.
- *
- * The function first samples a part of the total height of the tree and then
- * goes down from the root, deciding at each node if that point is to the left
- * or right, which should give us an O(log(#nodes)) algorithm.
- *
- * I checked the distribution of this function in multiple cases. -Paul
- *
- * \param node The current position in the tree when the functions goes down
- *             iteratively.
- *
- * \param length_left The length that is left until we encounter the sampled
- *              length.
- *
- * \return The sampled point on the tree.
- */
-TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
-
-    assert(model().biased_sampling);
-
-    if (node == NULL) {
-        // Called without arguments => initialization
-        assert( this->checkTreeLength() );
-        
-        node = this->local_root();
-        length_left = random_generator()->sample() * getWeightedLocalTreeLength();
-        assert( 0 < length_left && length_left < getWeightedLocalTreeLength() );
-    }
-    
-    assert( node->local() || node == this->local_root() );
-    assert( length_left >= 0 );
-    assert( length_left < (getWeightedLengthBelow(node) + WeightedBranchLengthAbove(node)) );
-    
-    if ( node != this->local_root() ) {
-        if ( length_left < WeightedBranchLengthAbove(node) ) {
-            assert( node->local() );
-            dout << " before IS_TP the weight is " << this->posteriorWeight() << endl;
-            this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
-            dout << " Straight after IS_TP the weight is " << this->posteriorWeight() << endl;
-            //this is the end of iterating through nodes, so we update here
-            return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
-        }
-        
-        length_left -= WeightedBranchLengthAbove(node);
-        assert( length_left >= 0 );
-    }
-    
-    // At this point, we should have at least one local child
-    assert( node->first_child() != NULL );
-    assert( node->first_child()->local() || node->second_child()->local() );
-    
-    // If we have only one local child, then give it the full length we have left.
-    if ( !node->first_child()->local() ) {
-        return sampleBiasedPoint(node->second_child(), length_left);
-    }
-    if ( node->second_child() == NULL || !node->second_child()->local() ) {
-        return sampleBiasedPoint(node->first_child(), length_left);
-    }
-    
-    // If we have two local children, the look if we should go down left or right.
-    double tmp = WeightedBranchLengthAbove(node->first_child()) + getWeightedLengthBelow(node->first_child());
-    if ( length_left <= tmp )
-        return sampleBiasedPoint(node->first_child(), length_left);
-    else
-        return sampleBiasedPoint(node->second_child(), length_left - tmp);
-}
-
-
-/**
- * Function for adjusting the particle weight and the delayed adjustments prioirty queue
- * of weights to be applied to the delayed particle weight at the specified sequence position
- */
-void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
-
-    // figure out the epoch of the recombination event;
-    // use the top epoch in case the recombination occurred above the top epoch
-    size_t indx = 0;
-    while (indx+1 < model().change_times().size() && rec_point.height() >= model().change_times().at(indx+1) ) {
-        indx++;
-    }
-
-    // find the bias time section containing the rec point height, in order to use the appropriate bias ratio
-    size_t time_section_idx = 0;
-    while( model().bias_heights()[time_section_idx+1] < rec_point.height() ){
-        time_section_idx++;
-    }
-    assert( time_section_idx <= model().bias_ratios().size() );
-
-    // calculate the importance weight: the ratio of the desired probability density of sampling this time point,
-    //    1 / localTreeLength
-    // over the probability density of the actual sampling distribution that was used
-    //    bias_ratio / weightedLocalTreeLength.
-    //
-    double bias_ratio = model().bias_ratios()[ time_section_idx ];
-    double delay = model().application_delays[indx];
-    double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
-
-    // update the particle weight so we have a correctly weighted sample of the target distribution,
-    // but delay weighting the pilot weight, so that we can bias the particles towards certain events
-    adjustWeightsWithDelay( importance_weight, delay );
-
-}
 
