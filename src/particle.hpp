@@ -174,7 +174,7 @@ private:
     double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
     
     TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
-    void sampleBiasedRecSeqPosition(bool recordEvents);
+    double sampleBiasedRecSeqPosition();
     
     double getWeightedLocalTreeLength() const;
     double getWeightedLengthBelow( Node* node ) const;
@@ -185,7 +185,7 @@ private:
     Node* trackLocalNode(Node *node) const;
 
     // below are overloaded
-    void sampleRecSeqPosition( bool recordEvents = false );
+    double sampleRecSeqPosition();
     
     // Debugging tools
     std::string newick(Node *node) ;

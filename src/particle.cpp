@@ -220,8 +220,6 @@ void ForestState::record_Recombevent_b4_extension (){
                                                                                 end_height, end_height_epoch, current_base(),
                                                                                 next_base(), contemporaries );
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-            //cout << "GENERATE Rw" << contemporaries << " [" << this->current_base() << "," << this->next_base()
-            //     << "]x[" << start_height << "," << end_height << "]" << endl;
         }
     }
 }
@@ -289,37 +287,9 @@ void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips)
 
 
 /*!
- * Calculate the marginal likelihood of a node recursively, let X denote the state of Node *, and Y denote the state of the
- *  first child, and Z denote the state of the second child. Let t1 denote the time from X to Y, and t2 is the time from X to Z.
- *  Let u(t) be the probability function of the no mutation occurs within time t.
+ * Calculate the marginal likelihood of a node recursively.
  *
-  \verbatim
-      X
-   t1/ \ t2
-    Y   Z
-  \endverbatim
- *
- *  Suppose that X, Y and Z only take values 0 or 1.
- *  When X=0, consider the likelihood of the tree in four cases of (y,z) pairs (0,0), (0,1), (1,0) and (1,1)
- *  Similarliy X=1, we have four cases too.
- * X[0]=y[0] * ut1 * z[0] * ut2 + y[0] * ut1 * z[1] * (1-ut2) + y[1] * (1-ut1) * z[0] * ut2 + y[1] * (1-ut1) * z[1] * (1-ut2);
- * X[1]=y[1] * ut1 * z[1] * ut2 + y[1] * ut1 * z[0] * (1-ut2) + y[0] * (1-ut1) * z[1] * ut2 + y[0] * (1-ut1) * z[0] * (1-ut2);
- *
- * After simplification,
- * X[0]=(y[0]*ut1 + y[1]*(1-ut1)) * (z[0]*ut2 + z[1]*(1-ut2))
- * X[1]=(y[1]*ut1 + y[0]*(1-ut1)) * (z[1]*ut2 + z[0]*(1-ut2))
- *
- * Note: even though there are only two states, x[0]+x[1] is not 1!!! becasue x[0] is a marginal probability, but still conditional on all the possiblities of the variants
- *
- *  If X, Y and Z take values A, T, C and G. The computation would be more complex.  Four equations, with 16 terms in each.
- *
- * If we consider JC69 model, then
- * X[0]= y[0] * ut1 * z[0] * ut2  + y[0] * ut1 * sum(z[1,2,3]) * (1-ut2) +  sum(y[1,2,3]) * (1-ut1) * z[0] * ut2 + sum(y[1,2,3]) * (1-ut1) * sum(z[1,2,3]) * (1-ut2)
- * ...
- *
- * @ingroup group_resample
  * * */
-
 
 inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node) {
 
@@ -481,7 +451,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
         if ( updated_to < extend_to ) {
             // a recombination has occurred (or the recombination rate has changed)
             double rec_height = this->sampleNextGenealogy( recordEvents );
-            this->sampleRecSeqPosition( recordEvents );
+            this->sampleRecSeqPosition();
 
             if (recordEvents) {
                 this->record_Recombevent_b4_extension();
@@ -537,15 +507,16 @@ std::string ForestState::newick(Node *node) {
  *
  */
 
-void ForestState::sampleRecSeqPosition( bool recordEvents ) {
+double ForestState::sampleRecSeqPosition() {
 
-  if( model().biased_sampling ) {
-      this->sampleBiasedRecSeqPosition( recordEvents );
-  } else {
-      this->sampleNextBase();
-  }
-  assert( this->printTree() );
-  //this->calcSegmentSumStats();
+    double importance_rate_per_nt = 0;
+    if( model().biased_sampling ) {
+        importance_rate_per_nt = this->sampleBiasedRecSeqPosition();
+    } else {
+        this->sampleNextBase();
+    }
+    assert( this->printTree() );
+    return importance_rate_per_nt;
 }
 
 
@@ -711,25 +682,35 @@ double ForestState::compute_positional_component_of_proposal_prob_of_recombinati
  * Function for sampling the sequence position of the next recombination event
  * under a biased sampling procedure.
  *
- * want to change importance weight member, rather than returning below
- * \return the importance weight adjustor needed to correct for biased sampling.
+ * \return the importance 'rate' needed to compute importance weight exp(-rate L) correcting for biased sampling.
  *
  */
-void ForestState::sampleBiasedRecSeqPosition( bool recordEvents ) {
+double ForestState::sampleBiasedRecSeqPosition() {
 
-    double length = random_generator()->sampleExpoLimit(model().recombination_rate() * getWeightedLocalTreeLength(),
-                                                        model().getNextSequencePosition() - current_base());
+    double distance_until_rate_change = model().getNextSequencePosition() - current_base();
+    double weighted_pernuc_recombination_rate = model().recombination_rate() * getWeightedLocalTreeLength();
+    double target_pernuc_recombination_rate = model().recombination_rate() * getLocalTreeLength();
+    double importance_rate_per_nuc = target_pernuc_recombination_rate - weighted_pernuc_recombination_rate;
+    double length = random_generator()->sampleExpoLimit(weighted_pernuc_recombination_rate,
+                                                        distance_until_rate_change);
     if (length == -1) {
+        
         // No recombination until the model changes
         set_next_base(model().getNextSequencePosition());
-        if (next_base() < model().loci_length())
+        if (next_base() < model().loci_length()) {
             writable_model()->increaseSequencePosition();
+        }
+
     } else {
-        // Recombination in the sequence segment
+        
+        // A recombination occurred in the sequence segment
         set_next_base(current_base() + length);
+
     }
     assert(next_base() > current_base());
     assert(next_base() <= model().loci_length());
+
+    return importance_rate_per_nuc;
 }
 
 
