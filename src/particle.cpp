@@ -531,26 +531,19 @@ double ForestState::sampleRecSeqPosition() {
  */
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
 
-    // identify time section of the bottom of the branch (the node)
-    size_t node_time_idx = 0;
-    while ( model().bias_heights()[ node_time_idx+1 ] <= node->height() ) {
-        node_time_idx++;
-    }
-
-    // identify the time section of the top of the branch (the parent node)
-    size_t parent_node_time_idx = node_time_idx;
-    while ( model().bias_heights()[ parent_node_time_idx+1 ] <= node->parent_height() ) {
-        parent_node_time_idx++;
-    }
-
+    if (model().bias_heights().size() < 2)
+        return node->parent_height() - node->height();
+    
     // loop over time sections present in branch and add the weighted length
     double weighted_branch_length = 0;
-    for ( size_t time_idx = node_time_idx; time_idx <= parent_node_time_idx; time_idx++) {
-        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
-        assert( upper_end >= lower_end );
-        weighted_branch_length += model().bias_ratios()[time_idx] * ( upper_end - lower_end );
-    }
+    size_t time_idx = 0;
+    double lower_end, upper_end;
+    do {
+        lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        weighted_branch_length += model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
+        ++time_idx;
+    } while ( upper_end < node->parent_height() );
 
     return (weighted_branch_length);
 }
@@ -589,40 +582,27 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
     return weighted_length;
 }
 
-/**
- * Function for converting a node and the weighted (sampled) length above
- * to an absolute height. The returned height is found by measuring down from
- * the parent node height in order to stay consistent with SCRM.
- *
- * \return a standardized height
- */
+
 double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_left) const {
 
     assert( length_left <= WeightedBranchLengthAbove( node ) );
 
-    // identify time section of the bottom of the branch (the node)
-    size_t node_time_idx = 1;
-    while ( model().bias_heights()[ node_time_idx ] <= node->height() ) {
-        node_time_idx++;
-    }
-
-    // identify the time section of the top of the branch (the parent node)
-    size_t parent_node_time_idx = node_time_idx;
-    while ( model().bias_heights()[ parent_node_time_idx ] <= node->parent_height() ) {
-        parent_node_time_idx++;
-    }
-
-    // loop over time sections present in branch (starting at the top) until the sampled height is reached
-    for ( size_t time_idx = parent_node_time_idx; time_idx >= node_time_idx; --time_idx) {
-        double upper_end = min( model().bias_heights()[time_idx] , node->parent_height() );
-        double lower_end = max( model().bias_heights()[time_idx - 1] , node->height() );
-        assert( upper_end > lower_end );
-        if( length_left >= model().bias_ratios()[time_idx - 1] * (upper_end-lower_end) ) {
-            length_left -= model().bias_ratios()[time_idx - 1] * (upper_end-lower_end);
+    if (model().bias_heights().size() < 2)
+        return length_left;
+    
+    // loop over time sections present in branch and add the weighted length
+    size_t time_idx = 0;
+    double lower_end, upper_end;
+    do {
+        lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        if ( length_left >= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end ) ) {
+            length_left -= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
         } else {
-            return upper_end - length_left / model().bias_ratios()[time_idx - 1];
+            return lower_end + length_left / model().bias_ratios()[time_idx];
         }
-    }
+        ++time_idx;
+    } while ( upper_end < node->parent_height() );
     throw std::runtime_error("This should never happen...");
 }
 
