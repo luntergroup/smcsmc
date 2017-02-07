@@ -185,6 +185,15 @@ void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, vala
         pfparam.append_resample_file( mutation_at, ESS() );
         this->systematic_resampling( weight_partial_sum, sample_count, num_state);
         this->resample(sample_count);
+    } else {
+        // The sampling procedure will flush old recombinations, but this won't happen in the absence of data.
+        // Ensure that even in the absence of data, old recombinations do not build up and cause memory overflows
+        bool flush = particles[0]->segment_count() > 50;
+        if (flush) {
+            for (size_t state_index = 0; state_index < particles.size(); state_index++) {
+                particles[state_index]->flushOldRecombinations();
+            }
+        }
     }
 }
 
