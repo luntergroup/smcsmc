@@ -502,24 +502,6 @@ std::string ForestState::newick(Node *node) {
 }
 
 
-/**
- * Function for sampling the sequence position of the next recombination event
- *
- */
-
-double ForestState::sampleRecSeqPosition() {
-
-    double importance_rate_per_nt = 0;
-    if( model().biased_sampling ) {
-        importance_rate_per_nt = this->sampleBiasedRecSeqPosition();
-    } else {
-        this->sampleNextBase();
-    }
-    assert( this->printTree() );
-    return importance_rate_per_nt;
-}
-
-
 //// biased sampling
 
 /**
@@ -723,7 +705,7 @@ double ForestState::compute_positional_component_of_proposal_prob_of_recombinati
  * \return the importance 'rate' needed to compute importance weight exp(-rate L) correcting for biased sampling.
  *
  */
-double ForestState::sampleBiasedRecSeqPosition() {
+double ForestState::sampleNextBase() {
 
     double distance_until_rate_change = model().getNextSequencePosition() - current_base();
     double weighted_pernuc_recombination_rate = model().recombination_rate() * getWeightedLocalTreeLength();

@@ -202,33 +202,33 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
 
 void calibrate_bias_ratios(Model* model, double top_t_value) {
 
-    if (!model->biased_sampling) return;
-    
-    clog << "model has bias heights " << model->bias_heights() << endl;
-    clog << "model has bias strengths " << model->bias_strengths() << endl;
+    if (model->biased_sampling) {
+        clog << "model has bias heights " << model->bias_heights() << endl;
+        clog << "model has bias strengths " << model->bias_strengths() << endl;
 
-    int Num_bias_ratio_simulation_trees = 10000;
-    ModelSummary model_summary = ModelSummary(model, top_t_value);
-    for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
-      model_summary.addTree();
+        int Num_bias_ratio_simulation_trees = 10000;
+        ModelSummary model_summary = ModelSummary(model, top_t_value);
+        for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
+            model_summary.addTree();
+        }
+        model_summary.finalize();
+        
+        clog << "Information from pre-sequence-analysis tree simulation:" << endl;
+        clog << "    model_summary.times_: " << model_summary.times_ << endl;
+        clog << "    avg B: " << model_summary.avg_B() << endl;
+        clog << "    avg B below: " << model_summary.avg_B_below() << endl;
+        clog << "    avg B within: " << model_summary.avg_B_within() << endl;
+        clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
+        clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
+        clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
+        clog << "    tree count: " << model_summary.tree_count_ << endl;
+        
+        model->clearBiasRatios();
+        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
+            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
+        }
+        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
     }
-    model_summary.finalize();
-    
-    clog << "Information from pre-sequence-analysis tree simulation:" << endl;
-    clog << "    model_summary.times_: " << model_summary.times_ << endl;
-    clog << "    avg B: " << model_summary.avg_B() << endl;
-    clog << "    avg B below: " << model_summary.avg_B_below() << endl;
-    clog << "    avg B within: " << model_summary.avg_B_within() << endl;
-    clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
-    clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
-    clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
-    clog << "    tree count: " << model_summary.tree_count_ << endl;
-
-    model->clearBiasRatios();
-    for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
-        model->addToBiasRatios( model_summary.getBiasRatio(idx) );
-    }
-    clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
     assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
 }
 
