@@ -469,15 +469,13 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
     if (updateWeight) {
         // update weights for extension of ARG
         this->adjustWeights( likelihood * imp_weight_simulation_to_pilot_dist );
-        if (model().biased_sampling) {
 
-            // update weights for application positions passed during extension
-            while ( !delayed_adjustments.empty()
-                    && delayed_adjustments.top().application_position < extend_to ) {
+        // update weights for application positions passed during extension
+        while ( !delayed_adjustments.empty()
+                && delayed_adjustments.top().application_position < extend_to ) {
                 
-                this->applyDelayedAdjustment();
+            this->applyDelayedAdjustment();
                 
-            }
         }
     }
     this->setSiteWhereWeightWasUpdated( extend_to );
@@ -590,16 +588,15 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
 }
 
 
-TreePoint ForestState::sampleBiasedPoint() {
+double ForestState::samplePoint() {
 
-    TreePoint tp;
     double bias_ratio = 0.0;
     double length_left = random_generator()->sample() * getWeightedLocalTreeLength();
 
     if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )
-        bias_ratio = sampleBiasedPoint_recursive( local_root()->first_child(), length_left, tp );
+        bias_ratio = sampleBiasedPoint_recursive( local_root()->first_child(), length_left );
     if ( length_left > 0 )
-        bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left, tp );
+        bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left );
 
     // compute importance weight
     double sampled_density = bias_ratio / getWeightedLocalTreeLength();
@@ -608,7 +605,7 @@ TreePoint ForestState::sampleBiasedPoint() {
 
     // find appropriate delay
     size_t indx = 0;
-    while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= tp.height())
+    while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= rec_point.height())
         indx++;
     double delay = model().application_delays[indx];
     
@@ -616,31 +613,32 @@ TreePoint ForestState::sampleBiasedPoint() {
     adjustWeightsWithDelay( importance_weight, delay );
 
     // done
-    return tp;
+    // TODO: handle entering of importance weight in caller (sampleNextGenealogy), rather than here
+    return 1.0;
 }
 
 
-double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left, TreePoint& tp ) {
+double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left ) {
 
     double bias_ratio = 0.0;
     if ( length_left < WeightedBranchLengthAbove(node) ) {
         // sample falls in branch above *node
         assert( node->local() );
         double sampled_height = sampleHeightOnWeightedBranch( node, length_left, &bias_ratio);
-        tp = TreePoint(node, sampled_height, false);
+        rec_point = TreePoint(node, sampled_height, false);
         length_left = 0;
         return bias_ratio;
     }
     length_left -= WeightedBranchLengthAbove(node);
     if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
         // enter first_child() recursively, and return if a sample was found
-        bias_ratio = sampleBiasedPoint_recursive( node->first_child(), length_left, tp );
+        bias_ratio = sampleBiasedPoint_recursive( node->first_child(), length_left);
         if (length_left == 0)
             return bias_ratio;
     }
     if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
         // enter second_child() recursively; always return
-        bias_ratio = sampleBiasedPoint_recursive( node->second_child(), length_left, tp );
+        bias_ratio = sampleBiasedPoint_recursive( node->second_child(), length_left);
     }
     return bias_ratio;
 }
