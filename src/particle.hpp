@@ -166,7 +166,6 @@ private:
     //// biased sampling    
     double imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to, double update_to,
                                                              bool sampled_recombination);
-    void IS_TreePoint_adjustor( const TreePoint & tp );
     
     double compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec );
     double compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec );
