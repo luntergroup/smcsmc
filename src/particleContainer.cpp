@@ -36,7 +36,6 @@ ParticleContainer::ParticleContainer(Model* model,
                                      bool emptyFile,
                                      vector <int> first_allelic_state) {
     this->random_generator_ = rg;
-    this->set_ESS(0);
     this->ln_normalization_factor_ = 0;
     this->set_current_printing_base(0);
     this->model = model;
@@ -171,14 +170,18 @@ void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips 
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
-void ParticleContainer::ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count,
-                                       int mutation_at, const PfParam &pfparam, int num_state)
+void ParticleContainer::resample(int update_to, const PfParam &pfparam)
 {
-    dout << "At pos " << mutation_at << " ESS is " <<  this->ESS() <<", number of particles is " <<  num_state
-         << "threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - this->ESS() << endl;
-    if ( this->ESS() + 1e-6 < pfparam.ESSthreshold ) {
-        pfparam.append_resample_file( mutation_at, ESS() );
-        this->systematic_resampling( weight_partial_sum, sample_count, num_state);
+    valarray<double> partial_sums( pfparam.N );
+    double ess = update_partial_sum_array_find_ESS( partial_sums );
+    
+    dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << pfparam.N
+         << "threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
+    
+    if ( ess < pfparam.ESSthreshold - 1e-6 ) {
+        pfparam.append_resample_file( update_to, ess );
+        valarray<int> sample_count( pfparam.N );
+        this->systematic_resampling( partial_sums, sample_count, pfparam.N );
         this->resample(sample_count);
     }
 }
@@ -278,19 +281,20 @@ void ParticleContainer::clear(){
  * @ingroup group_pf_update
  * \brief Calculate the effective sample size, and update the cumulative weight of the particles
  */
-void ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum){
+double ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum) {
+
     double wi_sum=0;
     double wi_sq_sum=0;
-    double Num_of_states = this->particles.size();
+    double Num_of_states = particles.size();
     weight_partial_sum=0;
 
-    for (size_t i=0; i < Num_of_states ;i++){
+    for (size_t i=0; i < Num_of_states ;i++) {
         double w_i = this->particles[i]->pilotWeight();
         weight_partial_sum[i+1] = weight_partial_sum[i] + w_i;
         wi_sum += w_i;
         wi_sq_sum += w_i * w_i;
     }
-    this->set_ESS(wi_sum * wi_sum / wi_sq_sum);
+    return (wi_sum * wi_sum / wi_sq_sum);
 }
 
 
@@ -317,8 +321,7 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( Segment * Segfile,
-                                              valarray<double> & weight_partial_sum ){
+void ParticleContainer::update_state_to_data( Segment * Segfile ) {
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
@@ -342,46 +345,30 @@ void ParticleContainer::update_state_to_data( Segment * Segfile,
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
 
     // Update the accumulated probabilities, as well as computing the effective sample size
-    this->normalize_probability(); // It seems to converge slower if it is not normalized ...
-    this->update_partial_sum_array_find_ESS( weight_partial_sum );
+    this->normalize_probability();
 }
 
-
-/*!
- * @ingroup group_naive
- * \brief Use simple random sampling to resample
- */
-void ParticleContainer::trivial_resampling( std::valarray<int> & sample_count, size_t num_state ){
-    sample_count=0;
-    for (size_t i=0; i < num_state ;i++){
-        size_t index = random_generator()->sampleInt(num_state);
-        sample_count[index]=sample_count[index]+1;
-        }
-        assert( sample_count.sum() == num_state );
-    }
 
 
 /*!
  * @ingroup group_systematic
  * \brief Use systematic resampling \cite Doucet2008 to generate sample count for each particle
  */
-void ParticleContainer::systematic_resampling(std::valarray<double> partial_sum, std::valarray<int>& sample_count,
-                                              int sample_size){
+void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum,
+                                              std::valarray<int>& sample_count,
+                                              size_t N){
     size_t interval_j = 0;
     size_t sample_i = 0;
-    size_t N = sample_size;
     double u_j = this->random_generator()->sample() / N;
     double partial_sum_normalization = partial_sum[partial_sum.size()-1];
 
-    resampledout << "systematic sampling procedure on interval:" << std::endl << " ";;
-    for (size_t i=0;i<partial_sum.size();i++){dout <<  (partial_sum[i]/partial_sum_normalization )<<"  ";}dout << std::endl;
-
     sample_count[sample_i] = 0;
     while (sample_i < N) {
+
         /* invariants: */
         assert( (partial_sum[interval_j] / partial_sum_normalization) < u_j );
         assert( sample_i < N );
-        /* check whether u_j is in the interval [ partial_sum[interval_j], partial_sum[interval_j+1] ) */
+
         if ( (sample_i == N) || partial_sum[interval_j+1] / partial_sum_normalization > u_j ) {
             sample_count[interval_j] += 1;
             sample_i += 1;
@@ -395,9 +382,10 @@ void ParticleContainer::systematic_resampling(std::valarray<double> partial_sum,
     for (;interval_j<N;interval_j++){
         sample_count[ interval_j ] = 0;
     }
+
     resampledout << "Sample counts: " ;
     for (size_t i=0;i<sample_count.size();i++){ dout << sample_count[i]<<"  "; }  dout << std::endl;
-    assert(sample_count.sum() == sample_size);
+    assert(sample_count.sum() == N);
 }
 
 

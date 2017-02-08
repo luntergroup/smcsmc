@@ -254,8 +254,6 @@ void pfARG_core(PfParam &pfARG_para,
                                      pfARG_para.Segfile->allelic_state_at_Segment_end);
     dout<<"######### finished initial particle building"<<endl;
 
-    valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
-
     /*! Initialize prior Ne */
     countNe->init();
     vector<double> median_survival = calculate_median_survival_distances( *model );
@@ -275,15 +273,12 @@ void pfARG_core(PfParam &pfARG_para,
     /*! Go through seg data */
     bool force_update = false;
     do{
-        dout <<"current base is at "<<Segfile->segment_start()<<" and it is "
-            << (Segfile->end_data()? "":"NOT") << " the end of data "<<endl;
-
-        valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
+        dout <<"Current base is "<<Segfile->segment_start() << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( Segfile, weight_cum_sum);
+        current_states.update_state_to_data( Segfile );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
@@ -297,16 +292,13 @@ void pfARG_core(PfParam &pfARG_para,
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
         }
-        /*! ESS resampling. Filtering step*/
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),
-                                                                        (double)model->loci_length()),
-                                      pfARG_para, Nparticles);
+
+        /*! Resample if the ESS becomes too low */
+        double update_to = min( Segfile->segment_end(), (double)model->loci_length() );
+        current_states.resample( update_to, pfARG_para );
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
-            cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
-            if ( Segfile->segment_end() > (double)model->loci_length() ) {
-                clog << "  Segment data is beyond loci length" << endl;
-            }
+            cout << "\r Particle filtering step 100% completed." << endl;
             Segfile->set_end_data (true);
         }
 

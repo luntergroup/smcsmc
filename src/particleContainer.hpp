@@ -57,10 +57,10 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( Segment * Segfile, valarray<double> & weight_partial_sum);
+        void update_state_to_data( Segment * Segfile );
         void extend_ARGs( double extend_to );
         void set_particles_with_random_weight();
-        void ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
+        void resample(int update_to, const PfParam &pfparam);
         void normalize_probability();
         void clear();
         void print_particle_probabilities();
@@ -87,15 +87,12 @@ class ParticleContainer {
         void duplicate_particles ( valarray<int> & sample_count );
         void resample_for_check(valarray<int> & sample_count);
         void shifting(int number_of_particles);
-        void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
-        void systematic_resampling(std::valarray<double> partial_sum, std::valarray<int>& sample_count, int sample_size);
-        void update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum);
+        void systematic_resampling( std::valarray<double>& partial_sum, std::valarray<int>& sample_count, size_t sample_size);
+        double update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum);
 
         //
         // Setters and getters:
         //
-        double ESS() const {return this->ESS_;};
-        void set_ESS(double ess){this->ESS_ = ess;};
         RandomGenerator* random_generator() const { return this->random_generator_; }
         double current_printing_base() const { return this->current_printing_base_;}
         void set_current_printing_base (double base) { this->current_printing_base_ = base;}
@@ -104,7 +101,6 @@ class ParticleContainer {
         // Members
         //
         vector <ForestState*> particles;
-        double ESS_;
         RandomGenerator* random_generator_; // This is for particle filter only,
         double current_printing_base_;
         double ln_normalization_factor_;
