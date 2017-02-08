@@ -241,7 +241,6 @@ void pfARG_core(PfParam &pfARG_para,
     MersenneTwister *rg  = pfARG_para.rg;
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
-    double mutation_rate = model->mutation_rate();
 
     calibrate_bias_ratios( model, pfARG_para.top_t() );
 
@@ -284,7 +283,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( mutation_rate, (double)model->loci_length(), Segfile, weight_cum_sum);
+        current_states.update_state_to_data( Segfile, weight_cum_sum);
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );

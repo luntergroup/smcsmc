@@ -408,7 +408,7 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 }
 
 
-double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool updateWeight, bool recordEvents ) {
+double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recordEvents ) {
 
     double updated_to = this->site_where_weight_was_updated();
     assert (updated_to >= this->current_base());
@@ -430,7 +430,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
         // These branches do not contribute to localTreeBranchLength
         double localTreeBranchLength = this->trackLocalTreeBranchLength();
 
-        double likelihood_of_segment = exp( -mutation_rate * localTreeBranchLength * (update_to - updated_to) );
+        double likelihood_of_segment = exp( -model().mutation_rate() * localTreeBranchLength * (update_to - updated_to) );
         likelihood *= likelihood_of_segment;
 
         if(model().biased_sampling) {

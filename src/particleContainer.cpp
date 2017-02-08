@@ -68,7 +68,7 @@ ParticleContainer::ParticleContainer(Model* model,
  * \brief Update the current state to the next state, at the given site, update all particles to its latest genealogy state.  
  * \brief Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
+void ParticleContainer::extend_ARGs( double extend_to ){
     dout << endl<<" We are extending particles" << endl<<endl;
 
         for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
@@ -79,7 +79,7 @@ void ParticleContainer::extend_ARGs( double mutation_rate, double extend_to ){
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         dout << " before extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
-        particles[particle_i]->extend_ARG ( mutation_rate, extend_to );
+        particles[particle_i]->extend_ARG ( extend_to );
         dout << " after extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
     }
 }
@@ -143,7 +143,7 @@ void ParticleContainer::update_data_status_at_leaf_nodes( const vector<int>& dat
 /*! \brief Update particle weight according to the haplotype or genotype data
  *      @ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
+void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips ){
 
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
@@ -317,7 +317,7 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile,
+void ParticleContainer::update_state_to_data( Segment * Segfile,
                                               valarray<double> & weight_partial_sum ){
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
@@ -327,7 +327,7 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
     update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
 
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    this->extend_ARGs( mutation_rate, (double)min(Segfile->segment_end(), loci_length) );
+    this->extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ) );
 
     //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;
@@ -336,7 +336,7 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
         // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
         //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
         //  missing data and therefore also does not end with a mutation).
-        this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
+        this->update_weight_at_site( Segfile->allelic_state_at_Segment_end );
     }
 
     dout << "Extended until " << this->particles[0]->current_base() <<endl;
