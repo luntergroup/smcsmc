@@ -114,6 +114,9 @@ class TestGeneric(unittest.TestCase):
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
 
+        ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
+        ###       specifies the epochs to infer.  That's probably what we want to do anyway,
+        ###       but in that case the test code shouldn't suggest that it supports this!
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
             epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
@@ -129,9 +132,7 @@ class TestGeneric(unittest.TestCase):
             else:
                 # use model epochs for inference
                 epochs = self.pop.change_points
-            #epochopt = " ".join(["-eN {time} 1".format(time=time)
-            #                     for time in epochs])
-            epochopt = ""
+            epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
         if self.infer_recombination:

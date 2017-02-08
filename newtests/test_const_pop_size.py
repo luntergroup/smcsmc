@@ -9,29 +9,38 @@ from test_generic import TestGeneric
 # Test various basic constant population size scenarios
 #
 
+
 class TestConstPopSize(TestGeneric):
 
     def setUp(self):
         TestGeneric.setUp(self, "testdata/constpopsize")
         self.seqlen = 1e7
-        self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
-                                          population_sizes = [1, 1, 1, 1, 1],
-                                          scrmpath=self.scrmpath )
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0, 0.25, 0.5, 1, 1.5],
+                                                num_populations = 1,
+                                                population_sizes = [[1], [1], [1], [1], [1]])
         
         # set default inference parameters
+        self.popt = None
+        self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+        self.lag = 2
         self.em = 4
-        self.np = 100
+        self.np = 200
+        self.bias_heights = [400]
+        self.bias_strengths = [3,1]
+        self.tmax = 4
         self.seed = (1,)
 
         # set targets
         self.targets = []
-        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
-        for idx in range(17):
-            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':0, 'max':100000, 'truth':10000})
-        self.max_out_of_range = -1
+        self.targets.append({'type':"Recomb", 'min':9e-9, 'max':1.1e-8, 'truth':1e-8})
+        for idx in range(5):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':8000, 'max':12000, 'truth':10000})
+        self.max_out_of_range = 0
 
 
-
+"""
 class TestConstPopSize_ThreeEpochs(TestConstPopSize):
 
     def setUp(self, name = "testdata/constpopsize_3epochs"):
@@ -58,9 +67,10 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
                         {'type':"Coal", 'pop':0, 'epoch':2, 'min':0,     'max':100000, 'truth':10000},]
 
         self.max_out_of_range = -1
-        
+"""     
 
 
+"""
 class TestConstPopSize_FourEpochs(TestConstPopSize):
 
     def setUp(self, name = "testdata/constpopsize_4epochs"):
@@ -87,29 +97,7 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
                         {'type':"Coal", 'pop':0, 'epoch':3, 'min':8268,  'max':9136,  'truth':10000}]  # it's worrying that the current version does not contain truth
 
         self.max_out_of_range = -1
-
-
-
-class TestConstPopSize_MissingData(TestConstPopSize):
-
-    def setUp(self):
-        TestConstPopSize.setUp(self)
-
-        # identical to TestConstPopSize, except for name, and for running inference without any data
-        self.prefix = "testdata/constpopsize_missingdata"
-        self.missing = [0,1]
-
-
-
-class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
-
-    def setUp(self):
-        TestConstPopSize_FourEpochs.setUp(self)
-
-        # identical to TestConstPopSize, except for name, and for running inference without any data
-        self.prefix = "testdata/constpopsize_4epochs_missingdata"
-        self.missing = [0,1]
-
+"""
 
 
 if __name__ == "__main__":
