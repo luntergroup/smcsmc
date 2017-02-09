@@ -36,7 +36,9 @@ class TestConstPopSize(TestGeneric):
         self.targets = []
         self.targets.append({'type':"Recomb", 'min':9e-9, 'max':1.1e-8, 'truth':1e-8})
         for idx in range(5):
-            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':8000, 'max':12000, 'truth':10000})
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
+        self.targets[4]['min'] = 8000
+        self.targets[4]['max'] = 12000
         self.max_out_of_range = 0
 
 

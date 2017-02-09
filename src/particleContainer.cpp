@@ -35,26 +35,29 @@ ParticleContainer::ParticleContainer(Model* model,
                                      double initial_position,
                                      bool emptyFile,
                                      vector <int> first_allelic_state) {
-    this->random_generator_ = rg;
-    this->ln_normalization_factor_ = 0;
-    this->set_current_printing_base(0);
+    random_generator_ = rg;
+    ln_normalization_factor_ = 0;
     this->model = model;
     bool make_copies_of_model_and_rg = false; // Set to true to use rg and model per particle, for multithreading
     dout << " --------------------   Particle Initial States   --------------------" << std::endl;
-    for ( size_t i=0; i < Num_of_states ; i++ ){
+    for ( size_t i=0; i < Num_of_states ; i++ ) {
+
         // create a new state, using scrm; scrm always starts at site 0.
         ForestState* new_state = new ForestState( model, rg, record_event_in_epoch, make_copies_of_model_and_rg );  
+
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
         new_state->setPosteriorWeight( 1.0/Num_of_states );
         new_state->setPilotWeight( 1.0/Num_of_states );
-        this->particles.push_back(new_state);
+        particles.push_back(new_state);
+
         // If no data was given, the initial tree should not include any data
         if ( emptyFile ){
             new_state->include_haplotypes_at_tips(first_allelic_state);
         }
+
         #ifdef _SCRM
         cout << new_state->newick( new_state->local_root() ) << ";" << endl;
         #endif
@@ -70,16 +73,16 @@ ParticleContainer::ParticleContainer(Model* model,
 void ParticleContainer::extend_ARGs( double extend_to ){
     dout << endl<<" We are extending particles" << endl<<endl;
 
-        for (size_t particle_i = 0; particle_i < this->particles.size(); particle_i++){
+        for (size_t particle_i = 0; particle_i < particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*!
          * For each particle, extend the current path until the the site such that 
          * the next genealogy change is beyond the mutation
          * Invariant: the likelihood is correct up to 'updated_to'
          */
-        dout << " before extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
+        dout << " before extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
         particles[particle_i]->extend_ARG ( extend_to );
-        dout << " after extend ARG particle weight is " << this->particles[particle_i]->posteriorWeight() << endl;
+        dout << " after extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
     }
 }
 
@@ -172,17 +175,30 @@ void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips 
  */
 void ParticleContainer::resample(int update_to, const PfParam &pfparam)
 {
-    valarray<double> partial_sums( pfparam.N );
-    double ess = update_partial_sum_array_find_ESS( partial_sums );
+    double Num_of_states = particles.size();
+    valarray<double> partial_sums( Num_of_states + 1 );
+    double wi_sum = 0;
+    double wi_sq_sum = 0;
+
+    //partial_sums[0] = 0;
+    for (size_t i = 0; i < Num_of_states; i++) {
+        partial_sums[i] = wi_sum;
+        double w_i = particles[i]->pilotWeight();
+        //partial_sums[i+1] = partial_sums[i] + w_i;
+        wi_sum += w_i;
+        wi_sq_sum += w_i * w_i;
+    }
+    partial_sums[ Num_of_states ] = wi_sum;
+    double ess = wi_sum * wi_sum / wi_sq_sum;
     
-    dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << pfparam.N
-         << "threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
+    dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << Num_of_states
+         << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
     
     if ( ess < pfparam.ESSthreshold - 1e-6 ) {
         pfparam.append_resample_file( update_to, ess );
-        valarray<int> sample_count( pfparam.N );
-        this->systematic_resampling( partial_sums, sample_count, pfparam.N );
-        this->resample(sample_count);
+        valarray<int> sample_count( Num_of_states );
+        systematic_resampling( partial_sums, sample_count, Num_of_states );
+        implement_resampling( sample_count, wi_sum);
     }
 }
 
@@ -194,64 +210,56 @@ void ParticleContainer::resample(int update_to, const PfParam &pfparam)
  *
  * \ingroup group_resample
  */
-void ParticleContainer::resample(valarray<int> & sample_count){
-    dout << endl;
-    resampledout << " *********** Recreate " << sample_count.sum() << " particles ****************" << endl;
+void ParticleContainer::implement_resampling(valarray<int> & sample_count, double sum_of_delayed_weights) {
+
     size_t number_of_particles = sample_count.size();
     bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
-    // calculate the sum of the delayed weights, this should be invariant
-    double sum_of_delayed_weights = 0;
+
     for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
-        sum_of_delayed_weights += particles[old_state_index]->pilotWeight();
-    }
-    for (size_t old_state_index = 0; old_state_index < number_of_particles; old_state_index++) {
+
         if ( sample_count[old_state_index] > 0 ) {
-            ForestState * current_state = this->particles[old_state_index];
+
+            ForestState * current_state = particles[old_state_index];
             if (flush) current_state->flushOldRecombinations();
-            // we need at least one copy of this particle; it keeps its own random generator
-            resampledout << " Keeping  the " << std::setw(5) << old_state_index << "th particle" << endl;
+
             // calculate weight adjustment: the ratio of the desired weight, sum_of_delayed_weights / num_particles,
             // to current weight, pilotWeight()
             double adjustment = sum_of_delayed_weights / ( number_of_particles * current_state->pilotWeight() );
             current_state->adjustWeights( adjustment );
-            this->particles.push_back(current_state);
+            particles.push_back(current_state);
 
             // create new copy of the resampled particle
-            for (int ii = 2; ii <= sample_count[old_state_index]; ii++) {
-                resampledout << " Making a copy of the " << old_state_index << "th particle ... " ;
-                dout << std::endl;
-                dout << "current end position for particle current_state " << current_state->current_base() << endl;
-                for (size_t ii =0 ; ii < current_state ->rec_bases_.size(); ii++){
-                    dout << current_state ->rec_bases_[ii] << " ";
-                }
-                dout <<endl;
+            for (int ii = 1; ii < sample_count[old_state_index]; ii++) {
 
-                ForestState* new_copy_state = new ForestState( *this->particles[old_state_index] );
-                dout <<"making particle finished" << endl; // DEBUG
+                ForestState* new_copy_state = new ForestState( *particles[old_state_index] );
 
                 // Resample the recombination position if particle has not hit end of sequence,
                 // and give particle its own event history
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ) {
                     new_copy_state->resample_recombination_position();
                 }
+
+                // calculate weight adjustment. Since the old particle's weight was changed in-place above,
+                // the weight adjustment is 1.0 now (if the resampling of recombination position above did not
+                // change its pilot weight -- which it doesn't.)
+                /*
                 double adjustment = sum_of_delayed_weights / ( number_of_particles * new_copy_state->pilotWeight() );
                 new_copy_state->adjustWeights( adjustment );
-                this->particles.push_back(new_copy_state);
+                */
+
+                particles.push_back(new_copy_state);
             }
         } else {
-            resampledout << " Deleting the " << std::setw(5) << old_state_index << "th particle ... " ;
-            delete this->particles[old_state_index];
+            delete particles[old_state_index];
         }
 
-        this->particles[old_state_index]=NULL;
+        particles[old_state_index]=NULL;
     }
 
     for (int i = 0; i < number_of_particles; i++) {
-        this->particles[i] = this->particles[i + number_of_particles];
+        particles[i] = particles[i + number_of_particles];
     }
-    this -> particles.resize(number_of_particles);
-
-    resampledout << " ***** There are " << this->particles.size() << "particles in total. *****" << endl;
+    particles.resize(number_of_particles);
 }
 
 
@@ -266,36 +274,15 @@ ParticleContainer::~ParticleContainer() {}
  * Proper particleContatiner destructor, remove pointers of the ForestState
  */
 void ParticleContainer::clear(){
-    for (size_t i = 0; i < this->particles.size(); i++){
-        if (this->particles[i]!=NULL){
-            delete this->particles[i];
-            this->particles[i]=NULL;
+    for (size_t i = 0; i < particles.size(); i++){
+        if (particles[i]!=NULL){
+            delete particles[i];
+            particles[i]=NULL;
         }
     }
-    this->particles.clear();
+    particles.clear();
 }
 
-
-/*!
- * @ingroup group_pf_resample
- * @ingroup group_pf_update
- * \brief Calculate the effective sample size, and update the cumulative weight of the particles
- */
-double ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum) {
-
-    double wi_sum=0;
-    double wi_sq_sum=0;
-    double Num_of_states = particles.size();
-    weight_partial_sum=0;
-
-    for (size_t i=0; i < Num_of_states ;i++) {
-        double w_i = this->particles[i]->pilotWeight();
-        weight_partial_sum[i+1] = weight_partial_sum[i] + w_i;
-        wi_sum += w_i;
-        wi_sq_sum += w_i * w_i;
-    }
-    return (wi_sum * wi_sum / wi_sq_sum);
-}
 
 
 /*!
@@ -304,19 +291,17 @@ double ParticleContainer::update_partial_sum_array_find_ESS(std::valarray<double
 void ParticleContainer::normalize_probability() {
 
     double total_probability = 0;
-    for ( size_t particle_i = 0;particle_i < this->particles.size(); particle_i++ )
-        total_probability += this->particles[particle_i]->posteriorWeight();
+    for ( size_t particle_i = 0; particle_i < particles.size(); particle_i++ )
+        total_probability += particles[particle_i]->posteriorWeight();
 
-    // check
     if (total_probability <= 0) throw std::runtime_error("Zero or negative probabilities");
     
     // keep track of overall (log) posterior probability
     ln_normalization_factor_ += log( total_probability );
 
     // normalize
-    for ( size_t particle_i = 0; particle_i < this->particles.size(); particle_i++ ) {
-        this->particles[particle_i]->setPosteriorWeight( this->particles[particle_i]->posteriorWeight() / total_probability);
-        this->particles[particle_i]->setPilotWeight(     this->particles[particle_i]->pilotWeight()     / total_probability);
+    for ( size_t particle_i = 0; particle_i < particles.size(); particle_i++ ) {
+        particles[particle_i]->adjustWeights( 1.0 / total_probability );
     }
 }
 
@@ -330,7 +315,7 @@ void ParticleContainer::update_state_to_data( Segment * Segfile ) {
     update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
 
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    this->extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ) );
+    extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ) );
 
     //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;
@@ -339,13 +324,13 @@ void ParticleContainer::update_state_to_data( Segment * Segfile ) {
         // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
         //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
         //  missing data and therefore also does not end with a mutation).
-        this->update_weight_at_site( Segfile->allelic_state_at_Segment_end );
+        update_weight_at_site( Segfile->allelic_state_at_Segment_end );
     }
 
-    dout << "Extended until " << this->particles[0]->current_base() <<endl;
+    dout << "Extended until " << particles[0]->current_base() <<endl;
 
     // Update the accumulated probabilities, as well as computing the effective sample size
-    this->normalize_probability();
+    normalize_probability();
 }
 
 
@@ -359,8 +344,8 @@ void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum
                                               size_t N){
     size_t interval_j = 0;
     size_t sample_i = 0;
-    double u_j = this->random_generator()->sample() / N;
-    double partial_sum_normalization = partial_sum[partial_sum.size()-1];
+    double u_j = random_generator()->sample() / N;
+    double partial_sum_normalization = partial_sum[ N ];
 
     sample_count[sample_i] = 0;
     while (sample_i < N) {
@@ -382,26 +367,13 @@ void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum
     for (;interval_j<N;interval_j++){
         sample_count[ interval_j ] = 0;
     }
-
-    resampledout << "Sample counts: " ;
-    for (size_t i=0;i<sample_count.size();i++){ dout << sample_count[i]<<"  "; }  dout << std::endl;
-    assert(sample_count.sum() == N);
 }
 
 
 // set_particles_with_random_weight() has not been updated for use with delayed IS
 void ParticleContainer::set_particles_with_random_weight(){
-    for (size_t i = 0; i < this->particles.size(); i++){
-        this->particles[i]->setPosteriorWeight( this->particles[i]->random_generator()->sample() );
+    for (size_t i = 0; i < particles.size(); i++){
+        particles[i]->setPosteriorWeight( particles[i]->random_generator()->sample() );
     }
 }
-
-
-void ParticleContainer::print_particle_probabilities(){
-    for (size_t i = 0; i < this->particles.size(); i++){
-        clog<<"weight = "<<this->particles[i]->posteriorWeight()<<endl;
-        clog<<"pilot weight = "<<this->particles[i]->pilotWeight()<<endl;
-    }
-}
-
 

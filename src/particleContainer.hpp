@@ -63,7 +63,6 @@ class ParticleContainer {
         void resample(int update_to, const PfParam &pfparam);
         void normalize_probability();
         void clear();
-        void print_particle_probabilities();
         double ln_normalization_factor() const { return this->ln_normalization_factor_; }
 
         //
@@ -81,30 +80,21 @@ class ParticleContainer {
         int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
         void update_weight_at_site( const vector <int> &data_at_tips);
         bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
-        void store_normalization_factor();
         // Resampling
-        void resample(valarray<int> & sample_count);
-        void duplicate_particles ( valarray<int> & sample_count );
-        void resample_for_check(valarray<int> & sample_count);
-        void shifting(int number_of_particles);
-        void systematic_resampling( std::valarray<double>& partial_sum, std::valarray<int>& sample_count, size_t sample_size);
-        double update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum);
+        void implement_resampling(valarray<int> & sample_count, double total_pilot_weight);
+        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count, size_t sample_size);
 
         //
         // Setters and getters:
         //
         RandomGenerator* random_generator() const { return this->random_generator_; }
-        double current_printing_base() const { return this->current_printing_base_;}
-        void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 
         //
         // Members
         //
         vector <ForestState*> particles;
         RandomGenerator* random_generator_; // This is for particle filter only,
-        double current_printing_base_;
         double ln_normalization_factor_;
-        double temp_sum_of_weights;
         Model* model;
 };
 
