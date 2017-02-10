@@ -363,9 +363,16 @@ inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node
  *  If there is no data given at the site i, return likelihood as 1.
  * @ingroup group_pf_resample
  */
-double ForestState::calculate_likelihood( ) {
+double ForestState::calculate_likelihood( bool ancestral_aware ) {
     valarray<double> marginalLikelihood = cal_partial_likelihood_infinite(this->local_root());
-    double prior[2] = {0.5,0.5};
+    double prior[2];
+    if ( ancestral_aware ) {
+        prior[0] = 1;
+        prior[1] = 0;
+    } else {
+        prior[0] = 0.5;
+        prior[1] = 0.5;
+    }
     double likelihood = marginalLikelihood[0]*prior[0] + marginalLikelihood[1]*prior[1];
     return likelihood;
 }

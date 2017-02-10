@@ -142,7 +142,7 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
 /*! \brief Update particle weight according to the haplotype or genotype data
  *      @ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips ){
+void ParticleContainer::update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips, bool ancestral_aware ){
 
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
@@ -154,7 +154,7 @@ void ParticleContainer::update_weight_at_site( double mutation_rate, const vecto
         do {
 
             particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
-            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
+            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware );
 
         } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
 
@@ -342,7 +342,8 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_partial_sum ){
+void ParticleContainer::update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile,
+                                              valarray<double> & weight_partial_sum, bool ancestral_aware ){
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
@@ -360,7 +361,10 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
         // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
         //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
         //  missing data and therefore also does not end with a mutation).
-        this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end );
+        this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end, ancestral_aware );
+        // Consider adding a column to the segfile which specifies if the ancestral allele is known for this
+        //   position. This would replace the blanket ancestral_aware with a Segfile->ancestral_aware.
+        //   We could also include a likelihood of 0 being ancestral.
     }
 
     dout << "Extended until " << this->particles[0]->current_base() <<endl;

@@ -140,7 +140,7 @@ class ForestState : public Forest{
 
         // Update weight
         void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */
-        double calculate_likelihood( ); /*!< \brief Calculate the likelihood of the genealogy */
+        double calculate_likelihood( bool ancestral_aware ); /*!< \brief Calculate the likelihood of the genealogy */
         valarray<double> cal_partial_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
         double trackLocalTreeBranchLength();
         BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
