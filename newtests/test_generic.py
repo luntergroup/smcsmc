@@ -7,7 +7,7 @@ import subprocess
 import itertools
 
 try:
-    from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Table, MetaData, create_engine
+    from sqlalchemy import Column, Integer, Float, Boolean, String, DateTime, ForeignKey, Table, MetaData, create_engine
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.sql import func
@@ -50,12 +50,16 @@ class TestGeneric(unittest.TestCase):
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
         self.infer_recombination = True
+        self.ancestral_aware = False
+        self.phased = True
         self.lag = 4.0
         self.smcsmc_change_points = None
         self.smcsmc_initial_pop_sizes = None
         self.missing_leaves = []            # list of 0-based missing leaves
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
+        self.directed_recomb = False
+        self.directed_recomb_strength = 0.3
         self.filename_disambiguator = ""
         self.int_parameter = 0
         self.str_parameter = ""
@@ -139,8 +143,13 @@ class TestGeneric(unittest.TestCase):
         else:
             recinfopt = "-xr 1-{}".format(num_epochs)
             
+        if self.ancestral_aware:
+            ancawareopt = "-ancestral_aware"
+        else:
+            ancawareopt = ""
+            
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} " \
-                                 "{lag} {epochs} {seed} {seg} {pilots}".format(
+                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
                                      nsam = nsamopt,
@@ -151,7 +160,8 @@ class TestGeneric(unittest.TestCase):
                                      epochs = epochopt,
                                      seed = seedopt,
                                      seg = segopt,
-                                     pilots = pilotsopt)
+                                     pilots = pilotsopt,
+                                     ancestral_aware = ancawareopt )
         if self.debug:
             print (self.inference_command)
         return self.inference_command
@@ -357,25 +367,37 @@ class TestGeneric(unittest.TestCase):
             # create tables.  Just declaring them does the trick
             class Experiment(Base):
                 __tablename__ = "experiment"
-                id = Column(Integer, primary_key=True)
-                date = Column(DateTime, default=func.now())
-                name = Column(String)
-                simulate_command = Column(String)
-                inference_command = Column(String)
-                np = Column(Integer)
-                lag = Column(Float)
-                num_samples = Column(Integer)
-                sequence_length = Column(Integer)
-                missing_leaves = Column(String)
-                recombination_rate = Column(Float)
-                mutation_rate = Column(Float)
-                dataseed = Column(Integer)
-                infseed = Column(Integer)
-                int_parameter = Column(Integer)   # generic optional parameter
-                str_parameter = Column(String)    # generic optional parameter
-                smcsmc_runtime = Column(Float)
-                scrm_version = Column(String)
-                smcsmc_version = Column(String)
+                id                       = Column(Integer, primary_key=True)
+                date                     = Column(DateTime, default=func.now())
+                name                     = Column(String)
+                simulate_command         = Column(String)
+                inference_command        = Column(String)
+                np                       = Column(Integer)
+                lag                      = Column(Float)
+                num_samples              = Column(Integer)
+                sequence_length          = Column(Integer)
+                missing_leaves           = Column(String)
+                recombination_rate       = Column(Float)
+                mutation_rate            = Column(Float)
+                ancestral_aware          = Column(Boolean)
+                phased                   = Column(Boolean)
+                infer_recombination      = Column(Boolean)
+                pattern                  = Column(String)
+                initial_Ne_values        = Column(String)
+                initial_migr_values      = Column(String)
+                bias_heights             = Column(String)
+                bias_strengths           = Column(String)
+                directed_recomb          = Column(Boolean)
+                directed_recomb_strength = Column(Float)     # I'll need to rename/reformat this based on implementation
+                dataseed                 = Column(Integer)
+                infseed                  = Column(Integer)
+                smcsmc_runtime           = Column(Float)
+                scrm_version             = Column(String)
+                smcsmc_version           = Column(String)
+                int_parameter            = Column(Integer)   # generic optional parameter
+                str_parameter            = Column(String)    # generic optional parameter
+                # add values for analysing dividing data into chunks. This would require changes to Result too.
+                # add functionality for different mutation/recombination rates for simulation and inference
             class Result(Base):
                 __tablename__ = "result"
                 id = Column(Integer, primary_key=True)
@@ -400,17 +422,33 @@ class TestGeneric(unittest.TestCase):
         Session.configure(bind=engine)
         session = Session()
         name = self.name if self.name != None else self.prefix.split('/')[-1]
-        this_exp = Experiment( np = self.np, num_samples=self.pop.num_samples,
-                               sequence_length=int(self.pop.sequence_length),
-                               dataseed=self.pop.seed[0], infseed=self.seed[0],
-                               simulate_command=self.pop.simulate_command,
-                               recombination_rate = self.pop.recombination_rate,
-                               mutation_rate = self.pop.mutation_rate,
-                               missing_leaves = str(self.missing_leaves), lag = self.lag,
-                               int_parameter = self.int_parameter, str_parameter = self.str_parameter,
-                               smcsmc_version = self.smcsmc_version, scrm_version = self.scrm_version,
-                               inference_command = self.inference_command, name = name,
-                               smcsmc_runtime = self.smcsmc_runtime )
+        this_exp = Experiment( name                     = name,
+                               simulate_command         = self.pop.simulate_command,
+                               inference_command        = self.inference_command,
+                               np                       = self.np,
+                               lag                      = self.lag,
+                               num_samples              = self.pop.num_samples,
+                               sequence_length          = int(self.pop.sequence_length),
+                               missing_leaves           = str(self.missing_leaves), 
+                               recombination_rate       = self.pop.recombination_rate,
+                               mutation_rate            = self.pop.mutation_rate,
+                               ancestral_aware          = self.ancestral_aware,
+                               phased                   = self.phased,
+                               infer_recombination      = self.infer_recombination,
+                               pattern                  = self.popt+" -tmax "+self.tmax if self.popt else self.popt,
+                               initial_Ne_values        = ' '.join(map(str,self.smcsmc_initial_pop_sizes)) if self.smcsmc_initial_pop_sizes else self.smcsmc_initial_pop_sizes,
+                               initial_migr_values      = ' '.join(map(str,self.pop.migration_rates)) if self.pop.migration_rates else self.pop.migration_rates,
+                               bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
+                               bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
+                               directed_recomb          = self.directed_recomb,
+                               directed_recomb_strength = self.directed_recomb_strength,
+                               dataseed                 = self.pop.seed[0], 
+                               infseed                  = self.seed[0],
+                               smcsmc_runtime           = self.smcsmc_runtime,
+                               scrm_version             = self.scrm_version,
+                               smcsmc_version           = self.smcsmc_version,
+                               int_parameter            = self.int_parameter, 
+                               str_parameter            = self.str_parameter )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id
 
@@ -422,9 +460,9 @@ class TestGeneric(unittest.TestCase):
                 if elts[0] == "Iter": continue                     # skip header line
                 assert len(elts) == 12
                 session.add( Result( exp_id = this_exp.id,
-                                     iter = int(elts[0]), epoch = int(elts[1]), start=float(elts[2]),
-                                     end=float(elts[3]), type = elts[4], frm = int(elts[5]),
-                                     to = int(elts[6]), opp=float(elts[7]), count=float(elts[8]),
+                                     iter = int(elts[0]), epoch = int(elts[1]), start = float(elts[2]),
+                                     end = float(elts[3]), type = elts[4], frm = int(elts[5]),
+                                     to = int(elts[6]), opp = float(elts[7]), count = float(elts[8]),
                                      rate = float(elts[9]), ne = float(elts[10]), ess = float(elts[11])))
         session.commit()
         session.close()

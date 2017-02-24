@@ -39,11 +39,11 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
         self.seqlen = 1e7
         self.missing_leaves = []
         self.popt = None                            # don't use epoch pattern for inference
-        self.smcsmc_change_points = [0,1,2]         # but rather use three large epochs
+        self.smcsmc_change_points = [0,1,1.99]         # but rather use three large epochs
 
         self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
                                           population_sizes = [1, 1, 1],
-                                          change_points = [0,1,2],
+                                          change_points = [0,1,1.99],
                                           scrmpath=self.scrmpath )
         
         # set default inference parameters
@@ -71,6 +71,7 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.smcsmc_change_points = [0, .02, .1, .5]   # but rather use four epochs
 
         self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
+                                          change_points = [0, .02, .1, .5],
                                           population_sizes = [1, 1, 1, 1],
                                           scrmpath=self.scrmpath )
         
