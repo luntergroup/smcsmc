@@ -15,6 +15,7 @@ seqlen = 50e6
 emiters = 30
 particles = [100,500,1000]
 anc_aware = [True, False]
+nsam = [4,8]
 
 
 # name of this experiment
@@ -27,31 +28,30 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 
 # define the experiments
-experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 'ancestral_aware':anc_aware}
-                   for (seqlen, simseed, infseed, numparticles, anc_aware) in (
+experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 
+                    'ancestral_aware':anc_aware, 'nsam':nsam}
+                   for (seqlen, simseed, infseed, numparticles, anc_aware, nsam) in (
                            # repetitions with unique data
-                           [(seqlen, 100+rep, 100+rep, np, aa)
-                            for rep, np, aa in itertools.product(range(inference_reps), particles, anc_aware)] +
-                           # repetitions with fixed data
-                           [(seqlen, 100,     100+rep, np, aa)
-                            for rep, np, aa in itertools.product(range(1,inference_reps), particles, anc_aware)])]
+                           [(seqlen, 100+rep, 100+rep, np, aa, ns)
+                            for rep, np, aa in itertools.product(range(inference_reps), particles, anc_aware, nsam)] )]
 
 
 # run an experiment.  keyword parameters must match those in experiment_pars
-def run_experiment( length, simseed, infseed, numparticles, ancestral_aware ):
-    label = "L{}_S{}_I{}_P{}_AA{}".format(int(length),simseed,infseed,numparticles,ancestral_aware)
+def run_experiment( length, simseed, infseed, numparticles, ancestral_aware, nsam ):
+    label = "L{}_S{}_I{}_P{}_AA{}_NSAM{}".format(int(length),simseed,infseed,numparticles,ancestral_aware,nsam)
     if experiment_base.have_result( name=experiment_name,
                                     sequence_length=length,
                                     dataseed=simseed,
                                     infseed=infseed,
                                     np=numparticles,
-                                    ancestral_aware=ancestral_aware ): # should I create a column for ancestral aware? (ALTER TABLE table_name; ADD column_name datatype; UPDATE table_name SET newcolumn = <something>)
+                                    ancestral_aware=ancestral_aware,
+                                    num_samples=nsam ):
         print "Skipping " + label
         return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( experiment_base.datapath + experiment_name )
     # set simulation parameters
-    e.pop.num_samples = 8
+    e.pop.num_samples = nsam
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
     e.pop.scrmpath = experiment_base.scrmpath
@@ -61,6 +61,7 @@ def run_experiment( length, simseed, infseed, numparticles, ancestral_aware ):
     e.seed = (infseed,)
     e.np = numparticles
     e.bias_heights = None
+    e.lag = 1
     e.smcsmcpath = experiment_base.smcsmcpath
     e.ancestral_aware = ancestral_aware
     # perform inference and store results
