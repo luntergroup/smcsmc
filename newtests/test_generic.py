@@ -196,8 +196,12 @@ class TestGeneric(unittest.TestCase):
         cmd = "{cmd} -o {caseprefix} > {caseprefix}.stdout 2> {caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
-        versiondata = subprocess.Popen([self.smcsmcpath,"-v"],
-                                       stdout=subprocess.PIPE).communicate()[0].split('\n')
+        versioncmd = [self.smcsmcpath,"-v"]
+        try:
+            versiondata = subprocess.Popen(versioncmd,
+                                           stdout=subprocess.PIPE).communicate()[0].split('\n')
+        except:
+            raise ValueError("Failed to execute {}".format(" ".join(versioncmd)))
         if len(versiondata) >= 3:
             self.smcsmc_version = versiondata[1].strip().split()[-1]
             self.scrm_version   = versiondata[2].strip().split()[-1]

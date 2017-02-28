@@ -28,12 +28,12 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 
 # define the experiments
-experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles, 
+experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed, 'numparticles':numparticles,
                     'ancestral_aware':anc_aware, 'nsam':nsam}
                    for (seqlen, simseed, infseed, numparticles, anc_aware, nsam) in (
                            # repetitions with unique data
                            [(seqlen, 100+rep, 100+rep, np, aa, ns)
-                            for rep, np, aa in itertools.product(range(inference_reps), particles, anc_aware, nsam)] )]
+                            for rep, np, aa, ns in itertools.product(range(inference_reps), particles, anc_aware, nsam)] )]
 
 
 # run an experiment.  keyword parameters must match those in experiment_pars
