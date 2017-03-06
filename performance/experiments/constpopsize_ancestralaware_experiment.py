@@ -12,8 +12,8 @@ import itertools
 # parameters for this experiment
 inference_reps = 25
 seqlen = 50e6
-emiters = 30
-particles = [100,500,1000]
+emiters = 4
+particles = [100,500,1000,5000]
 anc_aware = [True, False]
 nsam = [4,8]
 
@@ -58,6 +58,7 @@ def run_experiment( length, simseed, infseed, numparticles, ancestral_aware, nsa
     e.filename_disambiguator = label
     # set inference parameters
     e.seqlen = length
+    e.em = emiters
     e.seed = (infseed,)
     e.np = numparticles
     e.bias_heights = None

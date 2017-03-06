@@ -15,12 +15,19 @@ class Experiment(TrackerSQL):
                ['np','particles',0],                   # 0 = (numerical or string); show min/max or fixed value
                ['sequence_length','length',0],
                ['lag','lag',0],
+               ['num_samples','samples',0],
+               ['ancestral_aware','ancestral aware',0],
+               ['phased','phased',0],
+               ['infer_recombination','infer recombination',0],
+               ['bias_heights','bias heights',-1],
+               ['bias_strengths','bias strengths',-1],
+               ['directed_recomb','directed recombination',0],
                ['dataseed','sequence_seed',0],
                ['infseed','inference_seed',0],
                ['missing_leaves','missing_leaves',0],
                ['smcsmc_version','smcsmc_version',0],
                ['smcsmc_runtime','runtime',0] ]
-               
+
     def getSlices(self):
         return [ field[1] for field in self.fields ]
 
@@ -41,5 +48,5 @@ class Experiment(TrackerSQL):
 
         if numvalues < 4:
             return { 'value(s)' : ','.join( map( str, sorted(list(set(values))) )) }
-        
+
         return { 'value(s)' : '{} - {}'.format( min(values), max(values) ) }
