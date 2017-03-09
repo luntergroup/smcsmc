@@ -447,7 +447,7 @@ class TestGeneric(unittest.TestCase):
                                infer_recombination      = self.infer_recombination,
                                pattern                  = self.popt+" -tmax "+self.tmax if self.popt else self.popt,
                                initial_Ne_values        = ' '.join(map(str,self.smcsmc_initial_pop_sizes)) if self.smcsmc_initial_pop_sizes else self.pop.population_sizes,
-                               initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migration_rates)) if self.smcsmc_initial_migration_rates else self.pop.migration_rates,
+                               initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migr_rates)) if self.smcsmc_initial_migr_rates else self.pop.migration_rates,
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
                                directed_recomb          = self.directed_recomb,
