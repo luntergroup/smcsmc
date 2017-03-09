@@ -76,7 +76,7 @@ class Population:
                                for dummy in range(self.num_populations) ]
                 self.migration_rates[idx] = migr_rates
             assert len(migr_rates) == self.num_populations
-        
+
         # check sanity of samples, their times, and their population
         assert len(self.sample_populations) == self.num_samples
         assert len(self.sample_times) == self.num_samples
@@ -186,10 +186,10 @@ class Population:
     def core_command_line( self,
                            inference_popsizes = None,
                            inference_migrationrates = None):
-        """ builds core command line common to simulation and inference; 
+        """ builds core command line common to simulation and inference;
             without the initial "num_samples num_loci" bits, and without
             output-related commands """
-        
+
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
         self.recombinations = 4 * self.N0 * self.recombination_rate * self.sequence_length
 
@@ -202,8 +202,8 @@ class Population:
                                                                           inference_migrationrates ) )
         return command
 
-        
-    def simulate(self, missing_leaves = [], debug = False):
+
+    def simulate(self, missing_leaves = [], phased = True, debug = False):
 
         # make file name if required
         if self.filename == None:
@@ -234,14 +234,14 @@ class Population:
             raise ValueError("Problem executing " + command)
 
         # generate the .seg and .seg.recomb files
-        self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves )
+        self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves, phased )
         self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
 
         # done; remove scrm output file
         #os.unlink( scrmfilename )
 
 
-    def convert_scrm_to_seg(self, infilename, outfilename, missing_leaves ):
+    def convert_scrm_to_seg(self, infilename, outfilename, missing_leaves, phased ):
         # convert scrm output file to .seg file
 
         scrmfile = open(infilename, "r")
@@ -274,10 +274,23 @@ class Population:
         positions.append( int(self.sequence_length) )
 
         outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = "." * len(data) ) )
-        for idx in range(len(positions) - 1):
-            outfile.write( row.format( pos=positions[idx],
-                                       distance = positions[idx+1] - positions[idx],
-                                       genotype = ''.join( [sequence[idx] for sequence in data] ) ) )
+        if phased:
+            for idx in range(len(positions) - 1):
+                outfile.write( row.format( pos = positions[idx],
+                                           distance = positions[idx+1] - positions[idx],
+                                           genotype = ''.join( [sequence[idx] for sequence in data] ) ) )
+        else:
+            for idx in range(len(positions) - 1):
+                alleles_list = [sequence[idx] for sequence in data]
+                for haplotype_idx in range( len(alleles_list)/2 ):
+                    if alleles_list[haplotype_idx*2] != alleles_list[haplotype_idx*2+1]:
+                        alleles_list[haplotype_idx*2  ] = "/"
+                        alleles_list[haplotype_idx*2+1] = "/"
+                alleles = ''.join( alleles_list )
+                outfile.write( row.format( pos = positions[idx],
+                                           distance = positions[idx+1] - positions[idx],
+                                           genotype = alleles ) )
+
         outfile.close()
 
 
@@ -508,8 +521,8 @@ class TwoPopBiDirMigr(Population):
 
         pop2migr_defaults = {'change_points':    [0, .1, .5],
                              'population_sizes': [1, 1, 1],
-                             'migration_rates':  [ [[0,0.5],[0.5,0]],  
-                                                   [[0,0.5],[0.5,0]],  
+                             'migration_rates':  [ [[0,0.5],[0.5,0]],
+                                                   [[0,0.5],[0.5,0]],
                                                    [[0,0.5],[0.5,0]] ],
                              'num_samples': 8,
                              'num_populations': 2}

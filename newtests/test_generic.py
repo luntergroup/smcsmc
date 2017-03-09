@@ -101,7 +101,7 @@ class TestGeneric(unittest.TestCase):
                              for j in range(num_epochs) ]     # starting values for inference
 
         if self.smcsmc_initial_migr_rates is not None:
-            inf_migrationrate = self.smcsmc_initial_migr_rates
+            inf_migrationrates = self.smcsmc_initial_migr_rates
         else:
             inf_migrationrates = self.pop.migration_rates         # starting values for inference
 
@@ -186,7 +186,7 @@ class TestGeneric(unittest.TestCase):
             except:
                 # to cope with race conditions when multiple tests are run in parallel
                 pass
-        self.pop.simulate( self.missing_leaves, self.debug )
+        self.pop.simulate( self.missing_leaves, self.phased, self.debug )
         self.simulated = True
 
     # helper -- run smcsmc
