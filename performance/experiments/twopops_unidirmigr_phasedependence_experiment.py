@@ -19,12 +19,12 @@ nsam = [4,8]
 
 
 # name of this experiment
-experiment_name = "constpopsize_4epochs_pahsedependence"
+experiment_name = "twopops_unidirmigr_falsestart_phasedependence"
 
 
 # class defining default population parameters
-import test_const_pop_size
-experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
+import test_two_pops
+experiment_class = test_two_pops.TestTwoPopsUniDirMigr
 
 
 # define the experiments
@@ -57,6 +57,9 @@ def run_experiment( length, simseed, infseed, numparticles, phased, nsam ):
     e.pop.scrmpath = experiment_base.scrmpath
     e.phased = phased
     e.filename_disambiguator = label
+    if nsam==4:
+        # need to change from default population assignment which assumes 8 samples
+        e.pop.sample_populations = [1,1,2,2]
     # set inference parameters
     e.seqlen = length
     e.em = emiters
