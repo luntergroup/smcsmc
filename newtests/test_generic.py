@@ -55,6 +55,7 @@ class TestGeneric(unittest.TestCase):
         self.lag = 4.0
         self.smcsmc_change_points = None
         self.smcsmc_initial_pop_sizes = None
+        self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
@@ -72,7 +73,7 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_runtime = -1
         self.smcsmc_version = ""
         self.scrm_version = ""
-        
+
 
     # called every time an instance of TestGeneric is destroyed -- remove output file
     def tearDown(self):
@@ -92,16 +93,21 @@ class TestGeneric(unittest.TestCase):
     def build_command(self):
         num_epochs = len(self.pop.population_sizes)
         num_populations = len(self.pop.population_sizes[0])
+
         if self.smcsmc_initial_pop_sizes is not None:
             inf_popsizes = self.smcsmc_initial_pop_sizes
         else:
             inf_popsizes = [ [1] * num_populations
                              for j in range(num_epochs) ]     # starting values for inference
-        inf_migrationrates = self.pop.migration_rates         # starting values for inference
-        
+
+        if self.smcsmc_initial_migr_rates is not None:
+            inf_migrationrate = self.smcsmc_initial_migr_rates
+        else:
+            inf_migrationrates = self.pop.migration_rates         # starting values for inference
+
         core_cmd = self.pop.core_command_line( inference_popsizes = inf_popsizes,
                                                inference_migrationrates = inf_migrationrates )
-        
+
         nsamopt = "-nsam {}".format(self.pop.num_samples)
 
         if self.bias_heights != None:
@@ -111,7 +117,7 @@ class TestGeneric(unittest.TestCase):
             )
         else:
             pilotsopt = ""
-            
+
         lagopt = "-calibrate_lag {}".format(self.lag)
         particlesopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
@@ -142,12 +148,12 @@ class TestGeneric(unittest.TestCase):
             recinfopt = ""
         else:
             recinfopt = "-xr 1-{}".format(num_epochs)
-            
+
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
         else:
             ancawareopt = ""
-            
+
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
@@ -259,7 +265,7 @@ class TestGeneric(unittest.TestCase):
                 except:
                     continue
                 print ("  checking recomb rate        ",end=" ")
-                    
+
 
             elif result['type'] == "Migr":
 
@@ -433,25 +439,25 @@ class TestGeneric(unittest.TestCase):
                                lag                      = self.lag,
                                num_samples              = self.pop.num_samples,
                                sequence_length          = int(self.pop.sequence_length),
-                               missing_leaves           = str(self.missing_leaves), 
+                               missing_leaves           = str(self.missing_leaves),
                                recombination_rate       = self.pop.recombination_rate,
                                mutation_rate            = self.pop.mutation_rate,
                                ancestral_aware          = self.ancestral_aware,
                                phased                   = self.phased,
                                infer_recombination      = self.infer_recombination,
                                pattern                  = self.popt+" -tmax "+self.tmax if self.popt else self.popt,
-                               initial_Ne_values        = ' '.join(map(str,self.smcsmc_initial_pop_sizes)) if self.smcsmc_initial_pop_sizes else self.smcsmc_initial_pop_sizes,
-                               initial_migr_values      = ' '.join(map(str,self.pop.migration_rates)) if self.pop.migration_rates else self.pop.migration_rates,
+                               initial_Ne_values        = ' '.join(map(str,self.smcsmc_initial_pop_sizes)) if self.smcsmc_initial_pop_sizes else self.pop.population_sizes,
+                               initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migration_rates)) if self.smcsmc_initial_migration_rates else self.pop.migration_rates,
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
                                directed_recomb          = self.directed_recomb,
                                directed_recomb_strength = self.directed_recomb_strength,
-                               dataseed                 = self.pop.seed[0], 
+                               dataseed                 = self.pop.seed[0],
                                infseed                  = self.seed[0],
                                smcsmc_runtime           = self.smcsmc_runtime,
                                scrm_version             = self.scrm_version,
                                smcsmc_version           = self.smcsmc_version,
-                               int_parameter            = self.int_parameter, 
+                               int_parameter            = self.int_parameter,
                                str_parameter            = self.str_parameter )
         session.add( this_exp )
         session.commit()         # this also sets this_exp.id

@@ -19,7 +19,7 @@ nsam = [4,8]
 
 
 # name of this experiment
-experiment_name = "twopops_unidirmigr_ancestralawaredependence"
+experiment_name = "twopops_unidirmigr_falsestart_ancestralawaredependence"
 
 
 # class defining default population parameters

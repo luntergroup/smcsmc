@@ -25,6 +25,7 @@ class TestTwoPops(TestGeneric):
 
         # set default inference parameters
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+
         self.lag = 1
         self.popt = None
         self.em = 0
@@ -51,13 +52,14 @@ class TestTwoPopsUniDirMigr(TestTwoPops):
         TestTwoPops.setUp(self, fn)
 
         self.np = 100
-        self.pop.migration_rates = [ [ [0, 0.2],
-                                       [0, 0] ],
-                                     [ [0, 0.2],
-                                       [0, 0] ],
-                                     [ [0, 0.2],
-                                       [0, 0] ] ]
-                                       
+        self.pop.migration_rates = [ [ [0, 0.2],[0, 0] ],
+                                     [ [0, 0.2],[0, 0] ],
+                                     [ [0, 0.2],[0, 0] ] ]
+
+        self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]] ]
+
         # make sure smc^2 is passed the right population sizes
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
 
@@ -69,7 +71,7 @@ class TestTwoPopsUniDirMigr(TestTwoPops):
                               'min':9800,  'max':10200,'truth':10000, 'ess':self.np-1} )
         self.targets.append( {'type':"Coal", 'pop':1, 'epoch':2,
                               'min':9800,  'max':10200,'truth':10000, 'ess':self.np-1} )
-        
+
         self.targets.append( {'type':"Migr", 'from_pop':0, 'to_pop':1, 'epoch':0,
                               'min':0.15*scaling, 'max': 0.25*scaling} )
         self.targets.append( {'type':"Migr", 'from_pop':1, 'to_pop':0, 'epoch':0,
@@ -95,13 +97,10 @@ class TestTwoPopsBiDirMigr(TestTwoPops):
         TestTwoPops.setUp(self, "testdata/twopops_bidirmigr")
 
         sself.np = 100
-        self.pop.migration_rates = [ [ [0, 0.2],
-                                       [0.2, 0] ],
-                                     [ [0, 0.2],
-                                       [0.2, 0] ],
-                                     [ [0, 0.2],
-                                       [0.2, 0] ] ]
-                                       
+        self.pop.migration_rates = [ [ [0, 0.2], [0.2, 0] ],
+                                     [ [0, 0.2], [0.2, 0] ],
+                                     [ [0, 0.2], [0.2, 0] ] ]
+
         # make sure smc^2 is passed the right population sizes
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
 
@@ -113,7 +112,7 @@ class TestTwoPopsBiDirMigr(TestTwoPops):
                               'min':9800,  'max':10200,'truth':10000, 'ess':self.np-1} )
         self.targets.append( {'type':"Coal", 'pop':1, 'epoch':2,
                               'min':9800,  'max':10200,'truth':10000, 'ess':self.np-1} )
-        
+
         self.targets.append( {'type':"Migr", 'from_pop':0, 'to_pop':1, 'epoch':0,
                               'min':0.15*scaling, 'max': 0.25*scaling} )
         self.targets.append( {'type':"Migr", 'from_pop':1, 'to_pop':0, 'epoch':0,
@@ -130,9 +129,9 @@ class TestTwoPopsBiDirMigr(TestTwoPops):
         for t in self.targets:
             if t['type'] == "Migr":
                 t['truth'] = scaling * self.pop.migration_rates[t['epoch']][t['from_pop']][t['to_pop']]
-        
 
-            
-        
+
+
+
 if __name__ == "__main__":
     unittest.main()
