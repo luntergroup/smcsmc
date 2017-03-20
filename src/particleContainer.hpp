@@ -57,10 +57,10 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( Segment * Segfile );
+        void update_state_to_data( Segment * Segfile, bool ancestral_aware );
         void extend_ARGs( double extend_to );
         void set_particles_with_random_weight();
-        void resample(int update_to, const PfParam &pfparam);
+        int  resample(int update_to, const PfParam &pfparam);
         void normalize_probability();
         void clear();
         double ln_normalization_factor() const { return this->ln_normalization_factor_; }
@@ -78,7 +78,7 @@ class ParticleContainer {
         //
         void update_data_status_at_leaf_nodes( const vector<int>& data_at_tips );
         int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
-        void update_weight_at_site( const vector <int> &data_at_tips);
+        void update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware);
         bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
         // Resampling
         void implement_resampling(valarray<int> & sample_count, double total_pilot_weight);

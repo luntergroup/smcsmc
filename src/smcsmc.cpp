@@ -272,13 +272,14 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Go through seg data */
     bool force_update = false;
+    int total_resample_count = 0;
     do{
         dout <<"Current base is "<<Segfile->segment_start() << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( Segfile );
+        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
@@ -295,7 +296,7 @@ void pfARG_core(PfParam &pfARG_para,
 
         /*! Resample if the ESS becomes too low */
         double update_to = min( Segfile->segment_end(), (double)model->loci_length() );
-        current_states.resample( update_to, pfARG_para );
+        total_resample_count += current_states.resample( update_to, pfARG_para );
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r Particle filtering step 100% completed." << endl;
@@ -306,7 +307,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     } while( !Segfile->end_data() );
 
-    clog << "Got to end of sequence" << endl;
+    clog << "Got to end of sequence; resampled " << total_resample_count << " times" << endl;
 
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
 

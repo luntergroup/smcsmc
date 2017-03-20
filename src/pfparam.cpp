@@ -128,6 +128,8 @@ void PfParam::parse(int argc, char *argv[]) {
             }
             //} else if ( *argv_i == "-online" ){
             //this->online_bool = true;
+        } else if ( *argv_i == "-ancestral_aware" ){
+            this->ancestral_aware = true;
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -196,6 +198,7 @@ void PfParam::init(){
     this->lag              = 0.0;
     this->calibrate_lag    = true;
     this->lag_fraction     = 4.0;
+    this->ancestral_aware  = false;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;

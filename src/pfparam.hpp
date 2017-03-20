@@ -248,6 +248,7 @@ class PfParam{
     double lag;
     bool calibrate_lag;
     double lag_fraction;
+    bool ancestral_aware;
     bool online_bool;
     double start_position;
 

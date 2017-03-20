@@ -145,7 +145,7 @@ void ParticleContainer::update_data_status_at_leaf_nodes( const vector<int>& dat
 /*! \brief Update particle weight according to the haplotype or genotype data
  *      @ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips ){
+void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware ){
 
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
@@ -157,7 +157,7 @@ void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips 
         do {
 
             particles[particle_i]->include_haplotypes_at_tips( haplotype_at_tips );
-            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( );
+            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware );
 
         } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
 
@@ -173,7 +173,7 @@ void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips 
 /*! \brief Resampling step
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
-void ParticleContainer::resample(int update_to, const PfParam &pfparam)
+int ParticleContainer::resample(int update_to, const PfParam &pfparam)
 {
     double Num_of_states = particles.size();
     valarray<double> partial_sums( Num_of_states + 1 );
@@ -199,6 +199,17 @@ void ParticleContainer::resample(int update_to, const PfParam &pfparam)
         valarray<int> sample_count( Num_of_states );
         systematic_resampling( partial_sums, sample_count, Num_of_states );
         implement_resampling( sample_count, wi_sum);
+        return 1;
+    } else {
+        // The sampling procedure will flush old recombinations, but this won't happen in the absence of data.
+        // Ensure that even in the absence of data, old recombinations do not build up and cause memory overflows
+        bool flush = particles[0]->segment_count() > 50;
+        if (flush) {
+            for (size_t state_index = 0; state_index < particles.size(); state_index++) {
+                particles[state_index]->flushOldRecombinations();
+            }
+        }
+        return 0;
     }
 }
 
@@ -306,7 +317,7 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( Segment * Segfile ) {
+void ParticleContainer::update_state_to_data( Segment * Segfile, bool ancestral_aware ) {
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
@@ -321,10 +332,14 @@ void ParticleContainer::update_state_to_data( Segment * Segfile ) {
     dout << " Update state weight at a SNP "<<endl;
     if (Segfile->segment_state() == SEGMENT_INVARIANT) {
         // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
-        // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
-        //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
-        //  missing data and therefore also does not end with a mutation).
-        update_weight_at_site( Segfile->allelic_state_at_Segment_end );
+        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
+        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
+        // for a mutation in a MISSING segment.
+        update_weight_at_site( Segfile->allelic_state_at_Segment_end, ancestral_aware );
+
+        // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
+        //   position. This would replace the blanket ancestral_aware with a Segfile->ancestral_aware.
+        //   We could also include a likelihood of 0 being ancestral.
     }
 
     dout << "Extended until " << particles[0]->current_base() <<endl;
