@@ -358,10 +358,11 @@ void ParticleContainer::update_state_to_data( double mutation_rate, double loci_
     dout << " Update state weight at a SNP "<<endl;
     if (Segfile->segment_state() == SEGMENT_INVARIANT) {
         // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
-        // Do not do this for an INVARIANT_PARTIAL segment (which is part of an INVARIANT segment,
-        //  and therefore does not end with a mutation), nor for a MISSING segment (which represents
-        //  missing data and therefore also does not end with a mutation).
+        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
+        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
+        // for a mutation in a MISSING segment.
         this->update_weight_at_site( mutation_rate, Segfile->allelic_state_at_Segment_end, ancestral_aware );
+
         // Consider adding a column to the segfile which specifies if the ancestral allele is known for this
         //   position. This would replace the blanket ancestral_aware with a Segfile->ancestral_aware.
         //   We could also include a likelihood of 0 being ancestral.

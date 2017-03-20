@@ -15,17 +15,18 @@ class TestConstPopSize(TestGeneric):
         TestGeneric.setUp(self, "testdata/constpopsize")
         self.seqlen = 1e7
         self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
-                                          population_sizes = [1, 1, 1, 1, 1],
+                                          population_sizes = [1, 1, 1, 1, 1, 1],
                                           scrmpath=self.scrmpath )
         
         # set default inference parameters
         self.em = 4
         self.np = 100
         self.seed = (1,)
+        self.debug = True
 
         # set targets
         self.targets = []
-        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':5e-9})
+        self.targets.append({'type':"Recomb", 'min':1e-9, 'max':1e-8, 'truth':1e-8})
         for idx in range(17):
             self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':0, 'max':100000, 'truth':10000})
         self.max_out_of_range = -1
@@ -52,7 +53,7 @@ class TestConstPopSize_ThreeEpochs(TestConstPopSize):
         self.seed = (1,)
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':2e-9, 'max':7e-8, 'truth':5e-9},
+        self.targets = [{'type':"Recomb", 'min':2e-9, 'max':7e-8, 'truth':1e-8},
                         {'type':"Coal", 'pop':0, 'epoch':0, 'min':0,     'max':100000, 'truth':10000},
                         {'type':"Coal", 'pop':0, 'epoch':1, 'min':0,     'max':100000, 'truth':10000},
                         {'type':"Coal", 'pop':0, 'epoch':2, 'min':0,     'max':100000, 'truth':10000},]
@@ -79,9 +80,10 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.em = 4
         self.np = 100
         self.seed = (1,)
+        self.debug = True
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':5.62e-9, 'max':5.96e-8, 'truth':5e-9},
+        self.targets = [{'type':"Recomb", 'min':5.62e-9, 'max':5.96e-8, 'truth':1e-8},
                         {'type':"Coal", 'pop':0, 'epoch':0, 'min':4287,  'max':84767, 'truth':10000},
                         {'type':"Coal", 'pop':0, 'epoch':1, 'min':15060, 'max':21934, 'truth':10000},  # it's worrying that the current version does not contain truth
                         {'type':"Coal", 'pop':0, 'epoch':2, 'min':10506, 'max':11696, 'truth':10000},  # it's worrying that the current version does not contain truth
