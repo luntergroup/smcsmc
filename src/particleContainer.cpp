@@ -64,6 +64,19 @@ ParticleContainer::ParticleContainer(Model* model,
     }
 }
 
+void ParticleContainer::print_recent_recombination_histogram() {
+    vector<int> hist( 1 );
+    cout << "======= Recent recombination count histogram: =========" << endl;
+    for (size_t i=0; i<particles.size(); i++) {
+        size_t count = particles[i]->recent_recombination_count;
+        if (count >= hist.size()) hist.resize(count+1);
+        hist[count]++;
+    }
+    for (size_t i=0; i<hist.size(); i++) {
+        cout << i << "\t" << hist[i] << endl;
+    }
+}
+
 
 /*!
  * @ingroup group_pf_update

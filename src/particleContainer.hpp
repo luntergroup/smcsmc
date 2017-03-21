@@ -71,6 +71,7 @@ class ParticleContainer {
         void print();
         bool check_state_orders();
         void print_particle_newick();
+        void print_recent_recombination_histogram();
 
     private:
         //

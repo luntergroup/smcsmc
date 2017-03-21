@@ -194,10 +194,14 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
+    double first_coalescence_height_;
     bool owning_model_and_random_generator;
     const vector < int >& record_event_in_epoch;
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
     double total_delayed_adjustment_;
+
+    // DEBUG
+    int recent_recombination_count;
     
 };
 #endif

@@ -35,7 +35,8 @@ ForestState::ForestState( Model* model,
                           const vector<int>& record_event_in_epoch,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
-              record_event_in_epoch(record_event_in_epoch) {
+              record_event_in_epoch(record_event_in_epoch),
+              recent_recombination_count(0) {
 
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     setPosteriorWeight( 1.0 );
@@ -57,7 +58,8 @@ ForestState::ForestState( Model* model,
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
-             record_event_in_epoch( copied_state.record_event_in_epoch ) {
+             record_event_in_epoch( copied_state.record_event_in_epoch ),
+             recent_recombination_count( copied_state.recent_recombination_count) {
 
     setPosteriorWeight( copied_state.posteriorWeight() );
     setPilotWeight( copied_state.pilotWeight() );
@@ -172,17 +174,19 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
-            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
-            start_base = this->current_base();
-            int weight = ti.contemporaries_->size( active_node(i)->population() );
             // consider normal (not pairwise) coalescences that occurred on this node
             bool coal_event = (tmp_event_.isCoalescence() && tmp_event_.active_node_nr() == i);
-            bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
+            int weight = 0;
             // account for potential pairwise coalescence opportunity and event
             if (i==0 && states_[1]==1 && active_node(0)->population() == active_node(1)->population()) {
-                weight += 1;
+                weight = 1;
                 coal_event |= tmp_event_.isPwCoalescence();
             }
+            if (first_coalescence_height_ < 0.0 && coal_event) first_coalescence_height_ = end_height;
+            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
+            start_base = this->current_base();
+            weight += ti.contemporaries_->size( active_node(i)->population() );
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
             void* event_mem = Arena::allocate( start_height_epoch );
             EvolutionaryEvent* migrcoal_event = new(event_mem) EvolutionaryEvent(start_height, start_height_epoch,
@@ -457,14 +461,28 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
          */
         if ( updated_to < extend_to ) {
             // a recombination has occurred (or the recombination rate has changed)
-            double rec_height = this->sampleNextGenealogy( recordEvents );
-            this->sampleRecSeqPosition();
+            first_coalescence_height_ = -1.0;
+            double importance_weight = this->sampleNextGenealogy( recordEvents );
+            double rec_height = rec_point.height();
 
+            if (importance_weight >= 0.0) {
+                // implement importance weight, with appropriate delay
+                size_t indx = 0;
+                if (first_coalescence_height_ < 0.0) throw std::runtime_error("No coalescent found where one was expected");
+                while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= first_coalescence_height_)
+                    indx++;
+                double delay = model().application_delays[indx];
+    
+                // enter the importance weight
+                adjustWeightsWithDelay( importance_weight, delay );
+            }
+            
+            this->sampleRecSeqPosition();
+            
             if (recordEvents) {
                 this->record_Recombevent_b4_extension();
-                if (rec_height > 0.0) {
-                    // actual recombination -- record it
-                    this->record_Recombevent_atNewGenealogy(rec_height);
+                if (importance_weight >= 0.0) {
+                    this->record_Recombevent_atNewGenealogy(rec_height);    // actual recombination -- record it
                 }
             }
         }
@@ -523,15 +541,12 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
     
     // loop over time sections present in branch and add the weighted length
     double weighted_branch_length = 0;
-    size_t time_idx = 0;
-    double lower_end, upper_end;
-    do {
-        lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+    for (size_t time_idx = 0 ; ; ++time_idx) {
+        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
         weighted_branch_length += model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
-        ++time_idx;
-    } while ( upper_end < node->parent_height() );
-
+        if (upper_end >= node->parent_height()) break;
+    }
     return weighted_branch_length;
 }
 
@@ -610,18 +625,8 @@ double ForestState::samplePoint() {
     double target_density = 1.0 / getLocalTreeLength();
     double importance_weight = target_density / sampled_density;
 
-    // find appropriate delay
-    size_t indx = 0;
-    while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= rec_point.height())
-        indx++;
-    double delay = model().application_delays[indx];
-    
-    // enter the importance weight
-    adjustWeightsWithDelay( importance_weight, delay );
-
-    // done
-    // TODO: handle entering of importance weight in caller (sampleNextGenealogy), rather than here
-    return 1.0;
+    // done -- importance weight (and delay) are implemented in extend_ARG, via sampleNextGenealogy (scrm/forest.cc)
+    return importance_weight;
 }
 
 
@@ -633,6 +638,7 @@ double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left
         assert( node->local() );
         double sampled_height = sampleHeightOnWeightedBranch( node, length_left, &bias_ratio);
         rec_point = TreePoint(node, sampled_height, false);
+        if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1]) recent_recombination_count++;  // DEBUG
         length_left = 0;
         return bias_ratio;
     }
@@ -643,11 +649,8 @@ double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left
         if (length_left == 0)
             return bias_ratio;
     }
-    if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
-        // enter second_child() recursively; always return
-        bias_ratio = sampleBiasedPoint_recursive( node->second_child(), length_left);
-    }
-    return bias_ratio;
+    assert( node->second_child() && node->second_child()->samples_below() > 0 )
+    return sampleBiasedPoint_recursive( node->second_child(), length_left);
 }
 
 
