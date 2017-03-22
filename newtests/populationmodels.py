@@ -271,26 +271,23 @@ class Population:
         row = "{pos}\t{distance}\tT\tF\t1\t{genotype}\n"
 
         positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
-        positions.append( int(self.sequence_length) )
+        positions = [1] + positions
 
-        outfile.write( row.format( pos=1, distance = positions[0]-1, genotype = "." * len(data) ) )
-        if phased:
-            for idx in range(len(positions) - 1):
-                outfile.write( row.format( pos = positions[idx],
-                                           distance = positions[idx+1] - positions[idx],
-                                           genotype = ''.join( [sequence[idx] for sequence in data] ) ) )
-        else:
-            for idx in range(len(positions) - 1):
-                alleles_list = [sequence[idx] for sequence in data]
+        for idx in range(len(positions) - 1):
+            alleles_list = [sequence[idx] for sequence in data]
+            if not phased:
                 for haplotype_idx in range( len(alleles_list)/2 ):
                     if alleles_list[haplotype_idx*2] != alleles_list[haplotype_idx*2+1]:
                         alleles_list[haplotype_idx*2  ] = "/"
                         alleles_list[haplotype_idx*2+1] = "/"
-                alleles = ''.join( alleles_list )
-                outfile.write( row.format( pos = positions[idx],
-                                           distance = positions[idx+1] - positions[idx],
-                                           genotype = alleles ) )
+            outfile.write( row.format( pos = positions[idx],
+                                       distance = positions[idx+1] - positions[idx],
+                                       genotype = ''.join(alleles_list) ) )
 
+        outfile.write( row.format( pos=positions[-1],
+                                   distance = int(self.sequence_length - positions[-1] + 0.5),
+                                   genotype = "." * len(data) ) )
+            
         outfile.close()
 
 
