@@ -100,7 +100,7 @@ class TestConstPopSize_MissingData(TestConstPopSize):
 
         # identical to TestConstPopSize, except for name, and for running inference without any data
         self.prefix = "testdata/constpopsize_missingdata"
-        self.missing = [0,1]
+        self.missing_leaves = [0,1]
 
 
 
@@ -111,7 +111,7 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
 
         # identical to TestConstPopSize, except for name, and for running inference without any data
         self.prefix = "testdata/constpopsize_4epochs_missingdata"
-        self.missing = [0,1]
+        self.missing_leaves = [0,1]
 
 
 
