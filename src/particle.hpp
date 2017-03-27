@@ -75,10 +75,33 @@ struct BranchLengthData {
 class DelayedFactor {
     
 public:
-    DelayedFactor(double pos, double factor) : application_position(pos), importance_factor(factor) {}
-    
+    // single-activation instance
+    DelayedFactor(double pos, double factor) : application_position(pos), importance_factor(factor), delta(0), k(1) {}
+
+    // k-activation instance
+    DelayedFactor(double final_pos, double factor, double cur_pos, int k) : k(k) {
+        if (k < 1) throw std::runtime_error("Cannot have DelayedFactor with k < 1");
+        if (k == 1) {
+            delta = 0; // not used
+            application_position = final_pos;
+            importance_factor = factor;
+        } else {
+            delta = (final_pos-cur_pos) / ((1<<k)-1);
+            application_position = cur_pos + delta;
+            importance_factor = pow(factor, 1.0/k);
+        }
+    }
+    // internal: next activation
+    DelayedFactor( const DelayedFactor& df, bool _ ) : application_position( df.application_position + 2*df.delta ),
+                                                       importance_factor( df.importance_factor ),
+                                                       delta( 2*df.delta ),
+                                                       k( df.k-1 ) {}
+
     double application_position;
     double importance_factor;
+    // for piecewise constant (approximately continuous) application:
+    double delta;
+    int k;
 
     void print_info() const {
         std::clog << "\nThe application position of this DF is " << this->application_position << std::endl;
@@ -150,16 +173,25 @@ private:
         posterior_weight_ *= adjustment;
         pilot_weight_ *= adjustment;
     }
-    void adjustWeightsWithDelay(double adjustment, double delay) {
+    void adjustWeightsWithDelay(double adjustment, double delay, int k=1) {
         posterior_weight_ *= adjustment;
-        total_delayed_adjustment_ *= adjustment;
-        delayed_adjustments.push( DelayedFactor ( current_base() + delay, adjustment ) );
+        if ((adjustment > 0.99 && adjustment < 1.01) || (delay <= 1)) {
+            // don't delay marginal adjustments
+            pilot_weight_ *= adjustment;
+        } else {
+            total_delayed_adjustment_ *= adjustment;
+            delayed_adjustments.push( DelayedFactor ( current_base() + delay, adjustment, current_base(), k ) );
+        }
     }
     void applyDelayedAdjustment() {
-        double importance_factor = delayed_adjustments.top().importance_factor;
+        const DelayedFactor& df = delayed_adjustments.top();
+        pilot_weight_ *= df.importance_factor;
+        total_delayed_adjustment_ /= df.importance_factor;
+        // if necessary, add new, updated adjustment
+        if (df.k > 1) {
+            delayed_adjustments.push( DelayedFactor( df, true ) );
+        }
         delayed_adjustments.pop();
-        total_delayed_adjustment_ /= importance_factor;
-        pilot_weight_ *= importance_factor;
         assert( std::abs(posterior_weight_ - pilot_weight_ * total_delayed_adjustment_) <= .001 * posterior_weight_ );
     }
     

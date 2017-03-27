@@ -472,9 +472,19 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
                 while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= first_coalescence_height_)
                     indx++;
                 double delay = model().application_delays[indx];
-    
-                // enter the importance weight
-                adjustWeightsWithDelay( importance_weight, delay );
+
+                // hack (works for now.  When we bias recombinations based on posteriors, the part of the importance weight due to
+                //       posteriors should always get the appropriate delay)
+                // If the coalescence occurred above top bias height, i.e. the sampling failed to produce an early coalescent as
+                // intended, then apply the importance weight immediately, so that we don't pollute the particles
+                if (model().bias_heights().size() >= 2
+                    && first_coalescence_height_ > model().bias_heights()[ model().bias_heights().size() - 2 ]) {
+                    delay = 1;
+                }
+                
+                // enter the importance weight, and apply it semi-continuously:
+                // in 3 equal factors, at geometric intervals (double each time)
+                adjustWeightsWithDelay( importance_weight, delay, 3 );
             }
             
             this->sampleRecSeqPosition();
