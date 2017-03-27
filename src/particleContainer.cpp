@@ -65,6 +65,7 @@ ParticleContainer::ParticleContainer(Model* model,
 }
 
 void ParticleContainer::print_recent_recombination_histogram() {
+
     vector<int> hist( 1 );
     cout << "======= Recent recombination count histogram: =========" << endl;
     for (size_t i=0; i<particles.size(); i++) {
@@ -75,6 +76,14 @@ void ParticleContainer::print_recent_recombination_histogram() {
     for (size_t i=0; i<hist.size(); i++) {
         cout << i << "\t" << hist[i] << endl;
     }
+
+    double rec_acc = 0, rec_wt = 0;
+    for (size_t i=0; i<particles.size(); i++) {
+        rec_acc += particles[i]->recent_recombination_count * particles[i]->posteriorWeight();
+        rec_wt  += particles[i]->posteriorWeight();
+    }
+    cout << "Posterior mean recent recombination count: " << rec_acc / rec_wt << endl;
+    
 }
 
 

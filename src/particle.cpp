@@ -590,7 +590,7 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
     assert( length_left <= WeightedBranchLengthAbove( node ) );
 
     if (model().bias_heights().size() < 2)
-        return length_left;
+        return node->height() + length_left;
     
     // loop over time sections present in branch and add the weighted length
     size_t time_idx = 0;
@@ -615,10 +615,12 @@ double ForestState::samplePoint() {
     double bias_ratio = 0.0;
     double length_left = random_generator()->sample() * getWeightedLocalTreeLength();
 
-    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )
+    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 ) {
         bias_ratio = sampleBiasedPoint_recursive( local_root()->first_child(), length_left );
-    if ( length_left > 0 )
+    }
+    if ( length_left > 0 ) {
         bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left );
+    }
 
     // compute importance weight
     double sampled_density = bias_ratio / getWeightedLocalTreeLength();
@@ -646,11 +648,12 @@ double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left
     if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
         // enter first_child() recursively, and return if a sample was found
         bias_ratio = sampleBiasedPoint_recursive( node->first_child(), length_left);
-        if (length_left == 0)
-            return bias_ratio;
+        if (length_left == 0) return bias_ratio;
     }
-    assert( node->second_child() && node->second_child()->samples_below() > 0 )
-    return sampleBiasedPoint_recursive( node->second_child(), length_left);
+    if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
+        return sampleBiasedPoint_recursive( node->second_child(), length_left);
+    }
+    return -1;
 }
 
 

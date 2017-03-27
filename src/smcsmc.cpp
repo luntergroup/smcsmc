@@ -309,7 +309,7 @@ void pfARG_core(PfParam &pfARG_para,
 
     clog << "Got to end of sequence; resampled " << total_resample_count << " times" << endl;
 
-    //current_states.print_recent_recombination_histogram();    //DEBUG
+    current_states.print_recent_recombination_histogram();    //DEBUG
     
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
 
