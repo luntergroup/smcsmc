@@ -43,35 +43,6 @@ class TestConstPopSize(TestGeneric):
         self.max_out_of_range = 0
 
 
-"""
-class TestConstPopSize_ThreeEpochs(TestConstPopSize):
-
-    def setUp(self, name = "testdata/constpopsize_3epochs"):
-        TestGeneric.setUp(self, name)
-        self.seqlen = 1e7
-        self.missing_leaves = []
-        self.popt = None                            # don't use epoch pattern for inference
-        self.smcsmc_change_points = [0,1,1.99]         # but rather use three large epochs
-
-        self.pop = populationmodels.Pop2( sequence_length = self.seqlen,
-                                          population_sizes = [1, 1, 1],
-                                          change_points = [0,1,1.99],
-                                          scrmpath=self.scrmpath )
-        
-        # set default inference parameters
-        self.em = 4
-        self.np = 100
-        self.seed = (1,)
-
-        # set targets
-        self.targets = [{'type':"Recomb", 'min':2e-9, 'max':7e-8, 'truth':5e-9},
-                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':0,     'max':100000, 'truth':10000},
-                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':0,     'max':100000, 'truth':10000},
-                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':0,     'max':100000, 'truth':10000},]
-
-        self.max_out_of_range = -1
-"""     
-
 
 class TestConstPopSize_FourEpochs(TestConstPopSize):
 
@@ -153,5 +124,40 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
                         {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9900, 'max': 10100, 'ess':40}]
         self.max_out_of_range = 0   # set to -1 to always fail (and keep intermediate files)
 
+
+class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
+
+    def setUp(self, name = "testdata/constpopsize_4epochs_8samples"):
+        TestConstPopSize_FourEpochs.setUp(self, name)
+
+        # relatively short sequence, so expect biased inferences due to lack of data.  Instead, testing log likelihood
+        # The estimated log likelihood is about -23917 with np=3000 and bias=2.0
+        # The estimated log likelihood is about -23871 with np=6000 and bias=2.0
+        # The true log likelihood may be around -23814 (np=12000 bias=2.0)
+        self.pop.sequence_length = 1e6
+        self.pop.num_samples =  8
+        
+        # set default inference parameters
+        self.em = 0
+        self.np = 3000
+        self.bias_heights = [800]
+        self.bias_strengths = [2,1]
+        self.seed = (2,)
+        self.debug = True
+
+        # set targets
+        self.targets = [{'type':"Recomb", 'min':0.94e-8, 'max':1.06e-8, 'truth':1e-8, 'ess':1.4},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':4000,  'max':18000, 'truth':10000, 'ess':1},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':8500,  'max':11500, 'truth':10000, 'ess':1},
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':1.25},
+                        {'type':"Coal", 'pop':0, 'epoch':3, 'min':9600,  'max':10400, 'truth':10000, 'ess':1.85},
+                        {'type':"LogL", 'min':-23920, 'max':0, 'truth': -23814}]
+
+        self.max_out_of_range = 0
+
+
+
+
+        
 if __name__ == "__main__":
     unittest.main()

@@ -335,7 +335,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->log_counts( pfARG_para );
 
-    clog << " Estimates log likelihood: " << current_states.ln_normalization_factor() << endl;
+    // write log likelihood to out file
+    pfARG_para.appendToOutFile( pfARG_para.EMcounter(), -1, 0, 1e+99, "LogL", -1, -1, 1.0, current_states.ln_normalization_factor(), 1.0 );
+    clog << " Estimated log likelihood: " << current_states.ln_normalization_factor() << endl;
+    
     current_states.clear();
     Segfile->reset_data_to_first_entry();
 

@@ -287,6 +287,15 @@ class TestGeneric(unittest.TestCase):
                     continue
                 print ("  checking migr",from_pop,"->",to_pop,"epoch",result['epoch'],end=" ")
 
+            elif result['type'] == "LogL":
+                estimate = result['rate'][-1]
+                ess = 1.0
+                try:
+                    this_parameter = (item for item in self.targets if item["type"] == "LogL").next()
+                except:
+                    continue
+                print ("  checking log likelihood     ",end=" ")                
+                
             target_min = this_parameter['min']
             target_max = this_parameter['max']
             truth      = this_parameter['truth']
@@ -327,6 +336,8 @@ class TestGeneric(unittest.TestCase):
                                          'from_pop': int(from_pop), 'to_pop': int(to_pop),
                                          'epoch': int(epoch), 'start': float(start),
                                          'end': float(end), 'rate': [float(rate)], 'ess': [float(ess)]} )
+                    elif typ == "LogL":
+                        results.append( {'type': 'LogL', 'rate': [float(rate)] } )
                 else:
                 # append this parameter estimate to the list within the correct dictionary
                 # first extract the correct dictionary, then append it
@@ -351,6 +362,9 @@ class TestGeneric(unittest.TestCase):
                                       item['epoch'] == int(epoch))).next()
                         result['rate'].append( float(rate) )
                         result['ess'].append( float(ess) )
+                    elif typ == "LogL":
+                        result = (item for item in results if item['type'] == "LogL").next()
+                        result['rate'].append( float(rate) )
 
         return results
 
