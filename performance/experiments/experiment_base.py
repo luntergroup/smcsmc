@@ -28,7 +28,7 @@ sys.path.extend( ["../../newtests","../newtests"] )
 # run a single experiment
 def run_experiment_map( pars ):
     return run_experiment( **pars )
-    
+
 
 # check if this experiment has already been run
 def have_result( **kwargs ):
@@ -66,7 +66,7 @@ def remove( experiment_name ):
     ))
     session.commit()
     session.close()
-    
+
 
 #
 # main code.  Requires one function to be defined:
@@ -74,7 +74,7 @@ def remove( experiment_name ):
 # - run_experiment: function that runs an experiment; takes values in parameter dictionary as keyword args
 #
 def main( experiment_name, experiment_pars ):
-    
+
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
     parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
     parser.add_argument('-f', '--force', action='store_true', help='overwrite existing results in db')
@@ -89,7 +89,7 @@ def main( experiment_name, experiment_pars ):
         pool = Pool(processes = args.jobs)
         p = pool.map_async(run_experiment_map, experiment_pars )
         try:
-            results = p.get(100000)
+            results = p.get(200000)
             pool.terminate()
         except KeyboardInterrupt:
             print "Received keyboard interrupt -- stopping"
