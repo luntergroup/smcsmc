@@ -25,8 +25,8 @@ class TestConstPopSize(TestGeneric):
         self.popt = None
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
         self.lag = 2
-        self.em = 4
-        self.np = 200
+        self.em = 0
+        self.np = 1000
         self.debug = True
         self.bias_heights = [400]
         self.bias_strengths = [3,1]
@@ -35,11 +35,11 @@ class TestConstPopSize(TestGeneric):
 
         # set targets
         self.targets = []
-        self.targets.append({'type':"Recomb", 'min':9e-9, 'max':1.1e-8, 'truth':1e-8})
-        for idx in range(5):
-            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9000, 'max':11000, 'truth':10000})
-        self.targets[4]['min'] = 8000
-        self.targets[4]['max'] = 12000
+        self.targets.append({'type':"Recomb", 'min':9.6e-9, 'max':1.04e-8, 'truth':1e-8, 'ess':20})
+        for idx in range(6):
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9600, 'max':10400, 'truth':10000, 'ess':[1,15,40,60,60,35][idx]})
+        self.targets[1]['min'] = 6000
+        self.targets[1]['max'] = 15000
         self.max_out_of_range = 0
 
 
@@ -88,18 +88,21 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
                                           scrmpath=self.scrmpath )
         
         # set default inference parameters
-        self.em = 4
-        self.np = 100
+        self.em = 0
+        self.np = 1000
+        self.bias_heights = [800]
+        self.bias_strengths = [1.5,1]
         self.seed = (1,)
+        self.debug = True
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':5.62e-9, 'max':5.96e-8, 'truth':1e-8},
-                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':4287,  'max':84767, 'truth':10000},
-                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':15060, 'max':21934, 'truth':10000},  # it's worrying that the current version does not contain truth
-                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':10506, 'max':11696, 'truth':10000},  # it's worrying that the current version does not contain truth
-                        {'type':"Coal", 'pop':0, 'epoch':3, 'min':8268,  'max':9136,  'truth':10000}]  # it's worrying that the current version does not contain truth
+        self.targets = [{'type':"Recomb", 'min':0.98e-8, 'max':1.02e-8, 'truth':1e-8, 'ess':15},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'min':4000,  'max':18000, 'truth':10000, 'ess':1},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'min':8500,  'max':11500, 'truth':10000, 'ess':5},
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':20},
+                        {'type':"Coal", 'pop':0, 'epoch':3, 'min':9800,  'max':10200, 'truth':10000, 'ess':30}]
 
-        self.max_out_of_range = -1
+        self.max_out_of_range = 0
 
 
 class TestConstPopSize_MissingData(TestConstPopSize):
@@ -113,15 +116,15 @@ class TestConstPopSize_MissingData(TestConstPopSize):
 
         self.np = 100
         self.em = 0
-        self.seed=(3,)
+        self.seed=(4,)
         
         # set targets
-        self.targets = [{'type':"Recomb", 'truth':1e-8, 'min':0.96e-8, 'max':1.04e-8},
-                        {'type':"Coal", 'pop':0, 'epoch':0, 'truth':10000, 'min': 5000, 'max': 12000},  # not happy with this...
-                        {'type':"Coal", 'pop':0, 'epoch':1, 'truth':10000, 'min': 9800, 'max': 10200},                        
-                        {'type':"Coal", 'pop':0, 'epoch':2, 'truth':10000, 'min': 9800, 'max': 10200},                        
-                        {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9800, 'max': 10200},                        
-                        {'type':"Coal", 'pop':0, 'epoch':4, 'truth':10000, 'min': 9800, 'max': 10200}]
+        self.targets = [{'type':"Recomb", 'truth':1e-8, 'min':0.98e-8, 'max':1.02e-8, 'ess': 45},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'truth':10000, 'min': 6000, 'max': 12000, 'ess': 12},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'truth':10000, 'min': 9800, 'max': 10200, 'ess': 45},
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50},
+                        {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50},
+                        {'type':"Coal", 'pop':0, 'epoch':4, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50}]
         self.max_out_of_range = 0   # set to -1 to always fail (and keep intermediate files)
 
         
@@ -138,7 +141,17 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
 
         self.np = 100
         self.em = 0
+        self.bias_heights = [800]
+        self.bias_strengths = [3,1]
+        self.seed=(4,)
         
+        # set targets
+        self.targets = [{'type':"Recomb", 'truth':1e-8, 'min':0.99e-8, 'max':1.01e-8, 'ess': 30},
+                        {'type':"Coal", 'pop':0, 'epoch':0, 'truth':10000, 'min': 9000, 'max': 11000, 'ess': 6},
+                        {'type':"Coal", 'pop':0, 'epoch':1, 'truth':10000, 'min': 9400, 'max': 10600, 'ess': 20},
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':35},
+                        {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9900, 'max': 10100, 'ess':40}]
+        self.max_out_of_range = 0   # set to -1 to always fail (and keep intermediate files)
 
 if __name__ == "__main__":
     unittest.main()
