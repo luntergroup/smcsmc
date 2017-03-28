@@ -90,6 +90,14 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.max_out_of_range = -1
 
 
+# Setting the initial smcsmc parameters requires a format which is inconsistent with the original pop_sizes format for one population (i.e. [1, 1, 1, 1])
+# Consider cleaning this up?
+class TestConstPopSize_FourEpochs_FalseStart(TestConstPopSize_FourEpochs):
+
+    def setUp(self, name="testdata/constpopsize_4epochs_falsestart"):
+        TestConstPopSize_FourEpochs.setUp(self, name)
+
+        self.smcsmc_initial_pop_sizes = [ [1.2], [1.2], [1.2], [1.2] ]
 
 class TestConstPopSize_MissingData(TestConstPopSize):
 
