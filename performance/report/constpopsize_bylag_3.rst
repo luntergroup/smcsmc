@@ -1,9 +1,9 @@
 .. Test documentation master file, created by
    sphinxreport-quickstart 
 
-**********************************************************
-Dependence of inferred Ne on lag fraction
-**********************************************************
+***********************************************************************
+Dependence of inferred Ne on lag fraction when NOT initialised at truth
+***********************************************************************
 
 Population size inference with variable lag fraction when Ne is not initialised at the truth (see `constpopsize_bylag_experiment.py`).
 
@@ -62,7 +62,7 @@ Here we are comparing lag fractions, using inferred pop size after the first ite
    :tracks: 8s
    :yrange: 9000,17000
 
-
+One EM step is not very informative, let's look at the inference after 30 iterations below
 
 Results for last EM step by Number of samples
 =============================================
@@ -105,4 +105,7 @@ Here we are comparing lag fractions, using inferred pop size after 30 EM iterati
 It is clear that a non-zero lag is necessary.
 As for optimal choice of lag fraction, this seems to vary depending on the number of samples.
 Note we are only using 500 particles without any pilots, so 4 and 8 samples are incredibly challenging.
-Run with more particles?
+I am currently running this analysis with 3k particles.
+
+Note this is the last experiment run with the bug placing the SNP at the beginning of the segment.
+The Np=3k version of this experiment has the fix, but these Np=500 results will need to be redone.

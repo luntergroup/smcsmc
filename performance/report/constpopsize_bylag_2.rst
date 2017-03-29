@@ -17,8 +17,7 @@ epoch is worrying for all choices. Is there a bug in the code? Running with a lo
 for the 2 sample case should help answer this question. If there is a bug, the fact that lag=0
 does not diverge in one EM step indicates the bug is not in the event bookkeeping.
 
-We should do a similar experiment where Ne is not initialised at the true value, to compare the 
-speed of convergence rather than divergence (this is currently running).
+A similar experiment where Ne is not initialised at the true value is reported in the next section.
 
 
 =========
@@ -116,4 +115,4 @@ This should show which lags can recover from a slight move away from the true va
 It is clear that a non-zero lag is necessary.
 As for optimal choice of lag fraction, this seems to vary depending on the number of samples.
 Note we are only using 500 particles without any pilots, so 4 and 8 samples are incredibly challenging.
-Run with more particles?
+I am running the false start version of this experiment with both 500 and 3k particles to address this.

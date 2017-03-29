@@ -11,7 +11,10 @@ Population size inference with variable phasing (see `constpopsize_phasedependen
 Conclusion from the experiment
 ------------------------------
 
+As seen before we get better results when using unphased data. 
+However both cases are diverging from the truth. Bug or 4 samples too challenging for Np?
 
+I don't know why the multiple iterations Np=5k plots are not being generated correctly...
 
 =========
 Overview
