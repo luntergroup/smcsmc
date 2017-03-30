@@ -362,18 +362,18 @@ double ForestState::trackLocalTreeBranchLength() {
 
 
 Node* ForestState::trackLocalNode(Node *node) const {
-  assert( node->local() );
-  if (node->countChildren() == 0) return node;
-  if (node->countChildren() == 1) return trackLocalNode(node->first_child());
-
-  assert( node->countChildren() == 2 );
-  assert( node->first_child()->local() || node->second_child()->local() );
-
-  if ( node->first_child()->local() ) {
-    if (node->second_child()->local()) return node;
-    else return trackLocalNode(node->first_child());
-  }
-  else return trackLocalNode(node->second_child());
+    assert( node->local() );
+    if (node->countChildren() == 0) return node;
+    if (node->countChildren() == 1) return trackLocalNode(node->first_child());
+    
+    assert( node->countChildren() == 2 );
+    assert( node->first_child()->local() || node->second_child()->local() );
+    
+    if ( node->first_child()->local() ) {
+        if (node->second_child()->local()) return node;
+        else return trackLocalNode(node->first_child());
+    }
+    else return trackLocalNode(node->second_child());
 }
 
 
@@ -419,93 +419,126 @@ BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
 }
 
 
+double ForestState::find_delay( double coal_height ) {
+    size_t indx = 0;
+    while (indx+1 < model().change_times().size() &&
+           model().change_times().at(indx+1) <= coal_height )
+        indx++;
+    double delay = model().application_delays[indx];
+    return delay;
+}
+
+
 double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recordEvents ) {
 
     double updated_to = this->site_where_weight_was_updated();
-    assert (updated_to >= this->current_base());
-    // the likelihood of the data along the segment [updated_to, extend_to) given the ARG
-    double likelihood = 1.0;
-    // the ratio of the prob density of the ARG under the transition part
-    // of the pilot distribution, to that under the simulation distribution
-    double imp_weight_simulation_to_pilot_dist = 1.0;
+    double likelihood = 1.0;               // likelihood of data along [updated_to, extend_to) given ARG
+    double importance_weight_cont = 1.0;   // ratio of pilot probability density to true coalescent prior,
+                                           // for the continuous part of the densities (the exp(-rate * opportunity) factor)
 
+    assert (updated_to >= this->current_base());
     while ( updated_to < extend_to ) {
-        /*!
-         * First, update the likelihood up to either extend_to or the end of this state
-         */
-        double update_to = min( extend_to, this->next_base() );
+
+        // First, update the likelihood up to either extend_to or the end of this state
+        double new_updated_to = min( extend_to, this->next_base() );
 
         // Calculate the total tree length of the subtree over leaf nodes that carry data.
         // For leaf nodes that carry no data, there is no evidence for
         // presence or absence of mutations on corresponding branches.
         // These branches do not contribute to localTreeBranchLength
-        double localTreeBranchLength = this->trackLocalTreeBranchLength();
+        likelihood *= exp( -model().mutation_rate() * trackLocalTreeBranchLength() * (new_updated_to - updated_to) );
 
-        double likelihood_of_segment = exp( -model().mutation_rate() * localTreeBranchLength * (update_to - updated_to) );
-        likelihood *= likelihood_of_segment;
-
+        // Update importance sampling correction for the weight of the particle.  This requires some explanation.
+        //
+        // Suppose we're looking at a segment  [0,T)  without recombinations, followed by a recombination at a point y in a
+        // tree Y.  Let mu(Y) be the tree's total branch length, and  rho(y) = rho  the (constant) recombination rate per
+        // generation per nucleotide at the recombination point  y.  The probability density of theis event is then
+        //
+        //   exp( -\int_{t=0}^T \int_{y in Y}  rho(y) dt dy ) * rho(y) dt dy  =  exp( -rho T mu(Y) ) * rho dt dy
+        //
+        // Now suppose we sample from a different process where  rho'(y)  is not constant across the tree  Y  but depends on  y.
+        // The imporance weight for bringing a sample from that density to the desired probability density above, is the ratio
+        // of the two densities:
+        //
+        //   exp( -int_{t=0}^T \int_{y in Y}  (rho(y) - rho'(y)) dt dy ) * (rho(y) / rho'(y))
+        //
+        // We implemented  rho'(y)  as the normal recombination process with rate  rho  but occurring on a "weighted" tree, so
+        // that the weighted tree length is  mu'(Y) = \int_{y in Y} w(y) dy,  where the weight  w(y)  depends only on the height
+        // in the tree.  Another view is that the new recombination rate  rho'(y) = w(y) rho.  Using this notation, the importance
+        // weight becomes
+        //
+        //   IW = exp( -T (mu(Y) - mu'(Y)) / w(y)
+        //
+        // The first factor is implemented by extend_ARG, and applied immediately to the particle.  This factor tends not to depend
+        // strongly on the location of  y.  However, we bias towards recent recombinations, and for those  w(y)  tends to be large,
+        // so  IW  tends to be small.  In order not to immediately "undo" (through sampling) the effect of biasing towards recent
+        // recombinations, the factors  1/w(y)  are applied with a delay.  These factors are calculated by the function
+        //  SampleNextGenealogy,  which amonst others samples a point  y  on the current tree.
+        //
         if(model().biased_sampling) {
-            // Update importance sampling correction for the weight of the particle.
-            // Positional importance factors are stored in importance_weight_predata and applied to
-            // the particle weight with the likelihood at the end of extend_ARG().
-
-            bool sampled_recombination = ((update_to < extend_to) && (update_to > model().getCurrentSequencePosition() ));
-            imp_weight_simulation_to_pilot_dist *=
-                imp_weight_simulation_to_pilot_dist_over_segment( updated_to, update_to, sampled_recombination );
+            importance_weight_cont *= importance_weight_over_segment( updated_to, new_updated_to );
         }
 
-        updated_to = update_to;                // rescues the invariant
+        // Rescue the invariant
+        updated_to = new_updated_to;                
 
-        /*!
-         * Next, if we haven't reached extend_to now, add a new state and iterate
-         */
+        // Next, if we haven't reached extend_to now, sample a new genealogy, and a new recombination point
         if ( updated_to < extend_to ) {
-            // a recombination has occurred (or the recombination rate has changed)
+
+            // a recombination has occurred, or the recombination rate has changed;  sampleNextGenealogy deals with both.
             first_coalescence_height_ = -1.0;
             double importance_weight = this->sampleNextGenealogy( recordEvents );
-            double rec_height = rec_point.height();
 
             if (importance_weight >= 0.0) {
-                // implement importance weight, with appropriate delay
-                size_t indx = 0;
-                if (first_coalescence_height_ < 0.0) throw std::runtime_error("No coalescent found where one was expected");
-                while (indx+1 < model().change_times().size() && model().change_times().at(indx+1) <= first_coalescence_height_)
-                    indx++;
-                double delay = model().application_delays[indx];
+                // a recombination has occurred. Implement importance weight, with appropriate delay
 
-                // hack (works for now.  When we bias recombinations based on posteriors, the part of the importance weight due to
-                //       posteriors should always get the appropriate delay)
+                if (first_coalescence_height_ == -1.0) throw std::runtime_error("No coalescent found where one was expected");
+                double delay = find_delay( first_coalescence_height_ );
+
+                // Hack.
                 // If the coalescence occurred above top bias height, i.e. the sampling failed to produce an early coalescent as
                 // intended, then apply the importance weight immediately, so that we don't pollute the particles
+                // (Works for now: when we bias recombinations based on posteriors, the part of the importance weight due to
+                //  posteriors should always get the appropriate delay.)
+                /*
                 if (model().bias_heights().size() >= 2
                     && first_coalescence_height_ > model().bias_heights()[ model().bias_heights().size() - 2 ]) {
                     delay = 1;
                 }
+                */
                 
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
+                // (See implementation in particle.hpp: void applyDelayedAdjustment(), and class DelayedFactor)
                 adjustWeightsWithDelay( importance_weight, delay, 3 );
             }
-            
+
+            // sample a new recombination position (this calls the virtual overloaded sampleNextBase())
+            // Note: it returns an importance "rate", which is ignored; see comments in sampleNextBase below.
             this->sampleRecSeqPosition();
             
             if (recordEvents) {
-                this->record_Recombevent_b4_extension();
+                
+                record_Recombevent_b4_extension();
                 if (importance_weight >= 0.0) {
-                    this->record_Recombevent_atNewGenealogy(rec_height);    // actual recombination -- record it
+
+                    // actual recombination (the one at the current position, not the one we may have just sampled) -- record it
+                    // TODO:  HMMMMM, shouldn't these refer to the position we just sampled?  But then the importance_weight check
+                    // is not correct, right?  Need to look into this...
+                    record_Recombevent_atNewGenealogy( rec_point.height() );
+
                 }
             }
         }
 
-        this->set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
+        set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
 
     }
-    assert (updated_to == extend_to);
     if (updateWeight) {
-        // update weights for extension of ARG
-        this->adjustWeights( likelihood * imp_weight_simulation_to_pilot_dist );
 
-        // update weights for application positions passed during extension
+        adjustWeights( likelihood * importance_weight_cont );
+
+        // apply weights that we passed during the extension above
         while ( !delayed_adjustments.empty()
                 && delayed_adjustments.top().application_position < extend_to ) {
                 
@@ -620,6 +653,72 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
 }
 
 
+//
+//
+// The actual functions doing the sampling, and calculating of importance weights, are below:
+//
+//
+
+
+
+/**
+ * Function for adjusting the importance weight predata across a segment
+ *
+ * Note: this function must reflect what happens in sampleNextBase
+ */
+double ForestState::importance_weight_over_segment( double previously_updated_to, double update_to) {
+
+    double sequence_distance = update_to - previously_updated_to;
+    double true_recombination_rate = model().recombination_rate();
+    double target_density = std::exp( -sequence_distance * true_recombination_rate * getLocalTreeLength() );
+    double sampled_density = std::exp( -sequence_distance * true_recombination_rate * getWeightedLocalTreeLength() );
+    double importance_weight = target_density / sampled_density;
+    return importance_weight;
+}
+
+
+/**
+ * Function for sampling the sequence position of the next recombination event
+ * under a biased sampling procedure.
+ *
+ * \return the importance 'rate' needed to compute importance weight exp(-rate L) correcting for biased sampling.
+ *
+ * Note: the function samplePoint()
+ *
+ */
+double ForestState::sampleNextBase() {
+
+    double distance_until_rate_change         = model().getNextSequencePosition() - current_base();
+    double weighted_pernuc_recombination_rate = model().recombination_rate() * getWeightedLocalTreeLength();
+    double target_pernuc_recombination_rate   = model().recombination_rate() * getLocalTreeLength();
+    double importance_rate_per_nuc            = target_pernuc_recombination_rate - weighted_pernuc_recombination_rate;
+
+    double length = random_generator()->sampleExpoLimit(weighted_pernuc_recombination_rate,
+                                                        distance_until_rate_change);
+    if (length == -1) {
+        
+        // No recombination until the model changes
+        set_next_base(model().getNextSequencePosition());
+        if (next_base() < model().loci_length()) {
+            writable_model()->increaseSequencePosition();
+        }
+
+    } else {
+        
+        // A recombination occurred in the sequence segment
+        set_next_base(current_base() + length);
+
+    }
+    assert(next_base() > current_base());
+    assert(next_base() <= model().loci_length());
+
+    // return the importance weight "rate".  It would be neat to use this, as we then avoid any dependencies with the
+    // sampler in importance_weight_over_segment.  However it would require us to store this value until we need it,
+    // which introduces statefulness, trading badness for badness.  As the dependency is with a function
+    return importance_rate_per_nuc;
+}
+
+
 double ForestState::samplePoint() {
 
     double bias_ratio = 0.0;
@@ -632,9 +731,12 @@ double ForestState::samplePoint() {
         bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left );
     }
 
-    // compute importance weight
-    double sampled_density = bias_ratio / getWeightedLocalTreeLength();
-    double target_density = 1.0 / getLocalTreeLength();
+    // compute importance weight.  Note -- this returns the ratio of densities of sampling the
+    // recombination point (x,y) where  x  is the sequence position and  y  the point on the tree;
+    // not the ratio of conditional densities to sample  y  given  x  (although that is the density
+    // this function samples from)
+    double sampled_density = bias_ratio;
+    double target_density = 1.0;
     double importance_weight = target_density / sampled_density;
 
     // done -- importance weight (and delay) are implemented in extend_ARG, via sampleNextGenealogy (scrm/forest.cc)
@@ -665,93 +767,3 @@ double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left
     }
     return -1;
 }
-
-
-
-/**
- * Function for adjusting the importance weight predata to account for the probability of hitting
- *  a recombination at this sequence position
- *
- * Note: This assumes any change in the recombination rate is imposed in our sampler
- *       and not part of the transition distribution. We should add a feature for a
- *       known recombination map; we'll need to compare inferred_model and proposal_model for this
- */
-double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to,
-                                                                      double update_to, bool sampled_recombination) {
-    double sequence_distance_without_rec = update_to - previously_updated_to;
-    double transition_prob, proposal_prob;
-    if (!sampled_recombination) {
-        // We have NOT sampled a recombination at this position
-        transition_prob = compute_positional_component_of_transitional_prob_of_no_recombination( sequence_distance_without_rec );
-        proposal_prob = compute_positional_component_of_proposal_prob_of_no_recombination( sequence_distance_without_rec );
-    } else {
-        // We have sampled a recombination at this position
-        transition_prob = compute_positional_component_of_transitional_prob_of_recombination( sequence_distance_without_rec );
-        proposal_prob = compute_positional_component_of_proposal_prob_of_recombination( sequence_distance_without_rec );
-    }
-    return transition_prob / proposal_prob;
-}
-
-double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ){
-    /// !!Temporarily set true recombination rate here, need to decide which class should own this
-    // Should create an inferred_model to refer to
-    double true_recombination_rate = model().recombination_rate();
-    ///
-    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
-}
-
-double ForestState::compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec ) {
-    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
-}
-
-double ForestState::compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec ) {
-    /// !!Temporarily set true recombination rate here, need to decide which class should own this
-    // Should create an inferred_model to refer to
-    double true_recombination_rate = model().recombination_rate();
-    ///
-    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
-                                 ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );
-}
-
-double ForestState::compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec ) {
-    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
-                                 ( 1 - std::exp( - model().recombination_rate() * getWeightedLocalTreeLength() ) );
-}
-
-
-/**
- * Function for sampling the sequence position of the next recombination event
- * under a biased sampling procedure.
- *
- * \return the importance 'rate' needed to compute importance weight exp(-rate L) correcting for biased sampling.
- *
- */
-double ForestState::sampleNextBase() {
-
-    double distance_until_rate_change = model().getNextSequencePosition() - current_base();
-    double weighted_pernuc_recombination_rate = model().recombination_rate() * getWeightedLocalTreeLength();
-    double target_pernuc_recombination_rate = model().recombination_rate() * getLocalTreeLength();
-    double importance_rate_per_nuc = target_pernuc_recombination_rate - weighted_pernuc_recombination_rate;
-    double length = random_generator()->sampleExpoLimit(weighted_pernuc_recombination_rate,
-                                                        distance_until_rate_change);
-    if (length == -1) {
-        
-        // No recombination until the model changes
-        set_next_base(model().getNextSequencePosition());
-        if (next_base() < model().loci_length()) {
-            writable_model()->increaseSequencePosition();
-        }
-
-    } else {
-        
-        // A recombination occurred in the sequence segment
-        set_next_base(current_base() + length);
-
-    }
-    assert(next_base() > current_base());
-    assert(next_base() <= model().loci_length());
-
-    return importance_rate_per_nuc;
-}
-
-

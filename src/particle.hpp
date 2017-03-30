@@ -196,13 +196,9 @@ private:
     }
     
     //// biased sampling    
-    double imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to, double update_to,
-                                                             bool sampled_recombination);
-    
-    double compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec );
-    double compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec );
+    double importance_weight_over_segment( double previously_updated_to, double update_to );
+
+    double find_delay( double coal_height );
     
     double sampleHeightOnWeightedBranch( Node* node, double length_left, double* bias_ratio) const;
     double sampleBiasedPoint_recursive( Node* node, double& length_left );
