@@ -155,10 +155,9 @@ private:
     double extend_ARG ( double extend_to, bool updateWeight=true, bool recordEvents=true );
     
     // Record events
-    void record_Recombevent_b4_extension ( );
-    void record_Recombevent_atNewGenealogy ( double event_height );
-    void record_all_event(TimeIntervalIterator const &ti, double & recomb_opp_x_within_scrm);
-    void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
+    void record_recomb_extension ( );
+    void record_recomb_event( double event_height );
+    void record_all_event(TimeIntervalIterator const &ti);
     
     // Setters and getters:
     void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }

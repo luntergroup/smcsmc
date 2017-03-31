@@ -129,9 +129,8 @@ void ForestState::clear_eventContainer() {
 }
 
 
-void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recomb_opp_x_within_scrm) {
+void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
-    double recomb_opp_x_within_smcsmc = 0; // DEBUG
     double start_base, end_base;
     double start_height, end_height;
     size_t start_height_epoch, end_height_epoch;
@@ -170,7 +169,6 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
             }
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
-            recomb_opp_x_within_smcsmc += end_base - start_base;
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -206,7 +204,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
 }
 
 
-void ForestState::record_Recombevent_b4_extension (){
+void ForestState::record_recomb_extension (){
 
     // iterate over time intervals (but do NOT prune branches at this stage)
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
@@ -256,7 +254,7 @@ void ForestState::resample_recombination_position(void) {
 }
 
 
-void ForestState::record_Recombevent_atNewGenealogy ( double event_height )
+void ForestState::record_recomb_event( double event_height )
 {
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->writable_model()->current_time_idx_;
@@ -500,12 +498,10 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
                 // intended, then apply the importance weight immediately, so that we don't pollute the particles
                 // (Works for now: when we bias recombinations based on posteriors, the part of the importance weight due to
                 //  posteriors should always get the appropriate delay.)
-                /*
                 if (model().bias_heights().size() >= 2
                     && first_coalescence_height_ > model().bias_heights()[ model().bias_heights().size() - 2 ]) {
                     delay = 1;
                 }
-                */
                 
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
@@ -519,13 +515,13 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
             
             if (recordEvents) {
                 
-                record_Recombevent_b4_extension();
+                record_recomb_extension();
                 if (importance_weight >= 0.0) {
 
                     // actual recombination (the one at the current position, not the one we may have just sampled) -- record it
                     // TODO:  HMMMMM, shouldn't these refer to the position we just sampled?  But then the importance_weight check
                     // is not correct, right?  Need to look into this...
-                    record_Recombevent_atNewGenealogy( rec_point.height() );
+                    record_recomb_event( rec_point.height() );
 
                 }
             }

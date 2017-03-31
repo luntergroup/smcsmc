@@ -48,6 +48,7 @@ ParticleContainer::ParticleContainer(Model* model,
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
+        new_state->record_recomb_extension();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
         new_state->setPosteriorWeight( 1.0/Num_of_states );
         new_state->setPilotWeight( 1.0/Num_of_states );
