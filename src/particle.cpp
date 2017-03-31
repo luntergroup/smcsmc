@@ -575,7 +575,7 @@ std::string ForestState::newick(Node *node) {
  */
 double ForestState::WeightedBranchLengthAbove( Node* node ) const {
 
-    if (model().bias_heights().size() < 2)
+    if (!model().biased_sampling)
         return node->parent_height() - node->height();
     
     // loop over time sections present in branch and add the weighted length
@@ -598,7 +598,11 @@ double ForestState::WeightedBranchLengthAbove( Node* node ) const {
  * \return the sum of weighted branches
  */
 double ForestState::getWeightedLocalTreeLength() const {
-    return getWeightedLengthBelow( local_root() );
+    if (model().biased_sampling) {
+        return getWeightedLengthBelow( local_root() );
+    } else {
+        return getLocalTreeLength();
+    }
 }
 
 /**
@@ -628,8 +632,10 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
 
     assert( length_left <= WeightedBranchLengthAbove( node ) );
 
-    if (model().bias_heights().size() < 2)
+    if (!(model().biased_sampling)) {
+        *bias_ratio = 1.0;
         return node->height() + length_left;
+    }
     
     // loop over time sections present in branch and add the weighted length
     size_t time_idx = 0;
@@ -666,9 +672,10 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
 
     double sequence_distance = update_to - previously_updated_to;
     double true_recombination_rate = model().recombination_rate();
-    double target_density = std::exp( -sequence_distance * true_recombination_rate * getLocalTreeLength() );
-    double sampled_density = std::exp( -sequence_distance * true_recombination_rate * getWeightedLocalTreeLength() );
-    double importance_weight = target_density / sampled_density;
+    double target_rate = sequence_distance * true_recombination_rate * getLocalTreeLength();
+    double sampled_rate = sequence_distance * true_recombination_rate * getWeightedLocalTreeLength();
+    // return target_density / sampled_density, that is, exp( -target_rate ) / exp( -sampled_rate )
+    double importance_weight = std::exp( sampled_rate - target_rate );
     return importance_weight;
 }
 

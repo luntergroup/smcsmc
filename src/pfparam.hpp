@@ -144,10 +144,16 @@ inline std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs) {
 
 class RecombinationBias {
 public:
-    RecombinationBias() : _true_rate(-1), _num_leaves(-1) {};
+    RecombinationBias() : _true_rate(-1), _num_leaves(-1), _using_posterior_biased_sampling(false) {};
     void set_rate( double rate ) {
         assert( _bias_segments.size() == 0 );
         _true_rate = rate;
+    }
+    double get_true_rate() const {
+        return _true_rate;
+    }
+    bool using_posterior_biased_sampling() const {
+        return _using_posterior_biased_sampling;
     }
     void set_num_leaves( int num_leaves ) {
         assert( _bias_segments.size() == 0 );
@@ -161,7 +167,7 @@ public:
         }
         string header;
         std::getline(in_file, header);
-        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line in recombination guide file");
+        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (first column 'locus') in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
             assert( tmp.get_num_leaves() == _num_leaves );
@@ -176,6 +182,7 @@ public:
         return _bias_segments[idx];
     }
     const void set_model_rates( Model& model ) {
+        assert(_true_rate > 0);
         for (const RecombBiasSegment& rbs : _bias_segments) {
             double mutation_rate = model.mutation_rate();
             if (rbs.get_locus() < model.loci_length()) {
@@ -184,11 +191,13 @@ public:
                 model.setMutationRate( mutation_rate, false, false, rbs.get_locus() );
             }
         }
+        _using_posterior_biased_sampling = true;
     }
 private:
     double _true_rate;
     int _num_leaves;
     vector<RecombBiasSegment> _bias_segments;
+    bool _using_posterior_biased_sampling;
 };
 
 
