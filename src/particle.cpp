@@ -512,13 +512,11 @@ double ForestState::extend_ARG ( double extend_to ) {
             // sample a new recombination position (this calls the virtual overloaded sampleNextBase())
             // Note: it returns an importance "rate", which is ignored; see comments in sampleNextBase below.
             this->sampleRecSeqPosition();
-            
             record_recomb_extension();
+
+            // If this is an extension after an actual recombination, record the recombination event
             if (importance_weight >= 0.0) {
 
-                // actual recombination (the one at the current position, not the one we may have just sampled) -- record it
-                // TODO:  HMMMMM, shouldn't these refer to the position we just sampled?  But then the importance_weight check
-                // is not correct, right?  Need to look into this...
                 record_recomb_event( rec_point.height() );
                 
             }
