@@ -146,12 +146,13 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
         self.debug = True
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':0.94e-8, 'max':1.06e-8, 'truth':1e-8, 'ess':1.4},
+        self.targets = [{'type':"Recomb", 'min':0.85e-8, 'max':1.15e-8, 'truth':1e-8, 'ess':1.3},
                         {'type':"Coal", 'pop':0, 'epoch':0, 'min':4000,  'max':18000, 'truth':10000, 'ess':1},
                         {'type':"Coal", 'pop':0, 'epoch':1, 'min':8500,  'max':11500, 'truth':10000, 'ess':1},
-                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':1.25},
-                        {'type':"Coal", 'pop':0, 'epoch':3, 'min':9600,  'max':10400, 'truth':10000, 'ess':1.85},
-                        {'type':"LogL", 'min':-23920, 'max':0, 'truth': -23814}]
+                        {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':1.1},
+                        {'type':"Coal", 'pop':0, 'epoch':3, 'min':9600,  'max':10400, 'truth':10000, 'ess':1.7},
+                        #{'type':"LogL", 'min':-23920, 'max':0, 'truth': -23814}]
+                        {'type':"LogL", 'min':-26560, 'max':0, 'truth': -23814}]
 
         self.max_out_of_range = 0
 

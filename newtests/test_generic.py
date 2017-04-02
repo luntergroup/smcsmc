@@ -301,7 +301,7 @@ class TestGeneric(unittest.TestCase):
             truth      = this_parameter['truth']
             min_ess    = this_parameter.get('ess',0.0)
 
-            print (" True {:8.3g} Est {:8.3g} Range {:8.3g} - {:8.3g}; ESS {:7.3g} Min {:7.3g}".format(
+            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}".format(
                 truth, estimate, target_min, target_max, ess, min_ess))
             if estimate < target_min or estimate > target_max:
                 print("  ** Out of range! **")

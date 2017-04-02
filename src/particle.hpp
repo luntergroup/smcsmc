@@ -152,7 +152,7 @@ private:
     BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
     
     // Extend
-    double extend_ARG ( double extend_to, bool updateWeight=true, bool recordEvents=true );
+    double extend_ARG ( double extend_to );
     
     // Record events
     void record_recomb_extension ( );

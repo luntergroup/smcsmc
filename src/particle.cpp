@@ -427,7 +427,7 @@ double ForestState::find_delay( double coal_height ) {
 }
 
 
-double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recordEvents ) {
+double ForestState::extend_ARG ( double extend_to ) {
 
     double updated_to = this->site_where_weight_was_updated();
     double likelihood = 1.0;               // likelihood of data along [updated_to, extend_to) given ARG
@@ -485,7 +485,7 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
 
             // a recombination has occurred, or the recombination rate has changed;  sampleNextGenealogy deals with both.
             first_coalescence_height_ = -1.0;
-            double importance_weight = this->sampleNextGenealogy( recordEvents );
+            double importance_weight = this->sampleNextGenealogy( true );
 
             if (importance_weight >= 0.0) {
                 // a recombination has occurred. Implement importance weight, with appropriate delay
@@ -513,36 +513,33 @@ double ForestState::extend_ARG ( double extend_to, bool updateWeight, bool recor
             // Note: it returns an importance "rate", which is ignored; see comments in sampleNextBase below.
             this->sampleRecSeqPosition();
             
-            if (recordEvents) {
+            record_recomb_extension();
+            if (importance_weight >= 0.0) {
+
+                // actual recombination (the one at the current position, not the one we may have just sampled) -- record it
+                // TODO:  HMMMMM, shouldn't these refer to the position we just sampled?  But then the importance_weight check
+                // is not correct, right?  Need to look into this...
+                record_recomb_event( rec_point.height() );
                 
-                record_recomb_extension();
-                if (importance_weight >= 0.0) {
-
-                    // actual recombination (the one at the current position, not the one we may have just sampled) -- record it
-                    // TODO:  HMMMMM, shouldn't these refer to the position we just sampled?  But then the importance_weight check
-                    // is not correct, right?  Need to look into this...
-                    record_recomb_event( rec_point.height() );
-
-                }
             }
         }
 
         set_current_base( updated_to );  // record current position, to enable resampling of recomb. position
 
     }
-    if (updateWeight) {
 
-        adjustWeights( likelihood * importance_weight_cont );
+    adjustWeights( likelihood * importance_weight_cont );
 
-        // apply weights that we passed during the extension above
-        while ( !delayed_adjustments.empty()
-                && delayed_adjustments.top().application_position < extend_to ) {
-                
-            this->applyDelayedAdjustment();
-                
-        }
+    // apply weights that we passed during the extension above
+    while ( !delayed_adjustments.empty()
+            && delayed_adjustments.top().application_position < extend_to ) {
+        
+        this->applyDelayedAdjustment();
+        
     }
+
     this->setSiteWhereWeightWasUpdated( extend_to );
+
     return likelihood;
 }
 
