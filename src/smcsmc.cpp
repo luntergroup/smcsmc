@@ -247,7 +247,7 @@ void pfARG_core(PfParam &pfARG_para,
     dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;    
     Segfile->read_new_line();
     /*! Initial particles */
-    ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch,
+    ParticleContainer current_states(model, rg, &pfARG_para,
                                      Nparticles,
                                      Segfile->segment_start(),
                                      pfARG_para.Segfile->empty_file(),

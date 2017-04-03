@@ -32,10 +32,10 @@
  * */
 ForestState::ForestState( Model* model,
                           RandomGenerator* random_generator,
-                          const vector<int>& record_event_in_epoch,
+                          PfParam* pfparam,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
-              record_event_in_epoch(record_event_in_epoch),
+              pfparam( *pfparam ),
               recent_recombination_count(0) {
 
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
@@ -58,7 +58,7 @@ ForestState::ForestState( Model* model,
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
-             record_event_in_epoch( copied_state.record_event_in_epoch ),
+             pfparam( copied_state.pfparam ),
              recent_recombination_count( copied_state.recent_recombination_count) {
 
     setPosteriorWeight( copied_state.posteriorWeight() );
@@ -153,7 +153,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
         if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
-            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            if (!(pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
@@ -181,7 +181,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 coal_event |= tmp_event_.isPwCoalescence();
             }
             if (first_coalescence_height_ < 0.0 && coal_event) first_coalescence_height_ = end_height;
-            if (!(record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (!(pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
@@ -210,7 +210,7 @@ void ForestState::record_recomb_extension (){
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.contemporaries_->numberOfLocalContemporaries();
-        if (contemporaries > 0 && (record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
+        if (contemporaries > 0 && (pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
             size_t start_height_epoch = ti.forest()->model().current_time_idx_;
@@ -227,12 +227,30 @@ void ForestState::record_recomb_extension (){
 }
 
 
+void ForestState::record_recomb_event( double event_height )
+{
+    this->writable_model()->resetTime( event_height );
+    size_t epoch_i = this->writable_model()->current_time_idx_;
+    if (!(pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
+        return;
+    // find the EvolutionaryEvent to add this event to.
+    EvolutionaryEvent* event = eventTrees[ epoch_i ];
+    while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
+        event = event->parent();
+        assert (event != NULL);
+    }
+    assert (event->start_base() == this->current_base());
+    event->set_recomb_event_time( event_height );
+    event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+}
+
+
 void ForestState::resample_recombination_position(void) {
     // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
     this->resampleNextBase();
-    // then, create private event records, in effect re-doing the work of record_Recombevent_b4_extension
+    // then, create private event records, in effect re-doing the work of record_recomb_event
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
-        if (record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
+        if (pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no (further) recombination opportunity has been recorded
@@ -251,24 +269,6 @@ void ForestState::resample_recombination_position(void) {
             } while ( old_event && old_event->is_recomb() && old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
         }
     }
-}
-
-
-void ForestState::record_recomb_event( double event_height )
-{
-    this->writable_model()->resetTime( event_height );
-    size_t epoch_i = this->writable_model()->current_time_idx_;
-    if (!(record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
-        return;
-    // find the EvolutionaryEvent to add this event to.
-    EvolutionaryEvent* event = eventTrees[ epoch_i ];
-    while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
-        event = event->parent();
-        assert (event != NULL);
-    }
-    assert (event->start_base() == this->current_base());
-    event->set_recomb_event_time( event_height );
-    event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
 }
 
 
@@ -661,7 +661,8 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
 /**
  * Function for adjusting the importance weight predata across a segment
  *
- * Note: this function must reflect what happens in sampleNextBase
+ * This function must reflect the actual sampling algorithm in sampleNextBase
+ * In addition, it accounts for the difference between the posterior xxxxxxxxxxxxx
  */
 double ForestState::importance_weight_over_segment( double previously_updated_to, double update_to) {
 

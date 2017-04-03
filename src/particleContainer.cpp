@@ -28,9 +28,9 @@
  *
  * \ingroup group_pf_init
  */
-ParticleContainer::ParticleContainer(Model* model,
+ParticleContainer::ParticleContainer(Model *model,
                                      MersenneTwister *rg,
-                                     const vector<int>& record_event_in_epoch,
+                                     PfParam *pfparam,
                                      size_t Num_of_states,
                                      double initial_position,
                                      bool emptyFile,
@@ -43,7 +43,7 @@ ParticleContainer::ParticleContainer(Model* model,
     for ( size_t i=0; i < Num_of_states ; i++ ) {
 
         // create a new state, using scrm; scrm always starts at site 0.
-        ForestState* new_state = new ForestState( model, rg, record_event_in_epoch, make_copies_of_model_and_rg );  
+        ForestState* new_state = new ForestState( model, rg, pfparam, make_copies_of_model_and_rg );  
 
         // Initialize members of FroestState (derived class members)
         new_state->init_EventContainers( model );

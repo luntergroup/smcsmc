@@ -45,9 +45,9 @@ class ParticleContainer {
         //
         // Constructors and Destructors
         //
-        ParticleContainer(Model* model,
+        ParticleContainer(Model *model,
                           MersenneTwister *rg,
-                          const vector<int>& record_event_in_epoch,
+                          PfParam *pfparam,
                           size_t Num_of_states,
                           double initial_position,
                           bool emptyFile,

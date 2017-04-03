@@ -24,9 +24,11 @@
 
 #include "forest.h"
 #include "coalevent.hpp"
+#include "pfparam.hpp"
+#include "segdata.hpp"
+
 #include <deque>
 #include <valarray>
-#include "segdata.hpp"
 #include <queue>
 #include <cmath>
 
@@ -51,8 +53,6 @@
 
 extern int new_forest_counter;
 extern int delete_forest_counter;
-extern int recombination_counter; //DEBUG
-extern int recombination_event_called; //DEBUG
 
 struct BranchLengthData {
     BranchLengthData (double partialBranchLength = 0, double subtreeBranchLength = -1)
@@ -131,7 +131,7 @@ class ForestState : public Forest{
     // All members and methods are private
 private:
     // Constructor, called at initial stage //
-    ForestState(Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch,
+    ForestState(Model* model, RandomGenerator* random_generator, PfParam* pfparam,
                 bool own_model_and_random_generator);    /*!< \brief Used to create a ForestState for the first time */
     ForestState(const ForestState &current_state);       /*!< \brief Copy constructor, used when resampling */
 
@@ -221,14 +221,14 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
-    double first_coalescence_height_;
-    bool owning_model_and_random_generator;
-    const vector < int >& record_event_in_epoch;
+    double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
+    PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
-    double total_delayed_adjustment_;
+    bool owning_model_and_random_generator;
 
     // DEBUG
     int recent_recombination_count;
+    double total_delayed_adjustment_;
     
 };
 #endif
