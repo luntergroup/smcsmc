@@ -277,7 +277,7 @@ void PfParam::finalize_scrm_input (  ) {
 
 
 void PfParam::convert_scrm_input (){
-    enum { kMaxArgs = 264 };
+    enum { kMaxArgs = 1024 };
     int scrm_argc = 0;
     char *scrm_argv[kMaxArgs];
     char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
@@ -363,7 +363,7 @@ void PfParam::writeLog(ostream * writeTo){
     this->printVersion(writeTo);
     (*writeTo) << "smcsmc parameters: \n";
 
-    (*writeTo) << "Segment Data file: " 
+    (*writeTo) << "Segment Data file: "
                << (( this->input_SegmentDataFileName.size() == 0 )? "empty" : input_SegmentDataFileName.c_str() ) << "\n";
     (*writeTo) << "Recombination bias file: "
                << (input_RecombinationBiasFileName.size() == 0 ? "None" : input_RecombinationBiasFileName.c_str() ) << "\n";
@@ -500,7 +500,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
     cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
     cout << setw(15)<<"-seg"           << setw(8) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
-    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;    
+    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
     cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
     //cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
