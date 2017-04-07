@@ -57,6 +57,7 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_initial_pop_sizes = None
         self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
+        self.alpha = 0                      # proportion of posterior recombination mixed in; default 0 (none)
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.directed_recomb = False
@@ -79,7 +80,7 @@ class TestGeneric(unittest.TestCase):
     def tearDown(self):
         if self.success and self.prefix != None:
             toplevel = itertools.product( [self.pop.filename],
-                                          ["",".recomb"] )
+                                          ["",".recomb",".seg.scrm"] )
             percase = itertools.product( ["{}_C{}".format(self.pop.filename[:-4], case)
                                           for case in self.cases ],
                                          ['.out','.log','.stdout','.stderr','.recomb.gz'] )
@@ -87,7 +88,10 @@ class TestGeneric(unittest.TestCase):
                 try:
                     os.unlink( prefix + suffix )
                 except OSError:
-                    print ("Warning: file ",prefix + suffix," expected but not found")
+                    #print ("Warning: file ",prefix + suffix," expected but not found")
+                    # ignore non-existent files; smcsmc.py does not produce .log or .recomb.gz files
+                    pass
+            shutil.rmtree( os.path.dirname(self.pop.filename), ignore_errors = True )
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
@@ -123,7 +127,11 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
+        guideopt = "-alpha {}".format( self.alpha ) if self.alpha>0 else ""
 
+        ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
+        ###       specifies the epochs to infer.  That's probably what we want to do anyway,
+        ###       but in that case the test code shouldn't suggest that it supports this!
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
             epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
@@ -139,22 +147,20 @@ class TestGeneric(unittest.TestCase):
             else:
                 # use model epochs for inference
                 epochs = self.pop.change_points
-            #epochopt = " ".join(["-eN {time} 1".format(time=time)
-            #                     for time in epochs])
-            epochopt = ""
+            epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
         if self.infer_recombination:
             recinfopt = ""
         else:
-            recinfopt = "-xr 1-{}".format(num_epochs)
+            recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
         else:
             ancawareopt = ""
 
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -162,6 +168,7 @@ class TestGeneric(unittest.TestCase):
                                      recinf = recinfopt,
                                      np = particlesopt,
                                      em = emopt,
+                                     guide = guideopt,
                                      lag = lagopt,
                                      epochs = epochopt,
                                      seed = seedopt,
@@ -286,12 +293,21 @@ class TestGeneric(unittest.TestCase):
                     continue
                 print ("  checking migr",from_pop,"->",to_pop,"epoch",result['epoch'],end=" ")
 
+            elif result['type'] == "LogL":
+                estimate = result['rate'][-1]
+                ess = 1.0
+                try:
+                    this_parameter = (item for item in self.targets if item["type"] == "LogL").next()
+                except:
+                    continue
+                print ("  checking log likelihood     ",end=" ")                
+                
             target_min = this_parameter['min']
             target_max = this_parameter['max']
             truth      = this_parameter['truth']
             min_ess    = this_parameter.get('ess',0.0)
 
-            print (" True {:8.3g} Est {:8.3g} Range {:8.3g} - {:8.3g}; ESS {:7.3g} Min {:7.3g}".format(
+            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}".format(
                 truth, estimate, target_min, target_max, ess, min_ess))
             if estimate < target_min or estimate > target_max:
                 print("  ** Out of range! **")
@@ -326,6 +342,8 @@ class TestGeneric(unittest.TestCase):
                                          'from_pop': int(from_pop), 'to_pop': int(to_pop),
                                          'epoch': int(epoch), 'start': float(start),
                                          'end': float(end), 'rate': [float(rate)], 'ess': [float(ess)]} )
+                    elif typ == "LogL":
+                        results.append( {'type': 'LogL', 'rate': [float(rate)] } )
                 else:
                 # append this parameter estimate to the list within the correct dictionary
                 # first extract the correct dictionary, then append it
@@ -350,6 +368,9 @@ class TestGeneric(unittest.TestCase):
                                       item['epoch'] == int(epoch))).next()
                         result['rate'].append( float(rate) )
                         result['ess'].append( float(ess) )
+                    elif typ == "LogL":
+                        result = (item for item in results if item['type'] == "LogL").next()
+                        result['rate'].append( float(rate) )
 
         return results
 

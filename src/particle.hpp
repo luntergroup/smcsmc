@@ -172,6 +172,7 @@ class ForestState : public Forest{
         double site_where_weight_was_updated_;
         double posterior_weight_;
         double pilot_weight_;
+        double first_coalescence_height_;
         bool owning_model_and_random_generator;
         const vector < int >& record_event_in_epoch;
 
@@ -179,7 +180,7 @@ class ForestState : public Forest{
         //// biased sampling
 
         double imp_weight_positional_component( double previously_updated_to, double update_to, bool sampled_recombination );
-        void IS_TreePoint_adjustor( const TreePoint & tp );
+        void imp_weight_temporal_component( double recombination_height );
 
         TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
         void sampleBiasedRecSeqPosition(bool recordEvents);
