@@ -159,7 +159,7 @@ class TestGeneric(unittest.TestCase):
         else:
             ancawareopt = ""
 
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide}" \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
