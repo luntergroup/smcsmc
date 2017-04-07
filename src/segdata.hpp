@@ -26,9 +26,10 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <cassert>       // assert
+#include <cassert>      // assert
 #include <stdlib.h>     /* strtol, strtod */
-#include <climits> // INT_MAX
+#include <climits>      // INT_MAX
+#include <cmath>        // ceil
 #include "exception.hpp"
 
 using namespace std;

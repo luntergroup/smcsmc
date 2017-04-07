@@ -477,7 +477,7 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
 
             bool sampled_recombination = ((update_to < extend_to) && (update_to > model().getCurrentSequencePosition() ));
             imp_weight_simulation_to_pilot_dist *=
-                imp_weight_simulation_to_pilot_dist_over_segment( updated_to, update_to, sampled_recombination );
+                imp_weight_positional_component( updated_to, update_to, sampled_recombination );
         }
 
         updated_to = update_to;                // rescues the invariant
@@ -689,52 +689,34 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
 
 
 /**
- * Function for adjusting the importance weight predata to account for the probability of hitting
- *  a recombination at this sequence position
+ * Function for adjusting the importance weight to account for the sequence position of transitions of the ARG.
+ * This returns the positional component of the ratio of the transition prob and proposal prob ( f()/q() ).
+ * The temporal component of f()/q(), which accounts for the placement of recombination on the tree,
+ * is accounted for in IS_TreePoint_adjustor().
  *
  * Note: This assumes any change in the recombination rate is imposed in our sampler
- *       and not part of the transition distribution. We should add a feature for a
- *       known recombination map; we'll need to compare inferred_model and proposal_model for this
+ *       and not part of the transition distribution. We should add a feature for a known
+ *       recombination map; we'll need to compare an inferred_model anf proposal_model for this.
  */
-double ForestState::imp_weight_simulation_to_pilot_dist_over_segment( double previously_updated_to, double update_to, bool sampled_recombination) {
-    double sequence_distance_without_rec = update_to - previously_updated_to;
-    double transition_prob, proposal_prob;
-    if (!sampled_recombination) {
-        // We have NOT sampled a recombination at this position
-        transition_prob = compute_positional_component_of_transitional_prob_of_no_recombination( sequence_distance_without_rec );
-        proposal_prob = compute_positional_component_of_proposal_prob_of_no_recombination( sequence_distance_without_rec );
-    } else {
-        // We have sampled a recombination at this position
-        transition_prob = compute_positional_component_of_transitional_prob_of_recombination( sequence_distance_without_rec );
-        proposal_prob = compute_positional_component_of_proposal_prob_of_recombination( sequence_distance_without_rec );
+double ForestState::imp_weight_positional_component( double previously_updated_to, double update_to, bool sampled_recombination) {
+
+    double sequence_distance_without_rec = floor(update_to) - ceil(previously_updated_to);
+    double true_recombination_rate = model().recombination_rate(); // this will change when positional bias is imposed
+
+    if( !sampled_recombination && abs(update_to-floor(update_to)) > .01 ){
+        throw std::invalid_argument("update_to should be at an integer position, but its floor is different");
     }
-    return transition_prob / proposal_prob;
-}
 
-double ForestState::compute_positional_component_of_transitional_prob_of_no_recombination( double sequence_distance_without_rec ) {
-    /// !!Temporarily set true recombination rate here, need to decide which class should own this
-    // Should create an inferred_model to refer to
-    double true_recombination_rate = model().recombination_rate();
-    ///
-    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() );
-}
+    double transition_prob = std::exp( - sequence_distance_without_rec * true_recombination_rate      * getLocalTreeLength() );
+    double proposal_prob   = std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
 
-double ForestState::compute_positional_component_of_proposal_prob_of_no_recombination( double sequence_distance_without_rec ) {
-    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() );
-}
+    if( sampled_recombination ){
+        // we need to account for sampling a recombination in the interval ( floor(update_to) , ceil(update_to) )
+        transition_prob *= 1 - std::exp( - true_recombination_rate      * getLocalTreeLength() );
+        proposal_prob   *= 1 - std::exp( - model().recombination_rate() * getWeightedLocalTreeLength() );
+    }
 
-double ForestState::compute_positional_component_of_transitional_prob_of_recombination( double sequence_distance_without_rec ) {
-    /// !!Temporarily set true recombination rate here, need to decide which class should own this
-    // Should create an inferred_model to refer to
-    double true_recombination_rate = model().recombination_rate();
-    ///
-    return std::exp( - sequence_distance_without_rec * true_recombination_rate * getLocalTreeLength() ) *
-                                 ( 1 - std::exp( - true_recombination_rate * getLocalTreeLength() ) );
-}
-
-double ForestState::compute_positional_component_of_proposal_prob_of_recombination( double sequence_distance_without_rec ) {
-    return std::exp( - sequence_distance_without_rec * model().recombination_rate() * getWeightedLocalTreeLength() ) *
-                                 ( 1 - std::exp( - model().recombination_rate() * getWeightedLocalTreeLength() ) );
+    return transition_prob / proposal_prob ;
 }
 
 

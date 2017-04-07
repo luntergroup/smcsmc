@@ -95,7 +95,7 @@ void Segment::reset_data_to_first_entry() {
     segment_start_ = data_start_;
     segment_length_ = 0;
     if ( empty_file_ ){
-        segment_length_ = (size_t)seqlen_ / num_of_expected_mutations_ ;
+        segment_length_ = ceil( (size_t)seqlen_ / num_of_expected_mutations_ ) ;
         segment_state_ = SEGMENT_MISSING;
         genetic_break_ = true;
     }
