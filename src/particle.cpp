@@ -186,6 +186,8 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti, double &recom
                 weight += 1;
                 coal_event |= tmp_event_.isPwCoalescence();
             }
+            // note the height of the coalescence for use in delayed importance sampling (imp_weight_temporal_component)
+            if (first_coalescence_height_ < 0.0 && coal_event) first_coalescence_height_ = end_height;
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
             void* event_mem = Arena::allocate( start_height_epoch );
             EvolutionaryEvent* migrcoal_event = new(event_mem) EvolutionaryEvent(start_height, start_height_epoch,
@@ -487,7 +489,12 @@ double ForestState::extend_ARG ( double mutation_rate, double extend_to, bool up
          */
         if ( updated_to < extend_to ) {
             // a recombination has occurred (or the recombination rate has changed)
+            first_coalescence_height_ = -1; // reset so we can be sure this is set correctly in sampleNextGenealogy
             double rec_height = this->sampleNextGenealogy( recordEvents );
+            if ( updated_to > model().getCurrentSequencePosition() && model().biased_sampling ) {
+                // if we are at a recombination, create DelayedFactor to account for the temporal component of the importance weight
+                imp_weight_temporal_component( rec_height );
+            }
             this->sampleRecSeqPosition( recordEvents );
 
             if (recordEvents) {
@@ -692,7 +699,7 @@ double ForestState::WeightedToUnweightedHeightAbove( Node* node, double length_l
  * Function for adjusting the importance weight to account for the sequence position of transitions of the ARG.
  * This returns the positional component of the ratio of the transition prob and proposal prob ( f()/q() ).
  * The temporal component of f()/q(), which accounts for the placement of recombination on the tree,
- * is accounted for in IS_TreePoint_adjustor().
+ * is accounted for in imp_weight_temporal_component().
  *
  * Note: This assumes any change in the recombination rate is imposed in our sampler
  *       and not part of the transition distribution. We should add a feature for a known
@@ -785,9 +792,6 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
   if ( node != this->local_root() ) {
     if ( length_left < WeightedBranchLengthAbove(node) ) {
       assert( node->local() );
-      dout << " before IS_TP the weight is " << this->posteriorWeight() << endl;
-      this->IS_TreePoint_adjustor( TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false) );
-      dout << " Straight after IS_TP the weight is " << this->posteriorWeight() << endl;
       //this is the end of iterating through nodes, so we update here
       return TreePoint(node, WeightedToUnweightedHeightAbove( node, length_left), false);
     }
@@ -821,37 +825,39 @@ TreePoint ForestState::sampleBiasedPoint(Node* node, double length_left) {
  * Function for adjusting the particle weight and the delayed adjustments prioirty queue
  * of weights to be applied to the delayed particle weight at the specified sequence position
  */
-void ForestState::IS_TreePoint_adjustor(const TreePoint & rec_point) {
-
-    // figure out the epoch of the recombination event;
-    // use the top epoch in case the recombination occurred above the top epoch
-    size_t indx = 0;
-    while (indx+1 < model().change_times().size() && rec_point.height() >= model().change_times().at(indx+1) ) {
-        indx++;
-    }
+void ForestState::imp_weight_temporal_component( double recombination_height ) {
 
     // find the bias time section containing the rec point height, in order to use the appropriate bias ratio
     size_t time_section_idx = 0;
-    while( model().bias_heights()[time_section_idx+1] < rec_point.height() ){
+    while( model().bias_heights()[time_section_idx+1] < recombination_height ){
         time_section_idx++;
     }
     assert( time_section_idx <= model().bias_ratios().size() );
 
-    // calculate the importance weight: the ratio of the desired probability density of sampling this time point
-    // ( 1 / localTreeLength ) over the probability density of the actual sampling distribution that
-    // was used ( bias_ratio / weightedLocalTreeLength ).
+    // calculate the temporal component of the importance weight:
+    // the ratio of the desired probability density of sampling this time point, conditional on the tree,
+    // over the probability density of the used sampling distribution
+    // the formula used is a simplification of  [ B_i / B ] / [ r_i B_i / sum( r_j B_j )] where i is the time_section_idx
     double bias_ratio = model().bias_ratios()[ time_section_idx ];
     double importance_weight = getWeightedLocalTreeLength() / ( bias_ratio * getLocalTreeLength() );
 
     // update the particle weight so we have a correctly weighted sample of the target distribution
     setPosteriorWeight( posteriorWeight() * importance_weight );
 
+    // find the epoch of the coalescent for calculating the delay
+    size_t coal_epoch_idx = 0;
+    while (coal_epoch_idx+1 < model().change_times().size() && first_coalescence_height_ >= model().change_times().at(coal_epoch_idx+1) ) {
+        coal_epoch_idx++;
+    }
+
+    if (first_coalescence_height_ == -1.0) throw std::runtime_error("No coalescent found where one was expected");
+
     // delay applying the importance weight to the distribution used for resampling particles, by
     // storing it in the priority queue
     dout << " delayed_adjustments already has " << delayed_adjustments.size() << " elements" << endl;
     delayed_adjustments.push(
         DelayedFactor (
-            current_base() + model().application_delays.at(indx) ,
+            current_base() + model().application_delays.at(coal_epoch_idx) ,
             importance_weight
         )
     );
