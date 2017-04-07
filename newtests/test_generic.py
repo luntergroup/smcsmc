@@ -57,6 +57,7 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_initial_pop_sizes = None
         self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
+        self.alpha = 0                      # proportion of posterior recombination mixed in; default 0 (none)
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.directed_recomb = False
@@ -87,7 +88,9 @@ class TestGeneric(unittest.TestCase):
                 try:
                     os.unlink( prefix + suffix )
                 except OSError:
-                    print ("Warning: file ",prefix + suffix," expected but not found")
+                    #print ("Warning: file ",prefix + suffix," expected but not found")
+                    # ignore non-existent files; smcsmc.py does not produce .log or .recomb.gz files
+                    pass
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
@@ -123,6 +126,7 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
+        guideopt = "-alpha {}".format( self.alpha ) if self.alpha>0 else ""
 
         ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
         ###       specifies the epochs to infer.  That's probably what we want to do anyway,
@@ -148,14 +152,14 @@ class TestGeneric(unittest.TestCase):
         if self.infer_recombination:
             recinfopt = ""
         else:
-            recinfopt = "-xr 1-{}".format(num_epochs)
+            recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
         else:
             ancawareopt = ""
 
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide}" \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -163,6 +167,7 @@ class TestGeneric(unittest.TestCase):
                                      recinf = recinfopt,
                                      np = particlesopt,
                                      em = emopt,
+                                     guide = guideopt,
                                      lag = lagopt,
                                      epochs = epochopt,
                                      seed = seedopt,

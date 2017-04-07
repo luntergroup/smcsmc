@@ -26,6 +26,12 @@
 #include "segdata.hpp"
 #include "exception.hpp"
 
+#include <fstream>
+#include <iostream>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 using namespace std;
 
 #ifndef PFARGPfParam
@@ -160,14 +166,25 @@ public:
         _num_leaves = num_leaves;
     }
     void parse_recomb_bias_file( string filename, int start_pos ) {
-        ifstream in_file( filename.c_str(), std::ifstream::in );
-        if (!in_file.is_open()) {
+
+        boost::iostreams::filtering_istream in_file;
+        ifstream in_raw;
+        if (boost::algorithm::ends_with( filename, ".gz")) {
+            in_raw = ifstream(filename.c_str(), std::ifstream::in | std::ios_base::binary );
+            in_file.push(boost::iostreams::gzip_decompressor());
+        } else {
+            in_raw = ifstream(filename.c_str(), std::ifstream::in );
+        }
+        if (!in_raw.is_open()) {
             cout << "Problem opening file " << filename << endl;
             throw InvalidInput("Recombination guide file could not be opened.");
         }
+        in_file.push(in_raw);
+        //ifstream in_file( filename.c_str(), std::ifstream::in );
         string header;
         std::getline(in_file, header);
-        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (first column 'locus') in recombination guide file");
+        cout << header << endl;
+        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (with columns 'locus', 'size', 'recomb_rate', '1', ...) in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
             assert( tmp.get_num_leaves() == _num_leaves );

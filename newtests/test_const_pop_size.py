@@ -1,7 +1,7 @@
 from __future__ import print_function
-
+from context import populationmodels
 import unittest
-import populationmodels
+import itertools
 from test_generic import TestGeneric
 
 
@@ -9,17 +9,21 @@ from test_generic import TestGeneric
 # Test various basic constant population size scenarios
 #
 
+# NOTE: it seems that a lag of 4 gives more accurate parameter estimates, despite a lower ESS
 
 class TestConstPopSize(TestGeneric):
 
-    def setUp(self):
-        TestGeneric.setUp(self, "testdata/constpopsize")
+    def setUp(self, name="testdata/constpopsize"):
+        TestGeneric.setUp(self, name)
         self.seqlen = 1e7
         self.pop = populationmodels.Population( sequence_length = self.seqlen,
                                                 scrmpath=self.scrmpath,
                                                 change_points = [0, 0.01, 0.25, 0.5, 1, 1.5],
                                                 num_populations = 1,
                                                 population_sizes = [[1], [1], [1], [1], [1], [1]])
+
+        # use python front-end
+        self.smcsmcpath = "../python/smcsmc.py"
         
         # set default inference parameters
         self.popt = None
@@ -37,17 +41,79 @@ class TestConstPopSize(TestGeneric):
         self.targets = []
         self.targets.append({'type':"Recomb", 'min':9.6e-9, 'max':1.04e-8, 'truth':1e-8, 'ess':20})
         for idx in range(6):
-            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9600, 'max':10400, 'truth':10000, 'ess':[1,15,40,60,60,35][idx]})
+            self.targets.append({'type':"Coal", 'pop':0, 'epoch':idx, 'min':9600, 'max':10400,
+                                 'truth':10000, 'ess':[1,15,40,60,60,35][idx]})
         self.targets[1]['min'] = 6000
         self.targets[1]['max'] = 15000
         self.max_out_of_range = 0
 
 
 
+class TestConstPopSize_Migration(TestGeneric):
+
+    def setUp(self):
+        TestGeneric.setUp(self, "testdata/constpopsize_migration")
+        self.seqlen = 1e6
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0, 0.01, 0.25, 0.5, 1, 1.5],
+                                                num_populations = 2,
+                                                num_samples = 8,
+                                                sample_populations = [1,1,1,1,2,2,2,2],
+                                                population_sizes = [[1,1]] * 6,
+                                                migration_rates = [ [[0,0],[1,0]], # -em 0 2 1 1
+                                                                    [[0,0],[1,0]], # em 0.01 2 1 1
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]] ] )
+        # use python front-end
+        self.smcsmcpath = "../python/smcsmc.py"
+        
+        # set default inference parameters
+        self.popt = None
+        self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+        self.lag = 2
+        self.em = 0
+        self.np = 1000
+        self.debug = True
+        self.bias_heights = [800]
+        self.bias_strengths = [2,1]
+        self.tmax = 4
+        self.seed = (1,)
+
+        # set targets
+        self.targets = [{'type':"Recomb", 'min':9.6e-9, 'max':1.04e-8, 'truth':1e-8, 'ess':1.5}]
+        for idx, pop in itertools.product(range(6), range(2)):
+            self.targets.append({'type':"Coal", 'pop':pop, 'epoch':idx,
+                                 'min':9300  if idx>1 else 6000,
+                                 'max': [15000,11500,10600,10600,10600,11500][idx],
+                                 'truth':10000, 'ess':[1,1,1.3,1.5,2,3][idx]})
+        self.targets += [ {'type':'Migr', 'from_pop':fp, 'to_pop':tp, 'epoch':ep,
+                           'min':mi, 'max':ma, 'truth':tr}
+                          for (fp,tp,ep,mi,ma,tr) in
+                          [ (0,1,0, 0.0, 1e-5, 0),
+                            (0,1,1, 0.0, 1e-5, 0),
+                            (0,1,2, 0.0, 1e-5, 0),
+                            (0,1,3, 0.0, 1e-5, 0),
+                            (0,1,4, 0.0, 1e-5, 0),
+                            (0,1,5, 0.0, 1e-5, 0),
+                            (1,0,0, 0.0, 3e-5, 2.5e-5),
+                            (1,0,1, 0.0, 3e-5, 2.5e-5),
+                            (1,0,2, 0.0, 3e-5, 2.5e-5),
+                            (1,0,3, 0.0, 3e-5, 2.5e-5),
+                            (1,0,4, 0.0, 3e-5, 2.5e-5),
+                            (1,0,5, 0.0, 3e-5, 2.5e-5) ] ]
+                               
+        self.max_out_of_range = 0
+        
+
+
 class TestConstPopSize_FourEpochs(TestConstPopSize):
 
     def setUp(self, name = "testdata/constpopsize_4epochs"):
-        TestGeneric.setUp(self, name)
+        #TestGeneric.setUp(self, name)   # awk...
+        TestConstPopSize.setUp(self, name)
         self.seqlen = 1e7
         self.missing_leaves = []
         self.popt = None                               # don't use epoch pattern for inference
@@ -58,6 +124,9 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
                                           population_sizes = [[1], [1], [1], [1]],
                                           scrmpath=self.scrmpath )
         
+        # use python front-end
+        self.smcsmcpath = "../python/smcsmc.py"
+
         # set default inference parameters
         self.em = 0
         self.np = 1000
@@ -67,7 +136,7 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.debug = True
 
         # set targets
-        self.targets = [{'type':"Recomb", 'min':0.98e-8, 'max':1.02e-8, 'truth':1e-8, 'ess':15},
+        self.targets = [{'type':"Recomb", 'min':0.97e-8, 'max':1.03e-8, 'truth':1e-8, 'ess':15},
                         {'type':"Coal", 'pop':0, 'epoch':0, 'min':4000,  'max':18000, 'truth':10000, 'ess':1},
                         {'type':"Coal", 'pop':0, 'epoch':1, 'min':8500,  'max':11500, 'truth':10000, 'ess':5},
                         {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':20},
@@ -76,6 +145,7 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.max_out_of_range = 0
 
 
+        
 class TestConstPopSize_MissingData(TestConstPopSize):
 
     def setUp(self):
@@ -155,8 +225,6 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
                         {'type':"LogL", 'min':-26560, 'max':0, 'truth': -23814}]
 
         self.max_out_of_range = 0
-
-
 
 
         

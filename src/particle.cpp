@@ -512,7 +512,7 @@ double ForestState::extend_ARG ( double extend_to ) {
                 // bias recombinations based on posteriors, the part of the importance weight
                 // due to posteriors should always get the appropriate delay.)
                 int bhsize = model().bias_heights().size();
-                if (bhize >= 2 && first_coalescence_height_ > model().bias_heights()[bhsize-2]) {
+                if (bhsize >= 2 && first_coalescence_height_ > model().bias_heights()[bhsize-2]) {
                     delay = 1;
                 }
                 

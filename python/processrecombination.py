@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import sys
+import gzip
 
 class LocalRecombination:
     
@@ -20,7 +21,11 @@ class LocalRecombination:
     def read_data(self, infile, iter=0):
         self.data = []
         gcd = 0
-        for line in open(infile,'r').readlines():
+        if infile.upper().endswith('GZ'):
+            rfile = gzip.open(infile,'r')
+        else:
+            rfile = open(infile,'r')
+        for line in rfile:
             if line.startswith('iter'): continue
             eltsS = line.strip().split()
             elts = list(map(int, eltsS[:3])) + list(map(float, eltsS[3:]))
@@ -35,6 +40,7 @@ class LocalRecombination:
                 gcd = a
             self.data.append( elts )
         self.step = gcd
+        rfile.close()
 
     def smooth(self, window, alpha):
         """ Smooths the posterior recombination using windiw size 'window',
@@ -83,7 +89,7 @@ class LocalRecombination:
             else:
                 ratecodes = elts[4:]
             for loc in range(locus, locus+size, self.step):
-                yield [loc, 100, opp] + ratecodes
+                yield [loc, self.step, opp] + ratecodes
     
     def _smooth_leaf(self, leaf, alpha):
         """ smooth using an oil-bleed algorithm """
@@ -108,7 +114,7 @@ class LocalRecombination:
             if newstate != curstate:
                 # assign avg rate to previous streak
                 if startidx != None:
-                    newrate = alpha * (recombs / opp) + (1.0-alpha)*self.rate
+                    newrate = alpha * (recombs / opp) + (1.0-alpha)*self.rate/self.leaves
                     for i in range(startidx, idx):
                         rates.append( newrate )
                 startidx, curstate, opp, recombs = idx, newstate, 0, 0
@@ -138,12 +144,10 @@ class LocalRecombination:
 
 
 if __name__ == "__main__":
-    
+    # just a quick example of usage:
     filename = sys.argv[1]
-
+    windowsize = int(sys.argv[2])
+    alpha = float(sys.argv[3])
     lr = LocalRecombination( filename )
-
-    lr.smooth( 200, 0.8 )
-
+    lr.smooth( windowsize, alpha )
     lr.write_data( sys.stdout )
-
