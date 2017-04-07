@@ -80,7 +80,7 @@ class TestGeneric(unittest.TestCase):
     def tearDown(self):
         if self.success and self.prefix != None:
             toplevel = itertools.product( [self.pop.filename],
-                                          ["",".recomb"] )
+                                          ["",".recomb",".seg.scrm"] )
             percase = itertools.product( ["{}_C{}".format(self.pop.filename[:-4], case)
                                           for case in self.cases ],
                                          ['.out','.log','.stdout','.stderr','.recomb.gz'] )
@@ -91,6 +91,7 @@ class TestGeneric(unittest.TestCase):
                     #print ("Warning: file ",prefix + suffix," expected but not found")
                     # ignore non-existent files; smcsmc.py does not produce .log or .recomb.gz files
                     pass
+            shutil.rmtree( os.path.dirname(self.pop.filename), ignore_errors = True )
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):

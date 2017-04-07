@@ -685,19 +685,27 @@ double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left
 double ForestState::importance_weight_over_segment( double previously_updated_to,
                                                     double update_to) {
 
+    int cur_rec_idx = model().get_position_index();
+    assert (cur_rec_idx > 0);
+    double cur_recomb_segment_start = model().change_position(cur_rec_idx);
+    // the update segment may, or may not, overlap the "current" recombination rate segment,
+    // since that is moved along as soon as the simulated segment hits a change point.
+    if (update_to <= cur_recomb_segment_start) {
+        // The "current" recombination rate segment does not overlap; move the index one back
+        --cur_rec_idx;
+    }
     double sequence_distance = update_to - previously_updated_to;
-    double posterior_weighted_recombination_rate = model().recombination_rate();
+    double posterior_weighted_recombination_rate = model().recombination_rate( cur_rec_idx );
     double true_recomb_rate = posterior_weighted_recombination_rate;
 
     if (pfparam.recomb_bias.using_posterior_biased_sampling()) {
         true_recomb_rate = pfparam.recomb_bias.get_true_rate();
-        int cur_rec_idx = model().get_position_index();
-        const RecombBiasSegment& rbs = pfparam.recomb_bias.get_recomb_bias_segment( cur_rec_idx );
-        assert( rbs.get_rate() == posterior_weighted_recombination_rate );
-
-        if (rbs.get_rate() != posterior_weighted_recombination_rate ) {
+        const RecombBiasSegment* rbs = &pfparam.recomb_bias.get_recomb_bias_segment( cur_rec_idx );
+        assert(update_to > rgb.get_locus());
+        assert( rbs->get_rate() == posterior_weighted_recombination_rate );
+        if (rbs->get_rate() != posterior_weighted_recombination_rate ) {
             cout << "Problem: "
-                 << rbs.get_rate()<< " != " << posterior_weighted_recombination_rate
+                 << rbs->get_rate()<< " != " << posterior_weighted_recombination_rate
                  << " at idx " << cur_rec_idx << endl; // DEBUG
         }
     }

@@ -71,7 +71,6 @@ class Population:
         opts, unparsed_opts = cmdline.split(), []
         idx = 0
         while idx < len(opts):
-            print("parsing opt ",opts[idx])
             if opts[idx] == "-nsam":
                 self.num_samples = int(opts[idx+1])
                 idx += 2
@@ -138,8 +137,6 @@ class Population:
     def _parse_sample(self, time_idx, opt_idx, opts ):
         for idx in range(self.num_populations):
             num_sampled = int(opts[ opt_idx + idx ])
-            print("pop ",idx,"num sampled",num_sampled)
-            print("time idx",time_idx," change pts",self.change_points)
             self.sample_times += [ self.change_points[time_idx] ] * num_sampled
             self.sample_populations += [ 1 + idx ] * num_sampled
         return opt_idx + self.num_populations

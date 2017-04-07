@@ -180,7 +180,6 @@ public:
             throw InvalidInput("Recombination guide file could not be opened.");
         }
         in_file.push(in_raw);
-        //ifstream in_file( filename.c_str(), std::ifstream::in );
         string header;
         std::getline(in_file, header);
         cout << header << endl;
