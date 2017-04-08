@@ -2,24 +2,69 @@ from __future__ import print_function
 
 import sys
 import gzip
+import math
+import heapq
+import bisect
+import itertools
+
+
+# seems to work nicely; for beta=4 segment count is about half number of recombinations
+# next: sub-segment the leaves; write averages
+
 
 class LocalRecombination:
     
     def __init__(self, infile):
-        self.read_data(infile)
+        self.data   = self._read_data(infile)
         self.size   = self.data[-1][1] + self.data[-1][2]
-        self.rate   = self.calculate_rate()
+        self.rate   = self._calculate_rate()
         self.leaves = len(self.data[0][4:])
 
-    def calculate_rate(self):
+    def _calculate_rate(self):
         opportunity, recombinations = 0, 0
-        for data in self._forward_data_generator( encode=False ):
+        for data in self._unmerge_data_generator():
             opportunity += data[1] * data[2]
             recombinations += data[1] * sum(data[3:])
         return recombinations / opportunity
 
-    def read_data(self, infile, iter=0):
-        self.data = []
+    def _cusum(self, leaf=None):
+        cusum = []
+        curate = 0.0
+        curate2 = 0.0
+        for data in self._unmerge_data_generator():
+            if leaf==None:
+                datum = sum(data[3:])/data[2] - self.rate
+            else:
+                datum = data[3+leaf]/data[2] - self.rate/self.leaves
+            curate += datum
+            cusum.append(curate)
+        return cusum
+    
+    def _unmerge_data_generator(self):
+        # generates opportunity and per-leaf rates from input data, but in uniformly-sized windows
+        for elts in self.data:
+            locus, size, opp = elts[1:4]     # per-nt opportunity
+            counts = elts[4:]                # per-nt counts
+            for loc in range(locus, locus+size, self.step):
+                yield [loc, self.step, opp] + counts
+
+    def _smooth_column(self, B, leaf=None):
+        bidx, previdx, acc = 0, 0, 0
+        for idx, data in enumerate(self._unmerge_data_generator()):
+            if bidx < len(B) and idx == B[bidx]:
+                # found breakpoint; report last segment
+                for sidx in range(previdx,idx): yield acc / (idx-previdx)
+                # prepare for next segment
+                previdx, acc, bidx = idx, 0, bidx+1
+            opp = data[2]
+            if leaf==None:
+                acc += sum(data[3:]) / opp
+            else:
+                acc += data[3+leaf] / opp
+        for sidx in range(previdx,idx+1): yield acc / (idx+1-previdx)
+                
+    def _read_data(self, infile, iter=0):
+        data = []
         gcd = 0
         if infile.upper().endswith('GZ'):
             rfile = gzip.open(infile,'r')
@@ -32,25 +77,22 @@ class LocalRecombination:
             if elts[0] < iter: continue
             if elts[0] > iter: break
             if gcd == 0:
-                gcd = elts[1]
+                curpos = elts[0]
+                gcd = elts[2]
             else:
-                a, b = elts[1], gcd
+                if curpos != elts[1]:
+                    raise ValueError("Found gaps or overlaps in input file, line '{}'".format(line.strip()))
+                a, b = elts[2], gcd
                 while b > 0:
                     a, b = b, a % b
                 gcd = a
-            self.data.append( elts )
+            curpos += elts[2]
+            data.append( elts )
         self.step = gcd
         rfile.close()
+        return data
 
-    def smooth(self, window, alpha):
-        """ Smooths the posterior recombination using windiw size 'window',
-            and assign a fraction alpha to the posterior, 1-alpha to the uniform prior """
-
-        self.window = window
-        self.smoothed_data = []
-        for leaf in range(self.leaves):
-            self.smoothed_data.append( self._smooth_leaf( leaf, alpha ) )
-
+    # requires self.smoothed_data
     def write_data(self, outfile):
         headerline = "locus\tsize\trecomb_rate" + ''.join(["\t{}".format(leaf+1) for leaf in range(self.leaves)]) + "\n"
         outfile.write(headerline)
@@ -62,92 +104,107 @@ class LocalRecombination:
                     self._write_line(outfile, curvalues, start, idx)
                 start, curvalues = idx, values
         self._write_line(outfile, curvalues, start, idx+1)
-            
+
     def _write_line(self, outfile, curvalues, start, idx):
         rate = sum(curvalues)
-        curvalues = [ v / rate for v in curvalues ]
-        dataline = "{}\t{}\t{:12.6e}".format(start * self.step,
+        curvalues = [ v / (rate+1e-30) for v in curvalues ]
+        dataline = "{}\t{}\t{:9.3e}".format(start * self.step,
                                              (idx - start) * self.step,
                                              rate)
         dataline += ''.join(["\t{:5.3f}".format(v) for v in curvalues]) + "\n"
         outfile.write(dataline)
-            
-    def _encode(self, value):
-        if value < 0.1 * self.rate / self.leaves:
-            return 0
-        elif value < self.rate / self.leaves:
-            return 1
-        else:
-            return 2
-        
-    def _forward_data_generator(self, encode=False):
-        """ convert into low - medium - high codes """
-        for elts in self.data:
-            locus, size, opp = elts[1:4]
-            if encode:
-                ratecodes = [ self._encode(count / opp) for count in elts[4:] ]
-            else:
-                ratecodes = elts[4:]
-            for loc in range(locus, locus+size, self.step):
-                yield [loc, self.step, opp] + ratecodes
+
+    # minimize |X^b_{s,e}|.  Note, using half-open segment convention for [s,e)
+    def argmax_xbse(self,s,e,cusum):
+        n=float(e-s)
+        sumleft = 0
+        previous_cusum = 0 if s==0 else cusum[s-1]
+        sumright = cusum[e-1] - previous_cusum
+        maxsum, maxb = -1, -1
+        # loop to find change point (first point of right-hand segment)
+        for b in range(s+1,e):
+            # update sumleft and sumright
+            here = cusum[b-1] - previous_cusum
+            previous_cusum = cusum[b-1]
+            sumleft += here
+            sumright -= here
+            f1 = math.sqrt((e-b)/(n*(b-s)))
+            f2 = math.sqrt((b-s)/(n*(e-b)))
+            xbse = f1*sumleft - f2*sumright
+            # we can compute the square of the difference, without the square roots, but hey
+            if abs(xbse) > maxsum:
+                maxsum = abs(xbse)
+                maxb = b
+        return maxsum, maxb    # segments are [s,b) and [b,e)
+
+    # smooth using Wild Binary Segmentation (WBS) algorithm -- stats.lse.ac.uk/fryzlewicz/wbs/wbs.pdf
+    def _wbs(self, cusum, beta, B=None):
+        # change points
+        if B == None: B = []
+        # build test segments - not randomly though, that seems silly
+        testsegs = []
+        for l in [2,3,4,6,9,13,20,30,40,60,90,130,200,300,400,600,900,1300,2000]:
+            for s in range(0,len(cusum),l/2):
+                if s+l < len(cusum):
+                    testsegs.append( (s,s+l) )
+        # add test segments from B
+        for s,e in itertools.izip( [0]+B, B+[len(cusum)] ):
+            testsegs.append( (s,e) )
+        # build data structure
+        F = []
+        for s,e in testsegs:
+            value, b = self.argmax_xbse(s, e, cusum)
+            F.append( (-value, b, s, e) )
+        heapq.heapify(F)
+        # main loop of WBS algorithm
+        while len(F) > 0:
+            value, bk, s, e = heapq.heappop(F)
+            if -value < beta * self.rate: break
+            # check that [s,e) does not contain any change points that have already been identified
+            idx1 = bisect.bisect_right(B, s)
+            idx2 = bisect.bisect_left(B, e)
+            if idx1 != idx2: continue
+            # found good breakpoint
+            B.append(bk)
+            B.sort()
+            #print("X added ",bk,"; ",len(B)," brkpts; ",len(F)," segs remaining; zeta=",-value," rate=",self.rate)
+        return B
     
-    def _smooth_leaf(self, leaf, alpha):
-        """ smooth using an oil-bleed algorithm """
-        leafidx = leaf + 3
-        shoulderbins = int(self.window / self.step)
-        bins = int(self.size / self.step)
-        data = [ d[leafidx] for d in self._forward_data_generator( encode=True ) ]
-
-        # bleed out the high recombination bins by the required window size + 1
-        for i in range( shoulderbins ):
-            self._bleed( data, 2 )
-        # bleed out the low recombination bins by 1
-        self._bleed( data, 0 )
-
-        # find streaks of low or medium, and or high rec. rates, and calc avg rates
-        startidx = None
-        curstate = None
-        opp, recombs = 0, 0
-        rates = []
-        for idx, datum in enumerate(self._forward_data_generator( encode=False )):
-            newstate = data[idx] == 2
-            if newstate != curstate:
-                # assign avg rate to previous streak
-                if startidx != None:
-                    newrate = alpha * (recombs / opp) + (1.0-alpha)*self.rate/self.leaves
-                    for i in range(startidx, idx):
-                        rates.append( newrate )
-                startidx, curstate, opp, recombs = idx, newstate, 0, 0
-            opp += datum[1] * datum[2]
-            recombs += datum[1] * datum[leafidx]
-        newrate = alpha * (recombs / opp) + (1.0-alpha)*self.rate
-        for i in range(startidx, idx+1):
-            rates.append( newrate )
-        return rates
-
-    def _bleed(self, data, state):
-        start = None
-        for idx, s in enumerate(data):
-            if s == state:
-                if start == None:
-                    # start of streak
-                    start = idx
-            else:
-                if start != None:
-                    # end of streak -- implement bleed
-                    if start > 0:
-                        data[start - 1] = state
-                    start = None
-                    data[idx] = state
-        if start != None and start > 0:
-            data[start - 1] = state
-
+    def smooth(self, alpha, beta):
+        assert alpha >= 0 and alpha <= 1
+        assert beta > 0
+        # calculate change points for overall recombination rate
+        cusum = self._cusum()
+        B = self._wbs(cusum, beta)
+        data = [self._smooth_column(B)]
+        # iteratively calculate denser super-grid for the per-leaf rates
+        Bprime = B[:]
+        for leaf in range(self.leaves):
+            cusum = self._cusum( leaf )
+            Bprime = self._wbs(cusum, beta, Bprime)
+        data += [self._smooth_column(Bprime, leaf) for leaf in range(self.leaves)]
+        # store
+        self.smoothed_data = [ [] for _ in range(self.leaves) ]
+        for allcols in itertools.izip( *data ):
+            smoothrate = allcols[0]
+            relrates = [ r / (sum(allcols[1:]) + 1e-30) for r in allcols[1:] ]
+            smoothedrates = [ alpha*(r * smoothrate) + (1-alpha)*self.rate/self.leaves for r in relrates ]
+            for idx, r in enumerate(smoothedrates):
+                self.smoothed_data[idx].append(r)
+        return
+        
 
 if __name__ == "__main__":
     # just a quick example of usage:
-    filename = sys.argv[1]
-    windowsize = int(sys.argv[2])
-    alpha = float(sys.argv[3])
+    try:
+        filename = sys.argv[1]
+        alpha = float(sys.argv[2])            #mixin fraction
+        beta = float(sys.argv[3])             #min ratio of zeta and recombination rate
+    except:
+        print("Usage: {} <file.recomb.gz> alpha beta".format(sys.argv[0]))
+        print("\n  alpha (0-1) : proportion of posterior to mix in; 0 = use prior")
+        print("  beta (>0)   : smoothing factor; 1 is ok; use larger for more smoothing")
+        sys.exit(1)
     lr = LocalRecombination( filename )
-    lr.smooth( windowsize, alpha )
+    lr.smooth(alpha, beta)
     lr.write_data( sys.stdout )

@@ -582,60 +582,20 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
     double current_opportunity = 0.0;
     // invariant: current_opportunity = sum (0 <= i < idx) local_recomb_opportunity[i]
     while (idx < last_idx) {
-        int num_indices = 0, first_idx = idx;
-        double total_count = 0;
-        do {
-            current_opportunity += local_recomb_opportunity[ idx ];
-            for (int sample = 0; sample < sample_size_; ++sample) {
-                total_count += local_recomb_counts[ sample ][ idx ];
-            }
-            ++num_indices;
-            ++idx;
-        } while (total_count == 0.0 &&
-                 idx < last_idx &&
-                 abs(local_recomb_opportunity[ idx ]) < 1e-4 * current_opportunity);
-        // summarize streak of null counts
-        int streak = num_indices - 1;
-        if (total_count == 0.0) {
-            // loop was ended because of changing opportunity, or end-of-data,
-            // rather than a nonzero count, so the zero-count streak includes idx-1
-            ++streak;
+        current_opportunity += local_recomb_opportunity[ idx ];
+        stream << iteration
+               << "\t" 
+               << fixed << setprecision(0)
+               << idx * local_recording_interval_
+               << "\t"
+               << local_recording_interval_
+               << "\t"
+               << scientific << setprecision(5)
+               << current_opportunity / local_recording_interval_;
+        for (int sample = 0; sample < sample_size_; ++sample) {
+            stream << "\t" << local_recomb_counts[ sample ][ idx ] / local_recording_interval_;
         }
-        if (streak > 0) {
-            stream << iteration
-                   << "\t"
-                   << fixed << setprecision(0)
-                   << first_idx * local_recording_interval_
-                   << "\t"
-                   << streak * local_recording_interval_
-                   << "\t"
-                   << scientific << setprecision(5)
-                   << current_opportunity / local_recording_interval_;
-            for (int sample = 0; sample < sample_size_; ++sample) {
-                stream << "\t" << 0.0;
-            }
-            stream << "\n";
-            // point to first index that needs processing
-            while (idx < first_idx + streak) {
-                current_opportunity += local_recomb_opportunity[ idx ];
-                ++idx;
-            }
-        } else {
-            // streak == 0 && total_count > 0 && idx == first_idx + 1
-            // (i.e. we found a single nonzero-count line)
-            stream << iteration
-                   << "\t" 
-                   << fixed << setprecision(0)
-                   << first_idx * local_recording_interval_
-                   << "\t"
-                   << local_recording_interval_
-                   << "\t"
-                   << scientific << setprecision(5)
-                   << current_opportunity / local_recording_interval_;
-            for (int sample = 0; sample < sample_size_; ++sample) {
-                stream << "\t" << local_recomb_counts[ sample ][ first_idx ] / local_recording_interval_;
-            }
-            stream << "\n";
-        } 
+        stream << "\n";
+        ++idx;
     }
 }

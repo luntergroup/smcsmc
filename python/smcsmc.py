@@ -34,7 +34,8 @@ class Smcsmc:
         self.emiters = 0
         self.chunks = 1
         self.infer_recomb = True
-        self.alpha = 0.0
+        self.alpha = 0.0            # posterior mix-in; 0 means use prior
+        self.beta = 4               # smoothness parameter; see processrecombination.py
         self._processes = []
         self.threads = True
         
@@ -336,7 +337,7 @@ class Smcsmc:
                 # process the .recomb files to recomb-guideing files
                 for chunk in range(self.chunks):
                     lr = processrecombination.LocalRecombination( self.recomb_template.format(iteration-1,chunk) )
-                    lr.smooth( 200, self.alpha )
+                    lr.smooth( self.alpha, self.beta )
                     self.recombination_guide = self.recomb_guide_template.format(iteration, chunk)
                     fout = gzip.open( self.recombination_guide, 'w' )
                     lr.write_data( fout )
