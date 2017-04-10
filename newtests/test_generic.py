@@ -5,6 +5,7 @@ import os
 import time
 import subprocess
 import itertools
+import shutil
 
 try:
     from sqlalchemy import Column, Integer, Float, Boolean, String, DateTime, ForeignKey, Table, MetaData, create_engine
