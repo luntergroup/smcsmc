@@ -1,5 +1,5 @@
 from __future__ import print_function
-from .context import populationmodels
+from context import populationmodels
 import unittest
 from test_generic import TestGeneric
 
