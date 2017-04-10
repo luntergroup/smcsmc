@@ -57,8 +57,8 @@ class Smcsmc:
             (1, '-r', 'r l',   'Set per locus recombination rate and locus length'),
             (1, '-eN', 't n',  'Set the present day size of all populations to n*N0'),
             (1, '-en', 't i n','Change the size of population i to n*N0 at time t*4N0'),
-            (1, '-eM', 'm',    'Set a present day backward symmetric migration rate of m/(npop-1)'),
-            (1, '-em', 't m',  'Change the symmetric backward migration rate to m/(npop-1) at time t*4N0'),
+            (1, '-eM', 't m',    'Change the symmetric backward migration rate to m/(npop-1) at time t*4N0'),
+            (1, '-em', 't i j m', 'Change the backward migration rate, from population i to population j, to m/(npop-1) at time t*4N0'),
             (1, '-ema', 't s11 s12 ...', 'Set backward migration rate matrix at time t*4N0'),
             
             (2, '-seg', 'f',   'Input .seg file'),
