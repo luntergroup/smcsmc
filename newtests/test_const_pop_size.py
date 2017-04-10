@@ -145,6 +145,14 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.max_out_of_range = 0
 
 
+class TestConstPopSize_FourEpochs_FalseStart(TestConstPopSize_FourEpochs):
+
+    def setUp(self, name="testdata/constpopsize_4epochs_falsestart"):
+        TestConstPopSize_FourEpochs.setUp(self, name)
+
+        self.smcsmc_initial_pop_sizes = [[1.2], [1.2], [1.2], [1.2]]
+
+
         
 class TestConstPopSize_MissingData(TestConstPopSize):
 
