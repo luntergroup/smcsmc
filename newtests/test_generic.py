@@ -59,7 +59,7 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
         self.directed_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
-        self.directed_recomb_beta = 1       # extent of smoothing of the recombination change points
+        self.directed_recomb_beta = 4       # extent of smoothing of the recombination change points
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.filename_disambiguator = ""
@@ -127,7 +127,7 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
-        guideopt = "-alpha {}".format( self.alpha ) if self.alpha>0 else ""
+        guideopt = "-alpha {}".format( self.directed_recomb_alpha ) if self.directed_recomb_alpha>0 else ""
 
         ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
         ###       specifies the epochs to infer.  That's probably what we want to do anyway,
@@ -399,7 +399,7 @@ class TestGeneric(unittest.TestCase):
             class Experiment(Base):
                 __tablename__ = "experiment"
                 id                       = Column(Integer, primary_key=True)
-                date                     = Column(DateTime, default=func.now())
+                date                     = Column(String)
                 name                     = Column(String)
                 simulate_command         = Column(String)
                 inference_command        = Column(String)
@@ -407,6 +407,7 @@ class TestGeneric(unittest.TestCase):
                 lag                      = Column(Float)
                 num_samples              = Column(Integer)
                 sequence_length          = Column(Integer)
+                chunks                   = Column(Integer)
                 missing_leaves           = Column(String)
                 recombination_rate       = Column(Float)
                 mutation_rate            = Column(Float)
@@ -418,8 +419,8 @@ class TestGeneric(unittest.TestCase):
                 initial_migr_values      = Column(String)
                 bias_heights             = Column(String)
                 bias_strengths           = Column(String)
-                directed_recomb          = Column(Boolean)
-                directed_recomb_strength = Column(Float)     # I'll need to rename/reformat this based on implementation
+                directed_recomb_alpha    = Column(Float)
+                directed_recomb_beta     = Column(Float)
                 dataseed                 = Column(Integer)
                 infseed                  = Column(Integer)
                 smcsmc_runtime           = Column(Float)
@@ -454,12 +455,14 @@ class TestGeneric(unittest.TestCase):
         session = Session()
         name = self.name if self.name != None else self.prefix.split('/')[-1]
         this_exp = Experiment( name                     = name,
+                               date                     = time.strftime("%d/%m/%Y")+" "+time.strftime("%X"),
                                simulate_command         = self.pop.simulate_command,
                                inference_command        = self.inference_command,
                                np                       = self.np,
                                lag                      = self.lag,
                                num_samples              = self.pop.num_samples,
                                sequence_length          = int(self.pop.sequence_length),
+                               chunks                   = int(self.chunks),
                                missing_leaves           = str(self.missing_leaves),
                                recombination_rate       = self.pop.recombination_rate,
                                mutation_rate            = self.pop.mutation_rate,
@@ -471,8 +474,8 @@ class TestGeneric(unittest.TestCase):
                                initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migr_rates)) if self.smcsmc_initial_migr_rates else str(self.pop.migration_rates),
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
-                               directed_recomb          = self.directed_recomb,
-                               directed_recomb_strength = self.directed_recomb_strength,
+                               directed_recomb_alpha    = self.directed_recomb_alpha,
+                               directed_recomb_beta     = self.directed_recomb_beta,
                                dataseed                 = self.pop.seed[0],
                                infseed                  = self.seed[0],
                                smcsmc_runtime           = self.smcsmc_runtime,

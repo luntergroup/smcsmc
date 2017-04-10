@@ -75,6 +75,7 @@ class Smcsmc:
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
             (3, '-alpha', 't',  'Fraction of posterior recombination to mix in to recombination guide ({})'.format(self.alpha)),
+            (3, '-beta', 's',   'Extent of smoothing used in calculating posterior recombination ({})'.format(self.beta)),
             (3, '-smcsmcpath', 'f','Path to smcsmc executable ({})'.format(self.smcsmcpath)),
             (3, '-nothreads','','Calculate chunks sequentially rather than in parallel threads'),
             (3, '-log', 'f',    'Log file (stdout)'),
@@ -91,7 +92,7 @@ class Smcsmc:
             sys.exit(0)
         if set(self.opts).isdisjoint( set(['-help','--help','-?']) ) and len(self.opts)>0:
             return
-        print ("SMC2 - Stochastic Monte Carlo Sequentially Markovian Coalescent - Demographic Inference with Particle Filters")
+        print ("SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - Demographic Inference with Particle Filters")
         print ("       Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
         for idx, clas in enumerate(self.classes):
             print ("\n"+clas)
