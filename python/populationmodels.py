@@ -2,8 +2,8 @@
 from __future__ import print_function
 
 import sys
-import subprocess
 import os
+import subprocess
 import itertools
 
 from optparse import OptionParser
@@ -13,11 +13,11 @@ Population structures
 """
 
 
-defaults = {'N0': 10000,
-            'mutation_rate': 2.5e-8,
+defaults = {'N0':                 10000,
+            'mutation_rate':      2.5e-8,
             'recombination_rate': 1e-8,
-            'sequence_length': 1e6,
-            'num_samples': 2,
+            'sequence_length':    1e6,
+            'num_samples':        2,
             'scrmpath': 'scrm'}
 
 class Population:
@@ -29,7 +29,7 @@ class Population:
                  sequence_length      = defaults['sequence_length'],
                  num_samples          = defaults['num_samples'],
                  change_points        = [0, .01, 0.06, 0.2, 1, 2],
-                 population_sizes     = [1, 0.1, 1,    0.5, 1, 2],
+                 population_sizes     = [[1], [0.1], [1], [0.5], [1], [2]],
                  num_populations      = 1,
                  migration_rates      = None,
                  sample_populations   = None,
@@ -42,21 +42,106 @@ class Population:
         self.N0 = N0
         self.mutation_rate = mutation_rate
         self.recombination_rate = recombination_rate
+        self.startpos = 1
         self.sequence_length = sequence_length
         self.num_samples = num_samples
-        self.change_points = change_points              # list of (times, or list of times per population)
-        self.population_sizes = population_sizes        # similarly, list, or list of lists
+        self.change_points = change_points              # list of times, in 4Ne units
+        self.population_sizes = population_sizes        # list, or list of lists (per population)
         self.migration_rates = migration_rates          # None, or list of lists of lists
         self.num_populations = num_populations
-        self.sample_populations = sample_populations    # encoded as sample_populations_ in scrm/model.h
+        self.sample_populations = sample_populations    # encoded as sample_populations_ in model.h
         self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
         self.migration_commands = migration_commands    # to implement speciation events
         self.seed = seed
         self.filename = filename
         self.scrmpath = scrmpath
 
+    def parse_command_line(self, cmdline):
+        """ Parses options relating to population model: -nsam -em -eM -en -eN -eI -I -ej
+            Unrecognized options are returned unchanged
+            Note: need to set mutation_rate, recombination_rate, sequence_length separately! 
+            TODO: add -ej (split) """
+        self.num_samples = -1
+        self.change_points = []
+        self.population_sizes = []
+        self.migration_rates = []
+        self.sample_populations = []
+        self.sample_times = []
+        self.num_populations = 1
+        opts, unparsed_opts = cmdline.split(), []
+        idx = 0
+        while idx < len(opts):
+            if opts[idx] == "-nsam":
+                self.num_samples = int(opts[idx+1])
+                idx += 2
+            elif opts[idx] == "-I":
+                self.num_populations = int(opts[idx+1])
+                if len(self.change_points) != 0: raise ValueError("Options -I must go before -eN / -en / -eM / -em / -ema")
+                self._parse_time( 0, ["0.0"] )
+                idx = self._parse_sample( 0, idx+2, opts )
+            elif opts[idx] == "-eI":
+                idx = self._parse_time( idx+1, opts )
+                idx = self._parse_sample( len(self.change_points)-1, idx+2, opts )
+            elif opts[idx] == "-eM":
+                idx = self._parse_time( idx+1, opts )
+                rate = float( opts[idx] ) / (self.num_populations - 1)
+                idx += 1
+                for i in range(self.num_populations):
+                    for j in range(self.num_populations):
+                        if i!=j:
+                            self.migration_rates[-1][i][j] = rate
+            elif opts[idx] == "-ema":
+                idx = self._parse_time( idx+1, opts )
+                for i in range(self.num_populations):
+                    for j in range(self.num_populations):
+                        rate = float( opts[idx] )
+                        idx += 1
+                        self.migration_rates[-1][i][j] = rate
+            elif opts[idx] == "-em":
+                idx = self._parse_time( idx+1, opts )
+                i, j, rate = int(opts[idx]), int(opts[idx+1]), float( opts[idx+2] )
+                idx += 3
+                self.migration_rates[-1][i-1][j-1] = rate
+            elif opts[idx] == "-eN":
+                idx = self._parse_time( idx+1, opts )
+                for i in range(self.num_populations):
+                    self.population_sizes[-1][i] = float(opts[idx])
+                idx += 1
+            elif opts[idx] == "-en":
+                idx = self._parse_time( idx+1, opts )
+                i = int(opts[idx])
+                self.population_sizes[-1][i-1] = float(opts[idx+1])
+                idx += 2
+            else:
+                unparsed_opts.append( opts[idx] )
+                idx += 1
+        if self.sample_populations == []: self.sample_populations = None
+        if self.sample_times == []: self.sample_times = None
+        self._finalize_and_validate()
+        return unparsed_opts
+                
+    def _add_migration_rate(self, time_idx, i, j, rate):
+        self.migration_rates[time_idx][i][j] = rate        
 
-    def finalize_and_validate(self):
+    def _parse_time(self, opt_idx, opts ):
+        if self.change_points == []:
+            self.change_points = [float(opts[opt_idx])]
+            self.population_sizes = [ [0.0] * self.num_populations ]
+            self.migration_rates = [[[0.0]*self.num_populations for _ in range(self.num_populations)]]
+        elif self.change_points[-1] != float(opts[opt_idx]):
+            self.change_points.append( float(opts[opt_idx]) )
+            self.population_sizes.append( self.population_sizes[-1][:] )
+            self.migration_rates.append( [vec[:] for vec in self.migration_rates[-1]] )
+        return opt_idx + 1
+
+    def _parse_sample(self, time_idx, opt_idx, opts ):
+        for idx in range(self.num_populations):
+            num_sampled = int(opts[ opt_idx + idx ])
+            self.sample_times += [ self.change_points[time_idx] ] * num_sampled
+            self.sample_populations += [ 1 + idx ] * num_sampled
+        return opt_idx + self.num_populations
+
+    def _finalize_and_validate(self):
 
         assert type(self.change_points) == list
         assert type(self.population_sizes) == list
@@ -102,6 +187,7 @@ class Population:
         if len(self.migration_rates) != len(self.change_points):
             raise ValueError("Expected {} migration rate matrices; got {}".format(
                 len(self.migration_rates),self.population_sizes))
+        # allow one-population models be expressed as a simple list of population sizes
         if type(self.population_sizes[0]) != list:
             self.population_sizes = [ [size] * self.num_populations
                                       for size in self.population_sizes ]
@@ -115,9 +201,9 @@ class Population:
         assert( self.change_points[0] == 0.0 )
 
 
-    def create_sample_command_line_options(self):
+    def _create_sample_command_line_options(self):
 
-        self.finalize_and_validate()
+        self._finalize_and_validate()
         expression = ""
         if self.num_populations == 1 and max( self.sample_times ) == 0.0:
             return expression
@@ -136,10 +222,10 @@ class Population:
         return expression
 
 
-    def create_popsize_migration_command_line_options(self,
+    def _create_popsize_migration_command_line_options(self,
                                                       inference_popsizes = None,
                                                       inference_migrationrates = None):
-        self.finalize_and_validate()
+        self._finalize_and_validate()
         if inference_popsizes is None:
             my_popsizes = self.population_sizes
         else:
@@ -187,7 +273,7 @@ class Population:
                            inference_popsizes = None,
                            inference_migrationrates = None):
         """ builds core command line common to simulation and inference;
-            without the initial "num_samples num_loci" bits, and without
+            without the initial "num_samples num_loci" parameters, and without
             output-related commands """
 
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
@@ -197,19 +283,20 @@ class Population:
             muts = self.mutations,
             recs = self.recombinations,
             seqlen = self.sequence_length,
-            sample = self.create_sample_command_line_options(),
-            popmigr = self.create_popsize_migration_command_line_options( inference_popsizes,
-                                                                          inference_migrationrates ) )
+            sample = self._create_sample_command_line_options(),
+            popmigr = self._create_popsize_migration_command_line_options(
+                inference_popsizes,
+                inference_migrationrates
+            )
+        )
         return command
 
 
     def simulate(self, missing_leaves = [], phased = True, debug = False):
 
         # make file name if required
-        if self.filename == None:
-            filename = command.replace(' ','_') + ".seg"
-        else:
-            filename = self.filename
+        if self.filename == None: filename = command.replace(' ','_') + ".seg"
+        else:                     filename = self.filename
         scrmfilename = filename + ".scrm"
 
         # -T        print Newick trees;
@@ -225,13 +312,11 @@ class Population:
             fn = scrmfilename)
 
         self.simulate_command = command
-        if debug:
-            print (self.simulate_command)
+        if debug: print (self.simulate_command)
 
         # execute
         returnvalue = subprocess.check_call(command, shell=True)
-        if returnvalue > 0:
-            raise ValueError("Problem executing " + command)
+        if returnvalue > 0: raise ValueError("Problem executing " + command)
 
         # generate the .seg and .seg.recomb files
         self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves, phased )
@@ -242,7 +327,7 @@ class Population:
 
 
     def convert_scrm_to_seg(self, infilename, outfilename, missing_leaves, phased ):
-        # convert scrm output file to .seg file
+        # convert scrm output file to .seg file for input to smcsmc
 
         scrmfile = open(infilename, "r")
         data = None
@@ -270,24 +355,32 @@ class Population:
         outfile = open(outfilename,'w')
         row = "{pos}\t{distance}\tT\tF\t1\t{genotype}\n"
 
-        positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5), positions ))
+        positions = list(map( lambda realpos : int(realpos * self.sequence_length + 0.5),
+                              positions ))
         positions = [1] + positions
 
-        for idx in range(len(positions) - 1):
-            alleles_list = [sequence[idx] for sequence in data]
-            if not phased:
+        if phased:
+            for idx in range(len(positions) - 1):
+                outfile.write( row.format( pos = positions[idx],
+                                           distance = positions[idx+1] - positions[idx],
+                                           genotype = ''.join( [sequence[idx]
+                                                                for sequence in data] ) ) )
+        else:
+            for idx in range(len(positions) - 1):
+                alleles_list = [sequence[idx] for sequence in data]
                 for haplotype_idx in range( len(alleles_list)/2 ):
                     if alleles_list[haplotype_idx*2] != alleles_list[haplotype_idx*2+1]:
                         alleles_list[haplotype_idx*2  ] = "/"
                         alleles_list[haplotype_idx*2+1] = "/"
-            outfile.write( row.format( pos = positions[idx],
-                                       distance = positions[idx+1] - positions[idx],
-                                       genotype = ''.join(alleles_list) ) )
+                alleles = ''.join( alleles_list )
+                outfile.write( row.format( pos = positions[idx],
+                                           distance = positions[idx+1] - positions[idx],
+                                           genotype = alleles ) )
 
-        outfile.write( row.format( pos=positions[-1],
-                                   distance = int(self.sequence_length - positions[-1] + 0.5),
+        outfile.write( row.format( pos = positions[-1],
+                                   distance = self.sequence_length - positions[-1],
                                    genotype = "." * len(data) ) )
-            
+
         outfile.close()
 
 
@@ -317,11 +410,11 @@ class Population:
         # sequence of (pos, segment_size, value) or (pos, segment_size, value1, valud2) tuples.
         # The first two generators use the list just read in to do this, the others
         # consume data from an upstream generator.  In this way it is relatively straightforward to
-        # do a fairly complex transformation of the data: convert into segments, discretize to 100 bp
-        # blocks, and merge blocks with the same value together (and add a header).
-        # It's possibly not the simplest way to do this, but it nicely separates the various steps of
-        # the transformation.  This style is also memory-efficient -- no intermediate data stores are
-        # necessary; a trivial advantage in this case, but nice for very large data sets.
+        # do a fairly complex transformation of the data: convert into segments, discretize to
+        # 100 bp blocks, and merge blocks with the same value together (and add a header).
+        # It's possibly not the simplest way to do this, but it nicely separates the various steps
+        # of the transformation.  This style is also memory-efficient -- no intermediate data
+        # stores are necessary; trivial advantage in this case, but nice for very large data sets.
         class Conversion:
             def __init__(self, lengths, heights, segsize):
                 self.lengths = lengths
@@ -356,7 +449,7 @@ class Population:
                             # next interval
                             pos += self.segsize
                             integral = 0
-                        # cannot generate further segments -- add last bit of current, and get new one
+                        # cannot generate further segments; add last bit of current, get new one
                         integral += max(0, min( pos + self.segsize, newpos + length)
                                            - max( pos, newpos )) * height
                 except StopIteration:
@@ -403,6 +496,7 @@ class Population:
 #
 # some models
 #
+
 class Pop2(Population):
 
     def __init__(self, **kwargs):
@@ -497,7 +591,7 @@ class TwoPopUniDirMigr(Population):
     def __init__(self, **kwargs):
 
         defaults = {'change_points':    [0, .1, .5],
-                    'population_sizes': [1, 1, 1],
+                    'population_sizes': [[1,1], [1,1], [1,1]],
                     'num_populations':  2,
                     'migration_rates':  [ [[0,0],[1,0]],   # -em 0   2 1 1
                                           [[0,0],[1,0]],   # -em 0.1 2 1 1
@@ -517,7 +611,7 @@ class TwoPopBiDirMigr(Population):
     def __init__(self, **kwargs):
 
         pop2migr_defaults = {'change_points':    [0, .1, .5],
-                             'population_sizes': [1, 1, 1],
+                             'population_sizes': [[1,1], [1,1], [1,1]],
                              'migration_rates':  [ [[0,0.5],[0.5,0]],
                                                    [[0,0.5],[0.5,0]],
                                                    [[0,0.5],[0.5,0]] ],
@@ -537,7 +631,7 @@ class TwoPopSplitNoMigr(Population):
     def __init__(self, **kwargs):
 
         pop2migr_defaults = {'change_points':      [0, .1, .5],
-                             'population_sizes':   [1, 1, 1],
+                             'population_sizes':   [[1,1], [1,1], [1,1]],
                              'num_populations':    2,
                              'migration_commands': [None,None,"-ej 0.5 2 1"],
                              'num_samples': 8}
@@ -551,18 +645,18 @@ class TwoPopSplitNoMigr(Population):
 
 
 
+
 #
 # main code for standalone execution
 #
 if __name__ == "__main__":
-    models = {"Pop2": Pop2,
-              "Pop2Migr": Pop2Migr}
+    models = {"Population": Population}
     labels = str(tuple(models.keys())).replace("'","")
     parser = OptionParser()
     parser.add_option("-o", "--output", dest="outfile",
                       help="write data to FILE.seg", metavar="FILE.seg")
     parser.add_option("-m", "--model", dest="model",
-                      help="choose model {}".format(labels), default = "Pop2")
+                      help="choose model {}".format(labels), default = "Population")
     parser.add_option("-n", "--numsamples", type="int", dest="num_samples",
                       help="number of samples to simulate")
     parser.add_option("-l", "--seqlen", type="int", dest="seqlen",

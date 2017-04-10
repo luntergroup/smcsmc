@@ -5,6 +5,7 @@ import os
 import time
 import subprocess
 import itertools
+import shutil
 
 try:
     from sqlalchemy import Column, Integer, Float, Boolean, String, DateTime, ForeignKey, Table, MetaData, create_engine
@@ -52,15 +53,16 @@ class TestGeneric(unittest.TestCase):
         self.infer_recombination = True
         self.ancestral_aware = False
         self.phased = True
-        self.lag = 4.0
+        self.chunks = 1
+        self.lag = 1.0
         self.smcsmc_change_points = None
         self.smcsmc_initial_pop_sizes = None
         self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
+        self.directed_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
+        self.directed_recomb_beta = 4       # extent of smoothing of the recombination change points
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
-        self.directed_recomb = False
-        self.directed_recomb_strength = 0.3
         self.filename_disambiguator = ""
         self.int_parameter = 0
         self.str_parameter = ""
@@ -79,7 +81,7 @@ class TestGeneric(unittest.TestCase):
     def tearDown(self):
         if self.success and self.prefix != None:
             toplevel = itertools.product( [self.pop.filename],
-                                          ["",".recomb"] )
+                                          ["",".recomb",".seg.scrm"] )
             percase = itertools.product( ["{}_C{}".format(self.pop.filename[:-4], case)
                                           for case in self.cases ],
                                          ['.out','.log','.stdout','.stderr','.recomb.gz'] )
@@ -87,7 +89,10 @@ class TestGeneric(unittest.TestCase):
                 try:
                     os.unlink( prefix + suffix )
                 except OSError:
-                    print ("Warning: file ",prefix + suffix," expected but not found")
+                    #print ("Warning: file ",prefix + suffix," expected but not found")
+                    # ignore non-existent files; smcsmc.py does not produce .log or .recomb.gz files
+                    pass
+            shutil.rmtree( os.path.dirname(self.pop.filename), ignore_errors = True )
 
     # method to build smcsmc command corresponding to the simulated data
     def build_command(self):
@@ -123,7 +128,11 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
+        guideopt = "-alpha {}".format( self.directed_recomb_alpha ) if self.directed_recomb_alpha>0 else ""
 
+        ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
+        ###       specifies the epochs to infer.  That's probably what we want to do anyway,
+        ###       but in that case the test code shouldn't suggest that it supports this!
         if self.popt:
             # use -p / -tmax pattern to specify epochs for inference
             epochopt = "{popt} -tmax {tmax}".format(popt = self.popt,
@@ -139,22 +148,20 @@ class TestGeneric(unittest.TestCase):
             else:
                 # use model epochs for inference
                 epochs = self.pop.change_points
-            #epochopt = " ".join(["-eN {time} 1".format(time=time)
-            #                     for time in epochs])
-            epochopt = ""
+            epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
         if self.infer_recombination:
             recinfopt = ""
         else:
-            recinfopt = "-xr 1-{}".format(num_epochs)
+            recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
         else:
             ancawareopt = ""
 
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -162,6 +169,7 @@ class TestGeneric(unittest.TestCase):
                                      recinf = recinfopt,
                                      np = particlesopt,
                                      em = emopt,
+                                     guide = guideopt,
                                      lag = lagopt,
                                      epochs = epochopt,
                                      seed = seedopt,
@@ -286,12 +294,21 @@ class TestGeneric(unittest.TestCase):
                     continue
                 print ("  checking migr",from_pop,"->",to_pop,"epoch",result['epoch'],end=" ")
 
+            elif result['type'] == "LogL":
+                estimate = result['rate'][-1]
+                ess = 1.0
+                try:
+                    this_parameter = (item for item in self.targets if item["type"] == "LogL").next()
+                except:
+                    continue
+                print ("  checking log likelihood     ",end=" ")                
+                
             target_min = this_parameter['min']
             target_max = this_parameter['max']
             truth      = this_parameter['truth']
             min_ess    = this_parameter.get('ess',0.0)
 
-            print (" True {:8.3g} Est {:8.3g} Range {:8.3g} - {:8.3g}; ESS {:7.3g} Min {:7.3g}".format(
+            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}".format(
                 truth, estimate, target_min, target_max, ess, min_ess))
             if estimate < target_min or estimate > target_max:
                 print("  ** Out of range! **")
@@ -326,6 +343,8 @@ class TestGeneric(unittest.TestCase):
                                          'from_pop': int(from_pop), 'to_pop': int(to_pop),
                                          'epoch': int(epoch), 'start': float(start),
                                          'end': float(end), 'rate': [float(rate)], 'ess': [float(ess)]} )
+                    elif typ == "LogL":
+                        results.append( {'type': 'LogL', 'rate': [float(rate)] } )
                 else:
                 # append this parameter estimate to the list within the correct dictionary
                 # first extract the correct dictionary, then append it
@@ -350,6 +369,9 @@ class TestGeneric(unittest.TestCase):
                                       item['epoch'] == int(epoch))).next()
                         result['rate'].append( float(rate) )
                         result['ess'].append( float(ess) )
+                    elif typ == "LogL":
+                        result = (item for item in results if item['type'] == "LogL").next()
+                        result['rate'].append( float(rate) )
 
         return results
 
@@ -378,7 +400,7 @@ class TestGeneric(unittest.TestCase):
             class Experiment(Base):
                 __tablename__ = "experiment"
                 id                       = Column(Integer, primary_key=True)
-                date                     = Column(DateTime, default=func.now())
+                date                     = Column(String)
                 name                     = Column(String)
                 simulate_command         = Column(String)
                 inference_command        = Column(String)
@@ -386,6 +408,7 @@ class TestGeneric(unittest.TestCase):
                 lag                      = Column(Float)
                 num_samples              = Column(Integer)
                 sequence_length          = Column(Integer)
+                chunks                   = Column(Integer)
                 missing_leaves           = Column(String)
                 recombination_rate       = Column(Float)
                 mutation_rate            = Column(Float)
@@ -397,8 +420,8 @@ class TestGeneric(unittest.TestCase):
                 initial_migr_values      = Column(String)
                 bias_heights             = Column(String)
                 bias_strengths           = Column(String)
-                directed_recomb          = Column(Boolean)
-                directed_recomb_strength = Column(Float)     # I'll need to rename/reformat this based on implementation
+                directed_recomb_alpha    = Column(Float)
+                directed_recomb_beta     = Column(Float)
                 dataseed                 = Column(Integer)
                 infseed                  = Column(Integer)
                 smcsmc_runtime           = Column(Float)
@@ -433,12 +456,14 @@ class TestGeneric(unittest.TestCase):
         session = Session()
         name = self.name if self.name != None else self.prefix.split('/')[-1]
         this_exp = Experiment( name                     = name,
+                               date                     = time.strftime("%d/%m/%Y")+" "+time.strftime("%X"),
                                simulate_command         = self.pop.simulate_command,
                                inference_command        = self.inference_command,
                                np                       = self.np,
                                lag                      = self.lag,
                                num_samples              = self.pop.num_samples,
                                sequence_length          = int(self.pop.sequence_length),
+                               chunks                   = int(self.chunks),
                                missing_leaves           = str(self.missing_leaves),
                                recombination_rate       = self.pop.recombination_rate,
                                mutation_rate            = self.pop.mutation_rate,
@@ -450,8 +475,8 @@ class TestGeneric(unittest.TestCase):
                                initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migr_rates)) if self.smcsmc_initial_migr_rates else str(self.pop.migration_rates),
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
-                               directed_recomb          = self.directed_recomb,
-                               directed_recomb_strength = self.directed_recomb_strength,
+                               directed_recomb_alpha    = self.directed_recomb_alpha,
+                               directed_recomb_beta     = self.directed_recomb_beta,
                                dataseed                 = self.pop.seed[0],
                                infseed                  = self.seed[0],
                                smcsmc_runtime           = self.smcsmc_runtime,
