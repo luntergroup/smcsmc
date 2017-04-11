@@ -35,9 +35,7 @@
 
 #include <fenv.h>
 
-/*!
- * Global variable for the memory arena
- */
+// Global variable for the memory arena
 class Arena* Arena::globalArena;
 
 
@@ -246,7 +244,10 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
 
-    calibrate_bias_ratios( model, pfARG_para.top_t() );
+    // Commented out; experimenting with conditional normalization so that under recombination biasing,
+    // the overall rate remains the same independent of the tree, but conditional on a recombination,
+    // the relative rates across the tree are modified so as to provide the desired bias.
+    //calibrate_bias_ratios( model, pfARG_para.top_t() );
 
     dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;    
     Segfile->read_new_line();

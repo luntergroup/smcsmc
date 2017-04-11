@@ -5,6 +5,7 @@ import os
 import time
 import subprocess
 import itertools
+import shutil
 
 try:
     from sqlalchemy import Column, Integer, Float, Boolean, String, DateTime, ForeignKey, Table, MetaData, create_engine
@@ -307,14 +308,15 @@ class TestGeneric(unittest.TestCase):
             truth      = this_parameter['truth']
             min_ess    = this_parameter.get('ess',0.0)
 
-            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}".format(
-                truth, estimate, target_min, target_max, ess, min_ess))
+            msg = ""
             if estimate < target_min or estimate > target_max:
-                print("  ** Out of range! **")
+                msg += "  ** Out of range! **"
                 out_of_range += 1
             if ess < min_ess:
-                print("  ** ESS too low! **")
+                msg += "  ** ESS too low! **"
                 out_of_range += 1
+            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}{}".format(
+                truth, estimate, target_min, target_max, ess, min_ess, msg))
 
         self.assertTrue( out_of_range <= self.max_out_of_range )
         self.success = True

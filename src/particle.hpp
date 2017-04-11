@@ -225,9 +225,10 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
-    double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
-    PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias
+    double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
+    PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias.  NOTE: move elsewhere?
+    double recombination_bias_importance_weight_;    // importance weight due to recombination biasing; delay is treated specially for this IW
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
     bool owning_model_and_random_generator;
 

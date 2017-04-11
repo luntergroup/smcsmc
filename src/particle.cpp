@@ -496,8 +496,9 @@ double ForestState::extend_ARG ( double extend_to ) {
         if ( updated_to < extend_to ) {
 
             // a recombination has occurred, or the recombination rate has changed;
-            // sampleNextGenealogy deals with both.
+            // forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
             first_coalescence_height_ = -1.0;
+            recombination_bias_importance_weight_ = 1.0;
             double importance_weight = this->sampleNextGenealogy( true );
 
             if (importance_weight >= 0.0) {
@@ -507,15 +508,15 @@ double ForestState::extend_ARG ( double extend_to ) {
                     throw std::runtime_error("No coalescent found where one was expected");
                 double delay = find_delay( first_coalescence_height_ );
 
-                // Hack.
                 // If the coalescence occurred above top bias height, i.e. the sampling failed
                 // to produce an early coalescent as intended, then apply the importance weight
-                // immediately, so that we don't pollute the particles  (Works for now: when we
-                // bias recombinations based on posteriors, the part of the importance weight
-                // due to posteriors should always get the appropriate delay.)
+                // factor due to the recombination bias immediately, so that we don't pollute
+                // the particles.  However, always apply the importance weight due to guiding
+                // with the appropriate delay
                 int bhsize = model().bias_heights().size();
                 if (bhsize >= 2 && first_coalescence_height_ > model().bias_heights()[bhsize-2]) {
-                    delay = 1;
+                    adjustWeights( recombination_bias_importance_weight_ );
+                    importance_weight /= recombination_bias_importance_weight_;
                 }
                 
                 // enter the importance weight, and apply it semi-continuously:
@@ -641,33 +642,6 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
 }
 
 
-double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left,
-                                                  double* bias_ratio) const {
-
-    assert( length_left <= WeightedBranchLengthAbove( node ) );
-
-    if (!(model().biased_sampling)) {
-        *bias_ratio = 1.0;
-        return node->height() + length_left;
-    }
-    
-    // loop over time sections present in branch and add the weighted length
-    size_t time_idx = 0;
-    double lower_end, upper_end;
-    do {
-        lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
-        if ( length_left >= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end ) ) {
-            length_left -= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
-        } else {
-            *bias_ratio = model().bias_ratios()[time_idx];
-            return lower_end + length_left / *bias_ratio;
-        }
-        ++time_idx;
-    } while ( upper_end < node->parent_height() );
-    throw std::runtime_error("This should never happen...");
-}
-
 
 //
 //
@@ -718,7 +692,8 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
                            * getLocalTreeLength());
     double sampled_rate = (sequence_distance
                            * posterior_weighted_recombination_rate
-                           * getWeightedLocalTreeLength());
+                           * //getWeightedLocalTreeLength());
+                           getLocalTreeLength() );  // TESTING
 
     // return target_density / sampled_density, that is, exp( -target_rate ) / exp( -sampled_rate )
     double importance_weight = std::exp( sampled_rate - target_rate );
@@ -739,7 +714,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
 double ForestState::sampleNextBase() {
 
     double distance_until_rate_change  = model().getNextSequencePosition() - current_base();
-    double wtd_local_tree_len          = getWeightedLocalTreeLength();
+    double wtd_local_tree_len          = getLocalTreeLength();            // TESTING conditional reweighted trees
     double recomb_rate                 = model().recombination_rate();    // posterior weighted
     double weighted_pernuc_recomb_rate = recomb_rate * wtd_local_tree_len;
 
@@ -789,10 +764,14 @@ double ForestState::samplePoint() {
     // recombination point (x,y) where  x  is the sequence position and  y  the point on the tree;
     // not the ratio of conditional densities to sample  y  given  x  (although that is the density
     // this function samples from)
-    double sampled_density = bias_ratio;
+    double sampled_density = bias_ratio / getWeightedLocalTreeLength() * getLocalTreeLength();
     double target_density = 1.0;
     double importance_weight = target_density / sampled_density;
 
+    // set importance weight due to recombination biasing (as opposed to guiding), to allow the
+    // delay for this importance weight to be applied independently to that for guiding
+    recombination_bias_importance_weight_ = importance_weight;
+    
     // done -- importance weight (and delay) are implemented in extend_ARG,
     // via sampleNextGenealogy (scrm/forest.cc)
     return importance_weight;
@@ -823,3 +802,32 @@ double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left
     }
     return -1;
 }
+
+
+double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left,
+                                                  double* bias_ratio) const {
+
+    assert( length_left <= WeightedBranchLengthAbove( node ) );
+
+    if (!(model().biased_sampling)) {
+        *bias_ratio = 1.0;
+        return node->height() + length_left;
+    }
+    
+    // loop over time sections present in branch and add the weighted length
+    size_t time_idx = 0;
+    double lower_end, upper_end;
+    do {
+        lower_end = max( model().bias_heights()[time_idx] , node->height() );
+        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
+        if ( length_left >= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end ) ) {
+            length_left -= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
+        } else {
+            *bias_ratio = model().bias_ratios()[time_idx];
+            return lower_end + length_left / *bias_ratio;
+        }
+        ++time_idx;
+    } while ( upper_end < node->parent_height() );
+    throw std::runtime_error("This should never happen...");
+}
+

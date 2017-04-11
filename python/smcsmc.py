@@ -240,6 +240,16 @@ class Smcsmc:
         of.close()
 
 
+    def wait_for_outfile(self, iteration, chunk):
+        sleeptime = 30
+        while True:
+            if os.path.exists( self.out_template.format(iteration,chunk) ):
+                break
+            if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
+            time.sleep( sleeptime )
+            sleeptime *= 1.02
+        
+
     def merge_outfiles(self):
         of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
         of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS\n")
@@ -359,13 +369,7 @@ class Smcsmc:
 
         # wait for all .out files to appear (used if e_step submits jobs to sge)
         for chunk in range(self.chunks):
-            sleeptime = 30
-            while True:
-                if os.path.exists( self.out_template.format(iteration,chunk) ):
-                    break
-                if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
-                time.sleep( sleeptime )
-                sleeptime *= 1.02
+            self.wait_for_outfile(iteration, chunk)
         logger.info("Found all chunks; calculating sufficient statistics")
 
         # combine the .out files
