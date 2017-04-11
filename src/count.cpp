@@ -71,9 +71,9 @@ void CountModel::log_counts( PfParam& param ) {
                                    "Coal",
                                    pop_idx,
                                    -1,
-                                   this->total_coal_opportunity[epoch_idx][pop_idx].final_answer(),
-                                   this->total_coal_count[epoch_idx][pop_idx].final_answer(),
-                                   this->total_coal_weight[epoch_idx][pop_idx].final_answer());
+                                   this->total_coal_opportunity[epoch_idx][pop_idx],
+                                   this->total_coal_count[epoch_idx][pop_idx],
+                                   this->total_coal_weight[epoch_idx][pop_idx]);
         }
     }
 
@@ -82,9 +82,9 @@ void CountModel::log_counts( PfParam& param ) {
     double recomb_count = 0;
     double recomb_weight = 0;
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
-        recomb_opportunity += total_recomb_opportunity[epoch_idx][0].final_answer();
-        recomb_count       += total_recomb_count[epoch_idx][0].final_answer();
-        recomb_weight      += total_recomb_weight[epoch_idx][0].final_answer();
+        recomb_opportunity += total_recomb_opportunity[epoch_idx][0];
+        recomb_count       += total_recomb_count[epoch_idx][0];
+        recomb_weight      += total_recomb_weight[epoch_idx][0];
         if ( false ){ // when false, do not print out recomb events at every epoch.
             param.appendToOutFile( param.EMcounter(),
                                    (int)epoch_idx,
@@ -93,9 +93,9 @@ void CountModel::log_counts( PfParam& param ) {
                                    "Recomb",
                                    -1,
                                    -1,
-                                   this->total_recomb_opportunity[epoch_idx][0].final_answer(),
-                                   this->total_recomb_count[epoch_idx][0].final_answer(),
-                                   this->total_recomb_weight[epoch_idx][0].final_answer());
+                                   this->total_recomb_opportunity[epoch_idx][0],
+                                   this->total_recomb_count[epoch_idx][0],
+                                   this->total_recomb_weight[epoch_idx][0]);
         }
     }
     param.appendToOutFile( param.EMcounter(),
@@ -121,9 +121,9 @@ void CountModel::log_counts( PfParam& param ) {
                                            "Migr",
                                            from_pop_idx,
                                            to_pop_idx,
-                                           this->total_mig_opportunity[epoch_idx][from_pop_idx].final_answer(),
-                                           this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx].final_answer(),
-                                           this->total_mig_weight[epoch_idx][from_pop_idx].final_answer());
+                                           this->total_mig_opportunity[epoch_idx][from_pop_idx],
+                                           this->total_mig_count[epoch_idx][from_pop_idx][to_pop_idx],
+                                           this->total_mig_weight[epoch_idx][from_pop_idx]);
                 }
             }
         }
@@ -146,7 +146,7 @@ void CountModel::init_coal_and_recomb() {
         if (epoch_idx > 0)
             increaseTime();
         // populate coalescent and recombination event counters
-        vector <TwoDoubles> tmp_count(this->population_number(), TwoDoubles(0));
+        vector <double> tmp_count(this->population_number(), double(0));
         total_coal_count.push_back(tmp_count);
         total_recomb_count.push_back(tmp_count);
         // enter initial value
@@ -156,7 +156,7 @@ void CountModel::init_coal_and_recomb() {
             total_recomb_count[epoch_idx][pop_i] = this->recombination_rate();
         }
         // populate and enter initial value for opportunity
-        vector <TwoDoubles> tmp_opportunity(this->population_number(), TwoDoubles(1));
+        vector <double> tmp_opportunity(this->population_number(), double(1));
         total_coal_opportunity.push_back(tmp_opportunity);
         total_recomb_opportunity.push_back(tmp_opportunity);
         // and same for weight counters
@@ -181,12 +181,12 @@ void CountModel::init_migr() {
             increaseTime();
 
         // populate and set up initial values for the event count, opportunity, and inferred rate vectors, for one epoch
-        vector < vector < TwoDoubles > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
-        vector < TwoDoubles >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
+        vector < vector < double > > tmp_count_Time_i;               // Event counts for migrations pop_i -> pop_j
+        vector < double >            tmp_opp_Time_i;                 // Opportunity  for migrations from pop_i
         vector < vector < double > >      tmp_rate_Time_i_double;         // Rates        for migrations pop_i -> pop_j
         for (size_t pop_i = 0 ; pop_i < this->population_number(); pop_i++ ){
-            tmp_count_Time_i.      push_back( vector<TwoDoubles>( this->population_number(), TwoDoubles( 0.0 ) ) );
-            tmp_opp_Time_i.        push_back( TwoDoubles(1) );
+            tmp_count_Time_i.      push_back( vector<double>( this->population_number(), double( 0.0 ) ) );
+            tmp_opp_Time_i.        push_back( double(1) );
             tmp_rate_Time_i_double.push_back( vector<double>( this->population_number(), 0 ) );
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++) {
                 tmp_count_Time_i[ pop_i ][ pop_j ]       = this->migration_rate( pop_i, pop_j );
@@ -241,9 +241,9 @@ void CountModel::reset_Ne ( Model *model, bool useCap, double cap){
 
     for (size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++) {
         for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ) {
-            double coal_opp    = total_coal_opportunity[epoch_idx][pop_j].final_answer();
-            double coal_count  = total_coal_count[epoch_idx][pop_j].final_answer();
-            double coal_weight = total_coal_weight[epoch_idx][pop_j].final_answer();
+            double coal_opp    = total_coal_opportunity[epoch_idx][pop_j];
+            double coal_count  = total_coal_count[epoch_idx][pop_j];
+            double coal_weight = total_coal_weight[epoch_idx][pop_j];
             double coal_rate  = coal_count / coal_opp;
             double pop_size   = 1.0 / (2.0 * coal_rate);
             if ( useCap ){
@@ -258,7 +258,7 @@ void CountModel::reset_Ne ( Model *model, bool useCap, double cap){
 
             clog << " Setting size of population " << pop_j << " @ " << setw(8) << change_times_[epoch_idx] << " to "
                  << setw(8) << pop_size
-                 << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j].final_answer() << " / " << this->total_coal_count[epoch_idx][pop_j].final_answer() << "; post-lag ESS "
+                 << " ( 0.5 * " << total_coal_opportunity[epoch_idx][pop_j] << " / " << this->total_coal_count[epoch_idx][pop_j] << "; post-lag ESS "
                  << 1.0 / (coal_weight / coal_opp) << " )" << endl;
         }
     }
@@ -273,9 +273,9 @@ void CountModel::reset_recomb_rate ( Model *model ){
     double recomb_weight = 0;
 
     for ( size_t epoch_idx = 0; epoch_idx < change_times_.size(); epoch_idx++ ) {
-        recomb_opportunity += total_recomb_opportunity[epoch_idx][0].final_answer();
-        recomb_count       += total_recomb_count[epoch_idx][0].final_answer();
-        recomb_weight      += total_recomb_weight[epoch_idx][0].final_answer();
+        recomb_opportunity += total_recomb_opportunity[epoch_idx][0];
+        recomb_count       += total_recomb_count[epoch_idx][0];
+        recomb_weight      += total_recomb_weight[epoch_idx][0];
     }
     double inferred_recomb_rate = recomb_count / recomb_opportunity;
 
@@ -310,8 +310,8 @@ void CountModel::reset_mig_rate ( Model *model ) {
             for (size_t pop_j = 0 ; pop_j < this->population_number(); pop_j++ ) {
                 if ( pop_i == pop_j) continue;
                 double migration_rate =
-                    total_mig_count[epoch_idx][pop_i][pop_j].final_answer() /
-                    total_mig_opportunity[epoch_idx][pop_i].final_answer();
+                    total_mig_count[epoch_idx][pop_i][pop_j] /
+                    total_mig_opportunity[epoch_idx][pop_i];
 
                 model->addMigrationRate(change_times_[epoch_idx], pop_i, pop_j, migration_rate, false, false);
             }
@@ -462,7 +462,7 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 
     double x_start = counted_to[ epoch_idx ];  // counts have been updated to here
     double x_end = update_to[ epoch_idx ];     // and should be updated to here
-
+    
     // do counts in this epoch require updating?
     if ( event->start_base() < x_end )  {
 
@@ -477,19 +477,19 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
             int pop = event->get_population();
             if ( x_start <= event->start_base() ) {
                 if (event->is_coal_event()) {   // not stricly necessary, as if !is_coal_event, coal_event_count()==0
-                    total_coal_count[ epoch_idx ][ pop ].add( weight * event->coal_event_count() );
+                    total_coal_count[ epoch_idx ][ pop ] += ( weight * event->coal_event_count() );
                 }
                 if (event->is_migr_event()) {   // if !is_migr_event(), event->get_migr_to_population() is not valid
-                    total_mig_count[epoch_idx][ pop ][ event->get_migr_to_population() ].add( weight * event->migr_event_count() );
+                    total_mig_count[epoch_idx][ pop ][ event->get_migr_to_population() ] += ( weight * event->migr_event_count() );
                 }
             }
             // account for the opportunity in the segment [epoch_start, epoch_end)
             double coal_opp = event->coal_opportunity_between( epoch_start, epoch_end );
             double migr_opp = event->migr_opportunity_between( epoch_start, epoch_end );
-            total_coal_opportunity[ epoch_idx ][ pop ].add( weight * coal_opp );
-            total_coal_weight[ epoch_idx ][ pop ].add( weight * weight * coal_opp );
-            total_mig_opportunity[ epoch_idx ][ pop ].add( weight * migr_opp );
-            total_mig_weight[ epoch_idx ][ pop ].add( weight * weight * migr_opp );
+            total_coal_opportunity[ epoch_idx ][ pop ] += ( weight * coal_opp );
+            total_coal_weight[ epoch_idx ][ pop ] += ( weight * weight * coal_opp );
+            total_mig_opportunity[ epoch_idx ][ pop ] += ( weight * migr_opp );
+            total_mig_weight[ epoch_idx ][ pop ] += ( weight * weight * migr_opp );
         }
 
         // consider recombinations
@@ -497,13 +497,18 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
             bool isEndOfSeq = this->loci_length() == x_end;
             // the recombination event (and opportunity) is arbitrarily assigned to population 0
             double recomb_opp = event->recomb_opportunity_between( epoch_start, epoch_end, x_start, x_end );
-            total_recomb_count[epoch_idx][ 0 ].add( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end, isEndOfSeq ) );
-            total_recomb_opportunity[epoch_idx][ 0 ].add( weight * recomb_opp );
-            total_recomb_weight[ epoch_idx ][ 0 ].add( weight * weight * recomb_opp );
+            total_recomb_count[epoch_idx][ 0 ] += ( weight * event->recomb_event_count_between( epoch_start, epoch_end, x_start, x_end, isEndOfSeq ) );
+            //cout << "adding wt=" << weight << " opp=" << recomb_opp << endl;
+            //cout << "adding to " << total_recomb_opportunity[epoch_idx][0] << endl;
+            total_recomb_opportunity[epoch_idx][ 0 ] += ( weight * recomb_opp );
+            //cout << "adding to " << total_recomb_weight[epoch_idx][0] << endl;
+            total_recomb_weight[ epoch_idx ][ 0 ] += ( weight * weight * recomb_opp );
             double local_x_start = max( x_start, event->get_start_base() );
             double local_x_end = min( x_end, event->get_end_base() );
-            record_local_recomb_events( local_x_start, local_x_end, weight, recomb_opp,
-                                        event->recomb_event_base(), event->get_descendants() );
+            if (local_x_start < local_x_end) {
+                record_local_recomb_events( local_x_start, local_x_end, weight, recomb_opp,
+                                            event->recomb_event_base(), event->get_descendants() );
+            }
         }
     }
 }

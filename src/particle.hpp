@@ -167,6 +167,10 @@ private:
     double posteriorWeight() const { return this->posterior_weight_; }
     double pilotWeight() const { return this->pilot_weight_; }
 
+    // Save and restore recombination rate index
+    void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
+    void restore_recomb_state() { const_cast<Model&>(model()).resetSequencePosition( _current_seq_idx ); }
+
     // Biased sampling
     void adjustWeights(double adjustment) {
         posterior_weight_ *= adjustment;
@@ -222,6 +226,7 @@ private:
     double posterior_weight_;
     double pilot_weight_;
     double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
+    int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
     bool owning_model_and_random_generator;

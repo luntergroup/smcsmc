@@ -50,6 +50,7 @@ ForestState::ForestState( Model* model,
         random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
         model_ = new Model( *model_ );
     }
+    save_recomb_state();
 }
 
 
@@ -67,7 +68,7 @@ ForestState::ForestState( const ForestState & copied_state )
     delayed_adjustments = copied_state.delayed_adjustments;
     setSiteWhereWeightWasUpdated( copied_state.site_where_weight_was_updated() );
     copyEventContainers ( copied_state );
-    this->current_rec_ = copied_state.current_rec_;
+    current_rec_ = copied_state.current_rec_;
     owning_model_and_random_generator = copied_state.owning_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we (and copied_state) own model and rg, we should make copies
@@ -75,6 +76,7 @@ ForestState::ForestState( const ForestState & copied_state )
         random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
         model_ = new Model( *model_ );
     }
+    _current_seq_idx = copied_state._current_seq_idx;
 }
 
 
@@ -455,7 +457,7 @@ double ForestState::extend_ARG ( double extend_to ) {
         // Suppose we're looking at a segment  [0,T)  without recombinations, followed by a
         // recombination at a point  y  in a tree Y.  Let  mu(Y)  be the tree's total branch
         // length, and  rho(y) = rho  the (constant) recombination rate per generation per
-        // nucleotide at the recombination point  y.  The probability density of theis event is
+        // nucleotide at the recombination point  y.  The probability density of this event is
         // then
         //
         //      exp( -\int_{t=0}^T \int_{y in Y}  rho(y) dt dy ) * rho(y) dt dy
@@ -687,6 +689,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
 
     int cur_rec_idx = model().get_position_index();
     assert (cur_rec_idx > 0);
+
     double cur_recomb_segment_start = model().change_position(cur_rec_idx);
     // the update segment may, or may not, overlap the "current" recombination rate segment,
     // since that is moved along as soon as the simulated segment hits a change point.

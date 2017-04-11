@@ -49,6 +49,7 @@ ParticleContainer::ParticleContainer(Model *model,
         new_state->init_EventContainers( model );
         new_state->buildInitialTree();
         new_state->record_recomb_extension();
+        new_state->save_recomb_state();
         new_state->setSiteWhereWeightWasUpdated( initial_position );
         new_state->setPosteriorWeight( 1.0/Num_of_states );
         new_state->setPilotWeight( 1.0/Num_of_states );
@@ -105,7 +106,9 @@ void ParticleContainer::extend_ARGs( double extend_to ){
          * Invariant: the likelihood is correct up to 'updated_to'
          */
         dout << " before extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
+        particles[particle_i]->restore_recomb_state();
         particles[particle_i]->extend_ARG ( extend_to );
+        particles[particle_i]->save_recomb_state();
         dout << " after extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
     }
 }
@@ -271,7 +274,9 @@ void ParticleContainer::implement_resampling(valarray<int> & sample_count, doubl
                 // Resample the recombination position if particle has not hit end of sequence,
                 // and give particle its own event history
                 if ( new_copy_state->current_base() < new_copy_state->next_base() ) {
+                    new_copy_state->restore_recomb_state();
                     new_copy_state->resample_recombination_position();
+                    new_copy_state->save_recomb_state();
                 }
 
                 // calculate weight adjustment. Since the old particle's weight was changed in-place above,

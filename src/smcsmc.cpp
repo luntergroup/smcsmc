@@ -33,6 +33,7 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <fenv.h>
 
 /*!
  * Global variable for the memory arena
@@ -49,6 +50,9 @@ int main(int argc, char *argv[]){
 
     bool print_update_count = false; // DEBUG
 
+    // catch floating point exceptions, to aid debugging
+    feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);
+    
     try {
         /*! Extract pfARG parameters */
         PfParam pfARG_para;
