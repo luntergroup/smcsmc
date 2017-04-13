@@ -11,7 +11,7 @@ void ModelSummary::addTree(){
     MersenneTwister *randomgenerator = new MersenneTwister( true, tree_count_ );
     //Forest* forest = new Forest( this->model, randomgenerator );
     Forest forest = Forest( this->model, randomgenerator );
-    forest.buildInitialTree();
+    forest.buildInitialTree( false );
     set_current_tree_B(forest.local_root()->length_below());
 
     current_tree_traversed_ = false;

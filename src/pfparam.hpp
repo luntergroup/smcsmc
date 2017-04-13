@@ -107,11 +107,6 @@ public:
     int get_num_leaves() const             { return _leaf_rel_rates.size(); }
     double get_rate() const                { return _rate; }
     double get_leaf_rate( int leaf ) const { return _leaf_rel_rates[leaf]; }
-    void adjust_start_pos( int start_pos ) {
-        int end = get_end() - start_pos;
-        _locus = max(0, _locus - start_pos);
-        _size = end - _locus;
-    }
     friend std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs);
     friend std::ostream& operator<<(std::ostream& str, const RecombBiasSegment& rbs) {
         str << rbs._locus << "\t" << rbs._size << "\t" << rbs._rate;
@@ -165,8 +160,8 @@ public:
         assert( _bias_segments.size() == 0 );
         _num_leaves = num_leaves;
     }
-    void parse_recomb_bias_file( string filename, int start_pos ) {
-
+    void parse_recomb_bias_file( string filename ) {
+        // recombination guide files are always 0-based!
         boost::iostreams::filtering_istream in_file;
         ifstream in_raw;
         if (boost::algorithm::ends_with( filename, ".gz")) {
@@ -187,11 +182,8 @@ public:
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
             assert( tmp.get_num_leaves() == _num_leaves );
-            if (tmp.get_end() > start_pos) {
-                tmp.adjust_start_pos( start_pos );
-                assert( tmp.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
-                _bias_segments.push_back( tmp );
-            }
+            assert( tmp.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
+            _bias_segments.push_back( tmp );
         }
     }
     const RecombBiasSegment& get_recomb_bias_segment( int idx ) const {

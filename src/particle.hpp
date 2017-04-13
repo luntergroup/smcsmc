@@ -199,23 +199,17 @@ private:
     }
     
     //// biased sampling    
-    double importance_weight_over_segment( double previously_updated_to, double update_to );
-
     double find_delay( double coal_height );
+    double importance_weight_over_segment( double previously_updated_to, double update_to );
+    double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
+    double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
     
-    double sampleHeightOnWeightedBranch( Node* node, double length_left, double* bias_ratio) const;
-    double sampleBiasedPoint_recursive( Node* node, double& length_left );
-    
-    double getWeightedLocalTreeLength() const;
-    double getWeightedLengthBelow( Node* node ) const;
-    double WeightedBranchLengthAbove( Node* node ) const;
-
     // What does this do?
     Node* trackLocalNode(Node *node) const;
 
     // below are overloaded
-    virtual double sampleNextBase();
-    virtual double samplePoint();
+    virtual double sampleNextBase( bool record_and_bias );
+    virtual double samplePoint( bool record_and_bias );
     
     // Debugging tools
     std::string newick(Node *node) ;
@@ -228,7 +222,7 @@ private:
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
     PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias.  NOTE: move elsewhere?
-    double recombination_bias_importance_weight_;    // importance weight due to recombination biasing; delay is treated specially for this IW
+    double recombination_bias_importance_weight_;    // factor of importance weight due to recombination biasing; delay is treated specially for this IW
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
     bool owning_model_and_random_generator;
 

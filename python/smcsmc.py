@@ -277,8 +277,11 @@ class Smcsmc:
                     if frompop != topop:
                         key = ("Migr",epoch,frompop,topop)
                         rate = data[ (key,"Count") ] / data[ (key,"Opp") ]
-                        self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate
-                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}".format(epoch, frompop, topop, rate))
+                        # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
+                        #       true units (events per nt per generation).  Reporting the 
+                        self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate * 4 * self.pop.N0
+                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}  ({})".
+                                    format(epoch, frompop, topop, rate, rate*4*self.pop.N0))
         # set recombination rate
         if self.infer_recomb:
             key = ("Recomb",-1,-1,-1)
@@ -345,6 +348,7 @@ class Smcsmc:
             self.m_step( self.parse_outfile( self.out_template.format(iteration-1,"final" ) ) )
             if self.alpha > 0.0:
                 # process the .recomb files to recomb-guideing files
+                logger.info("Processing recombination guide files...")
                 for chunk in range(self.chunks):
                     lr = processrecombination.LocalRecombination( self.recomb_template.format(iteration-1,chunk) )
                     lr.smooth( self.alpha, self.beta )

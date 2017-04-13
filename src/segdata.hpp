@@ -124,9 +124,9 @@ class Segment {
 public:
     vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
     bool empty_file () const      { return this->empty_file_; }
-    double segment_start() const  { return segment_start_ - data_start_ + 1; }
+    double segment_start() const  { return segment_start_ - data_start_; }
     double segment_length() const { return segment_length_; }
-    double segment_end() const    { return segment_start_ - data_start_ + 1 + segment_length_; }
+    double segment_end() const    { return segment_start_ - data_start_ + segment_length_; }
 
     void read_new_line();
     void reset_data_to_first_entry();

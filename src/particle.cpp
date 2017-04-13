@@ -529,7 +529,7 @@ double ForestState::extend_ARG ( double extend_to ) {
             // sample a new recombination position (this calls the virtual overloaded
             // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
             // see comments in sampleNextBase below.
-            this->sampleRecSeqPosition();
+            this->sampleRecSeqPosition( true );
             record_recomb_extension();
 
             // If this is an extension after an actual recombination, record the recomb event
@@ -577,68 +577,97 @@ std::string ForestState::newick(Node *node) {
 }
 
 
-//// biased sampling
+//
+// biased sampling
+//
 
-/**
- * Function for calculating the weighted branch length above a node.
- * The portion of the branch in time section i is weighted by bias_ratio[i]
- * NB: bias_heights is the outer boundaries and hence has one more element than bias_ratios 
- *     (e.g. bh=(0,200,DBL_MAX), br=(5,0.5))
- *
- *  \return the weighted length of the branch above node.
- */
-double ForestState::WeightedBranchLengthAbove( Node* node ) const {
-
-    if (!model().biased_sampling)
-        return node->parent_height() - node->height();
-    
-    // loop over time sections present in branch and add the weighted length
-    double weighted_branch_length = 0;
-    for (size_t time_idx = 0 ; ; ++time_idx) {
-        double lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        double upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
-        weighted_branch_length += model().bias_ratios()[time_idx] * max(0.0, upper_end-lower_end );
-        if (upper_end >= node->parent_height()) break;
-    }
-    return weighted_branch_length;
-}
-
-/**
- * Function to get the weighted tree length for the purpose of 'uniformly'
- * sampling on the tree accounting for the bias.
- *
- * Look through the non-root nodes and account for WeightedBranchLengthAbove
- *
- * \return the sum of weighted branches
- */
-double ForestState::getWeightedLocalTreeLength() const {
-    if (model().biased_sampling) {
-        return getWeightedLengthBelow( local_root() );
-    } else {
-        return getLocalTreeLength();
-    }
-}
-
-/**
- * Function to recursively calculate the weighted length below a node.
- *
- * \return the sum of weighted branches below node
- */
-
-double ForestState::getWeightedLengthBelow( Node* node ) const {
-
-    // for all children, add length between node and child, and length below child
-    double weighted_length = 0;
+// Function to calculate the total length of a tree (if cumul_length == 0), or sample
+// a point on it (if length_left < 0).  The tree can be weighted for recombinations
+// at particular heights (recomb_bias == true) and/or weighted to reflect the
+// recombination guide (recomb_guide == true), or neither.
+//
+// \return the recombination rate above the node
+//
+double ForestState::sampleOrMeasureWeightedTree( const Node* node,
+                                                 double& cumul_length,
+                                                 double& local_weight,
+                                                 const bool recomb_bias,
+                                                 const bool recomb_guide ) {
+    double rate1 = 0, rate2 = 0, rate_above = 1.0;
+    int branches_below = 0;
+    //
+    // recursively enter the child nodes below, measure or sample, and obtain guide rates on descending branches
+    //
     if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
-        weighted_length += WeightedBranchLengthAbove(node->first_child());  // add length above;
-        weighted_length += getWeightedLengthBelow(node->first_child());   // add length below child
-
+        rate1 = sampleOrMeasureWeightedTree( node->first_child(), cumul_length, local_weight, recomb_bias, recomb_guide );
+        branches_below += 1;
     }
     if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
-        weighted_length += WeightedBranchLengthAbove(node->second_child()); // add length above;
-        weighted_length += getWeightedLengthBelow(node->second_child());  // add length below child
+        rate2 = sampleOrMeasureWeightedTree( node->second_child(), cumul_length, local_weight, recomb_bias, recomb_guide );
+        branches_below += 1;
     }
-    return weighted_length;
+    //
+    // calculate guide rate above node
+    //
+    if (branches_below == 0) {                // leaf node
+        if (recomb_guide) {
+            const RecombBiasSegment& rbs = pfparam.recomb_bias.get_recomb_bias_segment(model().get_position_index());
+            if (current_base() < rbs.get_locus() || current_base() > rbs.get_end()) {
+                cout << " current base: " << current_base() << endl;
+                cout << " rbs segment: [" << rbs.get_locus() << "," << rbs.get_end() << ")" << endl;
+                throw std::runtime_error("Current base not in expected rbs segment!  Should never happen!");
+            }
+            rate_above = rbs.get_leaf_rate( node->label()-1 );
+        }
+    } else if (branches_below == 1) {         // single child branch -- transmit rate unchanged
+        rate_above = rate1 + rate2;
+    } else {
+        // two child branches.  Calculate (unbiased, unnormalized) rate on branch doing down from node, as the hyperbolic
+        // hyperbolic average of the rates on the two incoming branches, divided by 2.  This has the result that two branches
+        // carrying the same rate transmits the same rate to the parent branch, while one zero rate branch will cause a zero
+        // rate to be transmitted.
+        rate_above = 2.0 / (1.0/(rate1 + 1e-30) + 1.0/(rate2 + 1e-30));
+    }
+    //
+    // going through the time slices of the recombination bias, accumulate branch length and sample
+    //
+    size_t time_idx = 0;
+    double lower_end = 0.0;            // this is correct irrespective of whether recomb_bias is used or not
+    double upper_end = 1e100;          // default for !recomb_bias
+    double local_weight_ = rate_above; // default for !recomb_bias
+    do {
+        if (recomb_bias) {
+            local_weight_ = rate_above * model().bias_ratios()[time_idx];
+            upper_end = model().bias_heights()[time_idx+1];
+        }
+        lower_end = max( lower_end, node->height() );
+        upper_end = min( upper_end, node->parent_height() );
+        double weighted_branch_length = local_weight_ * max(0.0, upper_end - lower_end);
+        if (cumul_length < 0 && cumul_length + weighted_branch_length >= 0) {
+            // a sample fell on the branch.  Note, 0 < initial cumul_length <= total branch length
+            local_weight = local_weight_;                                              // store local weight
+            double sampled_height = lower_end + (-cumul_length) / local_weight_;       // compute height
+            rec_point = TreePoint(const_cast<Node*>(node), sampled_height, false);     // store node and height
+            if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1])
+                recent_recombination_count++;  // DEBUG
+        }
+        cumul_length += weighted_branch_length;
+        lower_end = upper_end;
+        ++time_idx;
+    } while ( upper_end < node->parent_height() );
+    return rate_above;
+}
+
+
+double ForestState::getWeightedLocalTreeLength( const bool recomb_bias,
+                                                const bool recomb_guide ) {
+    double total_length = 0.0;
+    double dummy = 0.0;
+    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )    
+        sampleOrMeasureWeightedTree( local_root()->first_child(), total_length, dummy, recomb_bias, recomb_guide );
+    if ( local_root()->second_child() && local_root()->second_child()->samples_below() > 0 )    
+        sampleOrMeasureWeightedTree( local_root()->second_child(), total_length, dummy, recomb_bias, recomb_guide );
+    return total_length;
 }
 
 
@@ -648,6 +677,59 @@ double ForestState::getWeightedLengthBelow( Node* node ) const {
 // The actual functions doing the sampling, and calculating of importance weights, are below:
 //
 //
+
+
+double ForestState::samplePoint( bool record_and_bias ) {
+
+    double dummy_rate = 0.0;   _unused(dummy_rate);
+    bool use_recomb_guide = record_and_bias && pfparam.recomb_bias.using_posterior_biased_sampling();
+    bool use_recomb_bias  = record_and_bias && model().biased_sampling;
+    double guide_weighted_local_tree_length = getWeightedLocalTreeLength( false, use_recomb_guide );
+    double full_weighted_local_tree_length = getWeightedLocalTreeLength( use_recomb_bias, use_recomb_guide );
+    double sample_length = (random_generator()->sample() - 1.0) * full_weighted_local_tree_length;  // guaranteed < 0
+
+    // sample; updates full_local_weight and put sample in rec_point
+    double full_local_weight = 0.0;
+    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )    
+        sampleOrMeasureWeightedTree( local_root()->first_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
+    if ( sample_length < 0 && local_root()->second_child() && local_root()->second_child()->samples_below() > 0 )    
+        sampleOrMeasureWeightedTree( local_root()->second_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
+    if ( sample_length < 0 ) {
+        throw std::runtime_error("Failure to sample point -- should never happen!");
+    }
+
+    // compute importance weight.  Note -- this returns the ratio of densities sampling the
+    // tree point  y  conditional on a recombination sequence position  x, as the current
+    // implementation samples recombination positions according to the guide recombination rate,
+    // but disregards topological guiding and recombination biasing (and uses importance weights
+    // to correctfor the guide recombination rate only.)  It is the responsibility of this
+    // code to compute the importance weight to account for biasing on the tree.
+    double sampled_density = full_local_weight / full_weighted_local_tree_length;
+    double target_density = 1.0 / getLocalTreeLength();
+    double importance_weight = target_density / sampled_density;
+
+    // set importance weight due to recombination biasing only (as opposed to full biasing, which
+    // also includes recombination biasing), to allow the delay for this importance weight to be
+    // applied independently to that for guiding.  First calculate the recombination bias weight.
+    double recomb_bias_wt = 1.0;
+    if (use_recomb_bias) {
+        int idx=0;
+        while (model().bias_heights()[idx+1] < rec_point.height())
+            ++idx;
+        recomb_bias_wt = model().bias_ratios()[idx];
+    }
+    // density for sampling using guide recombinations, without recombination biasing
+    double guide_density = (full_local_weight / recomb_bias_wt) / guide_weighted_local_tree_length;
+    // importance weight for target=guide recombinations, sampled=full, is guide_density / sampled_density.
+    // So if we want to cancel the effect of recombination biasing, we should apply that IW
+    // rather than target_density / sampled_density.
+    recombination_bias_importance_weight_ = guide_density / sampled_density;
+    
+    // done -- importance weight (and delay) are implemented in extend_ARG,
+    // via sampleNextGenealogy (scrm/forest.cc)
+    return importance_weight;
+}
+
 
 
 
@@ -662,13 +744,12 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
                                                     double update_to) {
 
     int cur_rec_idx = model().get_position_index();
-    assert (cur_rec_idx > 0);
-
     double cur_recomb_segment_start = model().change_position(cur_rec_idx);
     // the update segment may, or may not, overlap the "current" recombination rate segment,
     // since that is moved along as soon as the simulated segment hits a change point.
     if (update_to <= cur_recomb_segment_start) {
         // The "current" recombination rate segment does not overlap; move the index one back
+        assert (cur_rec_idx > 0);
         --cur_rec_idx;
     }
     double sequence_distance = update_to - previously_updated_to;
@@ -678,12 +759,13 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
     if (pfparam.recomb_bias.using_posterior_biased_sampling()) {
         true_recomb_rate = pfparam.recomb_bias.get_true_rate();
         const RecombBiasSegment* rbs = &pfparam.recomb_bias.get_recomb_bias_segment( cur_rec_idx );
-        assert(update_to > rgb.get_locus());
+        assert(update_to > rbs->get_locus());
         assert( rbs->get_rate() == posterior_weighted_recombination_rate );
         if (rbs->get_rate() != posterior_weighted_recombination_rate ) {
             cout << "Problem: "
                  << rbs->get_rate()<< " != " << posterior_weighted_recombination_rate
                  << " at idx " << cur_rec_idx << endl; // DEBUG
+            throw std::runtime_error("Guide and model recombination rate differ.  This should never happen!");
         }
     }
 
@@ -692,8 +774,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
                            * getLocalTreeLength());
     double sampled_rate = (sequence_distance
                            * posterior_weighted_recombination_rate
-                           * //getWeightedLocalTreeLength());
-                           getLocalTreeLength() );  // TESTING
+                           * getLocalTreeLength() );
 
     // return target_density / sampled_density, that is, exp( -target_rate ) / exp( -sampled_rate )
     double importance_weight = std::exp( sampled_rate - target_rate );
@@ -711,13 +792,21 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
  * Note: the function samplePoint()
  *
  */
-double ForestState::sampleNextBase() {
+double ForestState::sampleNextBase( bool record_and_bias ) {
 
     double distance_until_rate_change  = model().getNextSequencePosition() - current_base();
-    double wtd_local_tree_len          = getLocalTreeLength();            // TESTING conditional reweighted trees
+    double wtd_local_tree_len          = getLocalTreeLength();            // conditional weighting, per bp rate unchanged
     double recomb_rate                 = model().recombination_rate();    // posterior weighted
+    if (!record_and_bias) {
+        // for the purpose of calibrating the lag times, do not use any biasing.  So, use the true recombination rate
+        // rather than the posterior weighted one.  (Importance_weight_over_segment above is not used when calibrating,
+        //  so it doesn't need to know the record_and_bias setting.)
+        if (pfparam.recomb_bias.using_posterior_biased_sampling()) {
+            recomb_rate                = pfparam.recomb_bias.get_true_rate();
+            distance_until_rate_change = 1e100;
+        }
+    }
     double weighted_pernuc_recomb_rate = recomb_rate * wtd_local_tree_len;
-
     double length = random_generator()->sampleExpoLimit(weighted_pernuc_recomb_rate,
                                                         distance_until_rate_change);
 
@@ -744,90 +833,9 @@ double ForestState::sampleNextBase() {
 
     double target_pernuc_recomb_rate   = recomb_rate * getLocalTreeLength();
     double importance_rate_per_nuc     = (target_pernuc_recomb_rate - weighted_pernuc_recomb_rate);
-    return importance_rate_per_nuc;
+    return importance_rate_per_nuc;    // value not used
 }
 
 
-double ForestState::samplePoint() {
 
-    double bias_ratio = 0.0;
-    double length_left = random_generator()->sample() * getWeightedLocalTreeLength();
-
-    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 ) {
-        bias_ratio = sampleBiasedPoint_recursive( local_root()->first_child(), length_left );
-    }
-    if ( length_left > 0 ) {
-        bias_ratio = sampleBiasedPoint_recursive( local_root()->second_child(), length_left );
-    }
-
-    // compute importance weight.  Note -- this returns the ratio of densities of sampling the
-    // recombination point (x,y) where  x  is the sequence position and  y  the point on the tree;
-    // not the ratio of conditional densities to sample  y  given  x  (although that is the density
-    // this function samples from)
-    double sampled_density = bias_ratio / getWeightedLocalTreeLength() * getLocalTreeLength();
-    double target_density = 1.0;
-    double importance_weight = target_density / sampled_density;
-
-    // set importance weight due to recombination biasing (as opposed to guiding), to allow the
-    // delay for this importance weight to be applied independently to that for guiding
-    recombination_bias_importance_weight_ = importance_weight;
-    
-    // done -- importance weight (and delay) are implemented in extend_ARG,
-    // via sampleNextGenealogy (scrm/forest.cc)
-    return importance_weight;
-}
-
-
-double ForestState::sampleBiasedPoint_recursive( Node* node, double& length_left ) {
-
-    double bias_ratio = 0.0;
-    if ( length_left < WeightedBranchLengthAbove(node) ) {
-        // sample falls in branch above *node
-        assert( node->local() );
-        double sampled_height = sampleHeightOnWeightedBranch( node, length_left, &bias_ratio);
-        rec_point = TreePoint(node, sampled_height, false);
-        if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1])
-            recent_recombination_count++;  // DEBUG
-        length_left = 0;
-        return bias_ratio;
-    }
-    length_left -= WeightedBranchLengthAbove(node);
-    if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
-        // enter first_child() recursively, and return if a sample was found
-        bias_ratio = sampleBiasedPoint_recursive( node->first_child(), length_left);
-        if (length_left == 0) return bias_ratio;
-    }
-    if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
-        return sampleBiasedPoint_recursive( node->second_child(), length_left);
-    }
-    return -1;
-}
-
-
-double ForestState::sampleHeightOnWeightedBranch( Node* node, double length_left,
-                                                  double* bias_ratio) const {
-
-    assert( length_left <= WeightedBranchLengthAbove( node ) );
-
-    if (!(model().biased_sampling)) {
-        *bias_ratio = 1.0;
-        return node->height() + length_left;
-    }
-    
-    // loop over time sections present in branch and add the weighted length
-    size_t time_idx = 0;
-    double lower_end, upper_end;
-    do {
-        lower_end = max( model().bias_heights()[time_idx] , node->height() );
-        upper_end = min( model().bias_heights()[time_idx+1] , node->parent_height() );
-        if ( length_left >= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end ) ) {
-            length_left -= model().bias_ratios()[time_idx] * max(0.0, upper_end - lower_end );
-        } else {
-            *bias_ratio = model().bias_ratios()[time_idx];
-            return lower_end + length_left / *bias_ratio;
-        }
-        ++time_idx;
-    } while ( upper_end < node->parent_height() );
-    throw std::runtime_error("This should never happen...");
-}
 

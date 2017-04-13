@@ -76,13 +76,11 @@ int main(int argc, char *argv[]){
         pfARG_para.outFileHeader();
         for (int i = 0; i <= pfARG_para.EM_steps; i++) {
 
-            cout << "EM step " << i << endl;
             clog << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             pfARG_para.increaseEMcounter();
-            cout << "End of EM step " << i << endl;
             clog << "End of EM step " << i << endl;
         }
 
@@ -95,7 +93,6 @@ int main(int argc, char *argv[]){
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        std::cout << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 }
@@ -121,16 +118,21 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
     int iterations = 0;
-    const int max_iterations = 10000000;
+    const int max_iterations = 1000000;
+    const long long max_num_trees = (long long)50 * max_iterations;
     const int max_safe_sample_size = 10;
     size_t epoch_idx;
+    long long num_trees = 0;
     
     while ( num_epochs_not_done > 0 ) {
 
       if (++iterations > max_iterations) break;
+      if (num_trees > max_num_trees) {
+          throw std::runtime_error("Using an excessive number of trees to calculate survival distances.  Check if model parameters are sensible.");
+      }
       Forest arg( &model, &randomgenerator );
       bool has_node_in_incomplete_epoch = false;
-      arg.buildInitialTree();
+      arg.buildInitialTree( false );
       std::set<double> original_node_heights;
       for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
           if (!(*it)->in_sample()) {
@@ -150,6 +152,7 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
       while( !original_node_heights.empty() && arg.next_base() < (model.loci_length() * 0.6) ) {
         arg.sampleNextGenealogy( false );
         arg.sampleRecSeqPosition( false );
+        ++num_trees;
         for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
           if( !is_height_in_tree( arg, *it ) ) {
             // add genomic position to the histogram fo survival for the appropriate epoch
@@ -249,7 +252,7 @@ void pfARG_core(PfParam &pfARG_para,
     // the relative rates across the tree are modified so as to provide the desired bias.
     //calibrate_bias_ratios( model, pfARG_para.top_t() );
 
-    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;    
+    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
     Segfile->read_new_line();
     /*! Initial particles */
     ParticleContainer current_states(model, rg, &pfARG_para,
