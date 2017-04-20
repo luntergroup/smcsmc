@@ -35,7 +35,7 @@ Overview
 
 
 4samples by Number of particles
-======================
+===============================
 
 Here we are comparing no ancestry information vs known ancestry after the first iteration with 4 samples
 
@@ -90,7 +90,7 @@ with biased sampling and eventually directed sampling, as those help our sampler
 
 
 8 samples by Number of particles
-======================
+================================
 
 Here we are comparing aa=False and aa=True after the first iteration with 8 samples
 
@@ -145,7 +145,7 @@ to intialize Ne at a different value or print the resampling file.
 
 
 4samples by Number of particles, show multiple iterations
-======================
+=========================================================
 
 Now we'll look at the first iteration and the last iteration, to check the longterm behaviour
 
@@ -194,7 +194,7 @@ Now we'll look at the first iteration and the last iteration, to check the longt
    :yrange: 9000,17000
 
 8samples by Number of particles, show multiple iterations
-======================
+=========================================================
 
 Now we'll look at the first iteration and the last iteration, to check the longterm behaviour
 

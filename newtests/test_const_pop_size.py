@@ -29,13 +29,15 @@ class TestConstPopSize(TestGeneric):
         self.popt = None
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
         self.lag = 2
-        self.em = 0
+        self.em = 1
         self.np = 1000
         self.debug = True
         self.bias_heights = [400]
         self.bias_strengths = [3,1]
         self.tmax = 4
         self.seed = (1,)
+
+        self.alpha = 0.5  #TEST
 
         # set targets
         self.targets = []
@@ -45,6 +47,30 @@ class TestConstPopSize(TestGeneric):
                                  'truth':10000, 'ess':[1,15,40,60,60,35][idx]})
         self.targets[1]['min'] = 6000
         self.targets[1]['max'] = 15000
+        self.max_out_of_range = -1
+
+
+
+class TestConstPopSize_ThreeEpochs(TestGeneric):
+
+    def setUp(self, name="testdata/constpopsize_3epochs"):
+        # base class for a number of experiments.
+        TestGeneric.setUp(self, name)
+        self.seqlen = 10000   # dummy length, for test
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0, 1, 2],   # three epochs
+                                                num_populations = 1,
+                                                population_sizes = [[1], [1], [1]] )
+        self.em = 5
+        self.np = 100
+        self.bias_heights = None
+        self.bias_strenghts = None
+        self.alpha = 0
+        self.debug = True
+
+        # no tests here
+        self.targets = []
         self.max_out_of_range = 0
 
 
@@ -74,7 +100,7 @@ class TestConstPopSize_Migration(TestGeneric):
         self.popt = None
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
         self.lag = 2
-        self.em = 0
+        self.em = 1
         self.np = 1000
         self.debug = True
         self.bias_heights = [800]
@@ -105,14 +131,13 @@ class TestConstPopSize_Migration(TestGeneric):
                             (1,0,4, 0.0, 3e-5, 2.5e-5),
                             (1,0,5, 0.0, 3e-5, 2.5e-5) ] ]
                                
-        self.max_out_of_range = 0
+        self.max_out_of_range = -1
         
 
 
 class TestConstPopSize_FourEpochs(TestConstPopSize):
 
     def setUp(self, name = "testdata/constpopsize_4epochs"):
-        #TestGeneric.setUp(self, name)   # awk...
         TestConstPopSize.setUp(self, name)
         self.seqlen = 1e7
         self.missing_leaves = []
@@ -128,12 +153,14 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
         self.smcsmcpath = "../python/smcsmc.py"
 
         # set default inference parameters
-        self.em = 0
+        self.em = 1
         self.np = 1000
         self.bias_heights = [800]
         self.bias_strengths = [1.5,1]
         self.seed = (1,)
         self.debug = True
+
+        self.alpha = 0.5  #TEST
 
         # set targets
         self.targets = [{'type':"Recomb", 'min':0.97e-8, 'max':1.03e-8, 'truth':1e-8, 'ess':15},
@@ -142,7 +169,7 @@ class TestConstPopSize_FourEpochs(TestConstPopSize):
                         {'type':"Coal", 'pop':0, 'epoch':2, 'min':9700,  'max':10300, 'truth':10000, 'ess':20},
                         {'type':"Coal", 'pop':0, 'epoch':3, 'min':9800,  'max':10200, 'truth':10000, 'ess':30}]
 
-        self.max_out_of_range = 0
+        self.max_out_of_range = -1
 
 
         
@@ -156,7 +183,7 @@ class TestConstPopSize_MissingData(TestConstPopSize):
         self.missing_leaves = [0,1]
 
         self.np = 100
-        self.em = 0
+        self.em = 1
         self.seed=(4,)
         
         # set targets
@@ -166,7 +193,7 @@ class TestConstPopSize_MissingData(TestConstPopSize):
                         {'type':"Coal", 'pop':0, 'epoch':2, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50},
                         {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50},
                         {'type':"Coal", 'pop':0, 'epoch':4, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':50}]
-        self.max_out_of_range = 0   # set to -1 to always fail (and keep intermediate files)
+        self.max_out_of_range = -1   # set to -1 to always fail (and keep intermediate files)
 
         
 
@@ -181,7 +208,7 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
         self.missing_leaves = [0,1]
 
         self.np = 100
-        self.em = 0
+        self.em = 1
         self.bias_heights = [800]
         self.bias_strengths = [3,1]
         self.seed=(4,)
@@ -192,7 +219,7 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
                         {'type':"Coal", 'pop':0, 'epoch':1, 'truth':10000, 'min': 9400, 'max': 10600, 'ess': 20},
                         {'type':"Coal", 'pop':0, 'epoch':2, 'truth':10000, 'min': 9800, 'max': 10200, 'ess':35},
                         {'type':"Coal", 'pop':0, 'epoch':3, 'truth':10000, 'min': 9900, 'max': 10100, 'ess':40}]
-        self.max_out_of_range = 0   # set to -1 to always fail (and keep intermediate files)
+        self.max_out_of_range = -1   # set to -1 to always fail (and keep intermediate files)
 
 
 class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
@@ -208,7 +235,7 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
         self.pop.num_samples =  8
         
         # set default inference parameters
-        self.em = 0
+        self.em = 1
         self.np = 3000
         self.bias_heights = [800]
         self.bias_strengths = [2,1]
@@ -224,7 +251,7 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
                         #{'type':"LogL", 'min':-23920, 'max':0, 'truth': -23814}]
                         {'type':"LogL", 'min':-26560, 'max':0, 'truth': -23814}]
 
-        self.max_out_of_range = 0
+        self.max_out_of_range = -1
 
 
         
