@@ -35,6 +35,7 @@ class Population:
                  sample_populations   = None,
                  sample_times         = None,
                  migration_commands   = None,
+                 split_command        = "",
                  seed                 = (1,),
                  filename             = None,
                  scrmpath             = defaults['scrmpath'] ):
@@ -52,6 +53,7 @@ class Population:
         self.sample_populations = sample_populations    # encoded as sample_populations_ in model.h
         self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
         self.migration_commands = migration_commands    # to implement speciation events
+        self.split_command = split_command
         self.seed = seed
         self.filename = filename
         self.scrmpath = scrmpath
@@ -81,7 +83,15 @@ class Population:
                 idx = self._parse_sample( 0, idx+2, opts )
             elif opts[idx] == "-eI":
                 idx = self._parse_time( idx+1, opts )
-                idx = self._parse_sample( len(self.change_points)-1, idx+2, opts )
+                idx = self._parse_sample( len(self.change_points)-1, idx, opts )
+            elif opts[idx] == "-ej":
+                time = float( opts[ idx+1 ] )
+                idx = self._parse_time( idx+1, opts )
+                # The above line requires the specified time to be the most ancient parsed so far!
+                # Do we actually need to call the above function?
+                sink, source = int(opts[idx]), int(opts[idx+1])
+                self.split_command = "-ej {} {} {}".format( time, sink, source )
+                idx += 2
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
                 rate = float( opts[idx] ) / (self.num_populations - 1)
@@ -132,6 +142,7 @@ class Population:
             self.change_points.append( float(opts[opt_idx]) )
             self.population_sizes.append( self.population_sizes[-1][:] )
             self.migration_rates.append( [vec[:] for vec in self.migration_rates[-1]] )
+        print( self.change_points )
         return opt_idx + 1
 
     def _parse_sample(self, time_idx, opt_idx, opts ):
@@ -279,11 +290,12 @@ class Population:
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
         self.recombinations = 4 * self.N0 * self.recombination_rate * self.sequence_length
 
-        command = "-t {muts} -r {recs} {seqlen} {sample} {popmigr}".format(
+        command = "-t {muts} -r {recs} {seqlen} {sample} {split} {popmigr}".format(
             muts = self.mutations,
             recs = self.recombinations,
             seqlen = self.sequence_length,
             sample = self._create_sample_command_line_options(),
+            split = self.split_command,
             popmigr = self._create_popsize_migration_command_line_options(
                 inference_popsizes,
                 inference_migrationrates
