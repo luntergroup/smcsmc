@@ -89,8 +89,8 @@ class Population:
                 idx = self._parse_time( idx+1, opts )
                 # The above line requires the specified time to be the most ancient parsed so far!
                 # Do we actually need to call the above function?
-                sink, source = int(opts[idx]), int(opts[idx+1])
-                self.split_command = "-ej {} {} {}".format( time, sink, source )
+                source, sink = int(opts[idx]), int(opts[idx+1])
+                self.split_command = "-ej {} {} {}".format( time, source, sink )
                 idx += 2
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
