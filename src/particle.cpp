@@ -350,17 +350,6 @@ double ForestState::calculate_likelihood( bool ancestral_aware ) {
 }
 
 
-double ForestState::trackLocalTreeBranchLength() {
-    BranchLengthData bld = trackSubtreeBranchLength( this->local_root() );
-    if (bld.subtreeBranchLength == -1) {
-        // none of the leaves carry data -- total length is 0
-        return 0;
-    }
-    // return branch length of the subtree subtending leaves carrying data
-    return bld.subtreeBranchLength;
-}
-
-
 Node* ForestState::trackLocalNode(Node *node) const {
     assert( node->local() );
     if (node->countChildren() == 0) return node;
@@ -377,45 +366,37 @@ Node* ForestState::trackLocalNode(Node *node) const {
 }
 
 
-BranchLengthData ForestState::trackSubtreeBranchLength ( Node * currentNode ) {
+double ForestState::trackLocalTreeBranchLength() {
+    total_local_branch_length_ = 0.0;
+    trackSubtreeBranchLength( local_root() );
+    return total_local_branch_length_;
+}
 
-    if (currentNode->in_sample() ) {
-        // current node is a leaf node
-        if (currentNode->mutation_state() >= 0) {
-            // leaf node carries data
-            return BranchLengthData( 0, 0 );
-        } else {
-            // leaf node carries no data
-            return BranchLengthData( 0, -1 );
-        }
+
+double ForestState::trackSubtreeBranchLength( Node* currentNode ) {
+    // returns total length of branches that carry data below currentNode, which is local;
+    // or -1 if currentNode has no data-carrying descendants.
+    // Side effect: sets total_local_branch_length_ if currentNode is a potential data root (both children carry data)
+
+    if (currentNode->in_sample() ) {                       // current node is a leaf node
+        if (currentNode->mutation_state() >= 0) return 0;  // leaf node carries data
+        else return -1;                                    // leaf node carries no data
     }
-
-    Node* left_local_child = trackLocalNode(currentNode->first_child());
-    Node* right_local_child = trackLocalNode(currentNode->second_child());
-
-    BranchLengthData bld_left  = this->trackSubtreeBranchLength( left_local_child );
-    BranchLengthData bld_right = this->trackSubtreeBranchLength( right_local_child );
-
-    // calculate branch length of partial tree, including the branch from this node to the child node
-    double leftBL = bld_left.partialBranchLength + (currentNode->height() - left_local_child->height());
-    double rightBL = bld_right.partialBranchLength + (currentNode->height() - right_local_child->height());
-
-    // return correct partial tree branch length, and subtree branch length.  The calculation depends on
-    // whether left and right subtrees carry data or not.
-    if (bld_left.subtreeBranchLength >= 0 && bld_right.subtreeBranchLength >= 0)
-        // both left and right subtrees carry data, so current node is a possible root node
-        return BranchLengthData( leftBL+rightBL, leftBL+rightBL );
-
-    if (bld_left.subtreeBranchLength >= 0)
-        // left subtree carries data, but right one doesn't -- keep left root as possible root node
-        return BranchLengthData( leftBL, bld_left.subtreeBranchLength );
-
-    if (bld_right.subtreeBranchLength >= 0)
-        // same for right subtree
-        return BranchLengthData( rightBL, bld_right.subtreeBranchLength );
-
-    // neither subtree contains data, so just return the length data of either
-    return bld_left;
+    Node* child_left = trackLocalNode(currentNode->first_child());
+    Node* child_right = trackLocalNode(currentNode->second_child());    
+    double stbl_left = trackSubtreeBranchLength( child_left );
+    double stbl_right = trackSubtreeBranchLength( child_right );
+    if (stbl_left >= 0.0)  stbl_left  += currentNode->height() - child_left->height();
+    if (stbl_right >= 0.0) stbl_right += currentNode->height() - child_right->height();
+    // potential data root?
+    if (stbl_left >= 0.0 && stbl_right >= 0.0) {
+        total_local_branch_length_ = stbl_left + stbl_right;
+        return total_local_branch_length_;
+    }
+    if (stbl_left >= 0.0)
+        return stbl_left;
+    else
+        return stbl_right;
 }
 
 

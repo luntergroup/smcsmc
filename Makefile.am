@@ -38,26 +38,26 @@ common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/s
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
-smcsmc_LDADD             = -lboost_iostreams -lz
+smcsmc_LDADD             = -lboost_iostreams -lz -ltcmalloc
 
 # Debugger flags
 scrm_dbg_CXXFLAGS            = $(common_flags)
-smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O2
+smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O3
 smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
-smcsmc_dbg_LDADD             = -lboost_iostreams -lz
+smcsmc_dbg_LDADD             = -lboost_iostreams -lz -ltcmalloc
 
 # Profiler flags
-smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O1
-smcsmc_prof_LDADD        = -lboost_iostreams -lz
+smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -pg -O3
+smcsmc_prof_LDADD        = -lboost_iostreams -lz -ltcmalloc
 
 # Static flags
 smcsmc_static_CXXFLAGS   = $(smcsmc_CXXFLAGS)
 smcsmc_static_LDFLAGS    = -static -static-libgcc -static-libstdc++
-smcsmc_static_LDADD      = -lboost_iostreams -lz
+smcsmc_static_LDADD      = -lboost_iostreams -lz -ltcmalloc
 
 # Gperf flags
 smcsmc_gperf_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -DGPERF -O3
-smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams -lz
+smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams -lz -lprofiler
 
 # Notes:
 #

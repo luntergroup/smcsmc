@@ -54,22 +54,6 @@
 extern int new_forest_counter;
 extern int delete_forest_counter;
 
-struct BranchLengthData {
-    BranchLengthData (double partialBranchLength = 0, double subtreeBranchLength = -1)
-    {
-        this->partialBranchLength = partialBranchLength;
-        this->subtreeBranchLength = subtreeBranchLength;
-    }
-    ~BranchLengthData(){};
-    // this holds the branch length of the partial tree consisting of all leaf nodes
-    // that carry data, up to the current node.
-    double partialBranchLength;
-    // this holds the branch length of the subtree subtending all leaf nodes that carry
-    // data, but not including the branch from the subtree's root to the current node
-    // Special case: if no descendants of the current node carry data, this is -1.
-    double subtreeBranchLength;
-};
-
 // machinery for delayedIS
 
 class DelayedFactor {
@@ -149,7 +133,7 @@ private:
     double calculate_likelihood( bool ancestral_aware ); /*!< \brief Calculate the likelihood of the genealogy */
     valarray<double> cal_partial_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
     double trackLocalTreeBranchLength();
-    BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
+    double trackSubtreeBranchLength ( Node * currentNode );    
     
     // Extend
     double extend_ARG ( double extend_to );
@@ -221,6 +205,7 @@ private:
     double pilot_weight_;
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
+    double total_local_branch_length_;               // NOTE: this is a temporary variable; move elsewhere?
     PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias.  NOTE: move elsewhere?
     double recombination_bias_importance_weight_;    // factor of importance weight due to recombination biasing; delay is treated specially for this IW
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
