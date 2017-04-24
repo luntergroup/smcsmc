@@ -86,12 +86,11 @@ class Population:
                 idx = self._parse_sample( len(self.change_points)-1, idx, opts )
             elif opts[idx] == "-ej":
                 time = float( opts[ idx+1 ] )
-                idx = self._parse_time( idx+1, opts )
-                # The above line requires the specified time to be the most ancient parsed so far!
-                # Do we actually need to call the above function?
-                source, sink = int(opts[idx]), int(opts[idx+1])
+                if time not in self.change_points:
+                    raise ValueError("Time used for -ej ({}) not a valid change point! (change points: {})".format(time,self.change_points))
+                source, sink = int(opts[idx+2]), int(opts[idx+3])
                 self.split_command = "-ej {} {} {}".format( time, source, sink )
-                idx += 2
+                idx += 4
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
                 rate = float( opts[idx] ) / (self.num_populations - 1)
@@ -142,7 +141,6 @@ class Population:
             self.change_points.append( float(opts[opt_idx]) )
             self.population_sizes.append( self.population_sizes[-1][:] )
             self.migration_rates.append( [vec[:] for vec in self.migration_rates[-1]] )
-        print( self.change_points )
         return opt_idx + 1
 
     def _parse_sample(self, time_idx, opt_idx, opts ):
