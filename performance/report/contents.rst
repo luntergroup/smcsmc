@@ -13,6 +13,7 @@ Contents
    constpopsize_bylag.rst
    constpopsize_byparticles2.rst   
    constpopsize_ancestralaware.rst
+   constpopsize_guiding.rst
               
 ==================
 Index

@@ -26,7 +26,7 @@ class Experiment(TrackerSQL):
                ['infseed','inference_seed',0],
                ['missing_leaves','missing_leaves',0],
                ['smcsmc_version','smcsmc_version',0],
-               ['smcsmc_runtime','runtime',0] ]
+               ['smcsmc_runtime','runtime',1] ]        # 1 = show min/max (seconds) and total (hours)
 
     def getSlices(self):
         return [ field[1] for field in self.fields ]
@@ -41,6 +41,9 @@ class Experiment(TrackerSQL):
         if code == -1:
             return { 'value(s)' : "(Typ:) " + str(values[0]) }
 
+        if code == 1:
+            return { 'value(s)' : '{} hr  ({} - {} sec)'.format( int(sum(values)/360)/10.0, min(values), max(values) ) }
+        
         numvalues = len(set(values))
 
         if numvalues == 1:

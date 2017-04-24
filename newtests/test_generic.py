@@ -51,6 +51,7 @@ class TestGeneric(unittest.TestCase):
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
         self.infer_recombination = True
+        self.m_step = True
         self.ancestral_aware = False
         self.phased = True
         self.lag = 4.0
@@ -115,14 +116,6 @@ class TestGeneric(unittest.TestCase):
 
         nsamopt = "-nsam {}".format(self.pop.num_samples)
 
-        if self.bias_heights != None:
-            pilotsopt = "-bias_heights {} -bias_strengths {}".format(
-                ' '.join(map(str,self.bias_heights)),
-                ' '.join(map(str,self.bias_strengths))
-            )
-        else:
-            pilotsopt = ""
-
         lagopt = "-calibrate_lag {}".format(self.lag)
         particlesopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
@@ -151,18 +144,28 @@ class TestGeneric(unittest.TestCase):
             epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
-        if self.infer_recombination:
-            recinfopt = ""
-        else:
+        pilotsopt = ""
+        recinfopt = ""
+        ancawareopt = ""
+        mstepopt = ""
+            
+        if self.bias_heights != None:
+            pilotsopt = "-bias_heights {} -bias_strengths {}".format(
+                ' '.join(map(str,self.bias_heights)),
+                ' '.join(map(str,self.bias_strengths))
+            )
+
+        if not self.infer_recombination:
             recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
-        else:
-            ancawareopt = ""
 
+        if not self.m_step:
+            mstepopt = "-no_m_step"
+            
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
-                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
+                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
                                      nsam = nsamopt,
@@ -175,7 +178,8 @@ class TestGeneric(unittest.TestCase):
                                      seed = seedopt,
                                      seg = segopt,
                                      pilots = pilotsopt,
-                                     ancestral_aware = ancawareopt )
+                                     ancestral_aware = ancawareopt,
+                                     mstep = mstepopt)
         if self.debug:
             print (self.inference_command)
         return self.inference_command

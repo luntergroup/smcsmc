@@ -34,6 +34,7 @@ class Smcsmc:
         self.emiters = 0
         self.chunks = 1
         self.infer_recomb = True
+        self.do_m_step = True
         self.alpha = 0.0            # posterior mix-in; 0 means use prior
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self._processes = []
@@ -74,6 +75,7 @@ class Smcsmc:
             (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
+            (3, '-no_m_step','','Do not update parameters (but do infer recombination guide)'),
             (3, '-alpha', 't',  'Fraction of posterior recombination to mix in to recombination guide ({})'.format(self.alpha)),
             (3, '-smcsmcpath', 'f','Path to smcsmc executable ({})'.format(self.smcsmcpath)),
             (3, '-nothreads','','Calculate chunks sequentially rather than in parallel threads'),
@@ -140,6 +142,9 @@ class Smcsmc:
                 idx += 2
             elif opts[idx] == '-no_infer_recomb':
                 self.infer_recomb = False
+                idx += 1
+            elif opts[idx] == '-no_m_step':
+                self.do_m_step = False
                 idx += 1
             elif opts[idx] == '-alpha':
                 self.alpha = float(opts[idx+1])
@@ -262,6 +267,9 @@ class Smcsmc:
         
     
     def m_step(self, data):
+        if not self.do_m_step:
+            logger.info("Skipping M step -- re-using initial parameters")
+            return
         # set population sizes
         for epoch in range(len(self.pop.change_points)):
             for pop in range(self.pop.num_populations):

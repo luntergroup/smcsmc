@@ -24,7 +24,9 @@ class ConstpopsizeLengthdependence(TrackerSQL):
         times = sorted(list(set( self.getValues(statement) )))
         return [ "T"+str(int(t)) for t in times ]
 
-    def __call__(self, track, slice):
+    def __call__(self, track, slice=None):
+        # catch case of no data (and therefore no slices)
+        if slice==None: return {}
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(experiment_bylength, time)
@@ -197,7 +199,9 @@ class ConstpopsizeNe(TrackerSQL):
         times = sorted( self.getValues(statement) )
         return [ "T"+str(int(t)) for t in times ]
     
-    def __call__(self, track, slice):
+    def __call__(self, track, slice=None):
+        # catch case of no data (and therefore no slices)
+        if slice==None: return {}
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(self.name, time)
@@ -220,4 +224,50 @@ class ConstpopsizeNe(TrackerSQL):
                  for key in keys }
 
 
+class ConstpopsizeLikelihood(TrackerSQL):
 
+    def __init__(self, **kwargs):
+        self.name =       kwargs.get("name")         # experiment name
+        self.field =      kwargs.get("column","np")  # field to index columns; defaults to number of particles
+        self.cache =      False                      # this doesn't seem to work...
+        TrackerSQL.__init__(self)
+
+    # tracks and slices
+    def getTracks(self):
+        # use the alpha (guide) value(s) as tracks
+        statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                    "WHERE name = '{}'".format(self.name)
+        return sorted( list( set( "G"+elt.split('_')[0][5:] 
+                             for elt in self.getValues(statement) ) ) )    # guide{}_bias{}_mstep{}
+
+    def getSlices(self):
+        # use the focus (bias) value(s) as slices
+        statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                    "WHERE name = '{}'".format(self.name)
+        return sorted( list( set( "F"+elt.split('_')[1][4:] 
+                             for elt in self.getValues(statement) ) ) )    # guide{}_bias{}_mstep{}
+    
+    def __call__(self, track, slice):
+        # generate the selector ('where') clause for this experiment, track and slice
+        selector = "guide{}_bias{}_mstepFalse".format( track[1:], slice[1:] )
+        where = "experiment.name = '{}' AND str_parameter = '{}' AND type = 'LogL'".format(self.name, selector)
+
+        # get last iteration
+        statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE {}".format(where)
+        lastiter = sorted( self.getValues(statement) )[-1]
+        
+        # get number of particles and likelihood at the last iteration
+        statement = "SELECT experiment.{}, result.rate FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE result.iter = {} AND {}".format(self.field, lastiter, where)
+        values = self.get(statement)
+
+        # extract the particle counts to serve as keys in the results, and build dictionary { key : [logl values] }
+        keys = sorted(list(set( v[0] for v in values )))
+        return { key : [logl for (key0, logl) in values if key0 == key]
+                 for key in keys }    
+
+
+
+
+    
