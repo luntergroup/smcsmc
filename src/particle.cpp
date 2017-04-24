@@ -218,6 +218,26 @@ void ForestState::record_recomb_extension (){
             size_t start_height_epoch = ti.forest()->model().current_time_idx_;
             //assert( start_height_epoch == ti.forest()->model().getTimeIdx( start_height ) );
             size_t end_height_epoch = start_height_epoch;
+
+            // try and find recombination event that could be extended
+            EvolutionaryEvent* event = eventTrees[ writable_model()->current_time_idx_];
+            while (event && event->ref_counter() == 1 && event->get_end_base() >= current_base()) {
+                if (event->is_recomb() &&
+                    event->is_no_event() &&    // cannot extend if recomb event already set, to avoid setting twice
+                    event->get_end_base() == current_base() &&
+                    event->get_start_height() == start_height &&
+                    event->get_end_height() == end_height &&
+                    event->get_weight() == contemporaries) {
+
+                    // extendable event
+                    event->set_end_base( next_base() );
+                    goto dont_make_new;   // break out of while loop; then immediately continue for loop
+                } else {
+                    event = event->parent();
+                }
+            }
+
+            // couldn't find extendable recombination record, so make new
             void* event_mem = Arena::allocate( start_height_epoch );
             // no event for now
             EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
@@ -225,6 +245,7 @@ void ForestState::record_recomb_extension (){
                                                                                 next_base(), contemporaries );
             recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
         }
+    dont_make_new: ;
     }
 }
 
