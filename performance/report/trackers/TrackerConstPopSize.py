@@ -143,6 +143,9 @@ class ConstpopsizeEMConvergence(TrackerSQL):
     def __init__(self, **kwargs):
         self.name =       kwargs.get("name",experiment_bylag)
         self.trackfield = kwargs.get("track","lag")
+        self.typ =        kwargs.get("type","Coal")
+        self.value =      kwargs.get("value","ne")
+        self.selector =   kwargs.get("selector","1=1")
         self.cache =      False                    # this doesn't seem to work...
         TrackerSQL.__init__(self)
     
@@ -161,15 +164,20 @@ class ConstpopsizeEMConvergence(TrackerSQL):
     def __call__(self, track, slice, **kwargs):
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
-        trackvalue = float(track)
+        try:
+            trackvalue = float(track)
+        except:
+            trackvalue = "'{}'".format(track)
         where = "result.start = {} "\
                 "AND {} = {} "\
-                "AND type = 'Coal' AND name = '{}'".format(time, self.trackfield, trackvalue, self.name)
+                "AND type = '{}' "\
+                "AND name = '{}' "\
+                "AND {}".format(time, self.trackfield, trackvalue, self.typ, self.name,self.selector)
 
         # get iteration and Ne estimates
-        statement = "SELECT result.iter, result.ne " \
+        statement = "SELECT result.iter, result.{} " \
                     "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
-                    "WHERE {}".format(where)
+                    "WHERE {}".format(self.value, where)
         values = self.get(statement)
 
         # extract the lags to serve as keys in the results, and build dictionary { key : [ne values] }
