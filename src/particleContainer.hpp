@@ -58,7 +58,7 @@ class ParticleContainer {
         // Methods
         //
         void update_state_to_data( Segment * Segfile, bool ancestral_aware );
-        void extend_ARGs( double extend_to, int leaf_status );
+        void extend_ARGs( double extend_to, const vector<int>& data_at_site );
         void set_particles_with_random_weight();
         int  resample(int update_to, const PfParam &pfparam);
         void normalize_probability();

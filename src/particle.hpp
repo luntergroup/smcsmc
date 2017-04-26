@@ -129,14 +129,13 @@ private:
     void resample_recombination_position(void);
     
     // Update weight
-    void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */
-    double calculate_likelihood( bool ancestral_aware ); /*!< \brief Calculate the likelihood of the genealogy */
-    void cal_partial_likelihood_infinite(Node * node, double marginal_likelihood[2]); /*!< Calculate the marginal likelihood of each node */
-    double trackLocalTreeBranchLength();
-    double trackSubtreeBranchLength ( Node * currentNode );    
+    double calculate_likelihood( bool ancestral_aware, const vector<int>& haplotype ); /*!< \brief Calculate the likelihood of the genealogy */
+    void cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]); /*!< Calculate the marginal likelihood of each node */
+    double trackLocalTreeBranchLength( const vector<int>& data_at_site );
+    double trackSubtreeBranchLength ( Node * currentNode, const vector<int>& data_at_site );
     
     // Extend
-    double extend_ARG ( double extend_to, int leaf_status = 0 );
+    double extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site );
     
     // Record events
     void record_recomb_extension ( );

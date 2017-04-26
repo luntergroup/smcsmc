@@ -221,6 +221,7 @@ void ForestState::record_recomb_extension (){
 
             // try and find recombination event that could be extended
             EvolutionaryEvent* event = eventTrees[ writable_model()->current_time_idx_];
+
             while (event && event->ref_counter() == 1 && event->get_end_base() >= current_base()) {
                 if (event->is_recomb() &&
                     event->is_no_event() &&    // cannot extend if recomb event already set, to avoid setting twice
@@ -236,7 +237,7 @@ void ForestState::record_recomb_extension (){
                     event = event->parent();
                 }
             }
-
+            
             // couldn't find extendable recombination record, so make new
             void* event_mem = Arena::allocate( start_height_epoch );
             // no event for now
@@ -295,22 +296,6 @@ void ForestState::resample_recombination_position(void) {
 }
 
 
-void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips)
-{
-    Node *leaf = this->nodes()->at(0);
-    assert( leaf->in_sample() );
-    assert( leaf->label() == 1 );
-    leaf->set_mutation_state( haplotypes_at_tips[0] );
-    for (size_t j = 1; j < haplotypes_at_tips.size(); j++) {
-        do {
-            leaf = leaf->next();
-        } while (!leaf->in_sample());
-        assert( leaf->label() == j+1 );
-        leaf->set_mutation_state( haplotypes_at_tips[j] );
-    }
-}
-
-
 /*!
  * Calculate the marginal likelihood of a node recursively.
  *
@@ -328,15 +313,16 @@ inline double fastexp(double x) {
     }
 }
     
-inline void ForestState::cal_partial_likelihood_infinite(Node * node, double marginal_likelihood[2]) {
+inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]) {
 
     // deal with the case that this node is a leaf node
     if ( node->first_child() == NULL ) {
-      assert ( node->mutation_state() != 2);
-      assert ( node->second_child() == NULL );          // if a node has no first child, it won't have a second child
-      assert ( node->in_sample() );                     // we only traverse the local tree, therefore leaf node must be in sample
-      marginal_likelihood[0] = node->mutation_state() == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
-      marginal_likelihood[1] = node->mutation_state() == 0 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
+        assert ( node->in_sample() );                                // we only traverse the local tree, therefore leaf node must be in sample
+        assert ( node->label() <= haplotype.size() );
+        assert ( node->second_child() == NULL );                     // leaf (if a node has no first child, it won't have a second child)
+        int mutation_state = haplotype[ node->label() - 1 ];
+        marginal_likelihood[0] = mutation_state == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
+        marginal_likelihood[1] = mutation_state == 0 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
       return;
     }
 
@@ -351,8 +337,8 @@ inline void ForestState::cal_partial_likelihood_infinite(Node * node, double mar
     double p_right = fastexp(-t_right * mutation_rate); // probability that no mutation occurred along branch (infinite sites model)
     double marg_like_left[2];
     double marg_like_right[2];
-    cal_partial_likelihood_infinite(left, marg_like_left);
-    cal_partial_likelihood_infinite(right, marg_like_right);
+    cal_partial_likelihood_infinite(left, haplotype, marg_like_left);
+    cal_partial_likelihood_infinite(right, haplotype, marg_like_right);
 
     marginal_likelihood[0] = ( marg_like_left[0]*p_left + marg_like_left[1]*(1-p_left) )
         * ( marg_like_right[0]*p_right + marg_like_right[1]*(1-p_right) );
@@ -368,9 +354,9 @@ inline void ForestState::cal_partial_likelihood_infinite(Node * node, double mar
  *  If there is no data given at the site i, return likelihood as 1.
  * @ingroup group_pf_resample
  */
-double ForestState::calculate_likelihood( bool ancestral_aware ) {
+double ForestState::calculate_likelihood( bool ancestral_aware, const vector<int>& haplotype ) {
     double marginalLikelihood[2];
-    cal_partial_likelihood_infinite(this->local_root(), marginalLikelihood);
+    cal_partial_likelihood_infinite(this->local_root(), haplotype, marginalLikelihood);
     double prior[2];
     if ( ancestral_aware ) {
         prior[0] = 1;
@@ -400,26 +386,26 @@ Node* ForestState::trackLocalNode(Node *node) const {
 }
 
 
-double ForestState::trackLocalTreeBranchLength() {
+double ForestState::trackLocalTreeBranchLength( const vector<int>& data_at_site ) {
     total_local_branch_length_ = 0.0;
-    trackSubtreeBranchLength( local_root() );
+    trackSubtreeBranchLength( local_root(), data_at_site );
     return total_local_branch_length_;
 }
 
 
-double ForestState::trackSubtreeBranchLength( Node* currentNode ) {
+double ForestState::trackSubtreeBranchLength( Node* currentNode, const vector<int>& data_at_site ) {
     // returns total length of branches that carry data below currentNode, which is local;
     // or -1 if currentNode has no data-carrying descendants.
     // Side effect: sets total_local_branch_length_ if currentNode is a potential data root (both children carry data)
 
-    if (currentNode->in_sample() ) {                       // current node is a leaf node
-        if (currentNode->mutation_state() >= 0) return 0;  // leaf node carries data
-        else return -1;                                    // leaf node carries no data
+    if (currentNode->in_sample() ) {                             // current node is a leaf node
+        if (data_at_site[currentNode->label()-1] >= 0) return 0; // leaf node carries data
+        else return -1;                                          // leaf node carries no data
     }
     Node* child_left = trackLocalNode(currentNode->first_child());
     Node* child_right = trackLocalNode(currentNode->second_child());    
-    double stbl_left = trackSubtreeBranchLength( child_left );
-    double stbl_right = trackSubtreeBranchLength( child_right );
+    double stbl_left = trackSubtreeBranchLength( child_left, data_at_site );
+    double stbl_right = trackSubtreeBranchLength( child_right, data_at_site );
     if (stbl_left >= 0.0)  stbl_left  += currentNode->height() - child_left->height();
     if (stbl_right >= 0.0) stbl_right += currentNode->height() - child_right->height();
     // potential data root?
@@ -444,7 +430,7 @@ double ForestState::find_delay( double coal_height ) {
 }
 
 
-double ForestState::extend_ARG ( double extend_to, int leaf_status ) {
+double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site ) {
 
     double updated_to = this->site_where_weight_was_updated();
     double likelihood = 1.0;             // likelihood of data on [updated_to, extend_to) given ARG
@@ -460,7 +446,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status ) {
         track_local_tree_branch_length = getLocalTreeLength();
         break;  // no data missing; all observable
     default:
-        track_local_tree_branch_length = trackLocalTreeBranchLength();
+        track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
         break;  // mixed case -- need to compute
     }
 
@@ -478,7 +464,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status ) {
                                * track_local_tree_branch_length
                                * (new_updated_to - updated_to) );
 
-        assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength()) < 1e-4);
+        assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength( data_at_site )) < 1e-4);
         
         // Update importance sampling correction for the weight of the particle.  This requires
         // some explanation.
@@ -530,7 +516,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status ) {
             recombination_bias_importance_weight_ = 1.0;
             double importance_weight = this->sampleNextGenealogy( true );
             
-            if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength();
+            if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
             if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
             
             if (importance_weight >= 0.0) {
