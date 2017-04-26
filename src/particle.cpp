@@ -302,12 +302,12 @@ void ForestState::resample_recombination_position(void) {
  * * */
 
 inline double fastexp(double x) {
-    // Based on a generalized continued fraction.  Just two divisions.
-    // The approximate branch is used only for |x|<0.2, where the relative error is ~1e-10
+    // Based on a generalized continued fraction.  Just one division, two multiplications.
+    // The approximate branch is used only for |x|<0.03, where the relative error is < 1e-10
     // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
     double xx = x*x;
-    if (xx < 0.04) {
-        return 1 + 2*x / (2 - x + xx / (6 + 0.1*xx));
+    if (xx < 0.0009) {
+        return 1 + 2*x / (2 - x + xx * (1.0/6));
     } else {
         return exp(x);
     }
