@@ -316,18 +316,28 @@ void ForestState::include_haplotypes_at_tips(vector <int> &haplotypes_at_tips)
  *
  * * */
 
-inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node) {
-
-    valarray<double> part_lik(2);    // partial likelihood of data subtended by node, conditional on state at current node
+inline double fastexp(double x) {
+    // Based on a generalized continued fraction.  Just two divisions.
+    // The approximate branch is used only for |x|<0.2, where the relative error is ~1e-10
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 0.04) {
+        return 1 + 2*x / (2 - x + xx / (6 + 0.1*xx));
+    } else {
+        return exp(x);
+    }
+}
     
+inline void ForestState::cal_partial_likelihood_infinite(Node * node, double marginal_likelihood[2]) {
+
     // deal with the case that this node is a leaf node
     if ( node->first_child() == NULL ) {
       assert ( node->mutation_state() != 2);
       assert ( node->second_child() == NULL );          // if a node has no first child, it won't have a second child
       assert ( node->in_sample() );                     // we only traverse the local tree, therefore leaf node must be in sample
-      part_lik[0] = node->mutation_state() == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
-      part_lik[1] = node->mutation_state() == 0 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
-      return part_lik;
+      marginal_likelihood[0] = node->mutation_state() == 1 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
+      marginal_likelihood[1] = node->mutation_state() == 0 ? 0.0 : 1.0;    // also encode state==-1 (missing data) as 1.0
+      return;
     }
 
     // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation
@@ -337,17 +347,19 @@ inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node
     double t_left = node->height() - left->height();
     double t_right = node->height() - right->height();
     assert (t_left >= 0 && t_right >= 0 && mutation_rate > 0);
-    double p_left = exp(-t_left * mutation_rate);   // probability that no mutation occurred along branch (infinite sites model)
-    double p_right = exp(-t_right * mutation_rate); // probability that no mutation occurred along branch (infinite sites model)
-    valarray<double> part_lik_left = cal_partial_likelihood_infinite(left);
-    valarray<double> part_lik_right = cal_partial_likelihood_infinite(right);
+    double p_left =fastexp(-t_left * mutation_rate);   // probability that no mutation occurred along branch (infinite sites model)
+    double p_right = fastexp(-t_right * mutation_rate); // probability that no mutation occurred along branch (infinite sites model)
+    double marg_like_left[2];
+    double marg_like_right[2];
+    cal_partial_likelihood_infinite(left, marg_like_left);
+    cal_partial_likelihood_infinite(right, marg_like_right);
 
-    part_lik[0] = ( part_lik_left[0]*p_left + part_lik_left[1]*(1-p_left) )
-        * ( part_lik_right[0]*p_right + part_lik_right[1]*(1-p_right) );
-    part_lik[1] = ( part_lik_left[1]*p_left + part_lik_left[0]*(1-p_left) )
-        * ( part_lik_right[1]*p_right + part_lik_right[0]*(1-p_right) );
+    marginal_likelihood[0] = ( marg_like_left[0]*p_left + marg_like_left[1]*(1-p_left) )
+        * ( marg_like_right[0]*p_right + marg_like_right[1]*(1-p_right) );
+    marginal_likelihood[1] = ( marg_like_left[1]*p_left + marg_like_left[0]*(1-p_left) )
+        * ( marg_like_right[1]*p_right + marg_like_right[0]*(1-p_right) );
 
-    return part_lik;
+    return;
 }
 
 
@@ -357,7 +369,8 @@ inline valarray<double> ForestState::cal_partial_likelihood_infinite(Node * node
  * @ingroup group_pf_resample
  */
 double ForestState::calculate_likelihood( bool ancestral_aware ) {
-    valarray<double> marginalLikelihood = cal_partial_likelihood_infinite(this->local_root());
+    double marginalLikelihood[2];
+    cal_partial_likelihood_infinite(this->local_root(), marginalLikelihood);
     double prior[2];
     if ( ancestral_aware ) {
         prior[0] = 1;
@@ -431,13 +444,25 @@ double ForestState::find_delay( double coal_height ) {
 }
 
 
-double ForestState::extend_ARG ( double extend_to ) {
+double ForestState::extend_ARG ( double extend_to, int leaf_status ) {
 
     double updated_to = this->site_where_weight_was_updated();
     double likelihood = 1.0;             // likelihood of data on [updated_to, extend_to) given ARG
     double importance_weight_cont = 1.0; // ratio of pilot prob density to true coalescent prior,
                                          //  for the continuous part of the densities
                                          //  (the exp(-rate * opportunity) factor)
+    double track_local_tree_branch_length;
+    switch (leaf_status) {
+    case -1:
+        track_local_tree_branch_length = 0;
+        break;  // all data missing; no observable mutations
+    case 1:
+        track_local_tree_branch_length = getLocalTreeLength();
+        break;  // no data missing; all observable
+    default:
+        track_local_tree_branch_length = trackLocalTreeBranchLength();
+        break;  // mixed case -- need to compute
+    }
 
     assert (updated_to >= this->current_base());
     while ( updated_to < extend_to ) {
@@ -449,10 +474,12 @@ double ForestState::extend_ARG ( double extend_to ) {
         // For leaf nodes that carry no data, there is no evidence for
         // presence or absence of mutations on corresponding branches.
         // These branches do not contribute to localTreeBranchLength
-        likelihood *= exp( -model().mutation_rate()
-                           * trackLocalTreeBranchLength()
-                           * (new_updated_to - updated_to) );
+        likelihood *= fastexp( -model().mutation_rate()
+                               * track_local_tree_branch_length
+                               * (new_updated_to - updated_to) );
 
+        assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength()) < 1e-4);
+        
         // Update importance sampling correction for the weight of the particle.  This requires
         // some explanation.
         //
@@ -502,7 +529,10 @@ double ForestState::extend_ARG ( double extend_to ) {
             first_coalescence_height_ = -1.0;
             recombination_bias_importance_weight_ = 1.0;
             double importance_weight = this->sampleNextGenealogy( true );
-
+            
+            if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength();
+            if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
+            
             if (importance_weight >= 0.0) {
                 // a recomb has occurred. Implement importance weight, with appropriate delay
 
@@ -766,7 +796,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
         if (rbs->get_rate() != posterior_weighted_recombination_rate ) {
             cout << "Problem: "
                  << rbs->get_rate()<< " != " << posterior_weighted_recombination_rate
-                 << " at idx " << cur_rec_idx << endl; // DEBUG
+                 << " at idx " << cur_rec_idx << endl;
             throw std::runtime_error("Guide and model recombination rate differ.  This should never happen!");
         }
     }
@@ -779,7 +809,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
                            * getLocalTreeLength() );
 
     // return target_density / sampled_density, that is, exp( -target_rate ) / exp( -sampled_rate )
-    double importance_weight = std::exp( sampled_rate - target_rate );
+    double importance_weight = fastexp( sampled_rate - target_rate );
     return importance_weight;
 }
 

@@ -95,10 +95,10 @@ void ParticleContainer::print_recent_recombination_histogram() {
  * \brief Update the current state to the next state, at the given site, update all particles to its latest genealogy state.  
  * \brief Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double extend_to ){
+void ParticleContainer::extend_ARGs( double extend_to, int leaf_status ){
     dout << endl<<" We are extending particles" << endl<<endl;
 
-        for (size_t particle_i = 0; particle_i < particles.size(); particle_i++){
+    for (size_t particle_i = 0; particle_i < particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
         /*!
          * For each particle, extend the current path until the the site such that 
@@ -107,7 +107,7 @@ void ParticleContainer::extend_ARGs( double extend_to ){
          */
         dout << " before extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
         particles[particle_i]->restore_recomb_state();
-        particles[particle_i]->extend_ARG ( extend_to );
+        particles[particle_i]->extend_ARG ( extend_to, leaf_status );
         particles[particle_i]->save_recomb_state();
         dout << " after extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << endl;
     }
@@ -354,8 +354,18 @@ void ParticleContainer::update_state_to_data( Segment * Segfile, bool ancestral_
     // Assign presence/absence status of data to each of the leaf nodes of all the particles
     update_data_status_at_leaf_nodes( Segfile->allelic_state_at_Segment_end );
 
+    // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
+    int num_leaves_missing = 0;
+    int leaf_status = 0;   // -1 all missing; 1 all present; 0 mixed
+    for (int i=0; i<Segfile->allelic_state_at_Segment_end.size(); i++)
+        num_leaves_missing += Segfile->allelic_state_at_Segment_end[i] == -1;
+    if (num_leaves_missing == 0)
+        leaf_status = 1;
+    if (num_leaves_missing == Segfile->allelic_state_at_Segment_end.size())
+        leaf_status = -1;
+
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ) );
+    extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ), leaf_status );
 
     //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;

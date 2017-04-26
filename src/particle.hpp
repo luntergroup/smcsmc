@@ -131,12 +131,12 @@ private:
     // Update weight
     void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */
     double calculate_likelihood( bool ancestral_aware ); /*!< \brief Calculate the likelihood of the genealogy */
-    valarray<double> cal_partial_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
+    void cal_partial_likelihood_infinite(Node * node, double marginal_likelihood[2]); /*!< Calculate the marginal likelihood of each node */
     double trackLocalTreeBranchLength();
     double trackSubtreeBranchLength ( Node * currentNode );    
     
     // Extend
-    double extend_ARG ( double extend_to );
+    double extend_ARG ( double extend_to, int leaf_status = 0 );
     
     // Record events
     void record_recomb_extension ( );
@@ -187,8 +187,6 @@ private:
     double importance_weight_over_segment( double previously_updated_to, double update_to );
     double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
     double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
-    
-    // What does this do?
     Node* trackLocalNode(Node *node) const;
 
     // below are overloaded
