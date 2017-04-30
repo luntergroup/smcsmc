@@ -254,6 +254,33 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
         self.max_out_of_range = -1
 
 
+class TestConstPopSize_Runtime(TestGeneric):
+
+    def setUp(self, name="testdata/runtime"):
+        TestGeneric.setUp(self, name)
+        self.seqlen = 1e6
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0],
+                                                num_populations = 1,
+                                                num_samples = 8,
+                                                population_sizes = [[1]])
+
+        # use smcsmc front-end
+        self.smcsmcpath = "../smcsmc"
+        
+        # use pattern for inference (default)
+        #self.popt = None
+
+        self.em = 0
+        self.np = 1000
+        self.bias_heights = [800]
+        self.bias_strengths = [1,1]
+        self.seed = (1,)
+        self.debug = True
+        self.targets = []
+        self.max_out_of_range = -1
+        
         
 if __name__ == "__main__":
     unittest.main()
