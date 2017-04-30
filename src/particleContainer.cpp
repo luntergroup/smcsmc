@@ -39,7 +39,7 @@ ParticleContainer::ParticleContainer(Model *model,
     ln_normalization_factor_ = 0;
     this->model = model;
     bool make_copies_of_model_and_rg = false; // Set to true to use rg and model per particle, for multithreading
-    dout << " --------------------   Particle Initial States   --------------------" << std::endl;
+
     for ( size_t i=0; i < Num_of_states ; i++ ) {
 
         // create a new state, using scrm; scrm always starts at site 0.
@@ -91,6 +91,7 @@ void ParticleContainer::print_recent_recombination_histogram() {
  * \brief Also include the likelihood for no mutations.
  */
 void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site ){
+
     dout << endl<<" We are extending particles" << endl<<endl;
 
     // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
@@ -103,7 +104,6 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
         leaf_status = 1;
     if (num_leaves_missing == data_at_site.size())
         leaf_status = -1;
-
     
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++){
         dout << "We are updating particle " << particle_i << endl;
@@ -201,11 +201,9 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
     double wi_sum = 0;
     double wi_sq_sum = 0;
 
-    //partial_sums[0] = 0;
     for (size_t i = 0; i < Num_of_states; i++) {
         partial_sums[i] = wi_sum;
         double w_i = particles[i]->pilotWeight();
-        //partial_sums[i+1] = partial_sums[i] + w_i;
         wi_sum += w_i;
         wi_sq_sum += w_i * w_i;
     }

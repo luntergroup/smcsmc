@@ -277,10 +277,14 @@ void ForestState::resample_recombination_position(void) {
         if (pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
-            // break out the loop if no (further) recombination opportunity has been recorded
-            if ( !old_event || !old_event->is_recomb() || !old_event->recomb_event_overlaps_opportunity_x( current_base() ) ) {
+            // break out the loop if no recombination opportunity has been recorded at this epoch,
+            // (implying that no opportunity has been recorded at more ancient epochs either)
+            if ( !old_event || !old_event->is_recomb() ||
+                 !old_event->recomb_event_overlaps_opportunity_x( current_base() ) ) {
                 break;
             }
+            // loop over the recombination opportunity records for this epochs
+            // there can be several if the tree has nodes in this epoch.
             do {
                 // make a copy of current event and modify the end_base member
                 void* event_mem = Arena::allocate( epoch );
@@ -290,7 +294,8 @@ void ForestState::resample_recombination_position(void) {
                 new_event->add_leaf_to_tree( new_chain );
                 new_chain = &(new_event->parent_);              // friend function access
                 old_event = old_event->parent();
-            } while ( old_event && old_event->is_recomb() && old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
+            } while ( old_event && old_event->is_recomb() &&
+                      old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
         }
     }
 }
@@ -423,7 +428,7 @@ double ForestState::trackSubtreeBranchLength( Node* currentNode, const vector<in
 double ForestState::find_delay( double coal_height ) {
     size_t indx = 0;
     while (indx+1 < model().change_times().size() &&
-           model().change_times().at(indx+1) <= coal_height )
+           model().change_times()[indx+1] <= coal_height )
         indx++;
     double delay = model().application_delays[indx];
     return delay;
@@ -505,7 +510,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         }
 
         // Rescue the invariant
-        updated_to = new_updated_to;                
+        updated_to = new_updated_to;
 
         // Next, if we haven't reached extend_to now, sample new genealogy, and a new recomb point
         if ( updated_to < extend_to ) {

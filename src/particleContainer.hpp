@@ -94,7 +94,7 @@ class ParticleContainer {
         // Members
         //
         vector <ForestState*> particles;
-        RandomGenerator* random_generator_; // This is for particle filter only,
+        RandomGenerator* random_generator_;
         double ln_normalization_factor_;
         Model* model;
 };
