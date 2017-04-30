@@ -221,7 +221,7 @@ void ForestState::record_recomb_extension (){
 
             // try and find recombination event that could be extended
             EvolutionaryEvent* event = eventTrees[ writable_model()->current_time_idx_];
-
+            EvolutionaryEvent* previous = NULL;
             while (event && event->ref_counter() == 1 && event->get_end_base() >= current_base()) {
                 if (event->is_recomb() &&
                     event->is_no_event() &&    // cannot extend if recomb event already set, to avoid setting twice
@@ -232,8 +232,17 @@ void ForestState::record_recomb_extension (){
 
                     // extendable event
                     event->set_end_base( next_base() );
+
+                    // make event first in chain, so assumption in resample_recombination_position is met (and current fn is slightly faster)
+                    if (previous != NULL) {
+                        // only do anything if not already first in chain. Note, all events have ref count 1 so simple linked list
+                        previous->parent() = event->parent();
+                        event->parent() = eventTrees[ writable_model()->current_time_idx_ ];
+                        eventTrees[ writable_model()->current_time_idx_ ] = event;
+                    }
                     goto dont_make_new;   // break out of while loop; then immediately continue for loop
                 } else {
+                    previous = event;
                     event = event->parent();
                 }
             }
@@ -279,6 +288,8 @@ void ForestState::resample_recombination_position(void) {
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no recombination opportunity has been recorded at this epoch,
             // (implying that no opportunity has been recorded at more ancient epochs either)
+            // Note: this assumes that the most recent recombination opportunity is the last opportunity recorded, and first in the chain!
+            //       see record_recomb_extension, where care is taken that this assumption is met
             if ( !old_event || !old_event->is_recomb() ||
                  !old_event->recomb_event_overlaps_opportunity_x( current_base() ) ) {
                 break;
