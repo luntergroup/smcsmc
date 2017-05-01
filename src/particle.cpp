@@ -155,7 +155,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
         if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
-            if (!(pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
@@ -170,7 +170,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
             }
             // add event in tree data structure
-            recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -183,7 +183,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 coal_event |= tmp_event_.isPwCoalescence();
             }
             if (first_coalescence_height_ < 0.0 && coal_event) first_coalescence_height_ = end_height;
-            if (!(pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
@@ -199,7 +199,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 migrcoal_event->set_migr_event( tmp_event_.mig_pop() );
             }
             // add event in tree data structure
-            migrcoal_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            migrcoal_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
             assert(migrcoal_event->print_event());
         }
     }
@@ -212,7 +212,7 @@ void ForestState::record_recomb_extension (){
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.contemporaries_->numberOfLocalContemporaries();
-        if (contemporaries > 0 && (pfparam.record_event_in_epoch[ writable_model()->current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
+        if (contemporaries > 0 && (pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
             size_t start_height_epoch = ti.forest()->model().current_time_idx_;
@@ -220,7 +220,7 @@ void ForestState::record_recomb_extension (){
             size_t end_height_epoch = start_height_epoch;
 
             // try and find recombination event that could be extended
-            EvolutionaryEvent* event = eventTrees[ writable_model()->current_time_idx_];
+            EvolutionaryEvent* event = eventTrees[ model().current_time_idx_];
             EvolutionaryEvent* previous = NULL;
             while (event && event->ref_counter() == 1 && event->get_end_base() >= current_base()) {
                 if (event->is_recomb() &&
@@ -237,8 +237,8 @@ void ForestState::record_recomb_extension (){
                     if (previous != NULL) {
                         // only do anything if not already first in chain. Note, all events have ref count 1 so simple linked list
                         previous->parent() = event->parent();
-                        event->parent() = eventTrees[ writable_model()->current_time_idx_ ];
-                        eventTrees[ writable_model()->current_time_idx_ ] = event;
+                        event->parent() = eventTrees[ model().current_time_idx_ ];
+                        eventTrees[ model().current_time_idx_ ] = event;
                     }
                     goto dont_make_new;   // break out of while loop; then immediately continue for loop
                 } else {
@@ -253,7 +253,7 @@ void ForestState::record_recomb_extension (){
             EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
                                                                                 end_height, end_height_epoch, current_base(),
                                                                                 next_base(), contemporaries );
-            recomb_event->add_leaf_to_tree( &eventTrees[ writable_model()->current_time_idx_] );
+            recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
         }
     dont_make_new: ;
     }
@@ -263,7 +263,7 @@ void ForestState::record_recomb_extension (){
 void ForestState::record_recomb_event( double event_height )
 {
     this->writable_model()->resetTime( event_height );
-    size_t epoch_i = this->writable_model()->current_time_idx_;
+    size_t epoch_i = this->model().current_time_idx_;
     if (!(pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
         return;
     // find the EvolutionaryEvent to add this event to.
