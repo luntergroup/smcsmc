@@ -42,7 +42,7 @@ class Experiment(TrackerSQL):
             return { 'value(s)' : "(Typ:) " + str(values[0]) }
 
         if code == 1:
-            return { 'value(s)' : '{} hr  ({} - {} sec)'.format( int(sum(values)/360)/10.0, min(values), max(values) ) }
+            return { 'value(s)' : '{:1.2f} hr  ({:1.1f} - {:1.1f} sec)'.format( sum(values)/3600, min(values), max(values) ) }
         
         numvalues = len(set(values))
 

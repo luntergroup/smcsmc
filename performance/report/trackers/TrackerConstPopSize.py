@@ -193,12 +193,22 @@ class ConstpopsizeNe(TrackerSQL):
     def __init__(self, **kwargs):
         self.name =       kwargs.get("name",experiment_byparticle)
         self.field =      kwargs.get("column","np")
+        self.trackfield = kwargs.get("track","")
         self.cache =      False                    # this doesn't seem to work...
         TrackerSQL.__init__(self)
 
     # tracks and slices
     def getTracks(self):
-        return ["variableData","fixedData"]
+        if self.trackfield == "":
+            # use fixed/variable data as tracks
+            return ["variableData","fixedData"]
+        else:
+            # use str_parameter as tracks; only use those for which Ne was inferred (mstep == True)
+            statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                        "WHERE name = '{}'".format(self.name)
+            return sorted( [ elt
+                             for elt in self.getValues(statement)
+                             if elt.endswith("mstepTrue") ] )
 
     def getSlices(self):
         # use the epoch start times as slices, leaving numbers of particles to be represented as columns
@@ -213,8 +223,12 @@ class ConstpopsizeNe(TrackerSQL):
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(self.name, time)
-        if track == "fixedData": where += " AND experiment.dataseed = 100"
-        else:                    where += " AND experiment.dataseed = infseed"
+        if track == "fixedData":
+            where += " AND experiment.dataseed = 100"
+        elif track == "variableData":
+            where += " AND experiment.dataseed = infseed"
+        else:
+            where += " AND experiment.str_parameter = '{}'".format(track)
 
         # get last iteration
         statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \

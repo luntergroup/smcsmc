@@ -21,7 +21,10 @@ Conclusion
 ----------
 Guiding improves the likelihood, and is equivalent to using 2.5x to 4x more particles without guiding.
 The improvement is iterative, showing that useful recombination events are remembered, as intended.
-These experiments do not show an advantage for focusing on the likelihood.  TODO: an experiment to look at parameter inferences.
+These experiments do not show an advantage for focusing on the likelihood.
+
+Initial experiments looking at the effect of focusing and guiding on parameter inferences were inconclusive -- I used
+too little data (1 Mb).
 
 
 ------------------------------
@@ -37,13 +40,13 @@ Overview
    Overview of experimental parameters
 
 
-Convergence
-===========
+Convergence of likelihood
+=========================
 
 .. report:: TrackerConstPopSize.ConstpopsizeLikelihood
    :tracker: name=constpopsize_4epochs_guiding
    :render: sb-box-plot
-   :slices: F1.0      
+   :slices: F1.0
    :yrange: -24500,-23500
    :function: -23600
    :layout: row
@@ -65,17 +68,6 @@ Convergence
    As above; focusing with bias_strength=2.0
 
 .. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
-   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter,type=LogL,value=rate,selector="np=5000"
-   :render: sb-box-plot
-   :tracks: guide0.5_bias1.0_mstepFalse,guide0.5_bias2.0_mstepFalse
-   :yrange: -24500,-23500
-   :function: -23600
-   :layout: row
-   :width: 400
-
-   Speed of convergence of recombination guide, without and with focusing, with 5000 particles
-
-.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
    :tracker: name=constpopsize_4epochs_guiding,track=str_parameter,type=LogL,value=rate,selector="np=2000"
    :render: sb-box-plot
    :tracks: guide0.5_bias1.0_mstepFalse,guide0.5_bias2.0_mstepFalse
@@ -84,5 +76,93 @@ Convergence
    :layout: row
    :width: 400
 
-   Same with 2000 particles
+   Speed of convergence of recombination guide, without and with focusing, with 2000 particles
+
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter,type=LogL,value=rate,selector="np=5000"
+   :render: sb-box-plot
+   :tracks: guide0.5_bias1.0_mstepFalse,guide0.5_bias2.0_mstepFalse
+   :yrange: -24500,-23500
+   :function: -23600
+   :layout: row
+   :width: 400
+
+   Same with 5000 particles
+
+.. report:: TrackerConstPopSize.ConstpopsizeEMConvergence
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter,type=LogL,value=rate,selector="np=10000"
+   :render: sb-box-plot
+   :tracks: guide0.5_bias1.0_mstepFalse,guide0.5_bias2.0_mstepFalse
+   :yrange: -24500,-23500
+   :function: -23600
+   :layout: row
+   :width: 400
+
+   Same with 10000 particles
+
+
    
+Convergence of parameter estimates
+==================================
+
+
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter
+   :render: sb-box-plot
+   :layout: row
+   :function: 10000         
+   :mpl-figure: tight_layout=True
+   :width: 300
+   :tracks: guide0.0_bias1.0_mstepTrue,guide0.0_bias2.0_mstepTrue,guide0.5_bias1.0_mstepTrue,guide0.5_bias2.0_mstepTrue
+   :slices: T0      
+   :groupby: none
+   :yrange: 8000,10500
+
+   Inference of population sizes, epoch T0
+   
+
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter
+   :render: sb-box-plot
+   :layout: row
+   :function: 10000         
+   :mpl-figure: tight_layout=True
+   :width: 300
+   :tracks: guide0.0_bias1.0_mstepTrue,guide0.0_bias2.0_mstepTrue,guide0.5_bias1.0_mstepTrue,guide0.5_bias2.0_mstepTrue
+   :slices: T800
+   :groupby: none
+   :yrange: 8000,10500
+
+   Inference of population sizes, epoch T800
+   
+
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter
+   :render: sb-box-plot
+   :layout: row
+   :function: 10000         
+   :mpl-figure: tight_layout=True
+   :width: 300
+   :tracks: guide0.0_bias1.0_mstepTrue,guide0.0_bias2.0_mstepTrue,guide0.5_bias1.0_mstepTrue,guide0.5_bias2.0_mstepTrue
+   :slices: T4000
+   :groupby: none
+   :yrange: 8000,10500
+
+   Inference of population sizes, epoch T4000
+   
+
+.. report:: TrackerConstPopSize.ConstpopsizeNe
+   :tracker: name=constpopsize_4epochs_guiding,track=str_parameter
+   :render: sb-box-plot
+   :layout: row
+   :function: 10000         
+   :mpl-figure: tight_layout=True
+   :width: 300
+   :tracks: guide0.0_bias1.0_mstepTrue,guide0.0_bias2.0_mstepTrue,guide0.5_bias1.0_mstepTrue,guide0.5_bias2.0_mstepTrue
+   :slices: T20000
+   :groupby: none
+   :yrange: 8000,10500
+
+   Inference of population sizes, epoch T20000
+   
+      
