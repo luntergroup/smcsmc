@@ -122,6 +122,15 @@ private:
     // Destructors //
     ~ForestState();
     void clear_eventContainer();
+
+    // Spawn off new particle from this with multiplicity > 1, leaving this with multiplicity = 1
+    ForestState* spawn() {
+        assert( multiplicity() > 1 );
+        ForestState* new_particle = new ForestState(*this);
+        new_particle->setMultiplicity( multiplicity() - 1 );
+        setMultiplicity(1);
+        return new_particle;
+    }
     
     // Resampling //
     void init_EventContainers( Model * model );
@@ -135,7 +144,8 @@ private:
     double trackSubtreeBranchLength ( Node * currentNode, const vector<int>& data_at_site );
     
     // Extend
-    double extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site );
+    double extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
+                        vector<ForestState*>* pParticleContainer = NULL);
     
     // Record events
     void record_recomb_extension ( );
@@ -149,10 +159,12 @@ private:
     void setPilotWeight(double weight) { this->pilot_weight_ = weight; }
     double posteriorWeight() const { return this->posterior_weight_; }
     double pilotWeight() const { return this->pilot_weight_; }
+    int multiplicity() const { return multiplicity_; }
+    void setMultiplicity( int multiplicity ) { multiplicity_ = multiplicity; }
 
     // Save and restore recombination rate index
     void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
-    void restore_recomb_state() { const_cast<Model&>(model()).resetSequencePosition( _current_seq_idx ); }
+    void restore_recomb_state() { writable_model()->resetSequencePosition( _current_seq_idx ); }
 
     // Biased sampling
     void adjustWeights(double adjustment) {
@@ -200,6 +212,7 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
+    int    multiplicity_;
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
     double total_local_branch_length_;               // NOTE: this is a temporary variable; move elsewhere?

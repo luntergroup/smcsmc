@@ -83,7 +83,7 @@ class ParticleContainer {
         bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
         // Resampling
         void implement_resampling(valarray<int> & sample_count, double total_pilot_weight);
-        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count, size_t sample_size);
+        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count);
 
         //
         // Setters and getters:
@@ -94,6 +94,7 @@ class ParticleContainer {
         // Members
         //
         vector <ForestState*> particles;
+        int num_particles;
         RandomGenerator* random_generator_;
         double ln_normalization_factor_;
         Model* model;

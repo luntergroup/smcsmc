@@ -124,6 +124,11 @@ inline std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs) {
     std::string line, elt;
     try {
         if (std::getline(str,line)) {
+            if (std::count(line.begin(), line.end(), ' ') > 0) {
+                cerr << "Found spaces in recombination record; columns must be tab-separated" << endl;
+                cerr << "Record: '" << line << "'" << endl;
+                throw InvalidInput("Found spaces in recombination record");
+            }
             std::stringstream iss(line);
             if ( !std::getline(iss, elt, '\t' ) ) throw InvalidInput("Parse error on 1st element");
             rbs._locus = std::stoi( elt );
@@ -181,8 +186,15 @@ public:
         if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (with columns 'locus', 'size', 'recomb_rate', '1', ...) in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
-            assert( tmp.get_num_leaves() == _num_leaves );
-            assert( tmp.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
+            if ( tmp.get_num_leaves() != _num_leaves ) {
+                cerr << "Problem on record at position " << tmp.get_locus() << " with " << tmp.get_num_leaves() << " leaf columns; expected " << _num_leaves << endl;
+                cerr << tmp << endl;
+                throw InvalidInput("Did not find expected number of leaf columns");
+            }
+            if ( tmp.get_locus() != ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() )) {
+                cerr << "Problem on record at position " << tmp.get_locus() << endl;
+                throw InvalidInput("Did not get expected locus position (records should start at 0, and leave no gaps)");
+            }
             _bias_segments.push_back( tmp );
         }
     }

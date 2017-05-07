@@ -366,7 +366,9 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 
         for (int epoch_idx = change_times_.size()-1; epoch_idx >= (int)first_epoch_to_update; epoch_idx--) {
 
-            update_all_counts( &thisState->eventTrees[ epoch_idx ], thisState->posteriorWeight(), update_to, epoch_idx );
+            update_all_counts( &thisState->eventTrees[ epoch_idx ],
+                               thisState->posteriorWeight() * thisState->multiplicity(),
+                               update_to, epoch_idx );
 
         }
     }

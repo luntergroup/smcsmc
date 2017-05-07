@@ -264,8 +264,8 @@ public:
         assert (children_updated_ <= 0); // ensure events are not removed in mid-flow
         children_updated_ = -1; }
     /* Adds (newly made, refcount==1) this to tree */
-    void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
-        if (parent_) {
+    void add_leaf_to_tree( EvolutionaryEvent** eventptr_location, bool always_treat_as_tree=false ) {
+        if (parent_ || always_treat_as_tree) {
             // this is a tree; replace existing tree off eventptr_location with this
             bool eventIsLost = (*eventptr_location)->decrease_refcount_is_zero();
             // decrease_refcount_is_zero returns TRUE, when ref count is zero, in which case, eventIsLost is TRUE

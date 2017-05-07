@@ -41,6 +41,7 @@ ForestState::ForestState( Model* model,
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     setPosteriorWeight( 1.0 );
     setPilotWeight( 1.0 );
+    setMultiplicity( 1 );
     total_delayed_adjustment_ = 1.0;
     setSiteWhereWeightWasUpdated(0.0);
     owning_model_and_random_generator = own_model_and_random_generator;
@@ -77,6 +78,7 @@ ForestState::ForestState( const ForestState & copied_state )
         model_ = new Model( *model_ );
     }
     _current_seq_idx = copied_state._current_seq_idx;
+    setMultiplicity( 1 );
 }
 
 
@@ -232,7 +234,6 @@ void ForestState::record_recomb_extension (){
 
                     // extendable event
                     event->set_end_base( next_base() );
-
                     // make event first in chain, so assumption in resample_recombination_position is met (and current fn is slightly faster)
                     if (previous != NULL) {
                         // only do anything if not already first in chain. Note, all events have ref count 1 so simple linked list
@@ -280,6 +281,7 @@ void ForestState::record_recomb_event( double event_height )
 
 void ForestState::resample_recombination_position(void) {
     // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
+    // (the implementation, in forest.h, then calls sampleNextBase which is overloaded and implemented in this file)
     this->resampleNextBase();
     // then, create private event records, in effect re-doing the work of record_recomb_event
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
@@ -297,14 +299,22 @@ void ForestState::resample_recombination_position(void) {
             // loop over the recombination opportunity records for this epochs
             // there can be several if the tree has nodes in this epoch.
             do {
-                // make a copy of current event and modify the end_base member
-                void* event_mem = Arena::allocate( epoch );
-                EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
-                new_event->end_base_ = this->next_base();        // friend function access
-                // splice into event tree, and update pointers
-                new_event->add_leaf_to_tree( new_chain );
-                new_chain = &(new_event->parent_);              // friend function access
+                // if multiple particle records refer to this event,
+                // make a copy of current event before modifying the end_base member
+                if (old_event->ref_counter() > 1) {
+                    void* event_mem = Arena::allocate( epoch );
+                    EvolutionaryEvent* new_event = new(event_mem) EvolutionaryEvent( *old_event );
+                    // splice into event tree, and update pointers (true == always treat new_event as a tree)
+                    new_event->add_leaf_to_tree( new_chain, true );
+                    new_chain = &(new_event->parent_);              // friend function access
+                    // update record
+                    new_event->end_base_ = this->next_base();        // friend function access
+                } else {
+                    old_event->end_base_ = this->next_base();
+                    new_chain = &(old_event->parent_);
+                }
                 old_event = old_event->parent();
+
             } while ( old_event && old_event->is_recomb() &&
                       old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
         }
@@ -446,7 +456,8 @@ double ForestState::find_delay( double coal_height ) {
 }
 
 
-double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site ) {
+double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
+                                 vector<ForestState*>* pParticleContainer) {
 
     double updated_to = this->site_where_weight_was_updated();
     double likelihood = 1.0;             // likelihood of data on [updated_to, extend_to) given ARG
@@ -516,6 +527,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         // These factors are calculated by the function  SampleNextGenealogy,  which amonst others
         // samples a point  y  on the current tree.
         //
+        // Note that the importance weight is for a single particle, even if multiplicity() > 1.
         if(model().biased_sampling) {
             importance_weight_cont *= importance_weight_over_segment( updated_to, new_updated_to );
         }
@@ -525,6 +537,22 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
 
         // Next, if we haven't reached extend_to now, sample new genealogy, and a new recomb point
         if ( updated_to < extend_to ) {
+
+            if (multiplicity() > 1 && updated_to > model().getCurrentSequencePosition()) {
+                // A recombination has occurred on a particle with multiplicity > 1.
+                // Spawn a new particle with multiplicity one less, resample its recombination
+                //  position, and deal with it later in the loop in particleContainer.  At the
+                //  same time, make the current particle have multiplicity one, and deal with it
+                //  the normal way.
+                assert( pParticleContainer != NULL );
+                pParticleContainer->push_back( spawn() );
+                save_recomb_state();
+                pParticleContainer->back()->restore_recomb_state();
+                pParticleContainer->back()->set_current_base( updated_to );
+                pParticleContainer->back()->resample_recombination_position();
+                pParticleContainer->back()->save_recomb_state();
+                restore_recomb_state();
+            }
 
             // a recombination has occurred, or the recombination rate has changed;
             // forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
@@ -563,7 +591,10 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
             // sample a new recombination position (this calls the virtual overloaded
             // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
             // see comments in sampleNextBase below.
-            this->sampleRecSeqPosition( true );
+            // The new recombination position does take account of multiplicity(), so that
+            // particles with high multiplicity() have higher effective recombination rates.
+            this->sampleNextBase( true );
+
             record_recomb_extension();
 
             // If this is an extension after an actual recombination, record the recomb event
@@ -811,6 +842,9 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
                            * getLocalTreeLength() );
 
     // return target_density / sampled_density, that is, exp( -target_rate ) / exp( -sampled_rate )
+    // note that, similar to the posterior weight, the importance weight is independent of the particle's
+    // multiplicity; the importance weight is for a single underlying particle, while the multiplicity
+    // simulates a virtual ensemble of such particles.
     double importance_weight = fastexp( sampled_rate - target_rate );
     return importance_weight;
 }
@@ -826,11 +860,22 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
  * Note: the function samplePoint()
  *
  */
+
 double ForestState::sampleNextBase( bool record_and_bias ) {
 
+    // three sources of biasing:
+    // "focus": varying rates across epochs, used to increase recombinations very low (and very high?) in tree
+    // "tree guide": varying rates across the tree, to guide recombinations towards branches with posterior support
+    // "position guide": varying rates across the sequence, to guide recombinations towards branches with posterior support
+    
     double distance_until_rate_change  = model().getNextSequencePosition() - current_base();
-    double wtd_local_tree_len          = getLocalTreeLength();            // conditional weighting, per bp rate unchanged
+    // we use conditional weighting (in samplePoint) to implement focus and tree guiding, so that while locally within the
+    // tree rates change, the overall rate remains that without focus and tree guiding.  So the "weighted" local tree length
+    // is the same as the normal local tree length
+    double wtd_local_tree_len          = getLocalTreeLength();
+    // position guiding is implemented by making the recombination rate position-dependent within model()
     double recomb_rate                 = model().recombination_rate();    // posterior weighted
+
     if (!record_and_bias) {
         // for the purpose of calibrating the lag times, do not use any biasing.  So, use the true recombination rate
         // rather than the posterior weighted one.  (Importance_weight_over_segment above is not used when calibrating,
@@ -840,8 +885,12 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
             distance_until_rate_change = 1e100;
         }
     }
+    // total recombination rate per nt, with all three biasing sources factored in
     double weighted_pernuc_recomb_rate = recomb_rate * wtd_local_tree_len;
-    double length = random_generator()->sampleExpoLimit(weighted_pernuc_recomb_rate,
+    // total recombination rate per nt, with additionally the particle's multiplicity factored in
+    double weighted_pernuc_particle_recomb_rate = weighted_pernuc_recomb_rate * multiplicity();
+    // sample a next event position
+    double length = random_generator()->sampleExpoLimit(weighted_pernuc_particle_recomb_rate,
                                                         distance_until_rate_change);
 
     if (length == -1) {          // No recombination until the model changes
@@ -852,22 +901,26 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
         }
 
     } else {                     // A recombination occurred in the sequence segment
-        
-        set_next_base(current_base() + length);
+
+        double current_position = current_base();
+        double next_position = current_base() + length;
+        if (current_position == next_position) {
+            cerr << "Next recombination position is identical due to underflow at "
+                 << "pos=" << current_position << "; length=" << length << endl;
+            cerr << "Check that recombination rates are sensible! (at this position, rate = " << recomb_rate << " per nt;"
+                 << " tree length " << wtd_local_tree_len << " generations; multiplicity = " << multiplicity() << ")" << endl;
+            next_position = nextafter( current_base(), current_base()*2 );
+        }
+        set_next_base(next_position);
 
     }
     assert(next_base() > current_base());
     assert(next_base() <= model().loci_length());
 
-    // return the importance weight "rate".  It would be neat to use this, as we then avoid
-    // any dependencies with the sampler in importance_weight_over_segment.  However it would
-    // require us to store this value until we need it, which introduces statefulness, trading
-    // badness for badness.  As the function it depends on is implement just above this one,
-    // leaving the dependency in isn't a big deal.
+    // the importance weight for this event is calculated by importance_weight_over_segment
+    // the multiplicity is dealt with within extend_ARG
 
-    double target_pernuc_recomb_rate   = recomb_rate * getLocalTreeLength();
-    double importance_rate_per_nuc     = (target_pernuc_recomb_rate - weighted_pernuc_recomb_rate);
-    return importance_rate_per_nuc;    // value not used
+    return 1.0;
 }
 
 

@@ -184,7 +184,7 @@ class TestConstPopSize_MissingData(TestConstPopSize):
 
         self.np = 100
         self.em = 1
-        self.seed=(4,)
+        self.seed=(1,)
         
         # set targets
         self.targets = [{'type':"Recomb", 'truth':1e-8, 'min':0.98e-8, 'max':1.02e-8, 'ess': 45},
@@ -211,7 +211,7 @@ class TestConstPopSize_FourEpochs_MissingData(TestConstPopSize_FourEpochs):
         self.em = 1
         self.bias_heights = [800]
         self.bias_strengths = [3,1]
-        self.seed=(4,)
+        self.seed=(1,)
         
         # set targets
         self.targets = [{'type':"Recomb", 'truth':1e-8, 'min':0.99e-8, 'max':1.01e-8, 'ess': 30},
@@ -239,7 +239,7 @@ class TestConstPopSize_FourEpochs_EightSamples(TestConstPopSize_FourEpochs):
         self.np = 3000
         self.bias_heights = [800]
         self.bias_strengths = [2,1]
-        self.seed = (2,)
+        self.seed = (1,)
         self.debug = True
 
         # set targets

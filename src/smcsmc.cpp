@@ -48,8 +48,11 @@ int main(int argc, char *argv[]){
 
     bool print_update_count = false; // DEBUG
 
-    // catch floating point exceptions, to aid debugging
+    // catch floating point exceptions, to aid debugging, 
+    // but not on OSX as it uses SSE for all FP math
+#ifndef __APPLE__
     feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);
+#endif
     
     try {
         /*! Extract pfARG parameters */
