@@ -570,17 +570,6 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
                     throw std::runtime_error("No coalescent found where one was expected");
                 double delay = find_delay( first_coalescence_height_ );
 
-                // If the coalescence occurred above top bias height, i.e. the sampling failed
-                // to produce an early coalescent as intended, then apply the importance weight
-                // factor due to the recombination bias immediately, so that we don't pollute
-                // the particles.  However, always apply the importance weight due to guiding
-                // with the appropriate delay
-                int bhsize = model().bias_heights().size();
-                if (bhsize >= 2 && first_coalescence_height_ > model().bias_heights()[bhsize-2]) {
-                    adjustWeights( recombination_bias_importance_weight_ );
-                    importance_weight /= recombination_bias_importance_weight_;
-                }
-                
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
                 // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
