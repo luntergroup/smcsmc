@@ -51,6 +51,7 @@ class TestGeneric(unittest.TestCase):
         self.popt = "-p 1*3+15*4+1"
         self.tmax = 4
         self.infer_recombination = True
+        self.m_step = True
         self.ancestral_aware = False
         self.phased = True
         self.chunks = 1
@@ -59,8 +60,8 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_initial_pop_sizes = None
         self.smcsmc_initial_migr_rates = None
         self.missing_leaves = []            # list of 0-based missing leaves
-        self.directed_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
-        self.directed_recomb_beta = 4       # extent of smoothing of the recombination change points
+        self.guided_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
+        self.guided_recomb_beta = 4       # extent of smoothing of the recombination change points
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.filename_disambiguator = ""
@@ -115,20 +116,12 @@ class TestGeneric(unittest.TestCase):
 
         nsamopt = "-nsam {}".format(self.pop.num_samples)
 
-        if self.bias_heights != None:
-            pilotsopt = "-bias_heights {} -bias_strengths {}".format(
-                ' '.join(map(str,self.bias_heights)),
-                ' '.join(map(str,self.bias_strengths))
-            )
-        else:
-            pilotsopt = ""
-
         lagopt = "-calibrate_lag {}".format(self.lag)
         particlesopt = "-Np {np}".format(np=self.np)
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
-        guideopt = "-alpha {}".format( self.directed_recomb_alpha ) if self.directed_recomb_alpha>0 else ""
+        guideopt = "-alpha {}".format( self.guided_recomb_alpha ) if self.guided_recomb_alpha>0 else ""
 
         ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
         ###       specifies the epochs to infer.  That's probably what we want to do anyway,
@@ -151,18 +144,28 @@ class TestGeneric(unittest.TestCase):
             epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
-        if self.infer_recombination:
-            recinfopt = ""
-        else:
+        pilotsopt = ""
+        recinfopt = ""
+        ancawareopt = ""
+        mstepopt = ""
+            
+        if self.bias_heights != None:
+            pilotsopt = "-bias_heights {} -bias_strengths {}".format(
+                ' '.join(map(str,self.bias_heights)),
+                ' '.join(map(str,self.bias_strengths))
+            )
+
+        if not self.infer_recombination:
             recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
-        else:
-            ancawareopt = ""
 
+        if not self.m_step:
+            mstepopt = "-no_m_step"
+            
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
-                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware}".format(
+                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
                                      nsam = nsamopt,
@@ -175,7 +178,8 @@ class TestGeneric(unittest.TestCase):
                                      seed = seedopt,
                                      seg = segopt,
                                      pilots = pilotsopt,
-                                     ancestral_aware = ancawareopt )
+                                     ancestral_aware = ancawareopt,
+                                     mstep = mstepopt)
         if self.debug:
             print (self.inference_command)
         return self.inference_command
@@ -308,14 +312,15 @@ class TestGeneric(unittest.TestCase):
             truth      = this_parameter['truth']
             min_ess    = this_parameter.get('ess',0.0)
 
-            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}".format(
-                truth, estimate, target_min, target_max, ess, min_ess))
+            msg = ""
             if estimate < target_min or estimate > target_max:
-                print("  ** Out of range! **")
+                msg += "  ** Out of range! **"
                 out_of_range += 1
             if ess < min_ess:
-                print("  ** ESS too low! **")
+                msg += "  ** ESS too low! **"
                 out_of_range += 1
+            print (" True {:9.4g} Est {:9.4g} Range {:9.4g} - {:9.4g}; ESS {:7.3g} Min {:7.3g}{}".format(
+                truth, estimate, target_min, target_max, ess, min_ess, msg))
 
         self.assertTrue( out_of_range <= self.max_out_of_range )
         self.success = True
@@ -420,8 +425,8 @@ class TestGeneric(unittest.TestCase):
                 initial_migr_values      = Column(String)
                 bias_heights             = Column(String)
                 bias_strengths           = Column(String)
-                directed_recomb_alpha    = Column(Float)
-                directed_recomb_beta     = Column(Float)
+                guided_recomb_alpha      = Column(Float)
+                guided_recomb_beta       = Column(Float)
                 dataseed                 = Column(Integer)
                 infseed                  = Column(Integer)
                 smcsmc_runtime           = Column(Float)
@@ -475,8 +480,8 @@ class TestGeneric(unittest.TestCase):
                                initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migr_rates)) if self.smcsmc_initial_migr_rates else str(self.pop.migration_rates),
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
-                               directed_recomb_alpha    = self.directed_recomb_alpha,
-                               directed_recomb_beta     = self.directed_recomb_beta,
+                               guided_recomb_alpha      = self.guided_recomb_alpha,
+                               guided_recomb_beta       = self.guided_recomb_beta,
                                dataseed                 = self.pop.seed[0],
                                infseed                  = self.seed[0],
                                smcsmc_runtime           = self.smcsmc_runtime,

@@ -27,7 +27,9 @@ class ConstpopsizeLengthdependence(TrackerSQL):
         times = sorted(list(set( self.getValues(statement) )))
         return [ "T"+str(int(t)) for t in times ]
 
-    def __call__(self, track, slice):
+    def __call__(self, track, slice=None):
+        # catch case of no data (and therefore no slices)
+        if slice==None: return {}
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(experiment_bylength, time)
@@ -370,6 +372,9 @@ class ConstpopsizeEMConvergence(TrackerSQL):
     def __init__(self, **kwargs):
         self.name =       kwargs.get("name",experiment_bylag)
         self.trackfield = kwargs.get("track","lag")
+        self.typ =        kwargs.get("type","Coal")
+        self.value =      kwargs.get("value","ne")
+        self.selector =   kwargs.get("selector","1=1")
         self.cache =      False                    # this doesn't seem to work...
         TrackerSQL.__init__(self)
     
@@ -388,15 +393,20 @@ class ConstpopsizeEMConvergence(TrackerSQL):
     def __call__(self, track, slice, **kwargs):
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
-        trackvalue = float(track)
+        try:
+            trackvalue = float(track)
+        except:
+            trackvalue = "'{}'".format(track)
         where = "result.start = {} "\
                 "AND {} = {} "\
-                "AND type = 'Coal' AND name = '{}'".format(time, self.trackfield, trackvalue, self.name)
+                "AND type = '{}' "\
+                "AND name = '{}' "\
+                "AND {}".format(time, self.trackfield, trackvalue, self.typ, self.name,self.selector)
 
         # get iteration and Ne estimates
-        statement = "SELECT result.iter, result.ne " \
+        statement = "SELECT result.iter, result.{} " \
                     "FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
-                    "WHERE {}".format(where)
+                    "WHERE {}".format(self.value, where)
         values = self.get(statement)
 
         # extract the lags to serve as keys in the results, and build dictionary { key : [ne values] }
@@ -412,12 +422,22 @@ class ConstpopsizeNe(TrackerSQL):
     def __init__(self, **kwargs):
         self.name =       kwargs.get("name",experiment_byparticle)
         self.field =      kwargs.get("column","np")
+        self.trackfield = kwargs.get("track","")
         self.cache =      False                    # this doesn't seem to work...
         TrackerSQL.__init__(self)
 
     # tracks and slices
     def getTracks(self):
-        return ["variableData","fixedData"]
+        if self.trackfield == "":
+            # use fixed/variable data as tracks
+            return ["variableData","fixedData"]
+        else:
+            # use str_parameter as tracks; only use those for which Ne was inferred (mstep == True)
+            statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                        "WHERE name = '{}'".format(self.name)
+            return sorted( [ elt
+                             for elt in self.getValues(statement)
+                             if elt.endswith("mstepTrue") ] )
 
     def getSlices(self):
         # use the epoch start times as slices, leaving numbers of particles to be represented as columns
@@ -426,12 +446,18 @@ class ConstpopsizeNe(TrackerSQL):
         times = sorted( self.getValues(statement) )
         return [ "T"+str(int(t)) for t in times ]
     
-    def __call__(self, track, slice):
+    def __call__(self, track, slice=None):
+        # catch case of no data (and therefore no slices)
+        if slice==None: return {}
         # generate the selector ('where') clause for this experiment, track and slice
         time = float(slice[1:])
         where = "experiment.name = '{}' AND result.start = {} AND type = 'Coal'".format(self.name, time)
-        if track == "fixedData": where += " AND experiment.dataseed = 100"
-        else:                    where += " AND experiment.dataseed = infseed"
+        if track == "fixedData":
+            where += " AND experiment.dataseed = 100"
+        elif track == "variableData":
+            where += " AND experiment.dataseed = infseed"
+        else:
+            where += " AND experiment.str_parameter = '{}'".format(track)
 
         # get last iteration
         statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
@@ -449,4 +475,50 @@ class ConstpopsizeNe(TrackerSQL):
                  for key in keys }
 
 
+class ConstpopsizeLikelihood(TrackerSQL):
 
+    def __init__(self, **kwargs):
+        self.name =       kwargs.get("name")         # experiment name
+        self.field =      kwargs.get("column","np")  # field to index columns; defaults to number of particles
+        self.cache =      False                      # this doesn't seem to work...
+        TrackerSQL.__init__(self)
+
+    # tracks and slices
+    def getTracks(self):
+        # use the alpha (guide) value(s) as tracks
+        statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                    "WHERE name = '{}'".format(self.name)
+        return sorted( list( set( "G"+elt.split('_')[0][5:] 
+                             for elt in self.getValues(statement) ) ) )    # guide{}_bias{}_mstep{}
+
+    def getSlices(self):
+        # use the focus (bias) value(s) as slices
+        statement = "SELECT DISTINCT str_parameter FROM experiment " \
+                    "WHERE name = '{}'".format(self.name)
+        return sorted( list( set( "F"+elt.split('_')[1][4:] 
+                             for elt in self.getValues(statement) ) ) )    # guide{}_bias{}_mstep{}
+    
+    def __call__(self, track, slice):
+        # generate the selector ('where') clause for this experiment, track and slice
+        selector = "guide{}_bias{}_mstepFalse".format( track[1:], slice[1:] )
+        where = "experiment.name = '{}' AND str_parameter = '{}' AND type = 'LogL'".format(self.name, selector)
+
+        # get last iteration
+        statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE {}".format(where)
+        lastiter = sorted( self.getValues(statement) )[-1]
+        
+        # get number of particles and likelihood at the last iteration
+        statement = "SELECT experiment.{}, result.rate FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
+                    "WHERE result.iter = {} AND {}".format(self.field, lastiter, where)
+        values = self.get(statement)
+
+        # extract the particle counts to serve as keys in the results, and build dictionary { key : [logl values] }
+        keys = sorted(list(set( v[0] for v in values )))
+        return { key : [logl for (key0, logl) in values if key0 == key]
+                 for key in keys }    
+
+
+
+
+    

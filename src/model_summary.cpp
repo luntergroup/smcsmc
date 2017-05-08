@@ -11,7 +11,7 @@ void ModelSummary::addTree(){
     MersenneTwister *randomgenerator = new MersenneTwister( true, tree_count_ );
     //Forest* forest = new Forest( this->model, randomgenerator );
     Forest forest = Forest( this->model, randomgenerator );
-    forest.buildInitialTree();
+    forest.buildInitialTree( false );
     set_current_tree_B(forest.local_root()->length_below());
 
     current_tree_traversed_ = false;
@@ -150,20 +150,6 @@ void ModelSummary::finalize(){
 
     calculate_avg_B_within_bias_section();
 
-    // for loop below is unused since we now calibrate lag empirically
-    for(size_t idx = 0 ; idx < times_.size()-1 ; idx++ ){
-        // calculate Exp_branch_count_given_two
-        exp_lineage_count_given_two_.push_back( k_calculation(avg_lineage_count().at(idx),single_lineage_count().at(idx)) );
-        // calculate lags
-        if(model->sample_size()==2) {
-            lags_.push_back( 1 / ( model->recombination_rate()*2*times_.at(idx+1) ) );
-        } else {
-            lags_.push_back( lag_calculation(avg_B_below().at(idx),exp_lineage_count_given_two_.at(idx)) );
-        }
-    }
-
-    assert(exp_lineage_count_given_two_.size()==times_.size()-1);
-    assert(lags_.size()==times_.size()-1);
     finalized_ = true;
 }
 
@@ -176,16 +162,3 @@ void ModelSummary::calculate_avg_B_within_bias_section(){
     assert( avg_B_within_bias_section().size() == model->bias_strengths().size() );
 }
 
-// All functions below are effectively unused since we introduced the empirical calibration of lags
-double ModelSummary::k_calculation(double exp_lineage_count, int single_lineage_count){
-
-    return std::min((exp_lineage_count - double(single_lineage_count)/tree_count_)/
-                    (1 - double(single_lineage_count)/tree_count_) , double(2));
-}
-
-double ModelSummary::lag_calculation(double B_below, double k){
-
-    return 1 / ( model->recombination_rate() * B_below *
-             ( (2/k)*(k-2)/(model->sample_size()-2) + .5*(model->sample_size()-k)/(model->sample_size()-2) ));
-
-}

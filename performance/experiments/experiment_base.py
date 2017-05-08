@@ -19,7 +19,7 @@ Base = declarative_base()
 # various files and directory paths
 db = "experimentsdb"
 scrmpath = "../../scrm"
-smcsmcpath = "../../smcsmc"
+smcsmcpath = "../../python/smcsmc.py"
 datapath = "data/"
 
 sys.path.extend( ["../../newtests","../newtests"] )

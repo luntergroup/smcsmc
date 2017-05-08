@@ -338,8 +338,7 @@ void PfParam::finalize(){
     recomb_bias.set_rate( model.recombination_rate() );
     recomb_bias.set_num_leaves( default_nsam );
     if (input_RecombinationBiasFileName.size() > 0) {
-        recomb_bias.parse_recomb_bias_file( input_RecombinationBiasFileName,
-                                            start_position );
+        recomb_bias.parse_recomb_bias_file( input_RecombinationBiasFileName );
         recomb_bias.set_model_rates( model );
     }
 }

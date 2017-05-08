@@ -1,5 +1,5 @@
 .. Test documentation master file, created by
-   sphinxreport-quickstart 
+   sphinxreport-quickstart
 
 *********
 Contents
@@ -13,11 +13,13 @@ Contents
    constpopsize_phase.rst
    constpopsize_bylag_2.rst
    constpopsize_bylag_3.rst
-#   constpopsize_bylength.rst
-#   constpopsize_byparticle.rst
-#   constpopsize_bylag.rst
-#   constpopsize_byparticles2.rst   
-              
+   constpopsize_bylength.rst
+   constpopsize_byparticle.rst
+   constpopsize_bylag.rst
+   constpopsize_byparticles2.rst
+   constpopsize_ancestralaware.rst
+   constpopsize_guiding.rst
+
 ==================
 Index
 ==================

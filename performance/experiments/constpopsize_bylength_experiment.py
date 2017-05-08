@@ -20,7 +20,7 @@ experiment_name = "constpopsize_3epochs_lengthdependence"
 
 # class
 import test_const_pop_size
-experiment_class = test_const_pop_size.TestConstPopSize_ThreeEpochs
+experiment_class = test_const_pop_size.TestConstPopSize
 
 # define the experiments
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'smcseed':smcseed,'missing':missing}
@@ -59,9 +59,8 @@ def run_experiment( length, simseed, smcseed, missing ):
     if missing: e.missing_leaves = [0,1]
     e.filename_disambiguator = label
     # set inference parameters
-    e.seqlen = length
     e.seed = (smcseed,)
-    e.bias_heights = None
+    e.seqlen = length
     e.smcsmcpath = experiment_base.smcsmcpath
     # perform inference and store results
     e.infer( case = smcseed )

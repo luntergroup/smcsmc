@@ -3,7 +3,7 @@
 ## Installation
 On Debian/Ubuntu based systems:
 ```bash
-apt-get install build-essential autoconf autoconf-archive doxygen libcppunit-dev
+apt-get install build-essential autoconf autoconf-archive doxygen libcppunit-dev libgoogle-perftools-dev
 ./bootstrap
 make
 ```

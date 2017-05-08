@@ -21,12 +21,12 @@ class Experiment(TrackerSQL):
                ['infer_recombination','infer recombination',0],
                ['bias_heights','bias heights',-1],
                ['bias_strengths','bias strengths',-1],
-               ['directed_recomb','directed recombination',0],
+               ['guided_recomb','guided recombination',0],
                ['dataseed','sequence_seed',0],
                ['infseed','inference_seed',0],
                ['missing_leaves','missing_leaves',0],
                ['smcsmc_version','smcsmc_version',0],
-               ['smcsmc_runtime','runtime',0] ]
+               ['smcsmc_runtime','runtime',1] ]        # 1 = show min/max (seconds) and total (hours)
 
     def getSlices(self):
         return [ field[1] for field in self.fields ]
@@ -41,6 +41,9 @@ class Experiment(TrackerSQL):
         if code == -1:
             return { 'value(s)' : "(Typ:) " + str(values[0]) }
 
+        if code == 1:
+            return { 'value(s)' : '{:1.2f} hr  ({:1.1f} - {:1.1f} sec)'.format( sum(values)/3600, min(values), max(values) ) }
+        
         numvalues = len(set(values))
 
         if numvalues == 1:

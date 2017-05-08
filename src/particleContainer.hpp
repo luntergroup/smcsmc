@@ -45,9 +45,9 @@ class ParticleContainer {
         //
         // Constructors and Destructors
         //
-        ParticleContainer(Model* model,
+        ParticleContainer(Model *model,
                           MersenneTwister *rg,
-                          const vector<int>& record_event_in_epoch,
+                          PfParam *pfparam,
                           size_t Num_of_states,
                           double initial_position,
                           bool emptyFile,
@@ -57,13 +57,12 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( double mutation_rate, double loci_length, Segment * Segfile, valarray<double> & weight_partial_sum, bool ancestral_aware);
-        void extend_ARGs( double mutation_rate, double extend_to );
+        void update_state_to_data( Segment * Segfile, bool ancestral_aware );
+        void extend_ARGs( double extend_to, const vector<int>& data_at_site );
         void set_particles_with_random_weight();
-        void ESS_resampling(valarray<double> weight_partial_sum, valarray<int> &sample_count, int mutation_at, const PfParam &pfparam, int num_state);
+        int  resample(int update_to, const PfParam &pfparam);
         void normalize_probability();
         void clear();
-        void print_particle_probabilities();
         double ln_normalization_factor() const { return this->ln_normalization_factor_; }
 
         //
@@ -72,6 +71,7 @@ class ParticleContainer {
         void print();
         bool check_state_orders();
         void print_particle_newick();
+        void print_recent_recombination_histogram();
 
     private:
         //
@@ -79,36 +79,24 @@ class ParticleContainer {
         //
         void update_data_status_at_leaf_nodes( const vector<int>& data_at_tips );
         int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
-        void update_weight_at_site( double mutation_rate, const vector <int> &data_at_tips, bool ancestral_aware);
+        void update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware);
         bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
-        void store_normalization_factor();
         // Resampling
-        void resample(valarray<int> & sample_count);
-        void duplicate_particles ( valarray<int> & sample_count );
-        void resample_for_check(valarray<int> & sample_count);
-        void shifting(int number_of_particles);
-        void trivial_resampling( std::valarray<int> & sample_count, size_t num_state );
-        void systematic_resampling(std::valarray<double> partial_sum, std::valarray<int>& sample_count, int sample_size);
-        void update_partial_sum_array_find_ESS(std::valarray<double> & weight_partial_sum);
+        void implement_resampling(valarray<int> & sample_count, double total_pilot_weight);
+        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count);
 
         //
         // Setters and getters:
         //
-        double ESS() const {return this->ESS_;};
-        void set_ESS(double ess){this->ESS_ = ess;};
         RandomGenerator* random_generator() const { return this->random_generator_; }
-        double current_printing_base() const { return this->current_printing_base_;}
-        void set_current_printing_base (double base) { this->current_printing_base_ = base;}
 
         //
         // Members
         //
         vector <ForestState*> particles;
-        double ESS_;
-        RandomGenerator* random_generator_; // This is for particle filter only,
-        double current_printing_base_;
+        int num_particles;
+        RandomGenerator* random_generator_;
         double ln_normalization_factor_;
-        double temp_sum_of_weights;
         Model* model;
 };
 

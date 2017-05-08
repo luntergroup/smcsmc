@@ -26,6 +26,12 @@
 #include "segdata.hpp"
 #include "exception.hpp"
 
+#include <fstream>
+#include <iostream>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 using namespace std;
 
 #ifndef PFARGPfParam
@@ -101,11 +107,6 @@ public:
     int get_num_leaves() const             { return _leaf_rel_rates.size(); }
     double get_rate() const                { return _rate; }
     double get_leaf_rate( int leaf ) const { return _leaf_rel_rates[leaf]; }
-    void adjust_start_pos( int start_pos ) {
-        int end = get_end() - start_pos;
-        _locus = max(0, _locus - start_pos);
-        _size = end - _locus;
-    }
     friend std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs);
     friend std::ostream& operator<<(std::ostream& str, const RecombBiasSegment& rbs) {
         str << rbs._locus << "\t" << rbs._size << "\t" << rbs._rate;
@@ -123,6 +124,11 @@ inline std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs) {
     std::string line, elt;
     try {
         if (std::getline(str,line)) {
+            if (std::count(line.begin(), line.end(), ' ') > 0) {
+                cerr << "Found spaces in recombination record; columns must be tab-separated" << endl;
+                cerr << "Record: '" << line << "'" << endl;
+                throw InvalidInput("Found spaces in recombination record");
+            }
             std::stringstream iss(line);
             if ( !std::getline(iss, elt, '\t' ) ) throw InvalidInput("Parse error on 1st element");
             rbs._locus = std::stoi( elt );
@@ -144,38 +150,59 @@ inline std::istream& operator>>(std::istream& str, RecombBiasSegment& rbs) {
 
 class RecombinationBias {
 public:
-    RecombinationBias() : _true_rate(-1), _num_leaves(-1) {};
+    RecombinationBias() : _true_rate(-1), _num_leaves(-1), _using_posterior_biased_sampling(false) {};
     void set_rate( double rate ) {
         assert( _bias_segments.size() == 0 );
         _true_rate = rate;
+    }
+    double get_true_rate() const {
+        return _true_rate;
+    }
+    bool using_posterior_biased_sampling() const {
+        return _using_posterior_biased_sampling;
     }
     void set_num_leaves( int num_leaves ) {
         assert( _bias_segments.size() == 0 );
         _num_leaves = num_leaves;
     }
-    void parse_recomb_bias_file( string filename, int start_pos ) {
-        ifstream in_file( filename.c_str(), std::ifstream::in );
-        if (!in_file.is_open()) {
+    void parse_recomb_bias_file( string filename ) {
+        // recombination guide files are always 0-based!
+        boost::iostreams::filtering_istream in_file;
+        ifstream in_raw;
+        if (boost::algorithm::ends_with( filename, ".gz")) {
+            in_raw = ifstream(filename.c_str(), std::ifstream::in | std::ios_base::binary );
+            in_file.push(boost::iostreams::gzip_decompressor());
+        } else {
+            in_raw = ifstream(filename.c_str(), std::ifstream::in );
+        }
+        if (!in_raw.is_open()) {
             cout << "Problem opening file " << filename << endl;
             throw InvalidInput("Recombination guide file could not be opened.");
         }
+        in_file.push(in_raw);
         string header;
         std::getline(in_file, header);
-        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line in recombination guide file");
+        cout << header << endl;
+        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (with columns 'locus', 'size', 'recomb_rate', '1', ...) in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
-            assert( tmp.get_num_leaves() == _num_leaves );
-            if (tmp.get_end() > start_pos) {
-                tmp.adjust_start_pos( start_pos );
-                assert( tmp.get_locus() == ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() ) );
-                _bias_segments.push_back( tmp );
+            if ( tmp.get_num_leaves() != _num_leaves ) {
+                cerr << "Problem on record at position " << tmp.get_locus() << " with " << tmp.get_num_leaves() << " leaf columns; expected " << _num_leaves << endl;
+                cerr << tmp << endl;
+                throw InvalidInput("Did not find expected number of leaf columns");
             }
+            if ( tmp.get_locus() != ((_bias_segments.size() == 0) ? 0 : _bias_segments.back().get_end() )) {
+                cerr << "Problem on record at position " << tmp.get_locus() << endl;
+                throw InvalidInput("Did not get expected locus position (records should start at 0, and leave no gaps)");
+            }
+            _bias_segments.push_back( tmp );
         }
     }
     const RecombBiasSegment& get_recomb_bias_segment( int idx ) const {
         return _bias_segments[idx];
     }
     const void set_model_rates( Model& model ) {
+        assert(_true_rate > 0);
         for (const RecombBiasSegment& rbs : _bias_segments) {
             double mutation_rate = model.mutation_rate();
             if (rbs.get_locus() < model.loci_length()) {
@@ -184,11 +211,13 @@ public:
                 model.setMutationRate( mutation_rate, false, false, rbs.get_locus() );
             }
         }
+        _using_posterior_biased_sampling = true;
     }
 private:
     double _true_rate;
     int _num_leaves;
     vector<RecombBiasSegment> _bias_segments;
+    bool _using_posterior_biased_sampling;
 };
 
 

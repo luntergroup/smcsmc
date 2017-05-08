@@ -231,6 +231,13 @@ public:
         return start_base_; }
     double get_end_base() const {
         return end_base_; }
+    double get_start_height() const {
+        return start_height; }
+    double get_end_height() const {
+        return end_height; }
+    int get_weight() const {
+        return weight;
+    }
     size_t get_population() const {
         assert (is_coalmigr());
         return a.coal_migr_population; }
@@ -257,8 +264,8 @@ public:
         assert (children_updated_ <= 0); // ensure events are not removed in mid-flow
         children_updated_ = -1; }
     /* Adds (newly made, refcount==1) this to tree */
-    void add_leaf_to_tree( EvolutionaryEvent** eventptr_location ) {
-        if (parent_) {
+    void add_leaf_to_tree( EvolutionaryEvent** eventptr_location, bool always_treat_as_tree=false ) {
+        if (parent_ || always_treat_as_tree) {
             // this is a tree; replace existing tree off eventptr_location with this
             bool eventIsLost = (*eventptr_location)->decrease_refcount_is_zero();
             // decrease_refcount_is_zero returns TRUE, when ref count is zero, in which case, eventIsLost is TRUE
@@ -327,6 +334,7 @@ private:
     short children_updated() const { return this->children_updated_; }
     void set_event_data ( const short event_data ){ this->event_data_ = event_data; }
     short event_data() const { return this->event_data_; }
+    void set_end_base( double end_base ) { end_base_ = end_base; }
 
     void set_ref_counter ( const short ref_counter ){ this->ref_counter_ = ref_counter; }
     short ref_counter() const { return this->ref_counter_; }

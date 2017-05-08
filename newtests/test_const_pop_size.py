@@ -10,7 +10,6 @@ from test_generic import TestGeneric
 #
 
 # NOTE: it seems that a lag of 4 gives more accurate parameter estimates, despite a lower ESS
-
 class TestConstPopSize(TestGeneric):
 
     def setUp(self, name="testdata/constpopsize"):
@@ -36,6 +35,8 @@ class TestConstPopSize(TestGeneric):
         self.bias_strengths = [3,1]
         self.tmax = 4
         self.seed = (1,)
+        
+        #self.guided_recomb_alpha = 0.5 #TEST
 
         # set targets
         self.targets = [{'type':"Coal", 'pop':0, 'epoch':0, 'min':0    , 'max':124573, 'truth':10000},
@@ -46,6 +47,91 @@ class TestConstPopSize(TestGeneric):
                         {'type':"Coal", 'pop':0, 'epoch':5, 'min':9862 , 'max':10098 , 'truth':10000},
                         {'type':"Recomb", 'min':9.77e-9, 'max':9.89e-9, 'truth':1e-8}]
         self.max_out_of_range = 0
+
+
+
+class TestConstPopSize_ThreeEpochs(TestGeneric):
+
+    def setUp(self, name="testdata/constpopsize_3epochs"):
+        # base class for a number of experiments.
+        TestGeneric.setUp(self, name)
+        self.seqlen = 10000   # dummy length, for test
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0, 1, 2],   # three epochs
+                                                num_populations = 1,
+                                                population_sizes = [[1], [1], [1]] )
+        self.em = 5
+        self.np = 100
+        self.bias_heights = None
+        self.bias_strenghts = None
+        self.alpha = 0
+        self.debug = True
+
+        # no tests here
+        self.targets = []
+        self.max_out_of_range = 0
+
+
+
+class TestConstPopSize_Migration(TestGeneric):
+
+    def setUp(self):
+        TestGeneric.setUp(self, "testdata/constpopsize_migration")
+        self.seqlen = 1e6
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0, 0.01, 0.25, 0.5, 1, 1.5],
+                                                num_populations = 2,
+                                                num_samples = 8,
+                                                sample_populations = [1,1,1,1,2,2,2,2],
+                                                population_sizes = [[1,1]] * 6,
+                                                migration_rates = [ [[0,0],[1,0]], # -em 0 2 1 1
+                                                                    [[0,0],[1,0]], # em 0.01 2 1 1
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]],
+                                                                    [[0,0],[1,0]] ] )
+        # use python front-end
+        self.smcsmcpath = "../python/smcsmc.py"
+        
+        # set default inference parameters
+        self.popt = None
+        self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+        self.lag = 2
+        self.em = 1
+        self.np = 1000
+        self.debug = True
+        self.bias_heights = [800]
+        self.bias_strengths = [2,1]
+        self.tmax = 4
+        self.seed = (1,)
+
+        # set targets
+        self.targets = [{'type':"Recomb", 'min':9.6e-9, 'max':1.04e-8, 'truth':1e-8, 'ess':1.5}]
+        for idx, pop in itertools.product(range(6), range(2)):
+            self.targets.append({'type':"Coal", 'pop':pop, 'epoch':idx,
+                                 'min':9300  if idx>1 else 6000,
+                                 'max': [15000,11500,10600,10600,10600,11500][idx],
+                                 'truth':10000, 'ess':[1,1,1.3,1.5,2,3][idx]})
+        self.targets += [ {'type':'Migr', 'from_pop':fp, 'to_pop':tp, 'epoch':ep,
+                           'min':mi, 'max':ma, 'truth':tr}
+                          for (fp,tp,ep,mi,ma,tr) in
+                          [ (0,1,0, 0.0, 1e-5, 0),
+                            (0,1,1, 0.0, 1e-5, 0),
+                            (0,1,2, 0.0, 1e-5, 0),
+                            (0,1,3, 0.0, 1e-5, 0),
+                            (0,1,4, 0.0, 1e-5, 0),
+                            (0,1,5, 0.0, 1e-5, 0),
+                            (1,0,0, 0.0, 3e-5, 2.5e-5),
+                            (1,0,1, 0.0, 3e-5, 2.5e-5),
+                            (1,0,2, 0.0, 3e-5, 2.5e-5),
+                            (1,0,3, 0.0, 3e-5, 2.5e-5),
+                            (1,0,4, 0.0, 3e-5, 2.5e-5),
+                            (1,0,5, 0.0, 3e-5, 2.5e-5) ] ]
+                               
+        self.max_out_of_range = -1
+
 
 
 class TestConstPopSize_FourEpochs(TestConstPopSize):
@@ -245,7 +331,36 @@ class TestConstPopSize_Migration(TestGeneric):
                 t['truth'] = scaling * self.pop.migration_rates[t['epoch']][t['from_pop']][t['to_pop']]
         self.max_out_of_range = 0
         
+
+
+class TestConstPopSize_Runtime(TestGeneric):
+
+    def setUp(self, name="testdata/runtime"):
+        TestGeneric.setUp(self, name)
+        self.seqlen = 1e6
+        self.pop = populationmodels.Population( sequence_length = self.seqlen,
+                                                scrmpath=self.scrmpath,
+                                                change_points = [0],
+                                                num_populations = 1,
+                                                num_samples = 8,
+                                                population_sizes = [[1]])
+
+        # use smcsmc front-end
+        self.smcsmcpath = "../smcsmc"
         
+        # use pattern for inference (default)
+        #self.popt = None
+
+        self.em = 0
+        self.np = 1000
+        self.bias_heights = [800]
+        self.bias_strengths = [1,1]
+        self.seed = (1,)
+        self.debug = True
+        self.targets = []
+        self.max_out_of_range = -1
+
+
         
 if __name__ == "__main__":
     unittest.main()

@@ -34,6 +34,7 @@ class Smcsmc:
         self.emiters = 0
         self.chunks = 1
         self.infer_recomb = True
+        self.do_m_step = True
         self.alpha = 0.0            # posterior mix-in; 0 means use prior
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self._processes = []
@@ -74,8 +75,8 @@ class Smcsmc:
             (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
+            (3, '-no_m_step','','Do not update parameters (but do infer recombination guide)'),
             (3, '-alpha', 't',  'Fraction of posterior recombination to mix in to recombination guide ({})'.format(self.alpha)),
-            (3, '-beta', 's',   'Extent of smoothing used in calculating posterior recombination ({})'.format(self.beta)),
             (3, '-smcsmcpath', 'f','Path to smcsmc executable ({})'.format(self.smcsmcpath)),
             (3, '-nothreads','','Calculate chunks sequentially rather than in parallel threads'),
             (3, '-log', 'f',    'Log file (stdout)'),
@@ -141,6 +142,9 @@ class Smcsmc:
                 idx += 2
             elif opts[idx] == '-no_infer_recomb':
                 self.infer_recomb = False
+                idx += 1
+            elif opts[idx] == '-no_m_step':
+                self.do_m_step = False
                 idx += 1
             elif opts[idx] == '-alpha':
                 self.alpha = float(opts[idx+1])
@@ -241,6 +245,16 @@ class Smcsmc:
         of.close()
 
 
+    def wait_for_outfile(self, iteration, chunk):
+        sleeptime = 30
+        while True:
+            if os.path.exists( self.out_template.format(iteration,chunk) ):
+                break
+            if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
+            time.sleep( sleeptime )
+            sleeptime *= 1.02
+        
+
     def merge_outfiles(self):
         of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
         of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS\n")
@@ -253,6 +267,9 @@ class Smcsmc:
         
     
     def m_step(self, data):
+        if not self.do_m_step:
+            logger.info("Skipping M step -- re-using initial parameters")
+            return
         # set population sizes
         for epoch in range(len(self.pop.change_points)):
             for pop in range(self.pop.num_populations):
@@ -268,8 +285,11 @@ class Smcsmc:
                     if frompop != topop:
                         key = ("Migr",epoch,frompop,topop)
                         rate = data[ (key,"Count") ] / data[ (key,"Opp") ]
-                        self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate
-                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}".format(epoch, frompop, topop, rate))
+                        # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
+                        #       true units (events per nt per generation).  Reporting the 
+                        self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate * 4 * self.pop.N0
+                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}  ({})".
+                                    format(epoch, frompop, topop, rate, rate*4*self.pop.N0))
         # set recombination rate
         if self.infer_recomb:
             key = ("Recomb",-1,-1,-1)
@@ -336,6 +356,7 @@ class Smcsmc:
             self.m_step( self.parse_outfile( self.out_template.format(iteration-1,"final" ) ) )
             if self.alpha > 0.0:
                 # process the .recomb files to recomb-guideing files
+                logger.info("Processing recombination guide files...")
                 for chunk in range(self.chunks):
                     lr = processrecombination.LocalRecombination( self.recomb_template.format(iteration-1,chunk) )
                     lr.smooth( self.alpha, self.beta )
@@ -360,13 +381,7 @@ class Smcsmc:
 
         # wait for all .out files to appear (used if e_step submits jobs to sge)
         for chunk in range(self.chunks):
-            sleeptime = 30
-            while True:
-                if os.path.exists( self.out_template.format(iteration,chunk) ):
-                    break
-                if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
-                time.sleep( sleeptime )
-                sleeptime *= 1.02
+            self.wait_for_outfile(iteration, chunk)
         logger.info("Found all chunks; calculating sufficient statistics")
 
         # combine the .out files

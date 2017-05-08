@@ -24,9 +24,11 @@
 
 #include "forest.h"
 #include "coalevent.hpp"
+#include "pfparam.hpp"
+#include "segdata.hpp"
+
 #include <deque>
 #include <valarray>
-#include "segdata.hpp"
 #include <queue>
 #include <cmath>
 
@@ -51,156 +53,177 @@
 
 extern int new_forest_counter;
 extern int delete_forest_counter;
-extern int recombination_counter; //DEBUG
-extern int recombination_event_called; //DEBUG
-
-struct TmrcaState {
-    TmrcaState (double base, double tmrca) {
-        this->base = base;
-        this->tmrca = tmrca;
-        }
-    ~TmrcaState(){};
-    double base;
-    double tmrca;
-    };
-
-struct BranchLengthData {
-    BranchLengthData (double partialBranchLength = 0, double subtreeBranchLength = -1)
-    {
-        this->partialBranchLength = partialBranchLength;
-        this->subtreeBranchLength = subtreeBranchLength;
-    }
-    ~BranchLengthData(){};
-    // this holds the branch length of the partial tree consisting of all leaf nodes
-    // that carry data, up to the current node.
-    double partialBranchLength;
-    // this holds the branch length of the subtree subtending all leaf nodes that carry
-    // data, but not including the branch from the subtree's root to the current node
-    // Special case: if no descendants of the current node carry data, this is -1.
-    double subtreeBranchLength;
-};
 
 // machinery for delayedIS
 
 class DelayedFactor {
+    
+public:
+    // single-activation instance
+    DelayedFactor(double pos, double factor) : application_position(pos), importance_factor(factor), delta(0), k(1) {}
 
-    public:
-            DelayedFactor(double pos, double factor);
+    // k-activation instance
+    DelayedFactor(double final_pos, double factor, double cur_pos, int k) : k(k) {
+        if (k < 1) throw std::runtime_error("Cannot have DelayedFactor with k < 1");
+        if (k == 1) {
+            delta = 0; // not used
+            application_position = final_pos;
+            importance_factor = factor;
+        } else {
+            delta = (final_pos-cur_pos) / ((1<<k)-1);
+            application_position = cur_pos + delta;
+            importance_factor = pow(factor, 1.0/k);
+        }
+    }
+    // internal: next activation
+    DelayedFactor( const DelayedFactor& df, bool _ ) : application_position( df.application_position + 2*df.delta ),
+                                                       importance_factor( df.importance_factor ),
+                                                       delta( 2*df.delta ),
+                                                       k( df.k-1 ) {}
 
-            // Members
-            double application_position;
-            double importance_factor;
-            void print_info() const;
+    double application_position;
+    double importance_factor;
+    // for piecewise constant (approximately continuous) application:
+    double delta;
+    int k;
 
+    void print_info() const {
+        std::clog << "\nThe application position of this DF is " << this->application_position << std::endl;
+        std::clog << "The importance factor of this DF is " << this->importance_factor << std::endl;
+    }
 };
 
 class CompareDFs {
-        public:
-                bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
-                    return lhs.application_position > rhs.application_position;
-                }
+public:
+    bool operator() (const DelayedFactor &lhs, const DelayedFactor &rhs) const {
+        return lhs.application_position > rhs.application_position;
+    }
 };
 
-inline DelayedFactor::DelayedFactor( double pos, double factor) {
-        this->application_position = pos;
-        this->importance_factor = factor;
-}
-
-// DEBUG delayedIS
-inline void DelayedFactor::print_info() const {
-    std::clog << "\nThe application position of this DF is " << this->application_position << std::endl;
-    std::clog << "The importance factor of this DF is " << this->importance_factor << std::endl;
-}
 
 /*!
  * \brief Derived class from Forest.
  * A particle is a special case of a Forest, with special members
  */
 class ForestState : public Forest{
-    #ifdef UNITTEST
+#ifdef UNITTEST
     friend class TestForestState;
-    #endif
+#endif
     friend class ParticleContainer;
     friend class CountModel;
 
     // All members and methods are private
-    private:
-        // Constructor, called at initial stage //
-        ForestState(Model* model, RandomGenerator* random_generator, const vector<int>& record_event_in_epoch, bool own_model_and_random_generator);    /*!< \brief ForestState constructer, used when initialize ForestState from absolutely the first time */
-        // Constructor, called when resampling, making new copy of a particle
-        ForestState(const ForestState &current_state); /*!< \brief ForestState constructer, used when copy particle from a given particle */
-        // Destructors //
-        ~ForestState();
-        void clear_eventContainer();
+private:
+    // Constructor, called at initial stage //
+    ForestState(Model* model, RandomGenerator* random_generator, PfParam* pfparam,
+                bool own_model_and_random_generator);    /*!< \brief Used to create a ForestState for the first time */
+    ForestState(const ForestState &current_state);       /*!< \brief Copy constructor, used when resampling */
 
-        // Resampling //
-        void init_EventContainers( Model * model );
-        void copyEventContainers(const ForestState & copied_state );
-        void resample_recombination_position(void);
+    // Destructors //
+    ~ForestState();
+    void clear_eventContainer();
 
-        // Update weight
-        void include_haplotypes_at_tips(vector <int> &haplotypes_at_tips); /*!< \brief Update data to the particle */
-        double calculate_likelihood( bool ancestral_aware ); /*!< \brief Calculate the likelihood of the genealogy */
-        valarray<double> cal_partial_likelihood_infinite(Node * node); /*!< Calculate the marginal likelihood of each node */
-        double trackLocalTreeBranchLength();
-        BranchLengthData trackSubtreeBranchLength ( Node * currentNode );
+    // Spawn off new particle from this with multiplicity > 1, leaving this with multiplicity = 1
+    ForestState* spawn() {
+        assert( multiplicity() > 1 );
+        ForestState* new_particle = new ForestState(*this);
+        new_particle->setMultiplicity( multiplicity() - 1 );
+        setMultiplicity(1);
+        return new_particle;
+    }
+    
+    // Resampling //
+    void init_EventContainers( Model * model );
+    void copyEventContainers(const ForestState & copied_state );
+    void resample_recombination_position(void);
+    
+    // Update weight
+    double calculate_likelihood( bool ancestral_aware, const vector<int>& haplotype ); /*!< \brief Calculate the likelihood of the genealogy */
+    void cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]); /*!< Calculate the marginal likelihood of each node */
+    double trackLocalTreeBranchLength( const vector<int>& data_at_site );
+    double trackSubtreeBranchLength ( Node * currentNode, const vector<int>& data_at_site );
+    
+    // Extend
+    double extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
+                        vector<ForestState*>* pParticleContainer = NULL);
+    
+    // Record events
+    void record_recomb_extension ( );
+    void record_recomb_event( double event_height );
+    void record_all_event(TimeIntervalIterator const &ti);
+    
+    // Setters and getters:
+    void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
+    double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
+    void setPosteriorWeight(double weight) { assert (weight > 0.0); this->posterior_weight_ = weight; }
+    void setPilotWeight(double weight) { this->pilot_weight_ = weight; }
+    double posteriorWeight() const { return this->posterior_weight_; }
+    double pilotWeight() const { return this->pilot_weight_; }
+    int multiplicity() const { return multiplicity_; }
+    void setMultiplicity( int multiplicity ) { multiplicity_ = multiplicity; }
 
-        // Extend
-        double extend_ARG ( double mutation_rate, double extend_to, bool updateWeight=true, bool recordEvents=true );
+    // Save and restore recombination rate index
+    void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
+    void restore_recomb_state() { writable_model()->resetSequencePosition( _current_seq_idx ); }
 
-        // Record events
-        void record_Recombevent_b4_extension ( );
-        void record_Recombevent_atNewGenealogy ( double event_height );
-        void record_all_event(TimeIntervalIterator const &ti, double & recomb_opp_x_within_scrm);
-        void clear_recomb_opp_within_scrm(){ this->recomb_opp_x_within_scrm = 0 ; }
+    // Biased sampling
+    void adjustWeights(double adjustment) {
+        posterior_weight_ *= adjustment;
+        pilot_weight_ *= adjustment;
+    }
+    void adjustWeightsWithDelay(double adjustment, double delay, int k=1) {
+        posterior_weight_ *= adjustment;
+        if ((adjustment > 0.99 && adjustment < 1.01) || (delay <= 1)) {
+            // don't delay marginal adjustments
+            pilot_weight_ *= adjustment;
+        } else {
+            total_delayed_adjustment_ *= adjustment;
+            delayed_adjustments.push( DelayedFactor ( current_base() + delay, adjustment, current_base(), k ) );
+        }
+    }
+    void applyDelayedAdjustment() {
+        const DelayedFactor& df = delayed_adjustments.top();
+        pilot_weight_ *= df.importance_factor;
+        total_delayed_adjustment_ /= df.importance_factor;
+        // if necessary, add new, updated adjustment
+        if (df.k > 1) {
+            delayed_adjustments.push( DelayedFactor( df, true ) );
+        }
+        delayed_adjustments.pop();
+        assert( std::abs(posterior_weight_ - pilot_weight_ * total_delayed_adjustment_) <= .001 * posterior_weight_ );
+    }
+    
+    //// biased sampling    
+    double find_delay( double coal_height );
+    double importance_weight_over_segment( double previously_updated_to, double update_to );
+    double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
+    double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
+    Node* trackLocalNode(Node *node) const;
 
-        // Setters and getters:
-        void setSiteWhereWeightWasUpdated( double site ){ this->site_where_weight_was_updated_=site; }
-        double site_where_weight_was_updated() const { return site_where_weight_was_updated_; }
-        void setPosteriorWeight(double weight) { assert (weight > 0.0); this->posterior_weight_ = weight; }
-        double posteriorWeight() const { return this->posterior_weight_; }
-        void setPilotWeight(double weight) { this->pilot_weight_ = weight; }
-        double pilotWeight() const { return this->pilot_weight_; }
+    // below are overloaded
+    virtual double sampleNextBase( bool record_and_bias );
+    virtual double samplePoint( bool record_and_bias );
+    
+    // Debugging tools
+    std::string newick(Node *node) ;
+        
+    // Members
+    vector < EvolutionaryEvent* > eventTrees;
+    double site_where_weight_was_updated_;
+    double posterior_weight_;
+    double pilot_weight_;
+    int    multiplicity_;
+    int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
+    double first_coalescence_height_;                // NOTE: this is a temporary variable; move elsewhere?
+    double total_local_branch_length_;               // NOTE: this is a temporary variable; move elsewhere?
+    PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias.  NOTE: move elsewhere?
+    double recombination_bias_importance_weight_;    // factor of importance weight due to recombination biasing; delay is treated specially for this IW
+    std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
+    bool owning_model_and_random_generator;
 
-
-        // What does this do?
-        Node* trackLocalNode(Node *node) const;
-
-        // Members
-        vector < EvolutionaryEvent* > eventTrees;
-        vector < TmrcaState > TmrcaHistory;
-        double site_where_weight_was_updated_;
-        double posterior_weight_;
-        double pilot_weight_;
-        double first_coalescence_height_;
-        bool owning_model_and_random_generator;
-        const vector < int >& record_event_in_epoch;
-
-
-        //// biased sampling
-
-        double imp_weight_positional_component( double previously_updated_to, double update_to, bool sampled_recombination );
-        void imp_weight_temporal_component( double recombination_height );
-
-        TreePoint sampleBiasedPoint(Node* node = NULL, double length_left = -1);
-        void sampleBiasedRecSeqPosition(bool recordEvents);
-
-        double getWeightedLocalTreeLength() const;
-        double getWeightedLengthBelow( Node* node ) const;
-        double WeightedBranchLengthAbove( Node* node ) const;
-        double WeightedToUnweightedHeightAbove( Node* node, double length_left) const;
-
-        //// delayed IS
-
-        std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
-        double total_delayed_adjustment = 1;  // this is the product over the factors in delayed_adjustments
-
-        // below are overloaded
-        void sampleRecSeqPosition( bool recordEvents = false );
-
-
-        // Debugging tools
-        std::string newick(Node *node) ;
-
+    // DEBUG
+    int recent_recombination_count;
+    double total_delayed_adjustment_;
+    
 };
 #endif

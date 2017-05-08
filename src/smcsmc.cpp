@@ -33,10 +33,9 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <fenv.h>
 
-/*!
- * Global variable for the memory arena
- */
+// Global variable for the memory arena
 class Arena* Arena::globalArena;
 
 
@@ -49,6 +48,12 @@ int main(int argc, char *argv[]){
 
     bool print_update_count = false; // DEBUG
 
+    // catch floating point exceptions, to aid debugging, 
+    // but not on OSX as it uses SSE for all FP math
+#ifndef __APPLE__
+    feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);
+#endif
+    
     try {
         /*! Extract pfARG parameters */
         PfParam pfARG_para;
@@ -74,13 +79,11 @@ int main(int argc, char *argv[]){
         pfARG_para.outFileHeader();
         for (int i = 0; i <= pfARG_para.EM_steps; i++) {
 
-            cout << "EM step " << i << endl;
             clog << "EM step " << i << endl;
             pfARG_core( pfARG_para,
                         countNe,
                         print_update_count);
             pfARG_para.increaseEMcounter();
-            cout << "End of EM step " << i << endl;
             clog << "End of EM step " << i << endl;
         }
 
@@ -93,7 +96,6 @@ int main(int argc, char *argv[]){
     }
     catch (const exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        std::cout << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 }
@@ -119,16 +121,21 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
     int num_epochs_not_done = num_epochs;
     MersenneTwister randomgenerator( true, 1 );
     int iterations = 0;
-    const int max_iterations = 10000000;
+    const int max_iterations = 1000000;
+    const long long max_num_trees = (long long)50 * max_iterations;
     const int max_safe_sample_size = 10;
     size_t epoch_idx;
+    long long num_trees = 0;
     
     while ( num_epochs_not_done > 0 ) {
 
       if (++iterations > max_iterations) break;
+      if (num_trees > max_num_trees) {
+          throw std::runtime_error("Using an excessive number of trees to calculate survival distances.  Check if model parameters are sensible.");
+      }
       Forest arg( &model, &randomgenerator );
       bool has_node_in_incomplete_epoch = false;
-      arg.buildInitialTree();
+      arg.buildInitialTree( false );
       std::set<double> original_node_heights;
       for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
           if (!(*it)->in_sample()) {
@@ -148,6 +155,7 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
       while( !original_node_heights.empty() && arg.next_base() < (model.loci_length() * 0.6) ) {
         arg.sampleNextGenealogy( false );
         arg.sampleRecSeqPosition( false );
+        ++num_trees;
         for( auto it = original_node_heights.begin(); it != original_node_heights.end(); it++){
           if( !is_height_in_tree( arg, *it ) ) {
             // add genomic position to the histogram fo survival for the appropriate epoch
@@ -202,33 +210,33 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
 
 void calibrate_bias_ratios(Model* model, double top_t_value) {
 
-    if (!model->biased_sampling) return;
-    
-    clog << "model has bias heights " << model->bias_heights() << endl;
-    clog << "model has bias strengths " << model->bias_strengths() << endl;
+    if (model->biased_sampling) {
+        clog << "model has bias heights " << model->bias_heights() << endl;
+        clog << "model has bias strengths " << model->bias_strengths() << endl;
 
-    int Num_bias_ratio_simulation_trees = 10000;
-    ModelSummary model_summary = ModelSummary(model, top_t_value);
-    for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
-      model_summary.addTree();
+        int Num_bias_ratio_simulation_trees = 10000;
+        ModelSummary model_summary = ModelSummary(model, top_t_value);
+        for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
+            model_summary.addTree();
+        }
+        model_summary.finalize();
+        
+        clog << "Information from pre-sequence-analysis tree simulation:" << endl;
+        clog << "    model_summary.times_: " << model_summary.times_ << endl;
+        clog << "    avg B: " << model_summary.avg_B() << endl;
+        clog << "    avg B below: " << model_summary.avg_B_below() << endl;
+        clog << "    avg B within: " << model_summary.avg_B_within() << endl;
+        clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
+        clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
+        clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
+        clog << "    tree count: " << model_summary.tree_count_ << endl;
+        
+        model->clearBiasRatios();
+        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
+            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
+        }
+        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
     }
-    model_summary.finalize();
-    
-    clog << "Information from pre-sequence-analysis tree simulation:" << endl;
-    clog << "    model_summary.times_: " << model_summary.times_ << endl;
-    clog << "    avg B: " << model_summary.avg_B() << endl;
-    clog << "    avg B below: " << model_summary.avg_B_below() << endl;
-    clog << "    avg B within: " << model_summary.avg_B_within() << endl;
-    clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
-    clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
-    clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
-    clog << "    tree count: " << model_summary.tree_count_ << endl;
-
-    model->clearBiasRatios();
-    for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
-        model->addToBiasRatios( model_summary.getBiasRatio(idx) );
-    }
-    clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
     assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
 }
 
@@ -241,21 +249,21 @@ void pfARG_core(PfParam &pfARG_para,
     MersenneTwister *rg  = pfARG_para.rg;
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
-    double mutation_rate = model->mutation_rate();
 
-    calibrate_bias_ratios( model, pfARG_para.top_t() );
+    // Commented out; experimenting with conditional normalization so that under recombination biasing,
+    // the overall rate remains the same independent of the tree, but conditional on a recombination,
+    // the relative rates across the tree are modified so as to provide the desired bias.
+    //calibrate_bias_ratios( model, pfARG_para.top_t() );
 
-    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;    
+    dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
     Segfile->read_new_line();
     /*! Initial particles */
-    ParticleContainer current_states(model, rg, pfARG_para.record_event_in_epoch,
+    ParticleContainer current_states(model, rg, &pfARG_para,
                                      Nparticles,
                                      Segfile->segment_start(),
                                      pfARG_para.Segfile->empty_file(),
                                      pfARG_para.Segfile->allelic_state_at_Segment_end);
     dout<<"######### finished initial particle building"<<endl;
-
-    valarray<int> sample_count( Nparticles ); // if sample_count is in the while loop, this is the initializing step...
 
     /*! Initialize prior Ne */
     countNe->init();
@@ -275,16 +283,14 @@ void pfARG_core(PfParam &pfARG_para,
 
     /*! Go through seg data */
     bool force_update = false;
+    int total_resample_count = 0;
     do{
-        dout <<"current base is at "<<Segfile->segment_start()<<" and it is "
-            << (Segfile->end_data()? "":"NOT") << " the end of data "<<endl;
-
-        valarray<double> weight_cum_sum((Nparticles+1)); //Initialize the weight cumulated sums
+        dout <<"Current base is "<<Segfile->segment_start() << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( mutation_rate, (double)model->loci_length(), Segfile, weight_cum_sum, pfARG_para.ancestral_aware);
+        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
@@ -298,16 +304,13 @@ void pfARG_core(PfParam &pfARG_para,
             dout << " random weights" <<endl;
             current_states.set_particles_with_random_weight();
         }
-        /*! ESS resampling. Filtering step*/
-        current_states.ESS_resampling(weight_cum_sum, sample_count, min(Segfile->segment_end(),
-                                                                        (double)model->loci_length()),
-                                      pfARG_para, Nparticles);
+
+        /*! Resample if the ESS becomes too low */
+        double update_to = min( Segfile->segment_end(), (double)model->loci_length() );
+        total_resample_count += current_states.resample( update_to, pfARG_para );
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
-            cout << "\r" << " Particle filtering step" << setw(4) << 100 << "% completed." << endl;
-            if ( Segfile->segment_end() > (double)model->loci_length() ) {
-                clog << "  Segment data is beyond loci length" << endl;
-            }
+            cout << "\r Particle filtering step 100% completed." << endl;
             Segfile->set_end_data (true);
         }
 
@@ -315,8 +318,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     } while( !Segfile->end_data() );
 
-    clog << "Got to end of sequence" << endl;
+    clog << "Got to end of sequence; resampled " << total_resample_count << " times" << endl;
 
+    current_states.print_recent_recombination_histogram();    //DEBUG
+    
     double sequence_end = pfARG_para.default_loci_length; // Set the sequence_end to the end of the sequence
 
     dout << endl << "### PROGRESS: end of the sequence at "<< sequence_end << endl;
@@ -341,7 +346,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     countNe->log_counts( pfARG_para );
 
-    clog << " Estimates log likelihood: " << current_states.ln_normalization_factor() << endl;
+    // write log likelihood to out file
+    pfARG_para.appendToOutFile( pfARG_para.EMcounter(), -1, 0, 1e+99, "LogL", -1, -1, 1.0, current_states.ln_normalization_factor(), 1.0 );
+    clog << " Estimated log likelihood: " << current_states.ln_normalization_factor() << endl;
+    
     current_states.clear();
     Segfile->reset_data_to_first_entry();
 
