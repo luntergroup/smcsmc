@@ -12,6 +12,9 @@ class TestTwoPops(TestGeneric):
 
     def setUp(self, fn="testdata/twopops"):
         TestGeneric.setUp(self, fn)
+
+        self.debug = True
+
         self.seqlen = 1e6
         self.num_samples = 8
         self.pop = populationmodels.Population( sequence_length = self.seqlen,
@@ -129,6 +132,7 @@ class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPopsSplit):
 
         self.np = 1000
         self.seqlen = 30e6
+        self.pop.sequence_length = self.seqlen
         self.pop.change_points = [0,0.1,0.5]
         self.pop.migration_rates = [ [ [0, 0.2],[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ],
@@ -196,6 +200,7 @@ class TestTwoPopsSplitUniDirMigrInMidEpoch(TestTwoPopsSplit):
 
         self.np = 1000
         self.seqlen = 30e6
+        self.pop.sequence_length = self.seqlen
         self.pop.change_points = [0,0.1,0.5]
         self.pop.migration_rates = [ [ [0, 0]  ,[0, 0] ],
                                      [ [0, 0.2],[0, 0] ],
