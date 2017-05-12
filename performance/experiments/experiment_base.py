@@ -22,7 +22,9 @@ scrmpath = "../../scrm"
 smcsmcpath = "../../python/smcsmc.py"
 datapath = "data/"
 
-sys.path.extend( ["../../newtests","../newtests"] )
+sys.path.extend( ["../../newtests","../newtests","../../python"] )
+
+import execute
 
 
 # run a single experiment
@@ -78,8 +80,17 @@ def main( experiment_name, experiment_pars ):
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
     parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
     parser.add_argument('-f', '--force', action='store_true', help='overwrite existing results in db')
+    parser.add_argument('-c', '--cluster', action='store_true', help='use qsub to submit job(s) to cluster')
+    parser.add_argument('-C', '--cconfig', help='qsub config parameter(s); override ./qsub.conf')
     args = parser.parse_args()
 
+    if args.cluster:
+        if args.cconfig is None:
+            try:
+                args.cconfig = open("./qsub.conf").read().replace('\n',' ')
+            except:
+                args.cconfig = ""
+        execute.qsub_config = args.cconfig   # assign to global variable within module 'execute'
     if args.force:
         remove( experiment_name )
     if args.jobs == 1:

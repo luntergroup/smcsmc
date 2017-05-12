@@ -18,6 +18,7 @@ except:
     Base = None
 
 import populationmodels
+import execute
 
 
 # All tests are derived from TestGeneric.  A class implementing a test should
@@ -224,7 +225,10 @@ class TestGeneric(unittest.TestCase):
             self.smcsmc_version = versiondata[1].strip().split()[-1]
             self.scrm_version   = versiondata[2].strip().split()[-1]
         start = time.time()
-        returnvalue = subprocess.check_call(cmd, shell = True)
+        # run, or submit to the cluster; note that the execution time is meaningless in the latter case...
+        returnvalue = execute.check_call(cmd,
+                                         outputdir=os.path.dirname(self.caseprefix),
+                                         name=os.path.basename(self.caseprefix))
         end = time.time()
         self.assertTrue( returnvalue == 0 )
         self.smcsmc_runtime = end-start

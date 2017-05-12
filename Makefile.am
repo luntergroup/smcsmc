@@ -2,8 +2,15 @@ EXTRA_DIST = Doxyfile bootstrap pfpsmc/R/*r pfpsmc/R/ms_vcf.py #acinclude.m4
 SMCSMCVERSION = $(shell git show HEAD | head -1 | sed -e "s/commit //g" | cat)
 SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/src.*//" | cat)
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
-# disable for Darwin...
-TCMALLOC = -ltcmalloc
+
+# disable for Darwin, and for rescomp
+#TCMALLOC = -ltcmalloc
+
+# set for rescomp
+boostinclude = -I/apps/well/boost/1.55.0/include
+boostldflags = -L/apps/well/boost/1.55.0/lib -Wl,-rpath,/apps/well/boost/1.55.0
+
+#############################################
 
 distdir = $(PACKAGE)-$(VERSION)
 
@@ -34,13 +41,16 @@ generate_vcf$(EXEEXT):
 	test -s ./sim-1Samples4msdata1_edited.rgvcf || ./unittest/gvcf2rgvcf.py -i sim-1Samples4msdata1_edited.gvcf -seqlen 30000000
 
 
-common_flags = -std=c++0x -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
+common_flags = -std=c++11 -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
 
 # Binary flags
-smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3
+smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 $(boostinclude)
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 smcsmc_LDADD             = -lboost_iostreams -lz ${TCMALLOC}
+scrm_LDADD               = -lboost_iostreams -lz ${TCMALLOC}
+smcsmc_LDFLAGS           = $(boostldflags)
+scrm_LDFLAGS             = $(boostldflags)
 
 # Debugger flags
 scrm_dbg_CXXFLAGS            = $(common_flags)
@@ -104,8 +114,6 @@ scrm_debug_src = src/scrm/src/random/constant_generator.cc src/scrm/src/random/c
 
 debug_src = src/scrm/src/random/constant_generator.cc \
             src/scrm/src/random/constant_generator.h
-#            src/debug/particle-debug.cpp \
-#            src/debug/count-debug.cpp
 
 smcsmc_src = src/coalevent.cpp \
              src/particle.cpp \
@@ -148,9 +156,6 @@ test_src = tests/unittest/test_runner.cpp \
 		   tests/unittest/test_Segment.cpp
 
 unittests_SOURCES = $(smcsmc_shared_SOURCES)  $(test_src)
-
-tcm:
-	echo ${TCMALLOC}
 
 .PHONY: clean-local
 clean-local:
