@@ -4,11 +4,11 @@ SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/s
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 
 # disable for Darwin, and for rescomp
-#TCMALLOC = -ltcmalloc
+TCMALLOC = -ltcmalloc
 
 # set for rescomp
-boostinclude = -I/apps/well/boost/1.55.0/include
-boostldflags = -L/apps/well/boost/1.55.0/lib -Wl,-rpath,/apps/well/boost/1.55.0
+#boostinclude = -I/apps/well/boost/1.55.0/include
+#boostldflags = -L/apps/well/boost/1.55.0/lib -Wl,-rpath,/apps/well/boost/1.55.0
 
 #############################################
 
