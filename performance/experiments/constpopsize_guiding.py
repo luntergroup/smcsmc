@@ -16,6 +16,7 @@ particles = [500, 1000, 2000, 5000, 10000, 20000, 40000]
 particles2 = [500, 1000, 2000, 5000, 10000]
 emiters = 5
 seqlen = 1e6
+seqlen_infpar = 5e6
 simseed = 1
 
 
@@ -27,7 +28,7 @@ import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 # define the experiments
-experiment_pars = [{'length':seqlen, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
+experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
                    for ( length, smcseed, simseed, np, em, guide, bias, mstep) in (
                            # unguided, unbiased, various numbers of particles
                            [(seqlen, 1+rep, 1, np, 1, 0.0, 1.0, False)         for np, rep in itertools.product(particles, range(inference_reps))] +
@@ -37,14 +38,14 @@ experiment_pars = [{'length':seqlen, 'smcseed':smcseed, 'np':np, 'em':em, 'guide
                            [(seqlen, 1+rep, 1, np, emiters, 0.5, 1.0, False)   for np, rep in itertools.product(particles2, range(inference_reps))] +
                            # guided, biased, smaller range of particles
                            [(seqlen, 1+rep, 1, np, emiters, 0.5, 2.0, False)   for np, rep in itertools.product(particles2, range(inference_reps))] +
-                           # unguided, unbiased, various numbers of particles, inferring parameters
-                           [(seqlen, 1+rep, 1, np, emiters, 0.0, 1.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-                           # unguided, biased, various numbers of particles, inferring parameters
-                           [(seqlen, 1+rep, 1, np, emiters, 0.0, 2.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-                           # guided, unbiased, smaller range of particles, inferring parameters
-                           [(seqlen, 1+rep, 1, np, emiters, 0.5, 1.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))] +
-                           # guided, biased, smaller range of particles, inferring parameters
-                           [(seqlen, 1+rep, 1, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
+                           # unguided, unbiased, various numbers of particles, inferring parameters; variable data
+                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 1.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
+                           # unguided, biased, various numbers of particles, inferring parameters; variable data
+                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 2.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
+                           # guided, unbiased, smaller range of particles, inferring parameters; variable data
+                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 1.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))] +
+                           # guided, biased, smaller range of particles, inferring parameters; variable data
+                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
 
 
 
@@ -84,6 +85,10 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.bias_strengths = [bias,1]
     e.alpha = guide
     e.m_step = mstep
+
+    # testing
+    #e.np = 1
+    #e.missing_leaves = range(8)
 
     # perform inference and store results
     e.infer( case = smcseed )

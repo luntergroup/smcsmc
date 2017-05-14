@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import sys
 import os
+import tempfile
 import subprocess
 import itertools
 
@@ -233,19 +234,18 @@ class Population:
 
     def _create_popsize_migration_command_line_options(self,
                                                       inference_popsizes = None,
-                                                      inference_migrationrates = None):
+                                                      inference_migrationrates = None,
+                                                      inference_changepoints = None,
+                                                      inference_migrationcommands = None):
         self._finalize_and_validate()
-        if inference_popsizes is None:
-            my_popsizes = self.population_sizes
-        else:
-            my_popsizes = inference_popsizes
-        if inference_migrationrates is None:
-            my_migrationrates = self.migration_rates
-        else:
-            my_migrationrates = inference_migrationrates
+        my_popsizes =          self.population_sizes   if inference_popsizes is None          else inference_popsizes
+        my_migrationrates =    self.migration_rates    if inference_migrationrates is None    else inference_migrationrates
+        my_changepoints =      self.change_points      if inference_changepoints is None      else inference_changepoints
+        my_migrationcommands = self.migration_commands if inference_migrationcommands is None else inference_migrationcommands
+
         expression = []
-        for i in range(len(self.change_points)):
-            time = self.change_points[i]
+        for i in range(len(my_changepoints)):
+            time = my_changepoints[i]
             popsizes = my_popsizes[i]
             if len(set(popsizes)) == 1:
                 expression.append("-eN {} {}".format(time, popsizes[0]))
@@ -272,7 +272,7 @@ class Population:
                     for j in range(self.num_populations):
                         for k in range(self.num_populations):
                             expression.append("{}".format(migration_matrix[j][k]))
-            migration_command = self.migration_commands[i]
+            migration_command = my_migrationcommands[i]
             if migration_command is not None:
                 expression.append(migration_command)
         return " ".join(expression)
@@ -280,7 +280,9 @@ class Population:
 
     def core_command_line( self,
                            inference_popsizes = None,
-                           inference_migrationrates = None):
+                           inference_migrationrates = None,
+                           inference_changepoints = None,
+                           inference_migrationcommands = None):
         """ builds core command line common to simulation and inference;
             without the initial "num_samples num_loci" parameters, and without
             output-related commands """
@@ -296,7 +298,9 @@ class Population:
             split = self.split_command,
             popmigr = self._create_popsize_migration_command_line_options(
                 inference_popsizes,
-                inference_migrationrates
+                inference_migrationrates,
+                inference_changepoints,
+                inference_migrationcommands
             )
         )
         return command
@@ -305,8 +309,14 @@ class Population:
     def simulate(self, missing_leaves = [], phased = True, debug = False):
 
         # make file name if required
-        if self.filename == None: filename = command.replace(' ','_') + ".seg"
-        else:                     filename = self.filename
+        if self.filename == None: final_filename = command.replace(' ','_') + ".seg"
+        else:                     final_filename = self.filename
+
+        # ensure no race conditions can occur when running many simulations in parallel
+        if os.path.exists( final_filename ): return
+        temp_file = tempfile.NamedTemporaryFile( dir = os.path.dirname( os.path.abspath( final_filename ) ) )
+        filename = temp_file.name + ".seg"
+        temp_file.close()
         scrmfilename = filename + ".scrm"
 
         # -T        print Newick trees;
@@ -330,10 +340,25 @@ class Population:
 
         # generate the .seg and .seg.recomb files
         self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves, phased )
-        self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
+        # don't generate .seg.recomb files; only useful for plotting to check that inference works
+        #self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
 
         # done; remove scrm output file
-        #os.unlink( scrmfilename )
+        os.unlink( scrmfilename )
+
+        # finally, move to true destination (if possible)
+        self.move_into_place( filename, final_filename )
+        #self.move_into_place( filename + ".recomb", final_filename + ".recomb" )
+
+
+    def move_into_place(self, filename, final_filename ):
+        if os.path.exists( final_filename ):
+            os.unlink( filename )                     # appeared while we were simulating -- remove
+        else:
+            try:
+                os.rename( filename, final_filename ) # move into destination
+            except:
+                os.unlink( filename )                 # assume failure means file has appeared -- remove
 
 
     def convert_scrm_to_seg(self, infilename, outfilename, missing_leaves, phased ):

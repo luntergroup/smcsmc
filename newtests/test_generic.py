@@ -60,6 +60,7 @@ class TestGeneric(unittest.TestCase):
         self.smcsmc_change_points = None
         self.smcsmc_initial_pop_sizes = None
         self.smcsmc_initial_migr_rates = None
+        self.smcsmc_migration_commands = None
         self.missing_leaves = []            # list of 0-based missing leaves
         self.guided_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
         self.guided_recomb_beta = 4       # extent of smoothing of the recombination change points
@@ -83,7 +84,7 @@ class TestGeneric(unittest.TestCase):
     def tearDown(self):
         if self.success and self.prefix != None:
             toplevel = itertools.product( [self.pop.filename],
-                                          ["",".recomb",".seg.scrm"] )
+                                          ["",".recomb",".seg.scrm",".seg.recomb"] )
             percase = itertools.product( ["{}_C{}".format(self.pop.filename[:-4], case)
                                           for case in self.cases ],
                                          ['.out','.log','.stdout','.stderr','.recomb.gz'] )
@@ -101,6 +102,11 @@ class TestGeneric(unittest.TestCase):
         num_epochs = len(self.pop.population_sizes)
         num_populations = len(self.pop.population_sizes[0])
 
+        if self.smcsmc_change_points is not None:             # if the change_points at inference
+            epochs = self.smcsmc_change_points                #  and simulation are difference, then
+        else:                                                 #  must set smcsmc_initial_{pop,migr}_rates
+            epochs = self.pop.change_points                   # use model epochs for inference
+
         if self.smcsmc_initial_pop_sizes is not None:
             inf_popsizes = self.smcsmc_initial_pop_sizes
         else:
@@ -110,10 +116,17 @@ class TestGeneric(unittest.TestCase):
         if self.smcsmc_initial_migr_rates is not None:
             inf_migrationrates = self.smcsmc_initial_migr_rates
         else:
-            inf_migrationrates = self.pop.migration_rates         # starting values for inference
+            inf_migrationrates = self.pop.migration_rates     # starting values for inference
+
+        if self.smcsmc_migration_commands is not None:
+            inf_migrationcommands = self.smcsmc_migration_commands
+        else:
+            inf_migrationcommands = self.pop.migration_commands
 
         core_cmd = self.pop.core_command_line( inference_popsizes = inf_popsizes,
-                                               inference_migrationrates = inf_migrationrates )
+                                               inference_migrationrates = inf_migrationrates,
+                                               inference_changepoints = epochs,
+                                               inference_migrationcommands = inf_migrationcommands)
 
         nsamopt = "-nsam {}".format(self.pop.num_samples)
 
@@ -136,12 +149,6 @@ class TestGeneric(unittest.TestCase):
             num_epochs = sum( [ int(elt.split('*')[0])
                                 for elt in self.popt.split(' ')[1].split('+') ] )
         else:
-            if self.smcsmc_change_points != None:
-                # use explicit epochs for inference
-                epochs = self.smcsmc_change_points
-            else:
-                # use model epochs for inference
-                epochs = self.pop.change_points
             epochopt = "-tmax {tmax}".format(tmax = self.tmax)
             num_epochs = len(epochs)
 
@@ -479,7 +486,7 @@ class TestGeneric(unittest.TestCase):
                                ancestral_aware          = self.ancestral_aware,
                                phased                   = self.phased,
                                infer_recombination      = self.infer_recombination,
-                               pattern                  = self.popt+" -tmax "+self.tmax if self.popt else self.popt,
+                               pattern                  = "{} -tmax {}".format(self.popt,self.tmax) if self.popt else self.popt,
                                initial_Ne_values        = ' '.join(map(str,self.smcsmc_initial_pop_sizes)) if self.smcsmc_initial_pop_sizes else str(self.pop.population_sizes),
                                initial_migr_values      = ' '.join(map(str,self.smcsmc_initial_migr_rates)) if self.smcsmc_initial_migr_rates else str(self.pop.migration_rates),
                                bias_heights             = ' '.join(map(str,self.bias_heights)) if self.bias_heights else self.bias_heights,
