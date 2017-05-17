@@ -44,6 +44,7 @@ ForestState::ForestState( Model* model,
     setMultiplicity( 1 );
     total_delayed_adjustment_ = 1.0;
     setSiteWhereWeightWasUpdated(0.0);
+    first_coalescence_height_ = -1.0;
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
