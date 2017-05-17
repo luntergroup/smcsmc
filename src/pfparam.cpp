@@ -230,28 +230,24 @@ void PfParam::init(){
 void PfParam::insertMutationRateInScrmInput(){
     size_t found = scrm_input.find("-t");
     if ( found == std::string::npos ) {
-    // if "-t" option is not found ...
-        this->default_num_mut = this->default_mut_rate * this->default_loci_length * 4 * 10000;
-        this->scrm_input = "-t " + to_string ( this->default_num_mut ) + " " + this->scrm_input;
+      throw std::invalid_argument("The option -t is required");
     }
 }
 
 
 void PfParam::insertRecombRateAndSeqlenInScrmInput(){
     size_t found = scrm_input.find("-r");
-    if ( found == std::string::npos ) { // if "-r" option is not found ...
-    // number of recombination events in 4N0, as the scaling N0 in scrm is 10000
-        this->scrm_input = "-r " + to_string ( this->default_recomb_rate * this->default_loci_length * 4 * 10000 )
-                           + " " + to_string ((size_t)this->default_loci_length) + " " + this->scrm_input;
-    } else { // If recombination and sequence length are defined in the input, extract the sequence length
-        // skipping the number of recombination first
-        size_t pos_start = scrm_input.find(" ", found+2, 1);
-        size_t pos_end = scrm_input.find(" ", pos_start+1, 1);
-        // extract the loci length
-        pos_start = scrm_input.find(" ", pos_start+2, 1);
-        pos_end = scrm_input.find(" ", pos_start+1, 1);
-        this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
+    if ( found == std::string::npos ) {
+      throw std::invalid_argument("The option -r is required");
     }
+    // If recombination and sequence length are defined in the input, extract the sequence length
+    // skipping the number of recombination first
+    size_t pos_start = scrm_input.find(" ", found+2, 1);
+    size_t pos_end = scrm_input.find(" ", pos_start+1, 1);
+    // extract the loci length
+    pos_start = scrm_input.find(" ", pos_start+2, 1);
+    pos_end = scrm_input.find(" ", pos_start+1, 1);
+    this->default_loci_length = std::strtod ( (char*)scrm_input.substr(pos_start, pos_end - pos_start).c_str(), NULL);
 }
 
 

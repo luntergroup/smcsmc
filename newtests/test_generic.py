@@ -64,6 +64,7 @@ class TestGeneric(unittest.TestCase):
         self.missing_leaves = []            # list of 0-based missing leaves
         self.guided_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
         self.guided_recomb_beta = 4       # extent of smoothing of the recombination change points
+        self.maxNE = 1e99
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.filename_disambiguator = ""
@@ -156,7 +157,13 @@ class TestGeneric(unittest.TestCase):
         recinfopt = ""
         ancawareopt = ""
         mstepopt = ""
+        maxneopt = ""
+        chunksopt = ""
             
+        if self.maxNE < 1e99: maxneopt = "-cap {}".format(self.maxNE)
+
+        if self.chunks > 1: chunksopt = "-chunks {}".format(self.chunks)
+
         if self.bias_heights != None:
             pilotsopt = "-bias_heights {} -bias_strengths {}".format(
                 ' '.join(map(str,self.bias_heights)),
@@ -172,7 +179,7 @@ class TestGeneric(unittest.TestCase):
         if not self.m_step:
             mstepopt = "-no_m_step"
             
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -181,6 +188,8 @@ class TestGeneric(unittest.TestCase):
                                      np = particlesopt,
                                      em = emopt,
                                      guide = guideopt,
+                                     maxne = maxneopt,
+                                     chunks = chunksopt,
                                      lag = lagopt,
                                      epochs = epochopt,
                                      seed = seedopt,

@@ -74,7 +74,10 @@ class Population:
         opts, unparsed_opts = cmdline.split(), []
         idx = 0
         while idx < len(opts):
-            if opts[idx] == "-nsam":
+            if opts[idx] == "-N0":
+                self.N0 = int(opts[idx+1])
+                idx += 2
+            elif opts[idx] == "-nsam":
                 self.num_samples = int(opts[idx+1])
                 idx += 2
             elif opts[idx] == "-I":
@@ -290,7 +293,8 @@ class Population:
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
         self.recombinations = 4 * self.N0 * self.recombination_rate * self.sequence_length
 
-        command = "-t {muts} -r {recs} {seqlen} {sample} {split} {popmigr}".format(
+        command = "-N0 {N0} -t {muts} -r {recs} {seqlen} {sample} {split} {popmigr}".format(
+            N0 = self.N0,
             muts = self.mutations,
             recs = self.recombinations,
             seqlen = self.sequence_length,

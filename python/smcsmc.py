@@ -37,6 +37,7 @@ class Smcsmc:
         self.do_m_step = True
         self.alpha = 0.0            # posterior mix-in; 0 means use prior
         self.beta = 4               # smoothness parameter; see processrecombination.py
+        self.maxNE = 1e99
         self._processes = []
         self.threads = True
         
@@ -54,6 +55,7 @@ class Smcsmc:
             (0, '-I', 'n s1..sn','Use an n-population island model with si individuals sampled'),
             (0, '-eI','t s1..sn','Sample s1..sn indiviuals from their populations at time t*4N0'),
             (0, '-ej', 't i j','Speciation event at t*4N0; creates population j from population i (not implemented)'),
+            (0, '-N0', 'N',    'Set (unscaled) default population size to N (10000; scales the output)'),
             
             (1, '-r', 'r l',   'Set per locus recombination rate and locus length'),
             (1, '-eN', 't n',  'Set the present day size of all populations to n*N0'),
@@ -73,6 +75,7 @@ class Smcsmc:
             (2, '-calibrate_lag','s','Explanation required!'),
             
             (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),
+            (3, '-cap', 'n',    'Set (unscaled) upper bound on effective population size'),
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
             (3, '-no_m_step','','Do not update parameters (but do infer recombination guide)'),
@@ -136,6 +139,9 @@ class Smcsmc:
                 idx += 2
             elif opts[idx] == '-chunks':
                 self.chunks = int(opts[idx+1])
+                idx += 2
+            elif opts[idx] in ['-maxNE','-cap']:
+                self.maxNE = float(opts[idx+1])
                 idx += 2
             elif opts[idx] == '-startpos':
                 self.startpos = int(opts[idx+1])
@@ -275,7 +281,7 @@ class Smcsmc:
             for pop in range(self.pop.num_populations):
                 key = ("Coal",epoch,pop,-1)
                 rate = data[ (key,"Count") ] / (data[ (key,"Opp") ] + 1e-30)
-                popsize = 1.0 / (2.0 * self.pop.N0 * rate)
+                popsize = min( self.maxNE / self.pop.N0, 1.0 / (2.0 * rate * self.pop.N0) )
                 self.pop.population_sizes[ epoch ][ pop ] = popsize
                 logger.info("Setting population size (epoch {} population {}) to {}".format(epoch, pop, popsize))
         # set migration rates
