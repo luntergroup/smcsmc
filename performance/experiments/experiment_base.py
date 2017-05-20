@@ -77,11 +77,14 @@ def remove( experiment_name ):
 #
 def main( experiment_name, experiment_pars ):
 
+    global db
+
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
     parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
-    parser.add_argument('-f', '--force', action='store_true', help='overwrite existing results in db')
+    parser.add_argument('-f', '--force', action='store_true', help='overwrite existing results in db; reuse existing iteration files')
     parser.add_argument('-c', '--cluster', action='store_true', help='use qsub to submit job(s) to cluster')
     parser.add_argument('-C', '--cconfig', help='qsub config parameter(s); override ./qsub.conf')
+    parser.add_argument('-D', '--db', help='set database to write result into (default: {})'.format(db))
     args = parser.parse_args()
 
     if args.cluster:
@@ -91,6 +94,8 @@ def main( experiment_name, experiment_pars ):
             except:
                 args.cconfig = ""
         execute.qsub_config = args.cconfig   # assign to global variable within module 'execute'
+    if args.db:
+        db = args.db
     if args.force:
         remove( experiment_name )
     if args.jobs == 1:
@@ -100,7 +105,7 @@ def main( experiment_name, experiment_pars ):
         pool = Pool(processes = args.jobs)
         p = pool.map_async(run_experiment_map, experiment_pars )
         try:
-            results = p.get(200000)
+            results = p.get(200000000)
             pool.terminate()
         except KeyboardInterrupt:
             print "Received keyboard interrupt -- stopping"

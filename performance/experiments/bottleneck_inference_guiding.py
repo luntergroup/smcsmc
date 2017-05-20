@@ -17,7 +17,7 @@ particles2 = [500, 1000, 2000, 5000, 10000]
 emiters = 20
 seqlen_infpar = 50e6
 simseed = 1
-
+chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 
 # name of this experiment
 experiment_name = "bottleneck_inference_guiding"
@@ -84,10 +84,12 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.smcsmcpath = experiment_base.smcsmcpath
     e.np = np
     e.em = em
+    e.maxNE = 1e5
     e.bias_heights = [800]
     e.bias_strengths = [bias,1]
     e.guided_recomb_alpha = guide
     e.m_step = mstep
+    e.chunks = chunks
 
     # testing
     #e.np = 1

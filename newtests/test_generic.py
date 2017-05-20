@@ -3,6 +3,7 @@ from __future__ import print_function
 import unittest
 import os
 import time
+import datetime
 import subprocess
 import itertools
 import shutil
@@ -224,11 +225,9 @@ class TestGeneric(unittest.TestCase):
         if case in self.cases: raise ValueError("Must run case " + str(case) + " only once")
         self.cases.append(case)
         self.caseprefix = "{}_C{}".format(self.pop.filename[:-4], case)
-        if os.path.exists(self.caseprefix):
-            raise ValueError("File {} already exists".format(self.caseprefix))
-        print (" running smcsmc for",self.__class__.__name__,", case",case,"...")
         self.outfile = self.caseprefix + ".out"
-        cmd = "{cmd} -o {caseprefix} > {caseprefix}.stdout 2> {caseprefix}.stderr".format(
+        # append to .stdout and .stderr, so as not to overwrite output from possible previous runs
+        cmd = "{cmd} -o {caseprefix} >> {caseprefix}.stdout 2>> {caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
         versioncmd = [self.smcsmcpath,"-v"]
@@ -240,8 +239,23 @@ class TestGeneric(unittest.TestCase):
         if len(versiondata) >= 3:
             self.smcsmc_version = versiondata[1].strip().split()[-1]
             self.scrm_version   = versiondata[2].strip().split()[-1]
+        if os.path.exists(self.outfile):
+            # note: smcsmc (c++) creates .out file at start; must be removed before re-starting,
+            #       and program will not re-use previous iterations
+            #       smcsmc.py creates final .out file at very end, and will re-use any previous
+            #       iterations when the relevant files exist.
+            #raise ValueError("File {} already exists".format(self.outfile))
+            #
+            # assume the results are trustworthy.  TODO: let smcsmc only create .out file at very end
+            self.smcsmc_runtime = -1
+            return
         start = time.time()
         # run, or submit to the cluster; note that the execution time is meaningless in the latter case...
+        print (" running smcsmc for",self.__class__.__name__,", case",case,"...")
+        with open(self.caseprefix + ".stdout",'a') as f: 
+            f.write("--- test_generic: starting smcsmc on {} ---\n".format(datetime.datetime.now().isoformat()))
+        with open(self.caseprefix + ".stderr",'a') as f: 
+            f.write("--- test_generic: starting smcsmc on {} ---\n".format(datetime.datetime.now().isoformat()))
         returnvalue = execute.check_call(cmd,
                                          outputdir=os.path.dirname(self.caseprefix),
                                          name=os.path.basename(self.caseprefix))

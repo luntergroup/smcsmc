@@ -16,7 +16,7 @@ import math
 # parameters for this experiment
 inference_reps = 10
 particles = [500, 1000, 2000, 5000, 10000, 20000, 40000]
-particles2 = [500, 1000, 2000, 5000, 10000]
+particles2 = [500, 1000, 2000, 5000, 10000, 20000]
 emiters = 10
 seqlen_infpar = 100e6
 simseed = 1

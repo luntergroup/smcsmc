@@ -316,8 +316,6 @@ class Population:
         if self.filename == None: final_filename = command.replace(' ','_') + ".seg"
         else:                     final_filename = self.filename
 
-        # ensure no race conditions can occur when running many simulations in parallel
-        if os.path.exists( final_filename ): return
         temp_file = tempfile.NamedTemporaryFile( dir = os.path.dirname( os.path.abspath( final_filename ) ) )
         filename = temp_file.name + ".seg"
         temp_file.close()
@@ -334,17 +332,19 @@ class Population:
             core = self.core_command_line(),
             seed = "-seed {}".format(' '.join(map(str,self.seed))),
             fn = scrmfilename)
-
         self.simulate_command = command
-        if debug: print (self.simulate_command)
+
+        # ensure no race conditions can occur when running many simulations in parallel
+        if os.path.exists( final_filename ): return
 
         # execute
+        if debug: print (self.simulate_command)
         returnvalue = subprocess.check_call(command, shell=True)
         if returnvalue > 0: raise ValueError("Problem executing " + command)
 
         # generate the .seg and .seg.recomb files
         self.convert_scrm_to_seg( scrmfilename, filename, missing_leaves, phased )
-        # don't generate .seg.recomb files; only useful for plotting to check that inference works
+        # don't generate .seg.recomb files; these are only useful for plotting to check that inference works
         #self.convert_scrm_to_recomb( scrmfilename, filename + ".recomb")
 
         # done; remove scrm output file

@@ -324,13 +324,10 @@ class Smcsmc:
                     "-o",self.template.format(iteration,chunk),
                     ">",self.stdout_template.format(iteration,chunk),
                     "2>",self.stderr_template.format(iteration,chunk)]
-        # final sanity check
-        if (os.path.exists( self.stdout_template.format(iteration,chunk) ) or
-            os.path.exists( self.log_template.format(iteration,chunk) ) or
-            os.path.exists( self.stderr_template.format(iteration,chunk) ) ):
-            raise ValueError("Found {} (or .log, or .stderr) -- it appears an inference process is already running!".
-                             format(self.stdout_template.format(iteration,chunk)))
-        # launch
+        # launch.  Note, no check is made to see if another process is already writing to 
+        # the output files (e.g. self.stdout_template.format(iteration,chunk)).  This is
+        # hard to do on a cluster system, so it's up to the user to make sure they don't
+        # launch processes writing to the same file in parallel!
         command = " ".join(command)
         logger.info("Running: "+command)
         if self.threads:
