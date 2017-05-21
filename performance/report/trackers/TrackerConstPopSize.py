@@ -480,6 +480,7 @@ class ConstpopsizeLikelihood(TrackerSQL):
     def __init__(self, **kwargs):
         self.name =       kwargs.get("name")         # experiment name
         self.field =      kwargs.get("column","np")  # field to index columns; defaults to number of particles
+        self.mstep =      kwargs.get("mstep","False")
         self.cache =      False                      # this doesn't seem to work...
         TrackerSQL.__init__(self)
 
@@ -500,12 +501,13 @@ class ConstpopsizeLikelihood(TrackerSQL):
     
     def __call__(self, track, slice):
         # generate the selector ('where') clause for this experiment, track and slice
-        selector = "guide{}_bias{}_mstepFalse".format( track[1:], slice[1:] )
+        selector = "guide{}_bias{}_mstep{}".format( track[1:], slice[1:], self.mstep )
         where = "experiment.name = '{}' AND str_parameter = '{}' AND type = 'LogL'".format(self.name, selector)
 
         # get last iteration
         statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
                     "WHERE {}".format(where)
+        print ("statement:",statement)
         lastiter = sorted( self.getValues(statement) )[-1]
         
         # get number of particles and likelihood at the last iteration

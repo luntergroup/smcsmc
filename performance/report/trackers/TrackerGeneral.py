@@ -21,7 +21,7 @@ class Experiment(TrackerSQL):
                ['infer_recombination','infer recombination',0],
                ['bias_heights','bias heights',-1],
                ['bias_strengths','bias strengths',-1],
-               ['guided_recomb','guided recombination',0],
+               ['guided_recomb_alpha','guided recombination',0],
                ['dataseed','sequence_seed',0],
                ['infseed','inference_seed',0],
                ['missing_leaves','missing_leaves',0],

@@ -19,7 +19,9 @@ Contents
    constpopsize_byparticles2.rst
    constpopsize_ancestralaware.rst
    constpopsize_guiding.rst
-
+   bottleneck.rst
+   zigzag.rst
+              
 ==================
 Index
 ==================
