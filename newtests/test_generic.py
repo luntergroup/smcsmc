@@ -415,13 +415,13 @@ class TestGeneric(unittest.TestCase):
         return results
 
     # helper -- store results in mysql database
-    def resultsToMySQL(self, dbtype = "sqlite:///", db = "resultsdb"):
+    def resultsToMySQL(self, dbtype = "sqlite:///", db = "resultsdb", connect_args={'timeout': 100}):
 
         # bail out of SQLAlchemy not installed
         if Base == None: return
 
         # make a connection
-        engine = create_engine(dbtype + db)
+        engine = create_engine(dbtype + db, connect_args = connect_args)
 
         # load or create tables
         if engine.dialect.has_table(engine, "experiment"):
