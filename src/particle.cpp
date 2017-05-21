@@ -281,9 +281,11 @@ void ForestState::record_recomb_event( double event_height )
 
 
 void ForestState::resample_recombination_position(void) {
+
     // first, obtain a fresh sequence position for the next recombination, overwriting the existing sample in next_base_
     // (the implementation, in forest.h, then calls sampleNextBase which is overloaded and implemented in this file)
     this->resampleNextBase();
+
     // then, create private event records, in effect re-doing the work of record_recomb_event
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
         if (pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
@@ -535,6 +537,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
 
         // Rescue the invariant
         updated_to = new_updated_to;
+        setSiteWhereWeightWasUpdated( updated_to );
 
         // Next, if we haven't reached extend_to now, sample new genealogy, and a new recomb point
         if ( updated_to < extend_to ) {
@@ -594,7 +597,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
                 
             }
         }
-        // record current position, to enable resampling of recomb. position
+        // record current position as recombination, so that resampling of recomb. position starts from here
         set_current_base( updated_to );
 
     }
@@ -608,8 +611,6 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         this->applyDelayedAdjustment();
         
     }
-
-    this->setSiteWhereWeightWasUpdated( extend_to );
 
     return likelihood;
 }
@@ -836,6 +837,7 @@ double ForestState::importance_weight_over_segment( double previously_updated_to
     // multiplicity; the importance weight is for a single underlying particle, while the multiplicity
     // simulates a virtual ensemble of such particles.
     double importance_weight = fastexp( sampled_rate - target_rate );
+
     return importance_weight;
 }
 
