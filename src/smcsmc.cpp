@@ -114,24 +114,25 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
 
     // we want to change model attributes inside this function only
     model.biased_sampling = false;
-
-    // Simulating trees in order to calibrate lag and bias ratios
     const int num_epochs = model.change_times().size();
-    vector < vector <double> > survival_distances( num_epochs );  // survival_distances[epoch_idx][coal_sample_index]
-    int num_epochs_not_done = num_epochs;
-    MersenneTwister randomgenerator( true, 1 );
-    int iterations = 0;
     const int max_iterations = 1000000;
     const long long max_num_trees = (long long)50 * max_iterations;
     const int max_safe_sample_size = 10;
-    size_t epoch_idx;
+
+    // Simulating trees in order to calibrate lag and bias ratios
+    int iterations = 0;
     long long num_trees = 0;
+    int num_epochs_not_done = num_epochs;
+    size_t epoch_idx;
+    vector < vector <double> > survival_distances( num_epochs );  // [epoch_idx][coal_sample_index]
+    MersenneTwister randomgenerator( true, 1 );
     
     while ( num_epochs_not_done > 0 ) {
 
       if (++iterations > max_iterations) break;
       if (num_trees > max_num_trees) {
-          throw std::runtime_error("Using an excessive number of trees to calculate survival distances.  Check if model parameters are sensible.");
+          throw std::runtime_error("Using an excessive number of trees to calculate survival distances."
+                                   "  Check if model parameters are sensible.");
       }
       Forest arg( &model, &randomgenerator );
       bool has_node_in_incomplete_epoch = false;
@@ -142,7 +143,7 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
               double height = (*it)->height();
               original_node_heights.insert( height );
               for (epoch_idx = 0;
-                   epoch_idx+1 < model.change_times().size() && model.change_times()[ epoch_idx+1 ] <= height;
+                   epoch_idx+1 < num_epochs && model.change_times()[ epoch_idx+1 ] <= height;
                    ++epoch_idx) {}
               if (survival_distances[epoch_idx].size() < min_num_events_per_epoch)
                   has_node_in_incomplete_epoch = true;
@@ -160,7 +161,7 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
           if( !is_height_in_tree( arg, *it ) ) {
             // add genomic position to the histogram fo survival for the appropriate epoch
             for (epoch_idx = 0;
-                 epoch_idx+1 < model.change_times().size() && model.change_times()[ epoch_idx+1 ] <= *it;
+                 epoch_idx+1 < num_epochs && model.change_times()[ epoch_idx+1 ] <= *it;
                  ++epoch_idx) {}
             survival_distances[epoch_idx].push_back( arg.current_base() );
             if (survival_distances[epoch_idx].size() == min_num_events_per_epoch) {
@@ -250,10 +251,10 @@ void pfARG_core(PfParam &pfARG_para,
     size_t Nparticles    = pfARG_para.N ;
     Segment *Segfile     = pfARG_para.Segfile;
 
-    // Commented out; experimenting with conditional normalization so that under recombination biasing,
-    // the overall rate remains the same independent of the tree, but conditional on a recombination,
-    // the relative rates across the tree are modified so as to provide the desired bias.
-    //calibrate_bias_ratios( model, pfARG_para.top_t() );
+    vector<double> median_survival = calculate_median_survival_distances( *model );
+
+    /* load the recombination guide rates into the model */
+    pfARG_para.setModelRates();
 
     dout<< "############# starting seg file at base " << Segfile->segment_start()<<endl;
     Segfile->read_new_line();
@@ -261,13 +262,12 @@ void pfARG_core(PfParam &pfARG_para,
     ParticleContainer current_states(model, rg, &pfARG_para,
                                      Nparticles,
                                      Segfile->segment_start(),
-                                     pfARG_para.Segfile->empty_file(),
-                                     pfARG_para.Segfile->allelic_state_at_Segment_end);
+                                     Segfile->empty_file(),
+                                     Segfile->allelic_state_at_Segment_end);
     dout<<"######### finished initial particle building"<<endl;
 
     /*! Initialize prior Ne */
     countNe->init();
-    vector<double> median_survival = calculate_median_survival_distances( *model );
 
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
     model->lags_to_application_delays( median_survival );

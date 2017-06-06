@@ -182,12 +182,13 @@ public:
         in_file.push(in_raw);
         string header;
         std::getline(in_file, header);
-        cout << header << endl;
-        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (with columns 'locus', 'size', 'recomb_rate', '1', ...) in recombination guide file");
+        if (header.substr(0,5) != "locus") throw InvalidInput("Expected header line (with columns 'locus', 'size', 'recomb_rate', '1', ...)"
+                                                              " in recombination guide file");
         RecombBiasSegment tmp;
         while (in_file >> tmp) {
             if ( tmp.get_num_leaves() != _num_leaves ) {
-                cerr << "Problem on record at position " << tmp.get_locus() << " with " << tmp.get_num_leaves() << " leaf columns; expected " << _num_leaves << endl;
+                cerr << "Problem on record at position " << tmp.get_locus() << " with " << tmp.get_num_leaves() 
+                     << " leaf columns; expected " << _num_leaves << endl;
                 cerr << tmp << endl;
                 throw InvalidInput("Did not find expected number of leaf columns");
             }
@@ -299,6 +300,7 @@ class PfParam{
 
     void increaseEMcounter() { this->EMcounter_++; }
     size_t EMcounter() const { return EMcounter_; }
+    void setModelRates();
 
   private:
 

@@ -331,13 +331,23 @@ void PfParam::finalize(){
                                  max_seg_len );
 
     /* set true rate, and number of samples, in RecombinationBias */
+    /* but do not actually set the recombination rates yet, to allow unbiased simulation */
+    /* To set the rates, call setModelRates() */
     recomb_bias.set_rate( model.recombination_rate() );
     recomb_bias.set_num_leaves( default_nsam );
     if (input_RecombinationBiasFileName.size() > 0) {
         recomb_bias.parse_recomb_bias_file( input_RecombinationBiasFileName );
-        recomb_bias.set_model_rates( model );
     }
 }
+
+
+void PfParam::setModelRates() {
+    cout << "Setting model rates" << endl;
+    if (input_RecombinationBiasFileName.size() > 0) {
+        recomb_bias.set_model_rates( model );
+    }        
+}
+
 
 
 int PfParam::log(){
