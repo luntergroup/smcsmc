@@ -196,6 +196,12 @@ class Smcsmc:
             raise ValueError("Can't find executable "+self.smcsmcpath+"; check -smcsmcpath")
         logger.info("Running inference over {} bp in {} chunks and {} EM iterations".format(self.length, self.chunks, self.emiters+1))
 
+
+    def set_environment(self):
+        # workaround for qrsh -V not passing through LD_LIBRARY_PATH
+        if "LLP" in os.environ:
+            os.environ["LD_LIBRARY_PATH"] = os.environ["LLP"]
+
         
     def prepare_folder(self, iteration):
         self.template = os.path.abspath( self.outprefix + "/emiter{}/chunk{}" )
@@ -402,6 +408,7 @@ smcsmc = Smcsmc( sys.argv[1:] )
 smcsmc.print_help_and_exit()
 smcsmc.load_option_file()
 smcsmc.parse_opts()
+smcsmc.set_environment()
 for em_iter in range(0, smcsmc.emiters+1):
     smcsmc.do_iteration(em_iter)
 smcsmc.merge_outfiles()
