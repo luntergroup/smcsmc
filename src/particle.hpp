@@ -144,8 +144,8 @@ private:
     double trackSubtreeBranchLength ( Node * currentNode, const vector<int>& data_at_site );
     
     // Extend
-    double extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
-                        vector<ForestState*>* pParticleContainer = NULL);
+    void extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
+		      vector<ForestState*>* pParticleContainer = NULL);
     
     // Record events
     void record_recomb_extension ( );
@@ -197,6 +197,7 @@ private:
     double find_delay( double coal_height );
     double importance_weight_over_segment( double previously_updated_to, double update_to );
     double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
+    void inline accumulateBranchLengths( double rate, bool recomb_bias, const Node* node, double& length, double& weight );
     double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
     Node* trackLocalNode(Node *node) const;
 

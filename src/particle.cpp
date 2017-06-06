@@ -459,14 +459,10 @@ double ForestState::find_delay( double coal_height ) {
 }
 
 
-double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
-                                 vector<ForestState*>* pParticleContainer) {
+void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
+			       vector<ForestState*>* pParticleContainer) {
 
     double updated_to = this->site_where_weight_was_updated();
-    double likelihood = 1.0;             // likelihood of data on [updated_to, extend_to) given ARG
-    double importance_weight_cont = 1.0; // ratio of pilot prob density to true coalescent prior,
-                                         //  for the continuous part of the densities
-                                         //  (the exp(-rate * opportunity) factor)
     double track_local_tree_branch_length;
     switch (leaf_status) {
     case -1:
@@ -490,9 +486,9 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         // For leaf nodes that carry no data, there is no evidence for
         // presence or absence of mutations on corresponding branches.
         // These branches do not contribute to localTreeBranchLength
-        likelihood *= fastexp( -model().mutation_rate()
-                               * track_local_tree_branch_length
-                               * (new_updated_to - updated_to) );
+        adjustWeights( fastexp( -model().mutation_rate()
+				* track_local_tree_branch_length
+				* (new_updated_to - updated_to) ) );
 
         assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength( data_at_site )) < 1e-4);
         
@@ -532,7 +528,7 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         //
         // Note that the importance weight is for a single particle, even if multiplicity() > 1.
         if(model().biased_sampling) {
-            importance_weight_cont *= importance_weight_over_segment( updated_to, new_updated_to );
+	  adjustWeights( importance_weight_over_segment( updated_to, new_updated_to ) );
         }
 
         // Rescue the invariant
@@ -602,8 +598,6 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
 
     }
 
-    adjustWeights( likelihood * importance_weight_cont );
-
     // apply weights that we passed during the extension above
     while ( !delayed_adjustments.empty()
             && delayed_adjustments.top().application_position < extend_to ) {
@@ -612,7 +606,6 @@ double ForestState::extend_ARG ( double extend_to, int leaf_status, const vector
         
     }
 
-    return likelihood;
 }
 
 
@@ -637,6 +630,29 @@ std::string ForestState::newick(Node *node) {
 // biased sampling
 //
 
+double ForestState::getWeightedLocalTreeLength( const bool recomb_bias,
+                                                const bool recomb_guide ) {
+    double total_length = 0.0;
+    double dummy = 0.0;
+    double rate1 = 0.0, rate2 = 0.0;
+    bool branch1 = local_root()->first_child() && local_root()->first_child()->samples_below() > 0;
+    bool branch2 = local_root()->second_child() && local_root()->second_child()->samples_below() > 0;
+
+    if ( branch1 )
+        rate1 = sampleOrMeasureWeightedTree( local_root()->first_child(), total_length, dummy, recomb_bias, recomb_guide );
+    if ( branch2 )
+        rate2 = sampleOrMeasureWeightedTree( local_root()->second_child(), total_length, dummy, recomb_bias, recomb_guide );
+    // most of the recombinations in the branches from the root node cannot be assigned with confidence to either.
+    // therefore make sure that the rate is equal in both.  This avoids the issue that for a cluster of deep
+    // coalescences, each recombination gets biased with an importance weight of approx. 0.5, potentially leading
+    // to a very large importance weight, which when postponed for a while would lead to overflows.
+    double rate = max(rate1, rate2);
+    if ( branch1 ) accumulateBranchLengths( rate, recomb_bias, local_root()->first_child(), total_length, dummy );
+    if ( branch2 ) accumulateBranchLengths( rate, recomb_bias, local_root()->second_child(), total_length, dummy );
+    return total_length;
+}
+
+
 // Function to calculate the total length of a tree (if cumul_length == 0), or sample
 // a point on it (if length_left < 0).  The tree can be weighted for recombinations
 // at particular heights (recomb_bias == true) and/or weighted to reflect the
@@ -649,21 +665,23 @@ double ForestState::sampleOrMeasureWeightedTree( const Node* node,
                                                  double& local_weight,
                                                  const bool recomb_bias,
                                                  const bool recomb_guide ) {
-    double rate1 = 0, rate2 = 0, rate_above = 1.0;
+    double rate1 = 0, rate2 = 0;
     int branches_below = 0;
     //
     // recursively enter the child nodes below, measure or sample, and obtain guide rates on descending branches
     //
     if ( node->first_child() && node->first_child()->samples_below() > 0 ) {
         rate1 = sampleOrMeasureWeightedTree( node->first_child(), cumul_length, local_weight, recomb_bias, recomb_guide );
+        accumulateBranchLengths( rate1, recomb_bias, node->first_child(), cumul_length, local_weight );
         branches_below += 1;
     }
     if ( node->second_child() && node->second_child()->samples_below() > 0 ) {
         rate2 = sampleOrMeasureWeightedTree( node->second_child(), cumul_length, local_weight, recomb_bias, recomb_guide );
+        accumulateBranchLengths( rate2, recomb_bias, node->second_child(), cumul_length, local_weight );
         branches_below += 1;
     }
     //
-    // calculate guide rate above node
+    // calculate guide rate above node and return
     //
     if (branches_below == 0) {                // leaf node
         if (recomb_guide) {
@@ -673,20 +691,28 @@ double ForestState::sampleOrMeasureWeightedTree( const Node* node,
                 cout << " rbs segment: [" << rbs.get_locus() << "," << rbs.get_end() << ")" << endl;
                 throw std::runtime_error("Current base not in expected rbs segment!  Should never happen!");
             }
-            rate_above = rbs.get_leaf_rate( node->label()-1 );
+            return rbs.get_leaf_rate( node->label()-1 );
+        } else {
+            return 1.0;  // relative rate - uniform across tree
         }
     } else if (branches_below == 1) {         // single child branch -- transmit rate unchanged
-        rate_above = rate1 + rate2;
+        return rate1 + rate2;
     } else {
-        // two child branches.  Calculate (unbiased, unnormalized) rate on branch doing down from node, as the hyperbolic
-        // hyperbolic average of the rates on the two incoming branches, divided by 2.  This has the result that two branches
-        // carrying the same rate transmits the same rate to the parent branch, while one zero rate branch will cause a zero
-        // rate to be transmitted.
-        rate_above = 2.0 / (1.0/(rate1 + 1e-30) + 1.0/(rate2 + 1e-30));
+        // two child branches.  Calculate (unbiased, unnormalized) rate on branch doing down from node,
+        // as the arithmetic average of the rates on the two incoming branches.  Previously we
+        // tried the hyperbolic average, but this causes recombinations to be focused onto
+        // recent branches when the tree doesn't fit the data well.  These carry large importance
+        // weights, which are delayed for a long time, leading to overflows.
+        return (rate1 + rate2) * 0.5;
     }
-    //
-    // going through the time slices of the recombination bias, accumulate branch length and sample
-    //
+}
+
+
+void inline ForestState::accumulateBranchLengths( double rate_above, 
+                                                  bool recomb_bias, 
+                                                  const Node* node, 
+                                                  double& cumul_length, 
+                                                  double& local_weight ) {
     size_t time_idx = 0;
     double lower_end = 0.0;            // this is correct irrespective of whether recomb_bias is used or not
     double upper_end = 1e100;          // default for !recomb_bias
@@ -711,21 +737,7 @@ double ForestState::sampleOrMeasureWeightedTree( const Node* node,
         lower_end = upper_end;
         ++time_idx;
     } while ( upper_end < node->parent_height() );
-    return rate_above;
 }
-
-
-double ForestState::getWeightedLocalTreeLength( const bool recomb_bias,
-                                                const bool recomb_guide ) {
-    double total_length = 0.0;
-    double dummy = 0.0;
-    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )    
-        sampleOrMeasureWeightedTree( local_root()->first_child(), total_length, dummy, recomb_bias, recomb_guide );
-    if ( local_root()->second_child() && local_root()->second_child()->samples_below() > 0 )    
-        sampleOrMeasureWeightedTree( local_root()->second_child(), total_length, dummy, recomb_bias, recomb_guide );
-    return total_length;
-}
-
 
 
 //
@@ -740,16 +752,29 @@ double ForestState::samplePoint( bool record_and_bias ) {
     double dummy_rate = 0.0;   _unused(dummy_rate);
     bool use_recomb_guide = record_and_bias && pfparam.recomb_bias.using_posterior_biased_sampling();
     bool use_recomb_bias  = record_and_bias && model().biased_sampling;
-    double guide_weighted_local_tree_length = getWeightedLocalTreeLength( false, use_recomb_guide );
+    //double guide_weighted_local_tree_length = getWeightedLocalTreeLength( false, use_recomb_guide );
     double full_weighted_local_tree_length = getWeightedLocalTreeLength( use_recomb_bias, use_recomb_guide );
     double sample_length = (random_generator()->sample() - 1.0) * full_weighted_local_tree_length;  // guaranteed < 0
 
     // sample; updates full_local_weight and put sample in rec_point
     double full_local_weight = 0.0;
-    if ( local_root()->first_child() && local_root()->first_child()->samples_below() > 0 )    
-        sampleOrMeasureWeightedTree( local_root()->first_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
-    if ( sample_length < 0 && local_root()->second_child() && local_root()->second_child()->samples_below() > 0 )    
-        sampleOrMeasureWeightedTree( local_root()->second_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
+    double rate1 = 0.0, rate2 = 0.0;
+    bool branch1 = local_root()->first_child() && local_root()->first_child()->samples_below() > 0;
+    bool branch2 = local_root()->second_child() && local_root()->second_child()->samples_below() > 0;
+
+    if ( branch1 )
+        rate1 = sampleOrMeasureWeightedTree( local_root()->first_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
+    if ( branch2 )
+        rate2 = sampleOrMeasureWeightedTree( local_root()->second_child(), sample_length, full_local_weight, use_recomb_bias, use_recomb_guide );
+    // most of the recombinations in the branches from the root node cannot be assigned with confidence to either.
+    // therefore make sure that the rate is equal in both.  This avoids the issue that for a cluster of deep
+    // coalescences, each recombination gets biased with an importance weight of approx. 0.5, potentially leading
+    // to a very large importance weight, which when postponed for a while would lead to overflows.
+    double rate = max(rate1, rate2);
+
+    if ( branch1 ) accumulateBranchLengths( rate, use_recomb_bias, local_root()->first_child(), sample_length, full_local_weight );
+    if ( branch2 ) accumulateBranchLengths( rate, use_recomb_bias, local_root()->second_child(), sample_length, full_local_weight );
+
     if ( sample_length < 0 ) {
         throw std::runtime_error("Failure to sample point -- should never happen!");
     }
@@ -775,11 +800,11 @@ double ForestState::samplePoint( bool record_and_bias ) {
         recomb_bias_wt = model().bias_ratios()[idx];
     }
     // density for sampling using guide recombinations, without recombination biasing
-    double guide_density = (full_local_weight / recomb_bias_wt) / guide_weighted_local_tree_length;
+    //double guide_density = (full_local_weight / recomb_bias_wt) / guide_weighted_local_tree_length;
     // importance weight for target=guide recombinations, sampled=full, is guide_density / sampled_density.
     // So if we want to cancel the effect of recombination biasing, we should apply that IW
     // rather than target_density / sampled_density.
-    recombination_bias_importance_weight_ = guide_density / sampled_density;
+    //recombination_bias_importance_weight_ = guide_density / sampled_density;
     
     // done -- importance weight (and delay) are implemented in extend_ARG,
     // via sampleNextGenealogy (scrm/forest.cc)
