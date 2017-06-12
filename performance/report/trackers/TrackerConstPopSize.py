@@ -507,7 +507,8 @@ class ConstpopsizeLikelihood(TrackerSQL):
         # get last iteration
         statement = "SELECT result.iter FROM experiment INNER JOIN result ON experiment.id = result.exp_id " \
                     "WHERE {}".format(where)
-        print ("statement:",statement)
+        vals = self.getValues(statement)
+        if len(vals)==0: return {}
         lastiter = sorted( self.getValues(statement) )[-1]
         
         # get number of particles and likelihood at the last iteration
