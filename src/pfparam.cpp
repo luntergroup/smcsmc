@@ -126,8 +126,15 @@ void PfParam::parse(int argc, char *argv[]) {
             if ( this->lag_fraction < 0.0 ){
                 throw OutOfRange ("-calibrate_lag", *argv_i );
             }
-            //} else if ( *argv_i == "-online" ){
-            //this->online_bool = true;
+        } else if ( *argv_i == "-delay" ) {
+            this->delay = this->readNextInput<double>();
+            if (this->delay < 0.0) {
+                throw OutOfRange( "-delay", *argv_i );
+            }
+        } else if ( *argv_i == "-delay_coal" ) {
+            this->delay_type = RESAMPLE_DELAY_COAL;
+        } else if ( *argv_i == "-delay_migr" ) {
+            this->delay_type = RESAMPLE_DELAY_COALMIGR;
         } else if ( *argv_i == "-ancestral_aware" ){
             this->ancestral_aware = true;
         // ------------------------------------------------------------------
@@ -138,7 +145,7 @@ void PfParam::parse(int argc, char *argv[]) {
             this->out_NAME_prefix = *argv_i;
         } else if ( *argv_i == "-log"   ){
             this->log_bool  = true;
-        } else if (*argv_i == "-record-ess" ) {
+        } else if (*argv_i == "-record_ess" ) {
             this->record_resample_file = true;
         } else if (*argv_i == "-h" || *argv_i == "-help") {
             this->setHelp(true);
@@ -198,6 +205,8 @@ void PfParam::init(){
     this->lag              = 0.0;
     this->calibrate_lag    = true;
     this->lag_fraction     = 4.0;
+    this->delay            = 0.5;
+    this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
@@ -499,8 +508,8 @@ void PfParam::append_resample_file( int position, double ESS) const {
 
 void PfParam::helpOption(){
     cout << "Options:" << endl;
-    cout << setw(15)<<"-Np"            << setw(8) << "INT" << "  --  " << "Number of particles [ 1000 ]" << endl;
-    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ 0.6 ]" << endl;
+    cout << setw(15)<<"-Np"            << setw(8) << "INT" << "  --  " << "Number of particles [ " << N << " ]" << endl;
+    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ " << ESS_fraction << " ]" << endl;
     cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
     cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
     cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
@@ -513,8 +522,12 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
     cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
     cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
+    cout << setw(15)<<"-calibrate_lag" << setw(8) << "FLT" << "  --  " << "Lag before extracting events (multiple of survival time) [ " << lag_fraction << " ]" << endl;
+    cout << setw(15)<<"-delay"         << setw(8) << "FLT" << "  --  " << "How much to delay application of importance weight due to bias (fraction of survival time)[ " << delay << "]" << endl;
+    cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
+    cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(15)<<"-record-ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
+    cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
 };
 

@@ -44,7 +44,7 @@ ForestState::ForestState( Model* model,
     setMultiplicity( 1 );
     total_delayed_adjustment_ = 1.0;
     setSiteWhereWeightWasUpdated(0.0);
-    first_coalescence_height_ = -1.0;
+    first_event_height_ = -1.0;
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
@@ -185,9 +185,12 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 weight = 1;
                 coal_event |= tmp_event_.isPwCoalescence();
             }
-            if (first_coalescence_height_ < 0.0 && coal_event) first_coalescence_height_ = end_height;
-            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
+            if (first_event_height_ < 0.0) {
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COALMIGR && migr_event) first_event_height_ = end_height;
+                if (coal_event) first_event_height_ = end_height;
+            }
+            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
@@ -556,7 +559,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 
             // a recombination has occurred, or the recombination rate has changed;
             // forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
-            first_coalescence_height_ = -1.0;
+            first_event_height_ = -1.0;
             recombination_bias_importance_weight_ = 1.0;
             double importance_weight = this->sampleNextGenealogy( true );
             
@@ -566,10 +569,25 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
             if (importance_weight >= 0.0) {
                 // a recomb has occurred. Implement importance weight, with appropriate delay
 
-                if (first_coalescence_height_ == -1.0)
-                    throw std::runtime_error("No coalescent found where one was expected");
-                double delay = find_delay( first_coalescence_height_ );
+                if (first_event_height_ == -1.0)
+                    throw std::runtime_error("No coalescence found where one was expected");
 
+                // If the coalescence occurred above top bias height, i.e. the sampling failed
+                // to produce an early coalescence as intended, then apply the importance weight
+                // factor due to the recombination bias immediately, so that we don't pollute
+                // the particles.  However, always apply the importance weight due to guiding
+                // with the appropriate delay
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) first_event_height_ = rec_point.height();
+                int idx = 0;
+                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < first_event_height_) ++idx;
+                if (model().bias_strengths()[idx] == 1.0) {
+                    // the height of the focal event (recombination, coalescence, or migration, as per delay_type)
+                    // is not biased, so apply the importance weight for the recombination bias immediately, and factor
+                    // it out of the overall importance weight (which may include a factor for recombination guiding)
+                    adjustWeights( recombination_bias_importance_weight_ );
+                    importance_weight /= recombination_bias_importance_weight_;
+                }
+                double delay = find_delay( first_event_height_ );
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
                 // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
@@ -719,7 +737,7 @@ void inline ForestState::accumulateBranchLengths( double rate_above,
     double local_weight_ = rate_above; // default for !recomb_bias
     do {
         if (recomb_bias) {
-            local_weight_ = rate_above * model().bias_ratios()[time_idx];
+            local_weight_ = rate_above * model().bias_strengths()[time_idx];
             upper_end = model().bias_heights()[time_idx+1];
         }
         lower_end = max( lower_end, node->height() );
@@ -752,10 +770,18 @@ double ForestState::samplePoint( bool record_and_bias ) {
     double dummy_rate = 0.0;   _unused(dummy_rate);
     bool use_recomb_guide = record_and_bias && pfparam.recomb_bias.using_posterior_biased_sampling();
     bool use_recomb_bias  = record_and_bias && model().biased_sampling;
-    //double guide_weighted_local_tree_length = getWeightedLocalTreeLength( false, use_recomb_guide );
     double full_weighted_local_tree_length = getWeightedLocalTreeLength( use_recomb_bias, use_recomb_guide );
     double sample_length = (random_generator()->sample() - 1.0) * full_weighted_local_tree_length;  // guaranteed < 0
-
+    double recomb_weighted_local_tree_length;   // tree length with only recombination weighting
+    if (use_recomb_bias) {
+        if (use_recomb_guide) {
+            recomb_weighted_local_tree_length = getWeightedLocalTreeLength( use_recomb_bias, false );
+        } else {
+            recomb_weighted_local_tree_length = full_weighted_local_tree_length;
+        }
+    } else {
+        recomb_weighted_local_tree_length = getLocalTreeLength();
+    }
     // sample; updates full_local_weight and put sample in rec_point
     double full_local_weight = 0.0;
     double rate1 = 0.0, rate2 = 0.0;
@@ -786,25 +812,21 @@ double ForestState::samplePoint( bool record_and_bias ) {
     // to correctfor the guide recombination rate only.)  It is the responsibility of this
     // code to compute the importance weight to account for biasing on the tree.
     double sampled_density = full_local_weight / full_weighted_local_tree_length;
-    double target_density = 1.0 / getLocalTreeLength();
+    double target_density  = 1.0               / getLocalTreeLength();
     double importance_weight = target_density / sampled_density;
 
-    // set importance weight due to recombination biasing only (as opposed to full biasing, which
-    // also includes recombination biasing), to allow the delay for this importance weight to be
+    // compute importance weight due to recombination biasing only (as opposed to full biasing, which
+    // also includes recombination guiding), to allow the delay for this importance weight to be
     // applied independently to that for guiding.  First calculate the recombination bias weight.
     double recomb_bias_wt = 1.0;
     if (use_recomb_bias) {
         int idx=0;
         while (model().bias_heights()[idx+1] < rec_point.height())
             ++idx;
-        recomb_bias_wt = model().bias_ratios()[idx];
+        recomb_bias_wt = model().bias_strengths()[idx];
     }
-    // density for sampling using guide recombinations, without recombination biasing
-    //double guide_density = (full_local_weight / recomb_bias_wt) / guide_weighted_local_tree_length;
-    // importance weight for target=guide recombinations, sampled=full, is guide_density / sampled_density.
-    // So if we want to cancel the effect of recombination biasing, we should apply that IW
-    // rather than target_density / sampled_density.
-    //recombination_bias_importance_weight_ = guide_density / sampled_density;
+    double recombination_density = recomb_bias_wt / recomb_weighted_local_tree_length;
+    recombination_bias_importance_weight_ = target_density / recombination_density;
     
     // done -- importance weight (and delay) are implemented in extend_ARG,
     // via sampleNextGenealogy (scrm/forest.cc)

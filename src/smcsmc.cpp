@@ -209,6 +209,7 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
 }
 
 
+/*
 void calibrate_bias_ratios(Model* model, double top_t_value) {
 
     if (model->biased_sampling) {
@@ -240,6 +241,7 @@ void calibrate_bias_ratios(Model* model, double top_t_value) {
     }
     assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
 }
+*/
 
 
 void pfARG_core(PfParam &pfARG_para,
@@ -270,7 +272,7 @@ void pfARG_core(PfParam &pfARG_para,
     countNe->init();
 
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
-    model->lags_to_application_delays( median_survival );
+    model->lags_to_application_delays( median_survival, pfARG_para.delay );
     for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    clog << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
     }

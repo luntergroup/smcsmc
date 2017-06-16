@@ -275,9 +275,15 @@ class PfParam{
     // ------------------------------------------------------------------
     // Action
     // ------------------------------------------------------------------
+    static const int RECORD_RECOMB_EVENT = 1;
+    static const int RECORD_COALMIGR_EVENT = 2;
+    enum ResampleDelayType { RESAMPLE_DELAY_RECOMB, RESAMPLE_DELAY_COAL, RESAMPLE_DELAY_COALMIGR };
+
     double lag;
     bool calibrate_lag;
     double lag_fraction;
+    double delay;
+    ResampleDelayType delay_type;
     bool ancestral_aware;
     bool online_bool;
     double start_position;
@@ -288,9 +294,6 @@ class PfParam{
     MersenneTwister *rg ;
     vector<int> record_event_in_epoch;
     RecombinationBias recomb_bias;
-
-    static const int RECORD_RECOMB_EVENT = 1;
-    static const int RECORD_COALMIGR_EVENT = 2;
 
     double default_loci_length;
 
