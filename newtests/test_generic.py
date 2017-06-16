@@ -65,6 +65,8 @@ class TestGeneric(unittest.TestCase):
         self.missing_leaves = []            # list of 0-based missing leaves
         self.guided_recomb_alpha = 0      # proportion of posterior recombination mixed in; default 0 (none)
         self.guided_recomb_beta = 4       # extent of smoothing of the recombination change points
+        self.delay = 0.5
+        self.delay_type = "recomb"        # or "coal" or "migr"
         self.maxNE = 1e99
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
@@ -170,6 +172,15 @@ class TestGeneric(unittest.TestCase):
                 ' '.join(map(str,self.bias_heights)),
                 ' '.join(map(str,self.bias_strengths))
             )
+            if self.delay != 0.5:
+                pilotsopt += " -delay {}".format(self.delay)
+            if self.delay_type != "recomb":
+                if self.delay_type == "coal": 
+                    pilotsopt += " -delay_coal"
+                elif self.delay_type == "migr":
+                    pilotsopt += " -delay_migr"
+                else:
+                    raise ValueError("Unknown delay_type")
 
         if not self.infer_recombination:
             recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
