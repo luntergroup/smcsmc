@@ -54,6 +54,7 @@ class CountModel: public Model {
         void reset_model_parameters(double current_base, Model * model, bool useCap = false, double cap = 200000, bool online = true, bool force_update = false, bool print = true);
         void log_counts( PfParam& param );
         void reset_lag( std::vector<double> survival, double lag_fraction = 1 );
+        void update_resample_count() { total_resample_count++; }
 
         // DEBUG
         void print_recomb_count();
@@ -76,6 +77,8 @@ class CountModel: public Model {
         void update_all_counts( EvolutionaryEvent** event_ptr, double weight, vector<double>& update_to, size_t epoch_idx );
         void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
         void record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, Descendants_t descendants );
+        void update_delayed_weight_count( double opportunity ) { total_delayed_weight_count += opportunity; }
+        void update_delayed_weight_opportunity( double opportunity ) { total_delayed_weight_opportunity += opportunity; }
         //
         // Members
         //
@@ -96,10 +99,12 @@ class CountModel: public Model {
         vector < vector <double> >            total_mig_weight;
         vector < double >                local_recomb_opportunity;
         vector < vector < double > >     local_recomb_counts;
+        double                           total_delayed_weight_opportunity;
+        double                           total_delayed_weight_count;
+        double                           total_resample_count;
 
         vector < double > counted_to;
         vector < double > lags;
-        //vector < vector < vector<double> > > inferred_mig_rate;  // This is a 3D vector, indexed by epoch, from_population, to_population
 
         double const_lag_;
         double const_minimal_lag_update_ratio_;

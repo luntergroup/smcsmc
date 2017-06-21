@@ -309,7 +309,10 @@ void pfARG_core(PfParam &pfARG_para,
 
         /*! Resample if the ESS becomes too low */
         double update_to = min( Segfile->segment_end(), (double)model->loci_length() );
-        total_resample_count += current_states.resample( update_to, pfARG_para );
+        if (current_states.resample( update_to, pfARG_para )) {
+            total_resample_count++;
+            countNe->update_resample_count();
+        }
 
         if ( Segfile->segment_end() >= (double)model->loci_length() ) {
             cout << "\r Particle filtering step 100% completed." << endl;

@@ -428,7 +428,7 @@ void PfParam::outFileHeader(){
     string file_name = outFileName;
     ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
     int field_length_1 = 6;
-    int field_length_2 = 11;
+    int field_length_2 = 12;
     count_file << setw(field_length_1) << "Iter"   << " "
                << setw(field_length_1) << "Epoch"  << " "
                << setw(field_length_2) << "Start"  << " "
@@ -454,13 +454,13 @@ public:
 };
 
 ostream& operator<<(ostream& ostr, const FormatDouble& fd) {
-    const int field_length = 11;
+    const int field_length = 12;
     const int precision = 2;
     const double maxdouble = exp( (field_length - precision - 1) * log(10.0) );
     if (fd.d < maxdouble && (fd.d > fd.scientific_bound || fd.d == 0.0)) {
         return ostr << setw(field_length) << fixed << setprecision(precision) << fd.d;
     } else {
-        return ostr << setw(field_length) << scientific << setprecision(field_length-6) << fd.d;
+        return ostr << setw(field_length) << scientific << setprecision(field_length-7) << fd.d;
     }
 }
 

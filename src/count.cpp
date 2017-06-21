@@ -31,6 +31,9 @@ void CountModel::init() {
     this->init_migr();
     this->init_local_recomb();
     this->init_lags();
+    total_delayed_weight_opportunity = 0.0;
+    total_delayed_weight_count = 0.0;
+    total_resample_count = 0.0;
 
     this->update_param_interval_  = 5e6; // ONLINE EM
     this->update_param_threshold_ = 1e7; // ONLINE EM
@@ -128,6 +131,30 @@ void CountModel::log_counts( PfParam& param ) {
             }
         }
     }
+
+    // log delayed weight fraction and resample fraction
+    param.appendToOutFile( param.EMcounter(),
+                           -1,
+                           0.0,
+                           1e+99,
+                           "Delay",
+                           -1,
+                           -1,
+                           total_delayed_weight_opportunity,
+                           total_delayed_weight_count / param.N,
+                           total_delayed_weight_opportunity);
+
+    param.appendToOutFile( param.EMcounter(),
+                           -1,
+                           0.0,
+                           1e+99,
+                           "Resamp",
+                           -1,
+                           -1,
+                           total_delayed_weight_opportunity,
+                           total_resample_count,
+                           total_delayed_weight_opportunity);
+                           
 }
 
 
@@ -360,9 +387,14 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
     //
     // update counts for all particles
     //
-    for (int i = Endparticles.particles.size()-1; i>=0; i--) {
+    int num_particles = Endparticles.particles.size();
+    for (int i = num_particles-1; i>=0; i--) {
 
         ForestState* thisState = Endparticles.particles[i];
+
+        // update delayed weight count for this particle
+        if (!thisState->delayed_adjustments.empty())
+            update_delayed_weight_count( update_to[change_times_.size()-1] - counted_to[change_times_.size()-1] );
 
         for (int epoch_idx = change_times_.size()-1; epoch_idx >= (int)first_epoch_to_update; epoch_idx--) {
 
@@ -372,6 +404,7 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 
         }
     }
+    update_delayed_weight_opportunity( update_to[change_times_.size()-1] - counted_to[change_times_.size()-1] );
 
     //
     // update counted_to pointers, after we're done with the last particle
@@ -415,9 +448,8 @@ void CountModel::extract_and_update_count(ParticleContainer &Endparticles, doubl
 void CountModel::update_all_counts( EvolutionaryEvent** event_ptr, double posterior_weight, vector<double>& update_to, size_t epoch_idx ) {
 
     // Recursively traverse the tree, updating complete nodes, until an incomplete node or the root is found
-
-    EvolutionaryEvent* event;
     // Find first non-deleted event, updating *event_ptr (but not event_ptr) as necessary; exit if root was found
+    EvolutionaryEvent* event;
     while ((event = purge_events( event_ptr, epoch_idx ))) {
 
         if (!event->update_posterior_is_done( posterior_weight )) {
