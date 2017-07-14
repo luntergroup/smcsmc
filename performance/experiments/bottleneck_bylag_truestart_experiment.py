@@ -12,13 +12,13 @@ import itertools
 # parameters for this experiment
 inference_reps = 10
 seqlen = 50e6
-particles = 500
+particles = 1000
 emiters = 10
 lagfactors = [0, 0.25, 0.5, 1.0, 2.0, 4.0]
 nsam = [2,4,8]
 
 # name of this experiment
-experiment_name = "constpopsize_4epochs_lagdependence"
+experiment_name = "bottleneck_bylag_truestart"
 
 
 # class defining default population parameters
@@ -49,20 +49,38 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam ):
         return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( experiment_base.datapath + experiment_name )
+    
     # set simulation parameters
+    e.pop.change_points = [0, .01, 0.06, 0.2,  1, 2]
+    e.pop.population_sizes = [[1], [0.1], [1], [0.5], [1], [2]]
     e.pop.num_samples = nsam
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
     e.pop.scrmpath = experiment_base.scrmpath
     e.filename_disambiguator = label
+    
     # set inference parameters
     e.seqlen = length
+    e.popt = None
+    e.smcsmc_change_points = [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06,
+                              0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.20,
+                              0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
+                              1.2, 1.4, 1.6, 1.8, 1.9, 2.0]
+    # need to set pop sizes, migr rates and commands explicitly when change pts
+    # differ between simulation and inference:
+    e.smcsmc_initial_pop_sizes = [ [1], [0.1], [0.1], [0.1], [0.1], [0.1], [1], 
+                                   [1], [1], [1], [1], [1], [1], [0.5],
+                                   [0.5], [0.5], [0.5], [0.5], [0.5], [0.5], [0.5], [1],
+                                   [1], [1], [1], [1], [1], [2] ]
+    e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
+    e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
     e.seed = (infseed,)
     e.np = numparticles
     e.lag = lag
     e.em = emiters-1
     e.bias_heights = None
     e.smcsmcpath = experiment_base.smcsmcpath
+    
     # perform inference and store results
     e.infer( case = simseed )
     e.resultsToMySQL( db = experiment_base.db )
@@ -75,4 +93,3 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam ):
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
     experiment_base.main( experiment_name, experiment_pars )
-
