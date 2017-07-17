@@ -16,6 +16,7 @@ particles = 1000
 emiters = 10
 lagfactors = [0, 0.25, 0.5, 1.0, 2.0, 4.0]
 nsam = [2,4,8]
+chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 
 # name of this experiment
 experiment_name = "bottleneck_bylag_truestart"
@@ -80,12 +81,12 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam ):
     e.em = emiters-1
     e.bias_heights = None
     e.smcsmcpath = experiment_base.smcsmcpath
+    e.chunks = chunks
     
     # perform inference and store results
     e.infer( case = simseed )
     e.resultsToMySQL( db = experiment_base.db )
     e.success = True   # remove files
-    e.tearDown()
     print "Done " + label
     return
 
