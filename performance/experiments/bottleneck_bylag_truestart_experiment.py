@@ -12,7 +12,7 @@ import itertools
 # parameters for this experiment
 inference_reps = 10
 seqlen = 50e6
-particles = 1000
+particles = 10000
 emiters = 10
 lagfactors = [0, 0.25, 0.5, 1.0, 2.0, 4.0]
 nsam = [2,4,8]
