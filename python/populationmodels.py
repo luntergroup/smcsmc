@@ -90,8 +90,6 @@ class Population:
                 idx = self._parse_sample( len(self.change_points)-1, idx, opts )
             elif opts[idx] == "-ej":
                 time = float( opts[ idx+1 ] )
-                if time not in self.change_points:
-                    raise ValueError("Time used for -ej ({}) not a valid change point! (change points: {})".format(time,self.change_points))
                 source, sink = int(opts[idx+2]), int(opts[idx+3])
                 self.split_command = "-ej {} {} {}".format( time, source, sink )
                 idx += 4
@@ -209,6 +207,8 @@ class Population:
                 assert len(migr_vec) == self.num_populations
                 assert migr_vec[popidx] == 0
                 assert min(migr_vec) == 0
+        if float( self.split_command.split()[1] ) not in [ float(t) for t in self.change_points]:
+            raise ValueError("Time used for -ej ({}) not a valid change point! (change points: {})".format(self.split_command.split()[1],self.change_points))
 
         # require the population size at time 0 to be set explicitly
         assert( self.change_points[0] == 0.0 )
