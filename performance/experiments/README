@@ -1,0 +1,31 @@
+
+The following experiments are contributing to Donna's thesis:
+
+constpopsize_bylag_truestart_experiment.py
+bottleneck_bylag_truestart_experiment.py
+constpopsize_bylag_falsestart_experiment.py
+bottleneck_bylag_falsestart_experiment.py
+
+bottleneck_particle_vs_seqlen_truestart.py
+bottleneck_particle_vs_seqlen_falsestart.py
+
+unidirmigr_nofocus.py
+
+TO DO:
+
+zigzag - Use Gerton's runs -  2,4,8sample. partcile vs seqlen?
+
+opt - unidirmigr_withfocus_nodelay.py
+unidirmigr_withfocus_appdelay.py
+
+unidirmigrgap_nofocus.py
+unidirmigrgap_withfocus_nodelay.py
+unidirmigrgap_withfocus_appdelay.py
+
+splitnomigr_nofocus.py
+opt - splitnomigr_withfocus_nodelay.py
+splitnomigr_withfocus_appdelay.py
+splitnomigr_multitieredfocus.py
+
+
+
