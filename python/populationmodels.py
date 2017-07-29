@@ -207,7 +207,7 @@ class Population:
                 assert len(migr_vec) == self.num_populations
                 assert migr_vec[popidx] == 0
                 assert min(migr_vec) == 0
-        if float( self.split_command.split()[1] ) not in [ float(t) for t in self.change_points]:
+        if len(self.split_command.split())==4 and float( self.split_command.split()[1] ) not in [ float(t) for t in self.change_points]:
             raise ValueError("Time used for -ej ({}) not a valid change point! (change points: {})".format(self.split_command.split()[1],self.change_points))
 
         # require the population size at time 0 to be set explicitly
