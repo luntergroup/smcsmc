@@ -123,6 +123,53 @@ class TestTwoPopsSplitUniDirMigr(TestTwoPopsSplit):
                 t['truth'] = scaling * self.pop.migration_rates[t['epoch']][t['from_pop']][t['to_pop']]
 
 
+class TestTwoPopsSplitUniDirMigrGap(TestTwoPopsSplit):
+
+    def setUp(self, fn="testdata/twopopssplit_unidirmigr"):
+        TestTwoPopsSplit.setUp(self, fn)
+
+        self.np = 1000
+        self.seqlen = 30e6
+        self.pop.sequence_length = self.seqlen
+        self.pop.change_points = [0,0.1,0.2,0.5]
+        self.pop.migration_rates = [ [ [0, 0],[0, 0] ],
+                                     [ [0, 0.2],[0, 0] ],
+                                     [ [0, 0],[0, 0] ],
+                                     [ [0, 0]  ,[0, 0] ] ]
+
+        self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
+                                           [[0,0] ,[0,0] ] ]
+
+        # make sure smc^2 is passed the right population sizes
+        self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+
+        scaling = 1.0 / (4.0 * self.pop.N0)
+
+
+class TestTwoPopsSplitNoMigr(TestTwoPopsSplit):
+
+    def setUp(self, fn="testdata/twopopssplit_unidirmigr"):
+        TestTwoPopsSplit.setUp(self, fn)
+
+        self.np = 1000
+        self.seqlen = 30e6
+        self.pop.sequence_length = self.seqlen
+        self.pop.change_points = [0,0.1,0.5]
+        self.pop.migration_rates = [ [ [0, 0],[0, 0] ],
+                                     [ [0, 0],[0, 0] ],
+                                     [ [0, 0],[0, 0] ] ]
+
+        self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
+                                           [[0,0] ,[0,0] ] ]
+
+        # make sure smc^2 is passed the right population sizes
+        self.smcsmc_initial_pop_sizes = self.pop.population_sizes
+
+        scaling = 1.0 / (4.0 * self.pop.N0)
+
 # This is an important regression test,
 # Note: targets were calculated based on 100 runs of 2b3a_wo_apply_immediately_hack
 class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPopsSplit):
