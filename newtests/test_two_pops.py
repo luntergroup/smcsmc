@@ -132,11 +132,13 @@ class TestTwoPopsSplitUniDirMigrGap(TestTwoPopsSplit):
         self.seqlen = 30e6
         self.pop.sequence_length = self.seqlen
         self.pop.change_points = [0,0.1,0.2,0.5]
+        self.pop.population_sizes = [ [1,1], [1,1], [1,1], [1,1] ]
         self.pop.migration_rates = [ [ [0, 0],[0, 0] ],
                                      [ [0, 0.2],[0, 0] ],
                                      [ [0, 0],[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ] ]
 
+        self.smcsmc_initial_pop_sizes = [ [1,1], [1,1], [1,1], [1,1] ]
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
