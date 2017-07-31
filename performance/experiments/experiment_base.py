@@ -1,9 +1,12 @@
+from __future__ import print_function
 import sys
 import os
 import inspect
 import argparse
 import itertools
-from multiprocessing import Pool
+import threading
+import traceback
+import Queue
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -29,7 +32,12 @@ import execute
 
 # run a single experiment
 def run_experiment_map( pars ):
-    return run_experiment( **pars )
+    global bucket
+    try:
+        return run_experiment( **pars )
+    except Exception:
+        bucket.put(sys.exc_info())
+        raise
 
 
 # check if this experiment has already been run
@@ -78,6 +86,7 @@ def remove( experiment_name ):
 def main( experiment_name, experiment_pars ):
 
     global db
+    global bucket
 
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
     parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
@@ -102,10 +111,22 @@ def main( experiment_name, experiment_pars ):
         for i in map( run_experiment_map, experiment_pars ):
             pass
     else:
-        pool = Pool(processes = args.jobs)
-        p = pool.map_async(run_experiment_map, experiment_pars )
+        threads = []
+        bucket = Queue.Queue()
+        for par in experiment_pars:
+            t = threading.Thread( target=run_experiment_map, args=(par,) )
+            t.start()
+            threads.append( t )
+
+        for t in threads:
+            t.join()
+
         try:
-            results = p.get(200000000)
-            pool.terminate()
-        except KeyboardInterrupt:
-            print "Received keyboard interrupt -- stopping"
+            exc = bucket.get(block=False)
+        except Queue.Empty:
+            pass
+        else:
+            exc_type, exc_obj, exc_trace = exc
+            print("Caught exception %s %s" % (exc_type, exc_obj), file=sys.stderr)
+            traceback.print_tb( exc_trace )
+            raise RuntimeError("Error in thread")
