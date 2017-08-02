@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import unittest
-import populationmodels
+from context import populationmodels
 from test_generic import TestGeneric
 
 

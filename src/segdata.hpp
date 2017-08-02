@@ -103,7 +103,6 @@ class Segment {
     double segment_start_;
     double segment_length_;
     Segment_State segment_state_;
-    bool genetic_break_;
     size_t chrom_;
     bool empty_file_;
 
@@ -117,7 +116,6 @@ class Segment {
     void extract_field_VARIANT();
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
     Segment_State segment_state() const { return this->segment_state_; }
-    bool genetic_break() const { return this->genetic_break_; }
 
     double num_of_expected_mutations_;
     bool end_data_;

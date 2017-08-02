@@ -18,8 +18,8 @@ try:
 except:
     Base = None
 
-import populationmodels
-import execute
+from context import populationmodels
+from context import execute
 
 
 # All tests are derived from TestGeneric.  A class implementing a test should

@@ -91,13 +91,11 @@ void Segment::reset_data_to_first_entry() {
 
     current_line_index_ = 0;
     set_end_data(false);
-    genetic_break_ = false;
     segment_start_ = data_start_;
     segment_length_ = 0;
     if ( empty_file_ ){
         segment_length_ = ceil( (size_t)seqlen_ / num_of_expected_mutations_ ) ;
         segment_state_ = SEGMENT_MISSING;
-        genetic_break_ = true;
     }
 }
 
@@ -135,9 +133,6 @@ void Segment::read_new_line(){
         this->tmp_str = tmp_line.substr( field_start, field_end - field_start );
         switch (field_index) {
         case 0:
-            if (this->genetic_break_){    // Genetic break! reset segMent_start
-                this->segment_start_ = data_start_;
-            }
             new_seg_start = strtol( tmp_str.c_str(), NULL, 0 );  // check values when we know the length
             break;
         case 1:
@@ -158,13 +153,10 @@ void Segment::read_new_line(){
             break;
         case 2:
             if (this->tmp_str != "T" && this->tmp_str != "F") throw InvalidSeg("Expected T or F in .seg file column 3");
-            //this->segment_state_ = ( this->tmp_str == "T" ) ? SEGMENT_INVARIANT : SEGMENT_MISSING;
             this->segment_state_ = SEGMENT_INVARIANT;  // ignore the value in the column; use per-sample data instead
             break;
         case 3:
             if (this->tmp_str != "T" && this->tmp_str != "F") throw InvalidSeg("Expected T or F in .seg file column 4");
-            //this->genetic_break_ = ( this->tmp_str == "T" ) ? true : false;
-            this->genetic_break_ = false; // ignore the value in this column; assume no breaks
             break;
         case 4:
             this->chrom_ = strtol( tmp_str.c_str(), NULL, 0);
