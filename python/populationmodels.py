@@ -419,7 +419,7 @@ class Population:
                                            genotype = alleles ) )
 
         outfile.write( row.format( pos = positions[-1],
-                                   distance = self.sequence_length - positions[-1],
+                                   distance = int( self.sequence_length + 0.5 ) - positions[-1],
                                    genotype = "." * len(data) ) )
 
         outfile.close()

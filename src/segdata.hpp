@@ -106,14 +106,22 @@ class Segment {
     size_t chrom_;
     bool empty_file_;
 
-    // less important stuff
-    string tmp_str;
-    vector <string> buffer_lines;
-    size_t current_line_index_;
+    // buffering
+    class SegDatum {
+    public:
+        double segment_start;
+        double segment_length;
+        Segment_State segment_state;
+        vector<int> allele_state;
+        SegDatum( double ss, double sl, Segment_State s, const vector<int>& as ) :
+            segment_start(ss), segment_length(sl), segment_state(s), allele_state(as) {}
+    };
+    vector< SegDatum > buffer;
+    size_t current_buf_index_;
 
     // Methods
     void prepare();
-    void extract_field_VARIANT();
+    vector<int> extract_field_VARIANT( const string field );
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
     Segment_State segment_state() const { return this->segment_state_; }
 
