@@ -53,6 +53,9 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam ):
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( experiment_base.datapath + experiment_name )
 
+    ## DEBUG
+    print ("run_experiment, init_migr_rates=",e.smcsmc_initial_migr_rates," pop.migr_rates=",e.pop.migration_rates)
+    
     # set simulation parameters
     e.pop.num_samples = nsam
     e.pop.sequence_length = length

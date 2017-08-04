@@ -107,7 +107,7 @@ def main( experiment_name, experiment_pars ):
         db = args.db
     if args.force:
         remove( experiment_name )
-    bucket = Queue.Queue()
+    bucket = Queue.Queue()                   # to hold exceptions that occur in threads
     if args.jobs == 1:
         for i in map( run_experiment_map, experiment_pars ):
             pass

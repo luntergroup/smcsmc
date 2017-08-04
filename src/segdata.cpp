@@ -151,6 +151,16 @@ void Segment::prepare(){
     if (buffer.size() == 0) {
         throw NoDataError(file_name_, data_start_, data_start_ + seqlen_);
     }
+
+    // set phasing status for the sequence columns
+    this->phased.clear();
+    for( SegDatum sd : buffer ) {
+        for( int idx=0; idx < sd.allele_state.size(); ++idx ) {
+            if (phased.size() < idx) phased.push_back(true);
+            if (sd.allele_state[idx] == 2)
+                phased[idx] = false;
+        }
+    }
 }
 
 
@@ -196,13 +206,104 @@ void Segment::read_new_line(){
     allelic_state_at_Segment_end = sd.allele_state;
     chrom_ = 1; // dummy value
 
-    if ( current_buf_index_ > 0 && current_buf_index_ % 2000 == 0 ){
-    cout << "\r" << " Particle filtering step" << setw(4) << int((segment_end() * 100) / seqlen_)
-    << "% completed." << flush;
+    if ( current_buf_index_ > 0 && current_buf_index_ % 2000 == 0 ) {
+        cout << "\r" << " Particle filtering " << setw(4) << int((segment_end() * 100) / seqlen_)
+             << "% completed." << flush;
     }
+
+    set_lookahead();
     
     current_buf_index_++;
+}
 
+
+void Segment::set_lookahead() {
+    /* sets variables used by the Auxiliary Particle Filter implementation */
+    first_singleton_distance.clear();
+    first_singleton_distance.resize( nsam_ );
+    doubleton.clear();
+
+    vector<bool> found_doubleton( nsam_ );   // records which sequences have participated in a doubleton
+    int num_singletons = 0;
+    int num_doubleton_sequences = 0;
+
+    for ( int i = current_buf_index_; i < buffer.size(); i++ ) {
+        // is mutation at  i  a singleton, doubleton, or something else?
+        // also identify the samples; take the first possible in case of unphased hets
+        int num_var = 0;
+        int s1 = -1, s2 = -1;
+        for ( int j = 0; j < nsam_ ; j++ ) {
+            if (buffer[i].allele_state[j]) {
+                num_var++;  // count the mutation
+                if (num_var==1) s1 = j;
+                if (num_var==2) s2 = j;
+                if (buffer[i].allele_state[j] == 2)
+                    j++;    // skip next sample, in case of a diploid unphased het
+            }
+        }
+        // now loop over doubletons, and see (i) if we already have this doubleton (if one),
+        // and (ii) which existing doubletons are incompatible with this allele
+        double have_doubleton = false;
+        double distance = buffer[i].segment_start + buffer[i].segment_length - buffer[current_buf_index_].segment_start;
+        if (num_var == 1) { // a singleton
+            if (first_singleton_distance[s1] == 0) {
+                first_singleton_distance[s1] = distance;
+                num_singletons++;
+            }
+        } else { // not a singleton
+            for ( Doubleton& d : doubleton ) {
+                if ( ( (d.seq_idx_1 | 1) == d.seq_idx_2 &&         // cherry involves one individual
+                        buffer[i].allele_state[d.seq_idx_1] == 2)  // the non-singleton mutation has a het at the individual
+                     ||
+                     ( (buffer[i].allele_state[d.seq_idx_1] != buffer[i].allele_state[d.seq_idx_2]) &&  // condition
+                       (buffer[i].allele_state[d.seq_idx_1] != 2) &&                                    // tests for 0,1 
+                       (buffer[i].allele_state[d.seq_idx_2] != 2) ) ) {                                 // or 1,0
+                    // either a diploid individual carrying the cherry has an unphased het which is not a singleton,
+                    // or the two individuals have differing genotypes neither of which are hets -- an incompatibility
+                    d.incompatible = true;
+                }
+                // check if mutation is a doubleton and we've already seen it ( (@) see below )
+                if (num_var == 2 && d.seq_idx_1 == s1 && d.seq_idx_2 == s2) {
+                    have_doubleton = true;
+                    // if no incompatible evidence for existing doubleton was found yet,
+                    // this is the latest evidence for presence of the doubleton we know
+                    if (!d.incompatible)
+                        d.last_evidence_distance = distance;
+                }
+            }
+        }
+        // enter new doubleton, if any, if we haven't entered it already, and if it is compatible with earlier doubletons
+        if (num_var == 2 && have_doubleton == false) {
+            // in the case of unphased individuals, see if we can make this doubleton compatible by using the
+            // other allele of the diploid individual
+            for (int d1 = 0 ; d1 <= (buffer[i].allele_state[s1] == 2) ; d1++) {
+                for (int d2 = 0 ; d2 <= (buffer[i].allele_state[s2] == 2) ; d2++) {
+                    if (!found_doubleton[s1+d1] && !found_doubleton[s2+d2]) {
+                        // use the original s1 s2 indices to mark the doubleton, so that we can match on the original indices
+                        // at (@) above
+                        doubleton.push_back( Doubleton( s1, s2, distance, distance ) );
+                        // mark sequences participating in doubletons, and count them
+                        found_doubleton[s1+d1] = true; num_doubleton_sequences++;
+                        found_doubleton[s2+d2] = true; num_doubleton_sequences++;
+                        // bail out
+                        d1 = 1; d2 = 1;
+                    }
+                }
+            }
+        }
+        // bail out if we're done
+        if (num_singletons == nsam_ && num_doubleton_sequences >= nsam_ - 1) break;
+    }
+    // Debug output
+    if (0) {
+        cout << current_buf_index_ << " " << buffer[current_buf_index_].segment_start << " ";
+        for ( int j = 0; j < nsam_ ; j++ ) cout << buffer[current_buf_index_].allele_state[j];
+        for ( int j = 0; j < nsam_ ; j++ ) cout << " S:" << first_singleton_distance[j];
+        for ( Doubleton d : doubleton )
+            cout << " D:" << d.seq_idx_1 << "," << d.seq_idx_2 << ":"
+                 << d.first_evidence_distance << "-" << d.last_evidence_distance;
+        cout << endl;
+    }
 }
 
 

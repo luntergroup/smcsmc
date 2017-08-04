@@ -47,14 +47,6 @@ class TestTwoPops(TestGeneric):
                          'min':9800,  'max':10200, 'truth':10000, 'ess':self.np-1}]
         self.max_out_of_range = 0
 
-        """
-class TestTwoPopsSplit(TestTwoPops):
-
-    def setUp(self, fn="testdata/twopopssplit"):
-        TestTwoPops.setUp(self, fn)
-
-        self.pop.split_command = "-ej .5 2 1"
-"""
         
 # This is an important regression test,
 # Note: targets were calculated based on 100 runs of 2b3a_wo_apply_immediately_hack

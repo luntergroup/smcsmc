@@ -119,11 +119,26 @@ class Segment {
     vector< SegDatum > buffer;
     size_t current_buf_index_;
 
+    // Lookahead for Auxiliary Particle Filter implementation
+    class Doubleton {
+    public:
+        int seq_idx_1, seq_idx_2;
+        double first_evidence_distance, last_evidence_distance;
+        bool incompatible;
+        Doubleton( int i1, int i2, double d1, double d2 ) :
+            seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2) {}
+    };
+    vector<bool> phased;
+    vector<double> first_singleton_distance;
+    vector<Doubleton> doubleton;
+
     // Methods
     void prepare();
+    void set_lookahead();
     vector<int> extract_field_VARIANT( const string field );
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
     Segment_State segment_state() const { return this->segment_state_; }
+    
 
     double num_of_expected_mutations_;
     bool end_data_;
