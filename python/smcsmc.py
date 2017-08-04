@@ -54,7 +54,7 @@ class Smcsmc:
             (0, '-nsam', 'n',  'Set the total number of samples to n'),
             (0, '-I', 'n s1..sn','Use an n-population island model with si individuals sampled'),
             (0, '-eI','t s1..sn','Sample s1..sn indiviuals from their populations at time t*4N0'),
-            (0, '-ej', 't i j','Speciation event at t*4N0; creates population j from population i (not implemented)'),
+            (0, '-ej', 't i j','Speciation event at t*4N0; creates population j from population i'),
             (0, '-N0', 'N',    'Set (unscaled) default population size to N (10000; scales the output)'),
             
             (1, '-r', 'r l',   'Set per locus recombination rate and locus length'),

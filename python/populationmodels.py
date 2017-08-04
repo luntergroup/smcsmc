@@ -36,7 +36,6 @@ class Population:
                  sample_populations   = None,
                  sample_times         = None,
                  migration_commands   = None,
-                 split_command        = "",
                  seed                 = (1,),
                  filename             = None,
                  scrmpath             = defaults['scrmpath'] ):
@@ -54,7 +53,6 @@ class Population:
         self.sample_populations = sample_populations    # encoded as sample_populations_ in model.h
         self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
         self.migration_commands = migration_commands    # to implement speciation events
-        self.split_command = split_command
         self.seed = seed
         self.filename = filename
         self.scrmpath = scrmpath
@@ -63,7 +61,7 @@ class Population:
         """ Parses options relating to population model: -nsam -em -eM -en -eN -eI -I -ej
             Unrecognized options are returned unchanged
             Note: need to set mutation_rate, recombination_rate, sequence_length separately! 
-            TODO: add -ej (split) """
+        """
         self.num_samples = -1
         self.change_points = []
         self.population_sizes = []
@@ -89,10 +87,10 @@ class Population:
                 idx = self._parse_time( idx+1, opts )
                 idx = self._parse_sample( len(self.change_points)-1, idx, opts )
             elif opts[idx] == "-ej":
-                time = float( opts[ idx+1 ] )
-                source, sink = int(opts[idx+2]), int(opts[idx+3])
-                self.split_command = "-ej {} {} {}".format( time, source, sink )
-                idx += 4
+                idx = self._parse_time( idx+1, opts )
+                source, sink = int(opts[idx]), int(opts[idx+1])
+                self.migration_commands[ len(self.change_points)-1 ] = "-ej {} {} {}".format( time, source, sink )
+                idx += 2
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
                 rate = float( opts[idx] ) / (self.num_populations - 1)
@@ -207,8 +205,6 @@ class Population:
                 assert len(migr_vec) == self.num_populations
                 assert migr_vec[popidx] == 0
                 assert min(migr_vec) == 0
-        if len(self.split_command.split())==4 and float( self.split_command.split()[1] ) not in [ float(t) for t in self.change_points]:
-            raise ValueError("Time used for -ej ({}) not a valid change point! (change points: {})".format(self.split_command.split()[1],self.change_points))
 
         # require the population size at time 0 to be set explicitly
         assert( self.change_points[0] == 0.0 )
@@ -293,13 +289,12 @@ class Population:
         self.mutations      = 4 * self.N0 * self.mutation_rate * self.sequence_length
         self.recombinations = 4 * self.N0 * self.recombination_rate * self.sequence_length
 
-        command = "-N0 {N0} -t {muts} -r {recs} {seqlen} {sample} {split} {popmigr}".format(
+        command = "-N0 {N0} -t {muts} -r {recs} {seqlen} {sample} {popmigr}".format(
             N0 = self.N0,
             muts = self.mutations,
             recs = self.recombinations,
             seqlen = self.sequence_length,
             sample = self._create_sample_command_line_options(),
-            split = self.split_command,
             popmigr = self._create_popsize_migration_command_line_options(
                 inference_popsizes,
                 inference_migrationrates,

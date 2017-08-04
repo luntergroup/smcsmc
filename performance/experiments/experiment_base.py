@@ -107,12 +107,12 @@ def main( experiment_name, experiment_pars ):
         db = args.db
     if args.force:
         remove( experiment_name )
+    bucket = Queue.Queue()
     if args.jobs == 1:
         for i in map( run_experiment_map, experiment_pars ):
             pass
     else:
         threads = []
-        bucket = Queue.Queue()
         for par in experiment_pars:
             t = threading.Thread( target=run_experiment_map, args=(par,) )
             t.start()

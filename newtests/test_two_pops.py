@@ -47,19 +47,21 @@ class TestTwoPops(TestGeneric):
                          'min':9800,  'max':10200, 'truth':10000, 'ess':self.np-1}]
         self.max_out_of_range = 0
 
+        """
 class TestTwoPopsSplit(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit"):
         TestTwoPops.setUp(self, fn)
 
         self.pop.split_command = "-ej .5 2 1"
-
+"""
+        
 # This is an important regression test,
 # Note: targets were calculated based on 100 runs of 2b3a_wo_apply_immediately_hack
-class TestTwoPopsSplitUniDirMigr(TestTwoPopsSplit):
+class TestTwoPopsSplitUniDirMigr(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit_unidirmigr"):
-        TestTwoPopsSplit.setUp(self, fn)
+        TestTwoPops.setUp(self, fn)
 
         self.np = 1000
         self.seqlen = 30e6
@@ -72,6 +74,7 @@ class TestTwoPopsSplitUniDirMigr(TestTwoPopsSplit):
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
                                            [[0,0] ,[0,0] ] ]
+        self.pop.migration_commands = [ None, None, "-ej .5 2 1" ]
 
         # make sure smc^2 is passed the right population sizes
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
@@ -123,10 +126,10 @@ class TestTwoPopsSplitUniDirMigr(TestTwoPopsSplit):
                 t['truth'] = scaling * self.pop.migration_rates[t['epoch']][t['from_pop']][t['to_pop']]
 
 
-class TestTwoPopsSplitUniDirMigrGap(TestTwoPopsSplit):
+class TestTwoPopsSplitUniDirMigrGap(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit_unidirmigr"):
-        TestTwoPopsSplit.setUp(self, fn)
+        TestTwoPops.setUp(self, fn)
 
         self.np = 1000
         self.seqlen = 30e6
@@ -137,23 +140,24 @@ class TestTwoPopsSplitUniDirMigrGap(TestTwoPopsSplit):
                                      [ [0, 0.2],[0, 0] ],
                                      [ [0, 0],[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ] ]
+        self.pop.migration_commands = [ None, None, None, "-ej .5 2 1" ]
 
         self.smcsmc_initial_pop_sizes = [ [1,1], [1,1], [1,1], [1,1] ]
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
                                            [[0,0] ,[0,0] ] ]
-
+        
         # make sure smc^2 is passed the right population sizes
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
 
         scaling = 1.0 / (4.0 * self.pop.N0)
 
 
-class TestTwoPopsSplitNoMigr(TestTwoPopsSplit):
+class TestTwoPopsSplitNoMigr(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit_unidirmigr"):
-        TestTwoPopsSplit.setUp(self, fn)
+        TestTwoPops.setUp(self, fn)
 
         self.np = 1000
         self.seqlen = 30e6
@@ -162,11 +166,13 @@ class TestTwoPopsSplitNoMigr(TestTwoPopsSplit):
         self.pop.migration_rates = [ [ [0, 0],[0, 0] ],
                                      [ [0, 0],[0, 0] ],
                                      [ [0, 0],[0, 0] ] ]
+        self.pop.migration_commands = [ None, None, "-ej .5 2 1" ]
 
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
                                            [[0,0] ,[0,0] ] ]
 
+        
         # make sure smc^2 is passed the right population sizes
         self.smcsmc_initial_pop_sizes = self.pop.population_sizes
 
@@ -174,10 +180,10 @@ class TestTwoPopsSplitNoMigr(TestTwoPopsSplit):
 
 # This is an important regression test,
 # Note: targets were calculated based on 100 runs of 2b3a_wo_apply_immediately_hack
-class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPopsSplit):
+class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit_unidirmigrinrecentepoch"):
-        TestTwoPopsSplit.setUp(self, fn)
+        TestTwoPops.setUp(self, fn)
 
         self.np = 1000
         self.seqlen = 30e6
@@ -186,6 +192,7 @@ class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPopsSplit):
         self.pop.migration_rates = [ [ [0, 0.2],[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ] ]
+        self.pop.migration_commands = [ None, None, "-ej .5 2 1" ]
 
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
@@ -242,10 +249,10 @@ class TestTwoPopsSplitUniDirMigrInRecentEpoch(TestTwoPopsSplit):
 
 # This is an important regression test,
 # Note: targets were calculated based on 100 runs of 2b3a_wo_apply_immediately_hack
-class TestTwoPopsSplitUniDirMigrInMidEpoch(TestTwoPopsSplit):
+class TestTwoPopsSplitUniDirMigrInMidEpoch(TestTwoPops):
 
     def setUp(self, fn="testdata/twopopssplit_unidirmigrinmidepoch"):
-        TestTwoPopsSplit.setUp(self, fn)
+        TestTwoPops.setUp(self, fn)
 
         self.np = 1000
         self.seqlen = 30e6
@@ -254,6 +261,7 @@ class TestTwoPopsSplitUniDirMigrInMidEpoch(TestTwoPopsSplit):
         self.pop.migration_rates = [ [ [0, 0]  ,[0, 0] ],
                                      [ [0, 0.2],[0, 0] ],
                                      [ [0, 0]  ,[0, 0] ] ]
+        self.pop.migration_commands = [ None, None, "-ej .5 2 1" ]
 
         self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
                                            [[0,.2],[.2,0]],
