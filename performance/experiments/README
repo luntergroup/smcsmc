@@ -10,21 +10,26 @@ bottleneck_particle_vs_seqlen_truestart.py
 bottleneck_particle_vs_seqlen_falsestart.py
 
 unidirmigr_nofocus.py
+unidirmigrgap_nofocus.py
+splitnomigr_nofocus.py
+
+unidirmigr_withfocus.py      (with and without delayed resampling)
+unidirmigrgap_withfocus.py   (with and without delayed resampling)
+splitnomigr_withfocus.py    (with and without delayed resampling)
+
+unidirmigrgapOLD.py  (gap models above didn't have satisfactory results for naive, FS, or FSDR)
 
 TO DO:
 
 zigzag - Use Gerton's runs -  2,4,8sample. partcile vs seqlen?
 
-opt - unidirmigr_withfocus_nodelay.py
-unidirmigr_withfocus_appdelay.py
+unidirmigrgapOLD without delay?
+am3 (naive, FS, FSDR)
 
-unidirmigrgap_nofocus.py
-unidirmigrgap_withfocus_nodelay.py
-unidirmigrgap_withfocus_appdelay.py
+tunelag
+aa
+phasing
 
-splitnomigr_nofocus.py
-opt - splitnomigr_withfocus_nodelay.py
-splitnomigr_withfocus_appdelay.py
 splitnomigr_multitieredfocus.py
 
 
