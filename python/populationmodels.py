@@ -89,7 +89,11 @@ class Population:
             elif opts[idx] == "-ej":
                 idx = self._parse_time( idx+1, opts )
                 source, sink = int(opts[idx]), int(opts[idx+1])
-                self.migration_commands[ len(self.change_points)-1 ] = "-ej {} {} {}".format( time, source, sink )
+                # the migration commands list needs to hold the -ej command at the element that corresponds to its time in the change points list
+                # below works only if the -ej is provided in the correct order with -eNs, and only for models with 0 or 1 split times
+                if self.migration_commands is None:
+                    self.migration_commands = [None] * len(self.change_points)
+                self.migration_commands[ len(self.change_points)-1 ] = "-ej {} {} {}".format( self.change_points[-1], source, sink )
                 idx += 2
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
@@ -164,6 +168,9 @@ class Population:
             self.migration_rates = [None] * len(self.change_points)
         if self.migration_commands is None:
             self.migration_commands = [None] * len(self.change_points)
+        # below is a hack to fill migration_commands with None as parsing -ej creates migration_commands only back to the time of the split
+        while len(self.migration_commands) < len(self.change_points):
+            self.migration_commands.append(None)
         for idx, migr_rates in enumerate(self.migration_rates):
             if migr_rates is None:
                 migr_rates = [ [0] * self.num_populations
