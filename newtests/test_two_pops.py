@@ -181,6 +181,37 @@ class TestTwoPopsSplitUniDirMigrGapOLD(TestTwoPops):
         scaling = 1.0 / (4.0 * self.pop.N0)
 
 
+class TestTwoPopsAM3(TestTwoPops):
+
+    def setUp(self, fn="testdata/twopops_AM3"):
+        TestTwoPops.setUp(self, fn)
+
+        self.np = 1000
+        self.seqlen = 30e6
+        self.pop.sequence_length = self.seqlen
+        self.pop.change_points = [0, 0.056, 0.066, 0.106, 0.156, 0.356, 0.506]
+        self.pop.population_sizes = [ [.4,1.5], [.1,.3], [1,.3], [1,.3], [2.7,.3], [2.7,.6], [1.8,1.8] ]
+        self.pop.migration_rates = [ [ [0,.17],[0, 0] ],
+                                     [ [0,.17],[0, 0] ],
+                                     [ [0,.17],[0, 0] ],
+                                     [ [0, 0 ],[0, 0] ],
+                                     [ [0, 0 ],[0, 0] ],
+                                     [ [0, 0 ],[0, 0] ],
+                                     [ [0, 0 ],[0, 0] ] ]
+        self.pop.migration_commands = [None, None, None, None, None, None, "-ej .506 1 2"]
+
+        self.smcsmc_initial_pop_sizes = [ [1,1], [1,1], [1,1], [1,1], [1,1], [1,1], [1,1] ]
+        self.smcsmc_initial_migr_rates = [ [[0,.1],[.1,0]],
+                                           [[0,.1],[.1,0]],
+                                           [[0,.1],[.1,0]],
+                                           [[0,.1],[.1,0]],
+                                           [[0,.1],[.1,0]],
+                                           [[0,.1],[.1,0]],
+                                           [[0,0] ,[0,0] ] ]
+        self.smcsmc_migration_commands = [None, None, None, None, None, None, "-ej .506 1 2"]
+
+        scaling = 1.0 / (4.0 * self.pop.N0)
+
 
 class TestTwoPopsSplitNoMigr(TestTwoPops):
 
