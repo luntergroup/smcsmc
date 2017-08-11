@@ -265,9 +265,9 @@ class Population:
                              if j != k )
             if len(all_rates) == 1:
                 rate = all_rates.pop()
-                if rate != 0:
-                    total_symmetric_rate = rate * (self.num_populations - 1)
-                    expression.append("-eM {} {}".format(time, total_symmetric_rate))
+                #if rate != 0:
+                total_symmetric_rate = rate * (self.num_populations - 1)
+                expression.append("-eM {} {}".format(time, total_symmetric_rate))
             else:
                 if len(all_rates) > 1:
                     expression.append("-ema {}".format(time))
