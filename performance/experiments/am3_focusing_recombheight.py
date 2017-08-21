@@ -8,6 +8,9 @@ import itertools
 #  try inferring with many focusing choices, hopefully to see FSDR > naive
 #  (will need to run seperately to show FS, as that requires delay=0)
 #
+#  the am3_focusing attempts at this do not show the benefit seen in the original case
+#  now trying with delay based on rec height as it was originally
+#
 ###################################################################################
 
 
@@ -20,11 +23,11 @@ lagfactor = 1.0
 nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 focus_heights = [[2240]]
-focus_strengths = [[2,1],[3,1],[1,1],[2,.9999],[3,.9999]]
+focus_strengths = [[2,1],[3,1],[2,.9999],[3,.9999]]
 delays = [0.5]
 
 # name of this experiment
-experiment_name = "am3_focusing"
+experiment_name = "am3_focusing_recombheight"
 
 
 # class defining default population parameters
@@ -82,7 +85,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.popt = None
     e.delay = delay
     e.str_parameter = str(delay)
-    e.delay_type = "coal"
+    e.delay_type = "recomb"
     e.smcsmc_change_points = [0, 0.056, 0.066, 0.106, 0.156, 0.356, 0.506]
 
     # perform inference and store results
