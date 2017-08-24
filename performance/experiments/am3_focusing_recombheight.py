@@ -23,7 +23,8 @@ lagfactor = 1.0
 nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 focus_heights = [[2240]]
-focus_strengths = [[2,1],[3,1],[2,.9999],[3,.9999]]
+#focus_strengths = [[2,1],[3,1],[2,.9999],[3,.9999]]
+focus_strengths = [[3,.9999]]
 delays = [0.5]
 
 # name of this experiment
@@ -41,7 +42,7 @@ experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed,
                     'biasheights':biasheights, 'biasstrengths':biasstrengths, 'delay':delay}
                    for (seqlen, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay) in (
                         # repetitions with unique data
-                        [(seqlen, 100+rep, 100+rep, np, lagfactor, ns, bh, bs, d)
+                        [(seqlen, 110+rep, 110+rep, np, lagfactor, ns, bh, bs, d)
                          for rep, np, ns, bh, bs, d in itertools.product(range(inference_reps), particles, nsam, focus_heights, focus_strengths, delays)] )]
 
 
