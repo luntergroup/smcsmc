@@ -170,9 +170,9 @@ class TestTwoPopsSplitUniDirMigrGapOLD(TestTwoPops):
         self.pop.migration_commands = [None, None, None, "-ej .4 2 1"]
 
         self.smcsmc_initial_pop_sizes = [ [1,1], [1,1], [1,1], [1,1] ]
-        self.smcsmc_initial_migr_rates = [ [[0,.1],[.1,0]],
-                                           [[0,.1],[.1,0]],
-                                           [[0,.1],[.1,0]],
+        self.smcsmc_initial_migr_rates = [ [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
+                                           [[0,.2],[.2,0]],
                                            [[0,0] ,[0,0] ] ]
 
         # make sure smc^2 is passed the right population sizes
