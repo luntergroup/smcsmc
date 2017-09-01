@@ -118,19 +118,7 @@ class Segment {
     };
     vector< SegDatum > buffer;
     size_t current_buf_index_;
-
-    // Lookahead for Auxiliary Particle Filter implementation
-    class Doubleton {
-    public:
-        int seq_idx_1, seq_idx_2;
-        double first_evidence_distance, last_evidence_distance;
-        bool incompatible;
-        Doubleton( int i1, int i2, double d1, double d2 ) :
-            seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2) {}
-    };
     vector<bool> phased;
-    vector<double> first_singleton_distance;
-    vector<Doubleton> doubleton;
 
     // Methods
     void prepare();
@@ -144,7 +132,21 @@ class Segment {
     bool end_data_;
 
 public:
-    vector <int> allelic_state_at_Segment_end; // Since missing variant can be represented here, variant can be ignored?
+    // Lookahead for Auxiliary Particle Filter implementation
+    class Doubleton {
+    public:
+        int seq_idx_1, seq_idx_2;
+        double first_evidence_distance, last_evidence_distance;
+	bool unphased_1, unphased_2;
+        bool incompatible;
+        Doubleton( int i1, int i2, double d1, double d2, bool uph_1, bool uph_2 ) :
+            seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2), unphased_1(uph_1), unphased_2(uph_2) {}
+    };
+    
+    vector <int> allelic_state_at_Segment_end;
+    vector<double> first_singleton_distance;
+    vector<double> relative_mutation_rate;       // to account for partially missing data
+    vector<Doubleton> doubleton;
     bool empty_file () const      { return this->empty_file_; }
     double segment_start() const  { return segment_start_ - data_start_; }
     double segment_length() const { return segment_length_; }

@@ -286,6 +286,7 @@ class PfParam{
     ResampleDelayType delay_type;
     bool ancestral_aware;
     bool online_bool;
+    int auxiliary_particle_filter;
     double start_position;
 
     Segment * Segfile;

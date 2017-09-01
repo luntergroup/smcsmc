@@ -110,6 +110,42 @@ bool is_height_in_tree( const Forest& forest, double height ) {
     return false;
 }
 
+
+TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model& model ) {
+
+    const int max_iterations = 1000000;
+    MersenneTwister randomgenerator( true, 1 );
+    TerminalBranchLengthQuantiles tblq;
+    tblq.quantiles = {0.001,0.003,0.01,0.03,0.1,0.5};
+    tblq.lengths.resize( model.sample_size() );
+    vector<vector<double>> tbls( model.sample_size() );
+    
+    for (int iterations = 0; iterations < max_iterations; iterations++) {
+
+	Forest tree( &model, &randomgenerator );
+	tree.buildInitialTree( false );	
+	for ( auto it = tree.getNodes()->iterator(); it.good(); ++it) {
+	    if ((*it)->in_sample()) {
+		double height = (*it)->parent_height();
+		int sample = (*it)->label() - 1;
+		tbls[ sample ].push_back( height );
+	    }
+	}
+    }
+    for (int sample = 0; sample < model.sample_size(); ++sample) {
+        cout << "Lineage " << sample << "; Terminal branch length quantiles:";
+        std::sort( tbls[ sample ].begin(), tbls[ sample ].end() );
+        for (int q = 0; q < tblq.quantiles.size(); ++q) {
+            tblq.lengths[ sample ].push_back( tbls[ sample ][ (int)(tblq.quantiles[q] * max_iterations) ] );
+            cout << " [" << tblq.quantiles[q] << ":] " << tblq.lengths[ sample ].back();
+        }
+        cout << endl;
+    }
+    
+    return tblq;
+}
+
+
 vector<double> calculate_median_survival_distances( Model model, int min_num_events_per_epoch = 200 ) {
 
     // we want to change model attributes inside this function only
@@ -254,7 +290,8 @@ void pfARG_core(PfParam &pfARG_para,
     Segment *Segfile     = pfARG_para.Segfile;
 
     vector<double> median_survival = calculate_median_survival_distances( *model );
-
+    TerminalBranchLengthQuantiles tblq = calculate_terminal_branch_length_quantiles( *model );
+    
     /* load the recombination guide rates into the model */
     pfARG_para.setModelRates();
 
@@ -292,7 +329,7 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware );
+        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware, tblq );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );

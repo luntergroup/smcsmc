@@ -35,6 +35,7 @@ ForestState::ForestState( Model* model,
                           PfParam* pfparam,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
+              lookahead_weight_(1.0),
               pfparam( *pfparam ),
               recent_recombination_count(0) {
 
@@ -61,6 +62,7 @@ ForestState::ForestState( Model* model,
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
+             lookahead_weight_( copied_state.lookahead_weight_), 
              pfparam( copied_state.pfparam ),
              recent_recombination_count( copied_state.recent_recombination_count) {
 
@@ -328,11 +330,6 @@ void ForestState::resample_recombination_position(void) {
 }
 
 
-/*!
- * Calculate the marginal likelihood of a node recursively.
- *
- * * */
-
 inline double fastexp(double x) {
     // Based on a generalized continued fraction.  Just one division, two multiplications.
     // The approximate branch is used only for |x|<0.03, where the relative error is < 1e-10
@@ -345,6 +342,113 @@ inline double fastexp(double x) {
     }
 }
     
+
+void ForestState::includeLookaheadLikelihood( const Segment& segment, const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
+
+    if (pfparam.auxiliary_particle_filter == 0)
+        return;
+
+    // extract rho and mu and nsam
+    // note: this assumes the current \rho is constant -- will not work well with hotspots and focused sampling!
+    int cur_rec_idx = model().get_position_index();
+    double cur_recomb_segment_start = model().change_position(cur_rec_idx);
+    if (current_base() <= cur_recomb_segment_start) --cur_rec_idx;
+    double recomb_rate = model().recombination_rate( cur_rec_idx );
+    if (pfparam.recomb_bias.using_posterior_biased_sampling()) {
+        recomb_rate = pfparam.recomb_bias.get_true_rate();
+    }
+    const double mut_rate = model().mutation_rate();
+    const int nsam = model().sample_size();
+    
+    // compute the likelihood.  First singletons
+    double likelihood = 1.0;
+    double rho_tbl = 2 * recomb_rate * (nsam - 1) / nsam;
+    Node* node = nodes()->first();
+    int num_leaves = 0;
+    vector<const Node*> leaves( nsam );
+    while (num_leaves < nsam) {
+        if (node->in_sample()) {
+            num_leaves++;
+            int i = node->label() - 1;
+            leaves[i] = node;
+            double li = node->getLocalParent()->height();
+            double si = segment.first_singleton_distance[i];
+            double li_rho = li * rho_tbl;
+            double rel_mut_rate = segment.relative_mutation_rate[i];
+            double li_mu = li * mut_rate * rel_mut_rate;
+            double fe = fastexp(-(li_rho + li_mu) * abs(si));
+            double p = 0;
+            for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
+                // integrate over the distribution of terminal branch lengths, for this branch i
+                double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
+                double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
+                double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
+                double lprime_mu = l_prime * mut_rate * rel_mut_rate;
+                double div = (li_rho + li_mu - lprime_mu);
+                if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
+                    lprime_mu = lprime_mu * 1.0001;
+                }
+                if (si > 0) {
+                    // mutation present
+                    p += (qtop-qbot) * (( li_rho * lprime_mu * fastexp(-lprime_mu * si) +
+                                          (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
+                                        / (li_rho + li_mu - lprime_mu) );
+                } else {
+                    // missing data - no mutation
+                    p += (qtop-qbot) * (( li_rho * fastexp(-lprime_mu * (-si)) +
+                                          (li_mu - lprime_mu) * fe )
+                                        / (li_rho + li_mu - lprime_mu) );
+                }
+            }
+            //cout << " Leaf " << i << " d=" << si << " ht=" << li << " p=" << p;
+            likelihood *= p;
+        }
+        node = node->next();
+    }
+
+    // next doubletons
+    double l_mean = 0.0;
+    for (const Node* node : leaves) l_mean += node->getLocalParent()->height();
+    l_mean /= nsam;
+    double rho_c = 4 * recomb_rate * (nsam - 2) / nsam;
+    double rhoprime_c = recomb_rate * (nsam - 1);
+    int ph1, ph2;
+    for (const Segment::Doubleton& d : segment.doubleton) {
+        // do we have the cherry?  Check greedily by considering all phasings
+        for (ph1 = 0; ph1 <= d.unphased_1; ph1++) {
+            for (ph2 = 0; ph2 <= d.unphased_2; ph2++) {
+                if (leaves[d.seq_idx_1 + ph1]->parent() == leaves[d.seq_idx_2 + ph2]->parent()) {
+                    // we do
+                    double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
+                    double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
+                    double p = exp_rho + (2.0/(3*(nsam-1))) * (1.0 - exp_rho);
+                    likelihood *= p;
+		    //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
+                    ph1 = ph2 = 99;
+                }
+            }
+        }
+        if (ph1 < 99) {
+            // we don't
+            double p = (2.0/(3*(nsam-1))) * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance));
+            likelihood *= p;
+	    //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
+        }
+    }
+
+    //cout << " Lookahead: " << likelihood << endl;
+    
+    // actually include the lookahead likelihood into the pilot weight
+    lookahead_weight_ *= likelihood;
+    pilot_weight_ *= likelihood;
+}
+
+
+/*!
+ * Calculate the marginal likelihood of a node recursively.
+ *
+ * * */
+
 inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]) {
 
     // deal with the case that this node is a leaf node
@@ -463,7 +567,7 @@ double ForestState::find_delay( double coal_height ) {
 
 
 void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
-			       vector<ForestState*>* pParticleContainer) {
+                               vector<ForestState*>* pParticleContainer) {
 
     double updated_to = this->site_where_weight_was_updated();
     double track_local_tree_branch_length;
@@ -490,8 +594,8 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         // presence or absence of mutations on corresponding branches.
         // These branches do not contribute to localTreeBranchLength
         adjustWeights( fastexp( -model().mutation_rate()
-				* track_local_tree_branch_length
-				* (new_updated_to - updated_to) ) );
+                                * track_local_tree_branch_length
+                                * (new_updated_to - updated_to) ) );
 
         assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength( data_at_site )) < 1e-4);
         
@@ -531,7 +635,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         //
         // Note that the importance weight is for a single particle, even if multiplicity() > 1.
         if(model().biased_sampling) {
-	  adjustWeights( importance_weight_over_segment( updated_to, new_updated_to ) );
+          adjustWeights( importance_weight_over_segment( updated_to, new_updated_to ) );
         }
 
         // Rescue the invariant

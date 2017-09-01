@@ -101,6 +101,15 @@ public:
 };
 
 
+// quantiles of the terminal branch lengths
+class TerminalBranchLengthQuantiles {
+public:
+    TerminalBranchLengthQuantiles() {}
+    vector<double> quantiles;        // between 0 and 1, ordered
+    vector<vector<double>> lengths;  // [lineage][quantile]
+};
+
+
 /*!
  * \brief Derived class from Forest.
  * A particle is a special case of a Forest, with special members
@@ -166,6 +175,10 @@ private:
     void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
     void restore_recomb_state() { writable_model()->resetSequencePosition( _current_seq_idx ); }
 
+    // Auxiliary particle filter
+    void includeLookaheadLikelihood( const Segment& segment, const TerminalBranchLengthQuantiles& terminal_branch_lengths );
+    void removeLookaheadLikelihood() { pilot_weight_ /= lookahead_weight_; lookahead_weight_ = 1.0; }
+    
     // Biased sampling
     void adjustWeights(double adjustment) {
         posterior_weight_ *= adjustment;
@@ -213,6 +226,7 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
+    double lookahead_weight_;
     int    multiplicity_;
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     double first_event_height_;                      // NOTE: this is a temporary variable; move elsewhere?

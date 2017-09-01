@@ -89,7 +89,7 @@ void Segment::prepare(){
                     // column 3 is T or F; ignore the value, but require the next column to also be T/F,
                     // and the column after that the chromosome
                     if ( col_starts.size() != 6 )
-                        throw InvalidSeg("Require 6 columns");
+                        throw InvalidSeg("Require 6 (or 3) columns");
                     if ( ( tmp_line[ col_starts[3] ] != 'T' && tmp_line[ col_starts[3] ] != 'F' ) ||
                          tmp_line[ col_starts[3] + 1 ] != '\t' )
                         throw InvalidSeg("Expected T or F in .seg file column 3 and 4");
@@ -100,7 +100,7 @@ void Segment::prepare(){
                 } else {
                     // column 3 is neither T nor F.  Assume alternative format, with just allele following
                     if ( col_starts.size() != 3 )
-                        throw InvalidSeg("Require 3 columns");
+                        throw InvalidSeg("Require 3 (or 6) columns");
                     allele = extract_field_VARIANT ( string( tmp_line.c_str() + col_starts[2] ) );
                     chrom_ = 1; // dummy value
                 }
@@ -155,7 +155,7 @@ void Segment::prepare(){
     // set phasing status for the sequence columns
     this->phased.clear();
     for( SegDatum sd : buffer ) {
-        for( int idx=0; idx < sd.allele_state.size(); ++idx ) {
+        for( size_t idx=0; idx < sd.allele_state.size(); ++idx ) {
             if (phased.size() < idx) phased.push_back(true);
             if (sd.allele_state[idx] == 2)
                 phased[idx] = false;
@@ -220,37 +220,84 @@ void Segment::read_new_line(){
 void Segment::set_lookahead() {
     /* sets variables used by the Auxiliary Particle Filter implementation */
     first_singleton_distance.clear();
-    first_singleton_distance.resize( nsam_ );
+    first_singleton_distance.resize( nsam_, 0.0 );
+    relative_mutation_rate.clear();
+    relative_mutation_rate.resize( nsam_, 0.0 );
     doubleton.clear();
 
-    vector<bool> found_doubleton( nsam_ );   // records which sequences have participated in a doubleton
+    double max_missing_data = 2000;
+
+    vector<bool> found_doubleton( nsam_ );     // records which sequences have participated in a doubleton
     int num_singletons = 0;
     int num_doubleton_sequences = 0;
+    double total_length_times_branches = 0.1;  // used to calculate weighing for mutation rate due to missing data
+    double total_length_times_branches_missing = 0.1;
+    double total_current_missing = 0.0;        // current streak of missingness in any lineage
+    double last_singleton_distance = 0.0;      // position of last singleton used; for bailing out the doubleton loop
 
-    for ( int i = current_buf_index_; i < buffer.size(); i++ ) {
+    double distance = 0.0;
+    for ( size_t i = current_buf_index_; i < buffer.size(); i++ ) {
         // is mutation at  i  a singleton, doubleton, or something else?
         // also identify the samples; take the first possible in case of unphased hets
         int num_var = 0;
+        int num_missing = 0;
         int s1 = -1, s2 = -1;
-        for ( int j = 0; j < nsam_ ; j++ ) {
-            if (buffer[i].allele_state[j]) {
+        for ( size_t j = 0; j < nsam_ ; j++ ) {
+            if (buffer[i].allele_state[j] > 0) {
                 num_var++;  // count the mutation
                 if (num_var==1) s1 = j;
                 if (num_var==2) s2 = j;
                 if (buffer[i].allele_state[j] == 2)
-                    j++;    // skip next sample, in case of a diploid unphased het
+                    j++;    // skip next sample, in case of a diploid unphased het, to avoid counting het twice
+            }
+            if (buffer[i].allele_state[j] == -1) {
+                // missing data
+                num_missing++;
+                // keep track of current streak of missing data
+                if (num_missing == 1)
+                    total_current_missing += buffer[i].segment_length;
+                // if stretch of missing data is too long, stop recording this lineage.
+                // Mark singleton if necessary, with the negative of the distance to START of segment
+                // Also mark sequence as participating (i.e. not able to participate) in doubletons
+                if (total_current_missing > max_missing_data) {
+                    if (first_singleton_distance[i] == 0) {
+                        // no singleton yet seen in this lineage; stop looking and mark as "no mutation seen" (negative distance)
+                        const double epsilon = 1e-3;
+                        first_singleton_distance[i] = -(buffer[i].segment_start - buffer[current_buf_index_].segment_start) - epsilon;
+                        relative_mutation_rate[i] = total_length_times_branches_missing / total_length_times_branches;
+                        num_singletons++;
+                        last_singleton_distance = -first_singleton_distance[i];
+                    }
+                    if (!found_doubleton[i]) {
+                        // no doubleton yet found that uses this lineage; stop looking
+                        found_doubleton[i] = true;
+                        num_doubleton_sequences++;
+                    }
+                }
             }
         }
-        // now loop over doubletons, and see (i) if we already have this doubleton (if one),
-        // and (ii) which existing doubletons are incompatible with this allele
+        // reset missing streak if warranted
+        if (num_missing == 0) 
+            total_current_missing = 0.0;
+        // update total length, taking account of missing data
+        total_length_times_branches         += buffer[i].segment_length * nsam_;
+        total_length_times_branches_missing += buffer[i].segment_length * (nsam_ - num_missing);
+        // if a long streak of missing data is encountered, stop since we then are unsure of existence of singletons and doubletons
+        if (total_current_missing > 2000)
+            continue;
+
         double have_doubleton = false;
-        double distance = buffer[i].segment_start + buffer[i].segment_length - buffer[current_buf_index_].segment_start;
+        distance = buffer[i].segment_start + buffer[i].segment_length - buffer[current_buf_index_].segment_start;
         if (num_var == 1) { // a singleton
             if (first_singleton_distance[s1] == 0) {
                 first_singleton_distance[s1] = distance;
+                relative_mutation_rate[s1] = total_length_times_branches_missing / total_length_times_branches;
                 num_singletons++;
+                last_singleton_distance = first_singleton_distance[s1];
             }
         } else { // not a singleton
+            // now loop over doubletons, and see (i) if we already have this doubleton (if one),
+            // and (ii) which existing doubletons are incompatible with this allele
             for ( Doubleton& d : doubleton ) {
                 if ( ( (d.seq_idx_1 | 1) == d.seq_idx_2 &&         // cherry involves one individual
                         buffer[i].allele_state[d.seq_idx_1] == 2)  // the non-singleton mutation has a het at the individual
@@ -267,8 +314,9 @@ void Segment::set_lookahead() {
                     have_doubleton = true;
                     // if no incompatible evidence for existing doubleton was found yet,
                     // this is the latest evidence for presence of the doubleton we know
-                    if (!d.incompatible)
+                    if (!d.incompatible) {
                         d.last_evidence_distance = distance;
+                    }
                 }
             }
         }
@@ -281,7 +329,9 @@ void Segment::set_lookahead() {
                     if (!found_doubleton[s1+d1] && !found_doubleton[s2+d2]) {
                         // use the original s1 s2 indices to mark the doubleton, so that we can match on the original indices
                         // at (@) above
-                        doubleton.push_back( Doubleton( s1, s2, distance, distance ) );
+                        doubleton.push_back( Doubleton( s1, s2, distance, distance,
+                                                        buffer[i].allele_state[s1] == 2,
+                                                        buffer[i].allele_state[s2] == 2 ) );
                         // mark sequences participating in doubletons, and count them
                         found_doubleton[s1+d1] = true; num_doubleton_sequences++;
                         found_doubleton[s2+d2] = true; num_doubleton_sequences++;
@@ -292,17 +342,29 @@ void Segment::set_lookahead() {
             }
         }
         // bail out if we're done
-        if (num_singletons == nsam_ && num_doubleton_sequences >= nsam_ - 1) break;
+        if ((num_singletons == (int)nsam_) && num_doubleton_sequences >= (int)nsam_ - 1) break;
+        // also bail out if way beyond last singleton, to avoid very long searches (it's a quadratic algo after all!)
+        if ((num_singletons == (int)nsam_) && distance > 2*last_singleton_distance) break;
+    }
+    // If we ran off the input sequence, fill in any missing singleton entries
+    if (num_singletons < (int)nsam_) {
+        for ( size_t j = 0; j < nsam_ ; j++ ) {
+            if (first_singleton_distance[j] == 0) {
+                first_singleton_distance[j] = -distance;
+                relative_mutation_rate[j] = total_length_times_branches_missing / total_length_times_branches;
+            }
+        }
     }
     // Debug output
     if (0) {
         cout << current_buf_index_ << " " << buffer[current_buf_index_].segment_start << " ";
-        for ( int j = 0; j < nsam_ ; j++ ) cout << buffer[current_buf_index_].allele_state[j];
-        for ( int j = 0; j < nsam_ ; j++ ) cout << " S:" << first_singleton_distance[j];
+        for ( size_t j = 0; j < nsam_ ; j++ ) cout << buffer[current_buf_index_].allele_state[j];
+        for ( size_t j = 0; j < nsam_ ; j++ ) cout << " S:" << first_singleton_distance[j];
         for ( Doubleton d : doubleton )
             cout << " D:" << d.seq_idx_1 << "," << d.seq_idx_2 << ":"
                  << d.first_evidence_distance << "-" << d.last_evidence_distance;
         cout << endl;
+        for ( size_t j = 0; j < nsam_ ; j++ ) cout << " M:" << relative_mutation_rate[j]; cout << endl;
     }
 }
 
@@ -325,6 +387,11 @@ vector<int> Segment::extract_field_VARIANT ( const string field ) {
             default: throw InvalidSeg("Unknown character found in .seg file; expect one of '.', '/', '0' or '1'.");
         }
         allelic_state_at_seg_end.push_back ( seg_content );
+        if ( seg_content == -1 && (i % 2) == 1 ) {
+            if (!(allelic_state_at_seg_end[i-1] == -1)) {
+                throw InvalidSeg("Found inconsistent unphased heterozygous marks");
+            }
+        }
     }
     return allelic_state_at_seg_end;
 }

@@ -23,6 +23,7 @@
 
 #include "particleContainer.hpp"
 
+
 /*! \brief Particle filtering Initialization
  * Create particle initial states in the simulation
  *
@@ -93,7 +94,7 @@ void ParticleContainer::print_recent_recombination_histogram() {
  */
 void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site ){
 
-    dout << endl<<" We are extending particles" << endl<<endl;
+    dout << endl<<" We are extending " << particles.size() << " particles" << endl<<endl;
 
     // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
     int num_leaves_missing = 0;
@@ -169,26 +170,33 @@ bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const ve
 /*! \brief Update particle weight according to the haplotype or genotype data
  *      @ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware ){
+void ParticleContainer::update_weight_at_site( const Segment& segment,
+					       bool ancestral_aware,
+					       const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
 
+    const vector<int>& data_at_tips = segment.allelic_state_at_Segment_end;
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
     double normalization_factor = 1.0 / num_configurations;
 
     // now update the weights of all particles, by calculating the likelihood of the data over the previous segment
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+	// marginalize over haplotype configurations consistent with (possibly unphased) genotype configuration
         double likelihood_of_haplotype_at_tips = 0;
         do {
-
             likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware, haplotype_at_tips );
-
         } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        // the following assertion checks appropriate importance factors have been accounted for
-        //   if we ever change the emission factor of the sampling distribution, this assertion should fail
+	// remove possible previous lookahead likelihood for auxiliary particle filter
+	this->particles[particle_i]->removeLookaheadLikelihood();
+
+	// include likelihood
         this->particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
+
+	// include lookahead likelihood into pilotWeight, to guide resampling
+	this->particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
     }
 }
 
@@ -223,7 +231,8 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
     
     dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << num_particle_records
          << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
-    
+
+    int result;
     if ( ess < pfparam.ESSthreshold - 1e-6 ) {
 
         // Dropped below ESS threshold -- resample
@@ -231,7 +240,7 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
         pfparam.append_resample_file( update_to, ess );
         systematic_resampling( partial_sums, sample_count );
         implement_resampling( sample_count, wi_sum);
-        return 1;
+        result = 1;
         
     } else {
 
@@ -243,9 +252,12 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
                 particles[state_index]->flushOldRecombinations();
             }
         }
-        return 0;
+        result = 0;
 
     }
+
+    return result;
+    
 }
 
 
@@ -371,27 +383,29 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( Segment * Segfile, bool ancestral_aware ) {
+void ParticleContainer::update_state_to_data( Segment * segment,
+					      bool ancestral_aware,
+					      const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
-    dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
+    dout << " ### PROGRESS: update weight at " << segment->segment_start()<<endl;
 
     // Allelic state; -1 = absent, 0,1 are ref/alt, 2 = part of het site
-    const vector<int>& data_at_site = Segfile->allelic_state_at_Segment_end;
+    const vector<int>& data_at_site = segment->allelic_state_at_Segment_end;
 
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ), data_at_site );
+    extend_ARGs( (double)min(segment->segment_end(), (double)model->loci_length() ), data_at_site );
 
     //Update weight for seeing mutation at the position
     dout << " Update state weight at a SNP "<<endl;
-    if (Segfile->segment_state() == SEGMENT_INVARIANT) {
+    if (segment->segment_state() == SEGMENT_INVARIANT) {
         // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
         // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
         // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
         // for a mutation in a MISSING segment.
-        update_weight_at_site( Segfile->allelic_state_at_Segment_end, ancestral_aware );
+        update_weight_at_site( *segment, ancestral_aware, terminal_branch_lengths );
         // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
-        //   position. This would replace the blanket ancestral_aware with a Segfile->ancestral_aware.
+        //   position. This would replace the blanket ancestral_aware with a segment->ancestral_aware.
         //   We could also include a likelihood of 0 being ancestral.
     }
 

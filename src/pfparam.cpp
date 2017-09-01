@@ -137,6 +137,11 @@ void PfParam::parse(int argc, char *argv[]) {
             this->delay_type = RESAMPLE_DELAY_COALMIGR;
         } else if ( *argv_i == "-ancestral_aware" ){
             this->ancestral_aware = true;
+	} else if ( *argv_i == "-apf" ) {
+	    this->auxiliary_particle_filter = this->readNextInput<int>();
+	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 1) {
+		throw OutOfRange( "-apf", *argv_i );
+	    }
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -208,6 +213,7 @@ void PfParam::init(){
     this->delay            = 0.5;
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
+    this->auxiliary_particle_filter = 0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;
@@ -307,6 +313,11 @@ void PfParam::finalize(){
     this->recombination_map_NAME = out_NAME_prefix + ".recomb.gz";
     this->resample_NAME          = out_NAME_prefix + ".resample";
 
+    // currently, using guided sampling is incompatible with auxiliary particle filters (see includeLookaheadLikelihood)
+    if ( (input_RecombinationBiasFileName.size() > 0) && (auxiliary_particle_filter > 0) ) {
+	throw std::invalid_argument(std::string("Recombination guiding and auxiliary particle filters cannot currently be used together"));
+    }
+    
     // remove any existing files with these names
     remove( this->outFileName.c_str() );
     remove( this->log_NAME.c_str() );
@@ -526,6 +537,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-delay"         << setw(8) << "FLT" << "  --  " << "How much to delay application of importance weight due to bias (fraction of survival time)[ " << delay << "]" << endl;
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
+    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0 or 1) [ 0 ]" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
