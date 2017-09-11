@@ -366,6 +366,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     Node* node = nodes()->first();
     int num_leaves = 0;
     vector<const Node*> leaves( nsam );
+    vector<double> mut_prob( nsam );
     while (num_leaves < nsam) {
         if (node->in_sample()) {
             num_leaves++;
@@ -378,6 +379,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
             double li_mu = li * mut_rate * rel_mut_rate;
             double fe = fastexp(-(li_rho + li_mu) * abs(si));
             double p = 0;
+            mut_prob[i] = li_mu;
             for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
                 // integrate over the distribution of terminal branch lengths, for this branch i
                 double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
@@ -421,7 +423,9 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
                     // we do
                     double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
                     double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
-                    double p = exp_rho + (2.0/(3*(nsam-1))) * (1.0 - exp_rho);
+                    // include a factor for at least 1 mutation - using half the average of the mutation rates on terminal branches
+                    double mutprob = (mut_prob[d.seq_idx_1+ph1] + mut_prob[d.seq_idx_2+ph2]) * 0.25;
+                    double p = mutprob * (exp_rho + (2.0/(3*(nsam-1))) * (1.0 - exp_rho));
                     likelihood *= p;
 		    //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
                     ph1 = ph2 = 99;
@@ -430,13 +434,15 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         }
         if (ph1 < 99) {
             // we don't
-            double p = (2.0/(3*(nsam-1))) * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance));
+            // include a term for a double mutation (to cover the case that first_evidence_distance == 0)
+            double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.25;
+            double p = mutprob * (mutprob + (1.0 - mutprob) * (2.0/(3*(nsam-1))) * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance)));
             likelihood *= p;
-	    //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
+	    //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
         }
     }
 
-    //cout << " Lookahead: " << likelihood << endl;
+    //cout << "Lookahead: " << likelihood << endl;
     
     // actually include the lookahead likelihood into the pilot weight
     lookahead_weight_ *= likelihood;
@@ -809,7 +815,7 @@ double ForestState::sampleOrMeasureWeightedTree( const Node* node,
         if (recomb_guide) {
             const RecombBiasSegment& rbs = pfparam.recomb_bias.get_recomb_bias_segment(model().get_position_index());
             if (current_base() < rbs.get_locus() || current_base() > rbs.get_end()) {
-                cout << " current base: " << current_base() << endl;
+                cout << "Problem: current base: " << current_base() << endl;
                 cout << " rbs segment: [" << rbs.get_locus() << "," << rbs.get_end() << ")" << endl;
                 throw std::runtime_error("Current base not in expected rbs segment!  Should never happen!");
             }
