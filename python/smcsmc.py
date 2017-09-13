@@ -73,6 +73,7 @@ class Smcsmc:
             (2, '-bias_heights', 't0..tn', 'Set recombination bias times to h0..hn * 4N0'),
             (2, '-bias_strengths','s1..sn','Set recombination bias strenghts'),
             (2, '-calibrate_lag','s','Explanation required!'),
+            (2, '-apf', 'b',    'Whether to use auxiliary particle filter (b=1) or not (b=0, default)'),
             
             (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),
             (3, '-cap', 'n',    'Set (unscaled) upper bound on effective population size'),

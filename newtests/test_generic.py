@@ -71,6 +71,7 @@ class TestGeneric(unittest.TestCase):
         self.bias_heights = [400]
         self.bias_strengths = [2,1]
         self.filename_disambiguator = ""
+        self.aux_part_filt = 0            # 1 to use auxiliary particle filter
         self.int_parameter = 0
         self.str_parameter = ""
         # state:
@@ -162,6 +163,7 @@ class TestGeneric(unittest.TestCase):
         mstepopt = ""
         maxneopt = ""
         chunksopt = ""
+        apfopt = ""
             
         if self.maxNE < 1e99: maxneopt = "-cap {}".format(self.maxNE)
 
@@ -190,8 +192,11 @@ class TestGeneric(unittest.TestCase):
 
         if not self.m_step:
             mstepopt = "-no_m_step"
+
+        if self.aux_part_filt > 0:
+            apfopt = "-apf {}".format(self.aux_part_filt)
             
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} {apf} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -202,6 +207,7 @@ class TestGeneric(unittest.TestCase):
                                      guide = guideopt,
                                      maxne = maxneopt,
                                      chunks = chunksopt,
+                                     apf = apfopt,
                                      lag = lagopt,
                                      epochs = epochopt,
                                      seed = seedopt,
@@ -472,6 +478,7 @@ class TestGeneric(unittest.TestCase):
                 bias_strengths           = Column(String)
                 guided_recomb_alpha      = Column(Float)
                 guided_recomb_beta       = Column(Float)
+                aux_part_filt            = Column(Integer)
                 dataseed                 = Column(Integer)
                 infseed                  = Column(Integer)
                 smcsmc_runtime           = Column(Float)
@@ -527,6 +534,7 @@ class TestGeneric(unittest.TestCase):
                                bias_strengths           = ' '.join(map(str,self.bias_strengths)) if self.bias_strengths else self.bias_strengths,
                                guided_recomb_alpha      = self.guided_recomb_alpha,
                                guided_recomb_beta       = self.guided_recomb_beta,
+                               aux_part_filt            = self.aux_part_filt,
                                dataseed                 = self.pop.seed[0],
                                infseed                  = self.seed[0],
                                smcsmc_runtime           = self.smcsmc_runtime,

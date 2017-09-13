@@ -12,15 +12,16 @@ import math
 
 # parameters for this experiment
 inference_reps = 10
-seqlen = 100e6
-particles = 10000
-emiters = 30
+seqlen = 1e6 #100e6
+particles = 100 # 10000
+emiters = 2 # 30
 lagfactors = [1.0]
 nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 focus_heights=[[800]]
 focus_strengths=[[1,1],[3,0.9999]]
 delays=[0,0.5]
+apfs=[0]
 
 # name of this experiment
 experiment_name = "zigzag_focusing"
@@ -36,16 +37,28 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 # define the experiments
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed,
                     'numparticles':numparticles, 'lag':lag, 'nsam':nsam,
-                    'biasheights':biasheights, 'biasstrengths':biasstrengths, 'delay':delay}
-                   for (seqlen, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay) in (
+                    'biasheights':biasheights, 'biasstrengths':biasstrengths, 'delay':delay, 'apf':apf}
+                   for (seqlen, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay, apf) in (
                         # repetitions with unique data
-                        [(seqlen, 100+rep, 100+rep, particles, lag, ns, bh, bs, d)
-                         for rep, lag, ns, bh, bs, d in itertools.product(range(inference_reps), lagfactors, nsam, focus_heights, focus_strengths, delays)] )]
+                        [(seqlen, 100, 100+rep, particles, lag, ns, bh, bs, d, a)
+                         for rep, lag, ns, bh, bs, d, a in
+                         itertools.product(range(inference_reps), lagfactors, nsam, focus_heights, focus_strengths, delays, apfs)] )]
 
 
 # run an experiment.  keyword parameters must match those in experiment_pars
-def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay ):
-    label = "L{}_S{}_I{}_P{}_G{}_NSAM{}_BH{}_BS{}_D{}".format(int(length),simseed,infseed,numparticles, lag, nsam, biasheights, biasstrengths, delay)
+def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay, apf ):
+    label = "L{}_S{}_I{}_P{}_G{}_NSAM{}_BH{}_BS{}_D{}_A{}".format(
+        int(length),
+        simseed,
+        infseed,
+        numparticles,
+        lag,
+        nsam,
+        "_".join(map(str,biasheights)),
+        "_".join(map(str,biasstrengths)),
+        delay,
+        apf
+    )
     label = label.replace(" ","")
     if experiment_base.have_result( name = experiment_name,
                                     sequence_length = length,
@@ -56,6 +69,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
                                     num_samples = nsam,
                                     bias_heights = str(biasheights),
                                     bias_strengths = str(biasstrengths),
+                                    aux_part_filt = apf,
                                     str_parameter = str(delay) ):
         print "Skipping " + label
         return
@@ -107,6 +121,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.chunks = chunks
     e.delay_type = "recomb"
     e.delay = delay
+    e.aux_part_filt = apf
     e.str_parameter = str(delay)
     
     # perform inference and store results
