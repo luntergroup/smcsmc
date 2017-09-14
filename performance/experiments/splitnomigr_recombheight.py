@@ -4,8 +4,11 @@ import itertools
 ###################################################################################
 #
 # experiment:
-#  the classic ancient model 3 which originally demonstrated the need for FSDR
-#  trying multi-tiered focus to try to improve post-split estimates
+#  THE NAME OF THIS EXPERIMENT IS MISLEADING
+#  this is the splitnomigr model with FS
+#  I have named it splitnomigr_recombheight to be consistent with the unidrimigr
+#   experiment of a similar name. However the unidirmigr experiment contains the
+#   naive and FSDR as well. This does not, as those are in splitnomigr_convergence
 #
 ###################################################################################
 
@@ -18,17 +21,17 @@ emiters = 30
 lagfactor = 1.0
 nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
-focus_heights = [[2240,3440,4240]] # also focus on the 20ky below the split
-focus_strengths = [[3,.9999,3,.9999]]
-delays = [0.5]
+focus_heights = [[2240]]
+focus_strengths = [[3,0.9999]]
+delays = [0]
 
 # name of this experiment
-experiment_name = "am3_mtf"
+experiment_name = "splitnomigr_recombheight"
 
 
 # class defining default population parameters
 import test_two_pops
-experiment_class = test_two_pops.TestTwoPopsAM3
+experiment_class = test_two_pops.TestTwoPopsSplitNoMigr
 
 
 # define the experiments
@@ -67,6 +70,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.filename_disambiguator = label
     if nsam == 4:
         e.pop.sample_populations = [1,1,2,2]
+    e.pop.change_points = [0, .1, .5]
 
     # set inference parameters
     e.seqlen = length
@@ -80,9 +84,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.chunks = chunks
     e.popt = None
     e.delay = delay
-    e.str_parameter = str(delay)
     e.delay_type = "recomb"
-    e.smcsmc_change_points = [0, 0.056, 0.066, 0.106, 0.156, 0.356, 0.506]
 
     # perform inference and store results
     e.infer( case = simseed )

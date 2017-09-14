@@ -4,62 +4,50 @@ import itertools
 ###################################################################################
 #
 # experiment:
-#  bottleneck model, naive, FS, and FSDR
-#  (will compare this with a future unphased version)
+#  check single simseed for a variety of seqlens
+#  (to be compared with bottleneck_particle_vs_seqlen_falsestart Np=10k)
 #
 ###################################################################################
 
 
 # parameters for this experiment
 inference_reps = 10
-seqlen = 100e6
-particles = 3000
+seqlens = [10e6,50e6,100e6]
+particles = [10000]
 emiters = 30
-lagfactors = [1.0]
-nsam = [4]
+lag = 1.0
+nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
-#focus_heights=[[800],[2240]]
-focus_heights=[[800]]
-focus_strengths=[[1,1],[3,0.9999]]
-#delays=[0,0.5]
-delays=[0.5]
 
 # name of this experiment
-experiment_name = "bottleneck_focusing"
+experiment_name = "bottleneck_seqlen_constsimseed_falsestart"
 
 
 # class defining default population parameters
 import test_const_pop_size
-experiment_class = test_const_pop_size.TestConstPopSize
+experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
+
 
 # define the experiments
 experiment_pars = [{'length':seqlen, 'simseed':simseed, 'infseed':infseed,
-                    'numparticles':numparticles, 'lag':lag, 'nsam':nsam,
-                    'biasheights':biasheights, 'biasstrengths':biasstrengths, 'delay':delay}
-                   for (seqlen, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay) in (
+                    'numparticles':numparticles, 'lag':lag, 'nsam':nsam}
+                   for (seqlen, simseed, infseed, numparticles, lag, nsam) in (
                         # repetitions with unique data
-                        [(seqlen, 100+rep, 100+rep, particles, lag, ns, bh, bs, d)
-                         for rep, lag, ns, bh, bs, d in itertools.product(range(inference_reps), lagfactors, nsam, focus_heights, focus_strengths, delays)] )]
+                        [(seqlen, 100, 100+rep, np, lag, ns)
+                         for rep, np, seqlen, ns in itertools.product(range(inference_reps), particles, seqlens, nsam)] )]
 
 
 # run an experiment.  keyword parameters must match those in experiment_pars
-def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay ):
-    label = "L{}_S{}_I{}_P{}_G{}_NSAM{}_BH{}_BS{}_D{}".format(int(length),simseed,infseed,numparticles, lag, nsam, biasheights, biasstrengths, delay)
-    label = label.replace(" ","")
+def run_experiment( length, simseed, infseed, numparticles, lag, nsam ):
+    label = "L{}_S{}_I{}_P{}_G{}_NSAM{}".format(int(length),simseed,infseed,numparticles, lag, nsam)
     if experiment_base.have_result( name = experiment_name,
                                     sequence_length = length,
                                     dataseed = simseed,
                                     infseed = infseed,
                                     np = numparticles,
                                     lag = lag,
-                                    num_samples = nsam,
-                                    bias_heights = str(biasheights),
-                                    bias_strengths = str(biasstrengths),
-                                    str_parameter = str(delay) ):
+                                    num_samples = nsam):
         print "Skipping " + label
-        return
-    if biasstrengths==[1,1] and (delay==0 or biasheights==[2240]):
-        print "Skipping redundant parameters combinations"
         return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( experiment_base.datapath + experiment_name )
@@ -92,13 +80,9 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.np = numparticles
     e.lag = lag
     e.em = emiters-1
-    e.bias_heights = biasheights
-    e.bias_strengths = biasstrengths
+    e.bias_heights = None
     e.smcsmcpath = experiment_base.smcsmcpath
     e.chunks = chunks
-    e.delay_type = "recomb"
-    e.delay = delay
-    e.str_parameter = str(delay)
     
     # perform inference and store results
     e.infer( case = simseed )
