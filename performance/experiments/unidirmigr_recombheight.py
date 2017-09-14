@@ -13,15 +13,16 @@ import itertools
 inference_reps = 10
 seqlen = 100e6
 #particles = [3000,10000]
-particles = [10000]
+particles = [3000]
 emiters = 30
 lagfactor = 1.0
 nsam = [8]
 chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
-focus_heights = [[400],[800],[2240]]
+#focus_heights = [[400],[800],[2240]]
+focus_heights = [[2240]]
 #focus_strengths = [[2,0.9999],[3,0.9999]]
-focus_strengths = [[2,0.9999]]
-delays = [0.5]
+focus_strengths = [[3,0.9999]]
+delays = [0]
 
 # name of this experiment
 experiment_name = "unidirmigr_recombheight"
