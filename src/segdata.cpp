@@ -224,7 +224,9 @@ void Segment::set_lookahead() {
     relative_mutation_rate.clear();
     relative_mutation_rate.resize( nsam_, 0.0 );
     doubleton.clear();
+    first_split_distance = -1;
 
+    /* hardcoded threshold of total length of missing data; beyond this no mutation will be recorded */
     double max_missing_data = 2000;
 
     vector<bool> found_doubleton( nsam_ );     // records which sequences have participated in a doubleton
@@ -239,8 +241,7 @@ void Segment::set_lookahead() {
     for ( size_t i = current_buf_index_; i < buffer.size(); i++ ) {
         // is mutation at  i  a singleton, doubleton, or something else?
         // also identify the samples; take the first possible in case of unphased hets
-        int num_var = 0;
-        int num_missing = 0;
+        int num_var = 0, num_missing = 0;
         int s1 = -1, s2 = -1;
         for ( size_t j = 0; j < nsam_ ; j++ ) {
             if (buffer[i].allele_state[j] > 0) {
@@ -250,12 +251,10 @@ void Segment::set_lookahead() {
                 if (buffer[i].allele_state[j] == 2)
                     j++;    // skip next sample, in case of a diploid unphased het, to avoid counting het twice
             }
-            if (buffer[i].allele_state[j] == -1) {
-                // missing data
+            if (buffer[i].allele_state[j] == -1) {                                       // missing data
                 num_missing++;
-                // keep track of current streak of missing data
-                if (num_missing == 1)
-                    total_current_missing += buffer[i].segment_length;
+                if (num_missing == 1) total_current_missing += buffer[i].segment_length; // keep track of current streak of missing data
+
                 // if stretch of missing data is too long, stop recording this lineage.
                 // Mark singleton if necessary, with the negative of the distance to START of segment
                 // Also mark sequence as participating (i.e. not able to participate) in doubletons
@@ -340,6 +339,11 @@ void Segment::set_lookahead() {
                     }
                 }
             }
+        }
+        // now consider splits
+        if (first_split_distance == -1 && num_var > 2 && (int)nsam_ - num_var > 2) {
+            first_split_distance = distance;
+            allelic_state_at_first_split = buffer[i].allele_state;
         }
         // bail out if we're done
         if ((num_singletons == (int)nsam_) && num_doubleton_sequences >= (int)nsam_ - 1) break;

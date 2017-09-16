@@ -126,12 +126,13 @@ class Segment {
     vector<int> extract_field_VARIANT( const string field );
     void calculate_num_of_expected_mutations ( size_t nsam, double theta );
     Segment_State segment_state() const { return this->segment_state_; }
-    
 
     double num_of_expected_mutations_;
     bool end_data_;
-
 public:
+    // The allele information
+    vector <int> allelic_state_at_Segment_end;
+
     // Lookahead for Auxiliary Particle Filter implementation
     class Doubleton {
     public:
@@ -142,11 +143,17 @@ public:
         Doubleton( int i1, int i2, double d1, double d2, bool uph_1, bool uph_2 ) :
             seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2), unphased_1(uph_1), unphased_2(uph_2) {}
     };
-    
-    vector <int> allelic_state_at_Segment_end;
+
+    // singleton data:
     vector<double> first_singleton_distance;
     vector<double> relative_mutation_rate;       // to account for partially missing data
+    // doubleton data:
     vector<Doubleton> doubleton;
+    // split data:
+    double first_split_distance;
+    vector<int> allelic_state_at_first_split;
+
+    // Public methods
     bool empty_file () const      { return this->empty_file_; }
     double segment_start() const  { return segment_start_ - data_start_; }
     double segment_length() const { return segment_length_; }

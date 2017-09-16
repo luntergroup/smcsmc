@@ -414,6 +414,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     l_mean /= nsam;
     double rho_c = 4 * recomb_rate * (nsam - 2) / nsam;
     double rhoprime_c = recomb_rate * (nsam - 1);
+    double p_equilibrium = 2.0/(3*(nsam-1));
     int ph1, ph2;
     for (const Segment::Doubleton& d : segment.doubleton) {
         // do we have the cherry?  Check greedily by considering all phasings
@@ -425,7 +426,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
                     double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
                     // include a factor for at least 1 mutation - using half the average of the mutation rates on terminal branches
                     double mutprob = (mut_prob[d.seq_idx_1+ph1] + mut_prob[d.seq_idx_2+ph2]) * 0.25;
-                    double p = mutprob * (exp_rho + (2.0/(3*(nsam-1))) * (1.0 - exp_rho));
+                    double p = mutprob * (exp_rho + p_equilibrium * (1.0 - exp_rho));
                     likelihood *= p;
 		    //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
                     ph1 = ph2 = 99;
@@ -436,12 +437,22 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
             // we don't
             // include a term for a double mutation (to cover the case that first_evidence_distance == 0)
             double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.25;
-            double p = mutprob * (mutprob + (1.0 - mutprob) * (2.0/(3*(nsam-1))) * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance)));
+            double p = mutprob * (mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance)));
             likelihood *= p;
 	    //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
         }
     }
 
+    // finally, splits
+    if (segment.first_split_distance > -1) {
+        int counts[2];
+        cal_num_mutations( local_root(), segment.allelic_state_at_first_split, counts );
+        int count = min( counts[0], counts[1] );
+        // calculate probability.  Include mutation probability ^ count -- so return that as well?  Perhaps rather than
+        // count the number of mutations necessary, just use the ordinary likelihood and include actual branch lengths,
+        // and then modify to account for distance to current tree?  Seems more natural.
+    }
+        
     //cout << "Lookahead: " << likelihood << endl;
     
     // actually include the lookahead likelihood into the pilot weight
@@ -489,6 +500,34 @@ inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vect
 
     return;
 }
+
+
+inline void ForestState::cal_num_mutations(Node * node, const vector<int>& haplotype, int counts[2]) {
+
+    // deal with the case that this node is a leaf node
+    if ( node->first_child() == NULL ) {
+        assert ( node->in_sample() );                            // we only traverse the local tree, therefore leaf node must be in sample
+        assert ( node->label() <= haplotype.size() );
+        assert ( node->second_child() == NULL );                 // leaf (if a node has no first child, it won't have a second child)
+        int mutation_state = haplotype[ node->label() - 1 ];
+        counts[0] = mutation_state == 1 ? 1 : 0;                 // also encode state==-1 (missing data) and state==2 (het) as 0 (match)
+        counts[1] = mutation_state == 0 ? 1 : 0;                 // also encode state==-1 (missing data) and state==2 (het) as 0 (match)
+        return;
+    }
+
+    // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation
+    Node *left = trackLocalNode(node->first_child()); 
+    Node *right = trackLocalNode(node->second_child());
+    int counts_left[2], counts_right[2];
+    cal_num_mutations(left, haplotype, counts_left);
+    cal_num_mutations(right, haplotype, counts_right);
+
+    counts[0] = min( counts_left[0], 1+counts_left[1] ) + min( counts_right[0], 1+counts_right[1] );
+    counts[1] = min( counts_left[1], 1+counts_left[0] ) + min( counts_right[1], 1+counts_right[0] );
+
+    return;
+}
+
 
 
 /*!

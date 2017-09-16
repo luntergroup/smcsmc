@@ -149,6 +149,7 @@ private:
     // Update weight
     double calculate_likelihood( bool ancestral_aware, const vector<int>& haplotype ); /*!< \brief Calculate the likelihood of the genealogy */
     void cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]); /*!< Calculate the marginal likelihood of each node */
+    void cal_num_mutations(Node * node, const vector<int>& haplotype, int counts[2]);
     double trackLocalTreeBranchLength( const vector<int>& data_at_site );
     double trackSubtreeBranchLength ( Node * currentNode, const vector<int>& data_at_site );
     

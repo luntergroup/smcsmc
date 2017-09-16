@@ -139,9 +139,14 @@ void PfParam::parse(int argc, char *argv[]) {
             this->ancestral_aware = true;
 	} else if ( *argv_i == "-apf" ) {
 	    this->auxiliary_particle_filter = this->readNextInput<int>();
-	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 1) {
+	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 3) {
 		throw OutOfRange( "-apf", *argv_i );
 	    }
+        } else if ( * argv_i == "-Nis" ) {
+            this->num_importance_samples = this->readNextInput<int>();
+            if (num_importance_samples < 1) {
+                throw OutOfRange( "-Nis", *argv_i );
+            }
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -207,6 +212,7 @@ void PfParam::init(){
     this->original_recombination_rate_ = 0;
     this->max_segment_length_factor_ = 4.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
+    this->num_importance_samples = 1;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
     this->lag_fraction     = 4.0;
@@ -316,6 +322,12 @@ void PfParam::finalize(){
     // currently, using guided sampling is incompatible with auxiliary particle filters (see includeLookaheadLikelihood)
     if ( (input_RecombinationBiasFileName.size() > 0) && (auxiliary_particle_filter > 0) ) {
 	throw std::invalid_argument(std::string("Recombination guiding and auxiliary particle filters cannot currently be used together"));
+    }
+
+    // importance sampling of new particles must (currently) be combined with auxiliary particle filtering (because they use
+    //  the same model)
+    if ( num_importance_samples > 1 && auxiliary_particle_filter == 0 ) {
+        throw std::invalid_argument(std::string("When using importance sampling for extending particles (-Nis > 1), auxiliary particle filtering (-apf) must be used"));
     }
     
     // remove any existing files with these names
@@ -537,7 +549,8 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-delay"         << setw(8) << "FLT" << "  --  " << "How much to delay application of importance weight due to bias (fraction of survival time)[ " << delay << "]" << endl;
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
-    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0 or 1) [ 0 ]" << endl;
+    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
+    cout << setw(15)<<"-Nis"           << setw(8) << "INT" << "  --  " << "Number of importance samples to use when extending particle" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
