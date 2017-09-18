@@ -116,21 +116,26 @@ TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model&
     const int max_iterations = 1000000;
     MersenneTwister randomgenerator( true, 1 );
     TerminalBranchLengthQuantiles tblq;
+    double total_length = 0.0;
     tblq.quantiles = {0.001,0.003,0.01,0.03,0.1,0.5};
     tblq.lengths.resize( model.sample_size() );
     vector<vector<double>> tbls( model.sample_size() );
+
+    // (for auxiliary particle filter:)
+    cout << "Calculating terminal branch length quantiles..." << endl;
     
     for (int iterations = 0; iterations < max_iterations; iterations++) {
 
-	Forest tree( &model, &randomgenerator );
-	tree.buildInitialTree( false );	
-	for ( auto it = tree.getNodes()->iterator(); it.good(); ++it) {
-	    if ((*it)->in_sample()) {
-		double height = (*it)->parent_height();
-		int sample = (*it)->label() - 1;
-		tbls[ sample ].push_back( height );
-	    }
-	}
+        Forest tree( &model, &randomgenerator );
+        tree.buildInitialTree( false );
+        total_length += tree.getLocalTreeLength();
+        for ( auto it = tree.getNodes()->iterator(); it.good(); ++it) {
+            if ((*it)->in_sample()) {
+                double height = (*it)->parent_height();
+                int sample = (*it)->label() - 1;
+                tbls[ sample ].push_back( height );
+            }
+        }
     }
     for (int sample = 0; sample < model.sample_size(); ++sample) {
         cout << "Lineage " << sample << "; Terminal branch length quantiles:";
@@ -141,6 +146,7 @@ TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model&
         }
         cout << endl;
     }
+    tblq.mean_total_branch_length = total_length / max_iterations;
     
     return tblq;
 }
@@ -243,41 +249,6 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
     }
     return median_survival_distances;
 }
-
-
-/*
-void calibrate_bias_ratios(Model* model, double top_t_value) {
-
-    if (model->biased_sampling) {
-        clog << "model has bias heights " << model->bias_heights() << endl;
-        clog << "model has bias strengths " << model->bias_strengths() << endl;
-
-        int Num_bias_ratio_simulation_trees = 10000;
-        ModelSummary model_summary = ModelSummary(model, top_t_value);
-        for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
-            model_summary.addTree();
-        }
-        model_summary.finalize();
-        
-        clog << "Information from pre-sequence-analysis tree simulation:" << endl;
-        clog << "    model_summary.times_: " << model_summary.times_ << endl;
-        clog << "    avg B: " << model_summary.avg_B() << endl;
-        clog << "    avg B below: " << model_summary.avg_B_below() << endl;
-        clog << "    avg B within: " << model_summary.avg_B_within() << endl;
-        clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
-        clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
-        clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
-        clog << "    tree count: " << model_summary.tree_count_ << endl;
-        
-        model->clearBiasRatios();
-        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
-            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
-        }
-        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
-    }
-    assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
-}
-*/
 
 
 void pfARG_core(PfParam &pfARG_para,

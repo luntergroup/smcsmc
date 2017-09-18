@@ -152,6 +152,7 @@ public:
     // split data:
     double first_split_distance;
     vector<int> allelic_state_at_first_split;
+    int mutation_count_at_first_split;
 
     // Public methods
     bool empty_file () const      { return this->empty_file_; }

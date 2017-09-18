@@ -344,6 +344,7 @@ void Segment::set_lookahead() {
         if (first_split_distance == -1 && num_var > 2 && (int)nsam_ - num_var > 2) {
             first_split_distance = distance;
             allelic_state_at_first_split = buffer[i].allele_state;
+            mutation_count_at_first_split = min( num_var, (int)nsam_ - num_var );
         }
         // bail out if we're done
         if ((num_singletons == (int)nsam_) && num_doubleton_sequences >= (int)nsam_ - 1) break;

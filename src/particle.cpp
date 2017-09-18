@@ -341,7 +341,16 @@ inline double fastexp(double x) {
         return exp(x);
     }
 }
-    
+
+
+inline double nchoosek(int n, int k) {
+    double nCk = 1.0;
+    for (int i=1; i<=k; i++) {
+        nCk *= (n-i+1)/double(i);
+    }
+    return nCk;
+}
+
 
 void ForestState::includeLookaheadLikelihood( const Segment& segment, const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
 
@@ -444,13 +453,42 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     }
 
     // finally, splits
-    if (segment.first_split_distance > -1) {
-        int counts[2];
-        cal_num_mutations( local_root(), segment.allelic_state_at_first_split, counts );
-        int count = min( counts[0], counts[1] );
-        // calculate probability.  Include mutation probability ^ count -- so return that as well?  Perhaps rather than
-        // count the number of mutations necessary, just use the ordinary likelihood and include actual branch lengths,
-        // and then modify to account for distance to current tree?  Seems more natural.
+    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter > 2) {
+        // probability of no change to the current topology.
+        // Assume 1/n of recombinations cause change in split
+        // justify by counting number of branches in tree, and number of branches that change after recombination.
+        double rate_of_change = getLocalTreeLength() * recomb_rate / double(nsam);
+        double p_nochange = fastexp( -rate_of_change * segment.first_split_distance );
+
+        // probability of split data given current tree.
+        bool ancestral_aware = false;
+        double p_splitdata = calculate_likelihood( ancestral_aware, segment.allelic_state_at_first_split );
+
+        // probability of correct split.  This would be n-choose-k at equilibrium.  But the current tree, if it is not
+        // supporting the split, is likely to be -almost- supporting the split; and in addition we need to have a heavy-tailed
+        // distribution.  So instead, assume that current tree has one lineage at the wrong side of the split.  We need a
+        // recombination in the correct branch (1/n) and need a coalescence into the split (k/n), together probability k/n^2,
+        // and recombiations and coalescences occuring quickly -- factor 1/4. (justify??)
+        // -- consider n-choose-k ?
+        int k = segment.mutation_count_at_first_split;
+        double p_correct_split = k / double(4.0 * nsam * nsam);
+        //double p_correct_split = 1.0 / nchoosek( nsam, k );
+
+        // length of the split branch. Under constant-pop-size coalescent model (CCM) total length is l(n) = 2(1 + ... + 1/(n-1)).
+        // The split branch has k descendants; since hanging configurations are uniformly distributed (Xavier Didelot) other
+        // branches at that time have the same expected number of descendants, so the number of branches is in expectation
+        // n/k.  The length of the next branch to coalesce into this upper subtree is l( n/k + 1 ) - l( n/k ) = 2k / n, which
+        // is a measure of the length of the subtree supporting the split.  After all branches have coalesced into the tree,
+        // the branch will have undergone further coalescences, so we divide this length by 2 (justification?)
+        // Now, our model is not CCM, so scale by the ratio of total branch length under CCM, 2(gamma + ln(n)), to the
+        // empirical total branch length ETBL, to get for the  approximate length of the split branch,
+        //  k * ETBL / ( 2 * n * ( gamma + ln(n) ) ).
+        double etbl = terminal_branch_lengths.mean_total_branch_length;
+        double split_branch_length = k * etbl / ( 2 * nsam * ( 0.577 * log(nsam) ) );
+        double p = p_nochange * p_splitdata + (1.0 - p_nochange) * p_correct_split * mut_rate * split_branch_length;
+        likelihood *= p;
+        //double mut_branch_length = p_splitdata / (this->model().mutation_rate());
+        //cout << " Split L=" << p_splitdata << " true brlen=" << mut_branch_length << " dist=" << segment.first_split_distance << " p_noch=" << p_nochange << " p_avg=" << p_correct_split * mut_rate * split_branch_length << " p=" << p << endl;
     }
         
     //cout << "Lookahead: " << likelihood << endl;
@@ -497,33 +535,6 @@ inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vect
         * ( marg_like_right[0]*p_right + marg_like_right[1]*(1-p_right) );
     marginal_likelihood[1] = ( marg_like_left[1]*p_left + marg_like_left[0]*(1-p_left) )
         * ( marg_like_right[1]*p_right + marg_like_right[0]*(1-p_right) );
-
-    return;
-}
-
-
-inline void ForestState::cal_num_mutations(Node * node, const vector<int>& haplotype, int counts[2]) {
-
-    // deal with the case that this node is a leaf node
-    if ( node->first_child() == NULL ) {
-        assert ( node->in_sample() );                            // we only traverse the local tree, therefore leaf node must be in sample
-        assert ( node->label() <= haplotype.size() );
-        assert ( node->second_child() == NULL );                 // leaf (if a node has no first child, it won't have a second child)
-        int mutation_state = haplotype[ node->label() - 1 ];
-        counts[0] = mutation_state == 1 ? 1 : 0;                 // also encode state==-1 (missing data) and state==2 (het) as 0 (match)
-        counts[1] = mutation_state == 0 ? 1 : 0;                 // also encode state==-1 (missing data) and state==2 (het) as 0 (match)
-        return;
-    }
-
-    // Genealogy branch lengths are in number of generations, the mutation rate is unit of per site per generation
-    Node *left = trackLocalNode(node->first_child()); 
-    Node *right = trackLocalNode(node->second_child());
-    int counts_left[2], counts_right[2];
-    cal_num_mutations(left, haplotype, counts_left);
-    cal_num_mutations(right, haplotype, counts_right);
-
-    counts[0] = min( counts_left[0], 1+counts_left[1] ) + min( counts_right[0], 1+counts_right[1] );
-    counts[1] = min( counts_left[1], 1+counts_left[0] ) + min( counts_right[1], 1+counts_right[0] );
 
     return;
 }
