@@ -453,7 +453,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     }
 
     // finally, splits
-    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter > 2) {
+    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter > 1) {
         // probability of no change to the current topology.
         // Assume 1/n of recombinations cause change in split
         // justify by counting number of branches in tree, and number of branches that change after recombination.
@@ -472,7 +472,9 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         // -- consider n-choose-k ?
         int k = segment.mutation_count_at_first_split;
         double p_correct_split = k / double(4.0 * nsam * nsam);
-        //double p_correct_split = 1.0 / nchoosek( nsam, k );
+        // for testing: let apf=2 do split distance, apf=3 uses n-choose-k factor
+        if (pfparam.auxiliary_particle_filter == 3)
+            p_correct_split = 1.0 / nchoosek( nsam, k );
 
         // length of the split branch. Under constant-pop-size coalescent model (CCM) total length is l(n) = 2(1 + ... + 1/(n-1)).
         // The split branch has k descendants; since hanging configurations are uniformly distributed (Xavier Didelot) other
