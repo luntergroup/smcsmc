@@ -39,7 +39,6 @@
 #define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
 #endif
 
-
 extern double recomb_opp; //DEBUG
 
 
@@ -316,8 +315,8 @@ private:
     // helper variables for the update algorithm (put here for packing / alignment)
     EvolutionaryEvent* parent_;
     double posterior_;
-    short children_updated_;
-    short ref_counter_;
+    int children_updated_;
+    int ref_counter_;
 
     // remainder of core variables
     short weight;         // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
@@ -330,20 +329,20 @@ private:
     
     void set_posterior ( const double posterior ){ this->posterior_ =  posterior; }
     double posterior () const { return this->posterior_; }
-    void set_children_updated ( const short children ){ this->children_updated_ = children; }
-    short children_updated() const { return this->children_updated_; }
+    void set_children_updated ( const int children ){ this->children_updated_ = children; }
+    int children_updated() const { return this->children_updated_; }
     void set_event_data ( const short event_data ){ this->event_data_ = event_data; }
     short event_data() const { return this->event_data_; }
     void set_end_base( double end_base ) { end_base_ = end_base; }
 
-    void set_ref_counter ( const short ref_counter ){ this->ref_counter_ = ref_counter; }
-    short ref_counter() const { return this->ref_counter_; }
+    void set_ref_counter ( const int ref_counter ){ this->ref_counter_ = ref_counter; }
+    int ref_counter() const { return this->ref_counter_; }
 
     void init(){
         this->set_posterior(0.0);
-        this->set_children_updated( (short)0 );
+        this->set_children_updated( 0 );
         this->set_event_data ( (short)-2 );
-        this->set_ref_counter( (short) 1 );
+        this->set_ref_counter( 1 );
     }
 };
 
