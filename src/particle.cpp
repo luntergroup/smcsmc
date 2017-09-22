@@ -455,9 +455,8 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     // finally, splits
     if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter > 1) {
         // probability of no change to the current topology.
-        // Assume 1/n of recombinations cause change in split
-        // justify by counting number of branches in tree, and number of branches that change after recombination.
-        double rate_of_change = getLocalTreeLength() * recomb_rate / double(nsam);
+        // Assume 1/2 of recombinations cause change in split
+        double rate_of_change = getLocalTreeLength() * recomb_rate / 2;
         double p_nochange = fastexp( -rate_of_change * segment.first_split_distance );
 
         // probability of split data given current tree.

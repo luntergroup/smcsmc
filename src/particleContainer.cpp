@@ -115,14 +115,71 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
          * Invariant: the likelihood is correct up to 'updated_to'
          * Note that extend_ARG may enter additional particles in the particles vector.
          */
-        dout << " before extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
+        dout << " before extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
         particles[particle_i]->restore_recomb_state();
         particles[particle_i]->extend_ARG ( extend_to, leaf_status, data_at_site, &particles );
         particles[particle_i]->save_recomb_state();
-        dout << " after extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
+        dout << " after extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
     }
 }
 
+
+void ParticleContainer::extend_ARGs_importance_sampling( double extend_to, const vector<int>& data_at_site, const Segment& segment,
+                                                         bool ancestral_aware, const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
+
+    dout << endl<<" IS: we are extending " << particles.size() << " particles" << endl<<endl;
+
+    const PfParam& pfparam = particles[0]->pfparam;
+    int num_importance_samples = pfparam.num_importance_samples;
+
+    // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
+    int num_leaves_missing = 0;
+    int leaf_status = 0;   // -1 all missing; 1 all present; 0 mixed
+    for (int i=0; i<data_at_site.size(); i++)      num_leaves_missing += data_at_site[i] == -1;
+    if (num_leaves_missing == 0)                   leaf_status = 1;
+    if (num_leaves_missing == data_at_site.size()) leaf_status = -1;
+
+    vector<ForestState*> is_particles;
+    int num_particles = particles.size();
+    for (size_t particle_i = 0; particle_i < num_particles; particle_i++) {
+        dout << "We are updating particle " << particle_i << endl;
+        dout << " before extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
+
+        int multiplicity = particles[particle_i]->multiplicity();
+        is_particles.push_back( particles[particle_i] );     // steal pointer!
+        particles[particle_i] = NULL;
+        is_particles[0]->setMultiplicity( multiplicity * num_importance_samples );
+        // extend the now enlarged set of particles as normal
+        for (size_t is_particle = 0; is_particle < is_particles.size(); is_particle++) {
+            is_particles[is_particle]->restore_recomb_state();
+            is_particles[is_particle]->extend_ARG ( extend_to, leaf_status, data_at_site, &is_particles );
+            is_particles[is_particle]->save_recomb_state();
+            dout << "  is.idx " << is_particle << " wt " << is_particles[is_particle]->posteriorWeight() << " mult " << is_particles[is_particle]->multiplicity()
+                 << " is_part.size " << is_particles.size() << endl;
+        }
+        // update the lookahead weights of these particles
+        update_lookahead_likelihood( segment, is_particles, ancestral_aware, terminal_branch_lengths );
+        // resample 'multiplicity' particles.  Must use only lookahead weights, not likelihood, but since the likelihood isn't yet
+        // updated and the particles all descend from a common one, the likelihoods are all the same, and only lookahead weights influence sampling
+        resample(extend_to, pfparam, &is_particles, multiplicity );
+        // replace particle by extended particle; also undo increase in weight due to num_importance_samples
+        particles[particle_i] = is_particles[0];
+        particles[particle_i]->adjustWeights( 1.0 / num_importance_samples );
+        is_particles[0] = NULL;
+        dout << " after extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
+        // put any additional particles at the back of the vector.  These do not have to be extended further,
+        // as they have been extended above (in order to calculate the apf likelihood)
+        for (size_t i = 1; i < is_particles.size(); i++) {
+            particles.push_back( is_particles[i] );
+            particles.back()->adjustWeights( 1.0 / num_importance_samples );
+            is_particles[i] = NULL;
+            dout << " additional: weight " << particles.back()->posteriorWeight() << " mult is " << particles.back()->multiplicity() << endl;
+        }
+        is_particles.clear();
+    }
+}
+
+    
 
 int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips,
                                                                   vector<int>& haplotype_at_tips ) const {
@@ -171,9 +228,22 @@ bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const ve
  *      @ingroup group_pf_update
  */
 void ParticleContainer::update_weight_at_site( const Segment& segment,
+                                               const vector<ForestState*>& particles,
 					       bool ancestral_aware,
 					       const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
 
+    if (segment.segment_state() != SEGMENT_INVARIANT) {
+        // only account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
+        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
+        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
+        // for a mutation in a MISSING segment.
+        return;
+    }
+
+    // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
+    //   position. This would replace the blanket ancestral_aware with a segment->ancestral_aware.
+    //   We could also include a likelihood of 0 being ancestral.
+    
     const vector<int>& data_at_tips = segment.allelic_state_at_Segment_end;
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
@@ -189,14 +259,25 @@ void ParticleContainer::update_weight_at_site( const Segment& segment,
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-	// remove possible previous lookahead likelihood for auxiliary particle filter
-	this->particles[particle_i]->removeLookaheadLikelihood();
-
 	// include likelihood
-        this->particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
+        particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
+
+    }
+}
+
+
+void ParticleContainer::update_lookahead_likelihood( const Segment& segment,
+                                                     const vector<ForestState*>& particles,
+                                                     bool ancestral_aware,
+                                                     const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
+
+    for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+    
+	// remove possible previous lookahead likelihood for auxiliary particle filter
+	particles[particle_i]->removeLookaheadLikelihood();
 
 	// include lookahead likelihood into pilotWeight, to guide resampling
-	this->particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
+	particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
     }
 }
 
@@ -205,9 +286,10 @@ void ParticleContainer::update_weight_at_site( const Segment& segment,
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
 
-int ParticleContainer::resample(int update_to, const PfParam &pfparam)
+int ParticleContainer::resample(int update_to, const PfParam &pfparam, vector<ForestState*>* particles, int to_sample)
 {
-    size_t num_particle_records = particles.size();
+    if (particles == NULL) particles = &(this->particles);
+    size_t num_particle_records = particles->size();
     valarray<double> partial_sums( num_particle_records + 1 );
     int actual_num_particles = 0;
     double wi_sum = 0;
@@ -215,8 +297,8 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
 
     for (size_t i = 0; i < num_particle_records; i++) {
         partial_sums[i] = wi_sum;
-        double w_i = particles[i]->pilotWeight();
-        int mult   = particles[i]->multiplicity();
+        double w_i = (*particles)[i]->pilotWeight();
+        int mult   = (*particles)[i]->multiplicity();
         actual_num_particles += mult;
         wi_sum += w_i * mult;
         wi_sq_sum += w_i * w_i * mult;
@@ -224,32 +306,37 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
     partial_sums[ num_particle_records ] = wi_sum;
     double ess = wi_sum * wi_sum / wi_sq_sum;
 
-    if (actual_num_particles != num_particles) {
+    if (to_sample == -1 && actual_num_particles != num_particles) {    // only check if used for main particle set, not importance sampling
         cout << "Problem: expected " << num_particles << " particles but found " << actual_num_particles << endl;
         exit(1);
     }
-    
-    dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << num_particle_records
-         << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
+
+    if (to_sample == -1) {
+        dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << num_particle_records
+             << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
+    }
 
     int result;
-    if ( ess < pfparam.ESSthreshold - 1e-6 ) {
+    if ( to_sample > 0 || ess < pfparam.ESSthreshold - 1e-6 ) {
 
-        // Dropped below ESS threshold -- resample
+        // Resample
         valarray<int> sample_count( num_particle_records );
-        pfparam.append_resample_file( update_to, ess );
-        systematic_resampling( partial_sums, sample_count );
-        implement_resampling( sample_count, wi_sum);
+        if (to_sample == -1) {
+            pfparam.append_resample_file( update_to, ess );
+            to_sample = num_particles;
+        }
+        systematic_resampling( partial_sums, sample_count, to_sample );
+        *particles = implement_resampling( *particles, sample_count, wi_sum);
         result = 1;
         
     } else {
 
         // The sampling procedure will flush old recombinations, but this won't happen in the absence of data.
         // Ensure that even in the absence of data, old recombinations do not build up and cause memory overflows
-        bool flush = particles[0]->segment_count() > 50;
+        bool flush = (*particles)[0]->segment_count() > 50;
         if (flush) {
             for (size_t state_index = 0; state_index < num_particle_records; state_index++) {
-                particles[state_index]->flushOldRecombinations();
+                (*particles)[state_index]->flushOldRecombinations();
             }
         }
         result = 0;
@@ -257,7 +344,7 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
     }
 
     return result;
-    
+
 }
 
 
@@ -268,11 +355,17 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
  *
  * \ingroup group_resample
  */
-void ParticleContainer::implement_resampling(valarray<int> & sample_count, double sum_of_delayed_weights) {
+vector<ForestState*> ParticleContainer::implement_resampling( const vector<ForestState*>& particles,
+                                                              valarray<int> & sample_count,
+                                                              double sum_of_delayed_weights) const {
 
     size_t number_of_records = sample_count.size();
-    bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
+    bool flush = particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
     vector<ForestState*> new_particles;
+    size_t number_of_particles = 0;
+    for (size_t particle_idx = 0; particle_idx < number_of_records; particle_idx++) {
+        number_of_particles += sample_count[particle_idx];
+    }
 
     for (size_t particle_idx = 0; particle_idx < number_of_records; particle_idx++) {
 
@@ -291,7 +384,7 @@ void ParticleContainer::implement_resampling(valarray<int> & sample_count, doubl
 
             // calculate weight adjustment:
             // the ratio of the desired weight, sum_of_delayed_weights / num_particles, to current weight, pilotWeight()
-            double adjustment = sum_of_delayed_weights / ( num_particles * current_state->pilotWeight() );
+            double adjustment = sum_of_delayed_weights / ( number_of_particles * current_state->pilotWeight() );
             current_state->adjustWeights( adjustment );
 
             // if we're using multiplicity, use that to implement the new particle count
@@ -332,8 +425,7 @@ void ParticleContainer::implement_resampling(valarray<int> & sample_count, doubl
         }
     }
 
-    // update particle container
-    particles = new_particles;
+    return new_particles;
 }
 
 
@@ -392,22 +484,24 @@ void ParticleContainer::update_state_to_data( Segment * segment,
 
     // Allelic state; -1 = absent, 0,1 are ref/alt, 2 = part of het site
     const vector<int>& data_at_site = segment->allelic_state_at_Segment_end;
+    double extend_to = (double)min(segment->segment_end(), (double)model->loci_length() );
 
-    //Extend ARGs and update weight for not seeing mutations along the sequences
-    extend_ARGs( (double)min(segment->segment_end(), (double)model->loci_length() ), data_at_site );
+    if (particles[0]->pfparam.num_importance_samples > 1) {
 
-    //Update weight for seeing mutation at the position
-    dout << " Update state weight at a SNP "<<endl;
-    if (segment->segment_state() == SEGMENT_INVARIANT) {
-        // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
-        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
-        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
-        // for a mutation in a MISSING segment.
-        update_weight_at_site( *segment, ancestral_aware, terminal_branch_lengths );
-        // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
-        //   position. This would replace the blanket ancestral_aware with a segment->ancestral_aware.
-        //   We could also include a likelihood of 0 being ancestral.
+        // When using importance sampling, extending the particles and updating the lookahead weights is done simultaneously
+        extend_ARGs_importance_sampling( extend_to, data_at_site, *segment, ancestral_aware, terminal_branch_lengths );
+
+    } else {
+    
+        //Extend ARGs and update weight for not seeing mutations along the sequences
+        extend_ARGs( extend_to, data_at_site );
+
+        //Update the lookahead likelihood
+        update_lookahead_likelihood( *segment, particles, ancestral_aware, terminal_branch_lengths );
     }
+    
+    //Update weight for seeing mutation at the position
+    update_weight_at_site( *segment, particles, ancestral_aware, terminal_branch_lengths );
 
     dout << "Extended until " << particles[0]->current_base() <<endl;
 
@@ -422,8 +516,8 @@ void ParticleContainer::update_state_to_data( Segment * segment,
  * \brief Use systematic resampling \cite Doucet2008 to generate sample count for each particle
  */
 void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum,
-                                              std::valarray<int>& sample_count) {
-    int N = num_particles;
+                                              std::valarray<int>& sample_count,
+                                              int N ) const {
     int num_records = sample_count.size();
     size_t sample_i = 0;                                             // sample counter, 1 to N
     double u_j = random_generator()->sample() / N;                   // quantile of record to sample
