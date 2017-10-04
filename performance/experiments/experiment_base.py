@@ -31,13 +31,24 @@ import execute
 
 
 # run a single experiment
-def run_experiment_map( pars ):
-    global bucket
-    try:
-        return run_experiment( **pars )
-    except Exception:
-        bucket.put(sys.exc_info())
-        raise
+def run_experiment_queue():
+    global error_bucket
+    global task_queue
+    global idle_queue
+    while True:
+        try:
+            pars = task_queue.get(False)
+            run_experiment( **pars )
+        except Exception as e:
+            if isinstance(e, Queue.Empty):
+                # signal that thread is done, and kill it
+                idle_queue.put( None )
+                return
+            # store error on queue, and raise error (which will kill thread, and nothing else)
+            error_bucket.put(sys.exc_info())
+            raise
+        task_queue.task_done()
+        
 
 
 # check if this experiment has already been run
@@ -86,7 +97,9 @@ def remove( experiment_name ):
 def main( experiment_name, experiment_pars ):
 
     global db
-    global bucket
+    global error_bucket
+    global task_queue
+    global idle_queue
 
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
     parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
@@ -107,22 +120,30 @@ def main( experiment_name, experiment_pars ):
         db = args.db
     if args.force:
         remove( experiment_name )
-    bucket = Queue.Queue()                   # to hold exceptions that occur in threads
+    error_bucket = Queue.Queue()                   # to hold exceptions that occur in threads
     if args.jobs == 1:
         for i in map( run_experiment_map, experiment_pars ):
             pass
     else:
-        threads = []
-        for par in experiment_pars:
-            t = threading.Thread( target=run_experiment_map, args=(par,) )
-            t.start()
-            threads.append( t )
+        task_queue = Queue.Queue()
+        idle_queue = Queue.Queue()
 
-        for t in threads:
-            t.join()
+        for par in experiment_pars:
+            task_queue.put( par )
+
+        for i in range(args.jobs):
+            t = threading.Thread( target=run_experiment_queue )
+            t.daemon = True
+            t.start()
+
+        # wait for all tasks to have been processed, and check for errors
+        while idle_queue.qsize() < args.jobs:
+            if not error_bucket.empty():
+                break
+            time.sleep( 1 )
 
         try:
-            exc = bucket.get(block=False)
+            exc = error_bucket.get(block=False)
         except Queue.Empty:
             pass
         else:
@@ -130,3 +151,9 @@ def main( experiment_name, experiment_pars ):
             print("Caught exception %s %s" % (exc_type, exc_obj), file=sys.stderr)
             traceback.print_tb( exc_trace )
             raise RuntimeError("Error in thread")
+
+        # terminate program.  Since no error was produced, and args.jobs workers are idle,
+        # they must all have finished.  But just to be sure...
+        task_queue.join()
+
+        
