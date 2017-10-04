@@ -418,42 +418,43 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     }
 
     // next doubletons
-    double l_mean = 0.0;
-    for (const Node* node : leaves) l_mean += node->getLocalParent()->height();
-    l_mean /= nsam;
-    double rho_c = 4 * recomb_rate * (nsam - 2) / nsam;
-    double rhoprime_c = recomb_rate * (nsam - 1);
-    double p_equilibrium = 2.0/(3*(nsam-1));
-    int ph1, ph2;
-    for (const Segment::Doubleton& d : segment.doubleton) {
-        // do we have the cherry?  Check greedily by considering all phasings
-        for (ph1 = 0; ph1 <= d.unphased_1; ph1++) {
-            for (ph2 = 0; ph2 <= d.unphased_2; ph2++) {
-                if (leaves[d.seq_idx_1 + ph1]->parent() == leaves[d.seq_idx_2 + ph2]->parent()) {
-                    // we do
-                    double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
-                    double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
-                    // include a factor for at least 1 mutation - using half the average of the mutation rates on terminal branches
-                    double mutprob = (mut_prob[d.seq_idx_1+ph1] + mut_prob[d.seq_idx_2+ph2]) * 0.25;
-                    double p = mutprob * (exp_rho + p_equilibrium * (1.0 - exp_rho));
-                    likelihood *= p;
-		    //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
-                    ph1 = ph2 = 99;
+    if (pfparam.auxiliary_particle_filter >= 2) {
+        double l_mean = 0.0;
+        for (int i=0; i<nsam; i++) l_mean += terminal_branch_lengths.lengths[ i ].back() / nsam;
+        double rho_c = 4 * recomb_rate * (nsam - 2) / nsam;
+        double rhoprime_c = recomb_rate * (nsam - 1);
+        double p_equilibrium = 2.0/(3*(nsam-1));
+        int ph1, ph2;
+        for (const Segment::Doubleton& d : segment.doubleton) {
+            // do we have the cherry?  Check greedily by considering all phasings
+            for (ph1 = 0; ph1 <= d.unphased_1; ph1++) {
+                for (ph2 = 0; ph2 <= d.unphased_2; ph2++) {
+                    if (leaves[d.seq_idx_1 + ph1]->parent() == leaves[d.seq_idx_2 + ph2]->parent()) {
+                        // we do
+                        double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
+                        double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
+                        // note - do not include a factor for a mutation; we don't want to model the length of the cherry root branch
+                        double p = exp_rho + p_equilibrium * (1.0 - exp_rho);
+                        likelihood *= p;
+                        //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
+                        ph1 = ph2 = 99;
+                    }
                 }
             }
-        }
-        if (ph1 < 99) {
-            // we don't
-            // include a term for a double mutation (to cover the case that first_evidence_distance == 0)
-            double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.25;
-            double p = mutprob * (mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance)));
-            likelihood *= p;
-	    //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
+            if (ph1 < 99) {
+                // we don't have a cherry.
+                // include a term for a double mutation (i.e. a single one, since one mutation isn't included normally), to cover the case that first_evidence_distance == 0
+                // the mutation rate is taken to be average of the mutation rates in the two terminal branches
+                double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.5;
+                double p = mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance));
+                likelihood *= p;
+                //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
+            }
         }
     }
-
+        
     // finally, splits
-    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter > 1) {
+    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter >= 3) {
         // probability of no change to the current topology.
         // Assume 1/2 of recombinations cause change in split
         double rate_of_change = getLocalTreeLength() * recomb_rate / 2;
@@ -471,8 +472,8 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         // -- consider n-choose-k ?
         int k = segment.mutation_count_at_first_split;
         double p_correct_split = k / double(4.0 * nsam * nsam);
-        // for testing: let apf=2 do split distance, apf=3 uses n-choose-k factor
-        if (pfparam.auxiliary_particle_filter == 3)
+        // for testing: let apf=2 do split distance, apf=4 uses n-choose-k factor
+        if (pfparam.auxiliary_particle_filter == 4)
             p_correct_split = 1.0 / nchoosek( nsam, k );
 
         // length of the split branch. Under constant-pop-size coalescent model (CCM) total length is l(n) = 2(1 + ... + 1/(n-1)).
@@ -488,7 +489,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         double split_branch_length = k * etbl / ( 2 * nsam * ( 0.577 * log(nsam) ) );
         double p = p_nochange * p_splitdata + (1.0 - p_nochange) * p_correct_split * mut_rate * split_branch_length;
         likelihood *= p;
-        //double mut_branch_length = p_splitdata / (this->model().mutation_rate());
+        //double mut_branch_length = p_splitdata / (this->model().mutation_rate()); // only for display
         //cout << " Split L=" << p_splitdata << " true brlen=" << mut_branch_length << " dist=" << segment.first_split_distance << " p_noch=" << p_nochange << " p_avg=" << p_correct_split * mut_rate * split_branch_length << " p=" << p << endl;
     }
         

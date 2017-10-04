@@ -139,7 +139,7 @@ void PfParam::parse(int argc, char *argv[]) {
             this->ancestral_aware = true;
 	} else if ( *argv_i == "-apf" ) {
 	    this->auxiliary_particle_filter = this->readNextInput<int>();
-	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 3) {
+	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 4) {
 		throw OutOfRange( "-apf", *argv_i );
 	    }
         } else if ( * argv_i == "-Nis" ) {
@@ -472,16 +472,16 @@ void PfParam::outFileHeader(){
 
 class FormatDouble {
 public:
-    FormatDouble( double d, double scientific_bound = 1.0 ) : d(d), scientific_bound(scientific_bound) {}
+    FormatDouble( double d, double scientific_bound = 0.1, int precision = 2 ) : d(d), scientific_bound(scientific_bound), precision(precision) {}
     double d, scientific_bound;
+    int precision;
 };
 
 ostream& operator<<(ostream& ostr, const FormatDouble& fd) {
     const int field_length = 12;
-    const int precision = 2;
-    const double maxdouble = exp( (field_length - precision - 1) * log(10.0) );
+    const double maxdouble = exp( (field_length - fd.precision - 1) * log(10.0) );
     if (fd.d < maxdouble && (fd.d > fd.scientific_bound || fd.d == 0.0)) {
-        return ostr << setw(field_length) << fixed << setprecision(precision) << fd.d;
+        return ostr << setw(field_length) << fixed << setprecision(fd.precision) << fd.d;
     } else {
         return ostr << setw(field_length) << scientific << setprecision(field_length-7) << fd.d;
     }
@@ -512,7 +512,7 @@ void PfParam::appendToOutFile( size_t EMstep,
                << FormatDouble(count) << " "
                << FormatDouble(count/(opportunity+1e-10)) << " "
                << FormatDouble( (eventType=="Coal") ? (opportunity+1e-10)/(2.0*count) : 0.0 ) << " "
-               << FormatDouble( 1.0 / (weight/opportunity+1e-10) )
+               << FormatDouble( 1.0 / (weight/opportunity+1e-10), 1.0, 3 )
                << endl;
     count_file.close();
 }
