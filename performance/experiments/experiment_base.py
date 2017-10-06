@@ -6,6 +6,7 @@ import argparse
 import itertools
 import threading
 import traceback
+import time
 import Queue
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
