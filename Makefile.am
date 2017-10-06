@@ -4,7 +4,7 @@ SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/s
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 
 # disable for Darwin and rescomp
-#TCMALLOC = -ltcmalloc
+TCMALLOC = -ltcmalloc
 
 # set for rescomp
 boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include

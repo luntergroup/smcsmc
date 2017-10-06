@@ -4,7 +4,18 @@ import itertools
 ###################################################################################
 #
 # experiment:
-#  estimate bias and variance, dependent on lag
+#  investigate interaction between bias, delay, and aux particle filter, focusing
+#  on the first epoch (<400 generations, 0.2% of coalescences)
+# 
+#  initial run (5/10/17) shows that bias=2 has benefits over vanilla; delay 0.5 has
+#  limited benefits, and increasing bias to 5 with delay results in positive bias in
+#  coalescent opportunity, and positive bias in recombination rate.  Using aux part
+#  filt mode 2 (singletons and doubletons) improves likelihood, ess with minimal bias
+#  in recombination rate inference.
+#
+#  next experiment: use fixed data to reduce variance in log likelihood; try delay
+#  0.1 to see if that mitigates bias; try bias 10 to look at more extreme case.
+#  More significant digits in LogL reporting.
 #
 ###################################################################################
 
@@ -29,32 +40,35 @@ experiment_class = test_const_pop_size.TestConstPopSize
 
 # define the experiments
 experiment_pars = [{'length':seqlen,             # global
-                    'simseed':simseed,
-                    'infseed':simseed,           # repetitions with unique data
+                    'simseed':0,                 # repetitions with the same data
+                    'infseed':seed,
                     'numparticles':numparticles, 
                     'lag':lagfactor,             # global
                     'nsam':nsam,                 # global
                     'bias':bias,
                     'delay':delay,
                     'apf':apf}
-                   for (simseed, numparticles, (bias, delay, apf)) in itertools.product(
+                   for (seed, numparticles, (bias, delay, apf)) in itertools.product(
                            range(inference_reps),
                            particles,
                            [(0,0,0),    # vanilla
                             (2,0,0),    # bias 2, no delay
                             (5,0,0),    # bias 5, no delay
-                            (2,0.5,0),  # bias 2, delay
-                            (5,0.5,0),  # bias 5, delay
-                            (2,0.5,1),  # bias 2, delay, apf 1
-                            (5,0.5,1),  # bias 5, delay, apf 1
+                            (2,0.1,0),  # bias 2, delay
+                            (5,0.1,0),  # bias 5, delay
+                            (10,0.1,0), # bias 10, delay
+                            (2,0.1,1),  # bias 2, delay, apf 1
+                            (5,0.1,1),  # bias 5, delay, apf 1
+                            (10,0.1,1), # bias 10, delay, apf 1
+                            (2,0.1,2),  # bias 2, delay, apf 2
+                            (5,0.1,2),  # bias 5, delay, apf 2
+                            (10,0.1,2), # bias 10, delay, apf 2
                             (2,0,1),    # bias 2, apf 1
                             (5,0,1),    # bias 5, apf 1
+                            (10,0,1),   # bias 10, apf 1
                             (2,0,2),    # bias 2, apf 2
                             (5,0,2),    # bias 5, apf 2
-                            (2,0,3),    # bias 2, apf 3
-                            (5,0,3),    # bias 5, apf 3
-                            (2,0,4),    # bias 2, apf 4
-                            (5,0,4)     # bias 5, apf 4
+                            (10,0,2),   # bias 10, apf 2
                             ])]
 
 # run an experiment.  keyword parameters must match those in experiment_pars
