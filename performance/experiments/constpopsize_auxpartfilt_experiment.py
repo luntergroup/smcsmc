@@ -54,6 +54,7 @@ experiment_pars = [{'length':seqlen,             # global
                            [(0,0,0),    # vanilla
                             (2,0,0),    # bias 2, no delay
                             (5,0,0),    # bias 5, no delay
+                            (10,0,0),   # bias 10, no delay
                             (2,0.1,0),  # bias 2, delay
                             (5,0.1,0),  # bias 5, delay
                             (10,0.1,0), # bias 10, delay
@@ -116,7 +117,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, del
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
 
     # perform inference and store results
-    e.infer( case = simseed )
+    e.infer( case = infseed )
     e.resultsToMySQL( db = experiment_base.db )
     e.success = True   # remove files
     print "Done " + label

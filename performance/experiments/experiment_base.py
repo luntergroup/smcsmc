@@ -7,10 +7,12 @@ import itertools
 import threading
 import traceback
 import time
+import random
 import Queue
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 ###################################################################################
 #
@@ -36,6 +38,7 @@ def run_experiment_queue():
     global error_bucket
     global task_queue
     global idle_queue
+    time.sleep( random.random() )    # avoid issues with sqlalchemy...
     while True:
         try:
             pars = task_queue.get(False)
@@ -55,13 +58,13 @@ def run_experiment_queue():
 # check if this experiment has already been run
 def have_result( **kwargs ):
     """ see if the database already contains the required result """
-    engine = create_engine("sqlite:///" + db)
+    engine = create_engine("sqlite:///" + db, poolclass=NullPool)
     if not engine.dialect.has_table(engine, "experiment"): return False
     metadata = MetaData(bind=engine)
-    class Experiment(Base):
-        __table__ = Table('experiment', metadata, autoload=True)
     Session = sessionmaker(bind=engine)
     session = Session()
+    class Experiment(Base):
+        __table__ = Table('experiment', metadata, autoload=True)
     result = session.query(Experiment).filter_by( **kwargs ).first()
     session.commit()
     session.close()
@@ -71,15 +74,15 @@ def have_result( **kwargs ):
 # remove all data for thsi experiment
 def remove( experiment_name ):
     """ remove any previous results for this experiment """
-    engine = create_engine("sqlite:///" + db)
+    engine = create_engine("sqlite:///" + db, poolclass=NullPool)
     if not engine.dialect.has_table(engine, "experiment"): return False
     metadata = MetaData(bind=engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
     class Experiment(Base):
         __table__ = Table('experiment', metadata, autoload=True)
     class Result(Base):
         __table__ = Table('result', metadata, autoload=True)
-    Session = sessionmaker(bind=engine)
-    session = Session()
     session.execute("DELETE FROM result WHERE exp_id IN ( SELECT id FROM experiment WHERE name = '{}')".format(
         experiment_name
     ))
@@ -122,16 +125,14 @@ def main( experiment_name, experiment_pars ):
     if args.force:
         remove( experiment_name )
     error_bucket = Queue.Queue()                   # to hold exceptions that occur in threads
+    task_queue = Queue.Queue()
+    idle_queue = Queue.Queue()
+    for par in experiment_pars:
+        task_queue.put( par )
+
     if args.jobs == 1:
-        for i in map( run_experiment_map, experiment_pars ):
-            pass
+        run_experiment_queue()
     else:
-        task_queue = Queue.Queue()
-        idle_queue = Queue.Queue()
-
-        for par in experiment_pars:
-            task_queue.put( par )
-
         for i in range(args.jobs):
             t = threading.Thread( target=run_experiment_queue )
             t.daemon = True
@@ -156,5 +157,3 @@ def main( experiment_name, experiment_pars ):
         # terminate program.  Since no error was produced, and args.jobs workers are idle,
         # they must all have finished.  But just to be sure...
         task_queue.join()
-
-        

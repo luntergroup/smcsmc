@@ -259,17 +259,17 @@ void Segment::set_lookahead() {
                 // Mark singleton if necessary, with the negative of the distance to START of segment
                 // Also mark sequence as participating (i.e. not able to participate) in doubletons
                 if (total_current_missing > max_missing_data) {
-                    if (first_singleton_distance[i] == 0) {
+                    if (first_singleton_distance[j] == 0) {
                         // no singleton yet seen in this lineage; stop looking and mark as "no mutation seen" (negative distance)
                         const double epsilon = 1e-3;
-                        first_singleton_distance[i] = -(buffer[i].segment_start - buffer[current_buf_index_].segment_start) - epsilon;
-                        relative_mutation_rate[i] = total_length_times_branches_missing / total_length_times_branches;
+                        first_singleton_distance[j] = -(buffer[i].segment_start - buffer[current_buf_index_].segment_start) - epsilon;
+                        relative_mutation_rate[j] = total_length_times_branches_missing / total_length_times_branches;
                         num_singletons++;
-                        last_singleton_distance = -first_singleton_distance[i];
+                        last_singleton_distance = -first_singleton_distance[j];
                     }
-                    if (!found_doubleton[i]) {
+                    if (!found_doubleton[j]) {
                         // no doubleton yet found that uses this lineage; stop looking
-                        found_doubleton[i] = true;
+                        found_doubleton[j] = true;
                         num_doubleton_sequences++;
                     }
                 }
