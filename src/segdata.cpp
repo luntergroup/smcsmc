@@ -261,11 +261,15 @@ void Segment::set_lookahead() {
                 if (total_current_missing > max_missing_data) {
                     if (first_singleton_distance[j] == 0) {
                         // no singleton yet seen in this lineage; stop looking and mark as "no mutation seen" (negative distance)
-                        const double epsilon = 1e-3;
+                        // however, if most of the segment was missing, ignore (mark as minus small distance)
+                        const double epsilon = 1e-6;
                         first_singleton_distance[j] = -(buffer[i].segment_start - buffer[current_buf_index_].segment_start) - epsilon;
+                        last_singleton_distance = -first_singleton_distance[j];
+                        if (first_singleton_distance[j] < 0.5 * total_current_missing) {
+                            first_singleton_distance[j] = -epsilon;
+                        }
                         relative_mutation_rate[j] = total_length_times_branches_missing / total_length_times_branches;
                         num_singletons++;
-                        last_singleton_distance = -first_singleton_distance[j];
                     }
                     if (!found_doubleton[j]) {
                         // no doubleton yet found that uses this lineage; stop looking
@@ -282,7 +286,7 @@ void Segment::set_lookahead() {
         total_length_times_branches         += buffer[i].segment_length * nsam_;
         total_length_times_branches_missing += buffer[i].segment_length * (nsam_ - num_missing);
         // if a long streak of missing data is encountered, stop since we then are unsure of existence of singletons and doubletons
-        if (total_current_missing > 2000)
+        if (total_current_missing > max_missing_data)
             continue;
 
         double have_doubleton = false;

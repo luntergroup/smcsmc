@@ -45,14 +45,17 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 #                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
 
 
+
 # for running without data;
 experiment_pars = [{'length':seqlen_infpar,
                     'smcseed':1,
                     'np':10,
                     'em':0,
                     'guide':0,
-                    'bias':0,
+                    'bias':1,
                     'mstep':True}]
+
+
 
 # main experiment:
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
@@ -62,7 +65,7 @@ experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide
                            particles,
                            [0],
                            [0],
-                           [1,2,5,10,-2,-5,-10], #    ,20,50,100,-10,-20,-50,-100],
+                           [1,2,5,10,20,50,100,-2,-5,-10,-20,-50,-100],
                            [True] ) ]
 
 
@@ -99,18 +102,19 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
                                     str_parameter=strpar):
         print "Skipping " + label
         return
-    
+
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
     e.setUp( experiment_base.datapath + experiment_name )
     e.pop.num_samples = 8
     e.str_parameter = strpar
 
     # set simulation parameters
+    rel_ne = 1         # Schiffel's paper uses 5
     e.pop.N0 = N0
     e.pop.mutation_rate = mu
     e.pop.recombination_rate = rho
     e.pop.change_points = [0, 0.596236]
-    e.pop.population_sizes = [[5], [0.5]]
+    e.pop.population_sizes = [[rel_ne], [rel_ne/10]]
     e.missing_leaves = missing_leaves
     # use "migration commands" to set exponential growth parameters for zigzag model (see msmc paper, supp info, pg. 11)
     e.pop.migration_commands = ["-eG 0.000582262 1318.18 -eG 0.00232905 -329.546 -eG 0.00931619 82.3865 -eG 0.0372648 -20.5966 -eG 0.149059 5.14916",""]
@@ -132,9 +136,15 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     # need to set pop sizes, migr rates and commands explicitly when change pts
     # differ between simulation and inference:
     #e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
-    e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, n0=1) ] for cp in e.smcsmc_change_points ]  ## TEST
+    e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, rel_ne) ] for cp in e.smcsmc_change_points ]  ## TEST
     e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
+
+    ## testing the simulation
+    #e.pop.change_points = e.smcsmc_change_points          ## TEST
+    #e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
+    #e.pop.migration_commands = None                       ## TEST
+    
     e.maxNE = 1e5
     e.seed = (smcseed,)
     e.seqlen = length
@@ -142,7 +152,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.np = np
     e.em = em
     e.chunks = chunks
-    e.aux_part_filt = 2
+    e.aux_part_filt = 2      # always use apf=2
     e.delay = 0              # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
     if bias > 0:
         e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1] ]  # 32
