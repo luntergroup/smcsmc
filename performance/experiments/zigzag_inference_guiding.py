@@ -114,7 +114,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.pop.mutation_rate = mu
     e.pop.recombination_rate = rho
     e.pop.change_points = [0, 0.596236]
-    e.pop.population_sizes = [[rel_ne], [rel_ne/10]]
+    e.pop.population_sizes = [[rel_ne], [rel_ne/10.0]]
     e.missing_leaves = missing_leaves
     # use "migration commands" to set exponential growth parameters for zigzag model (see msmc paper, supp info, pg. 11)
     e.pop.migration_commands = ["-eG 0.000582262 1318.18 -eG 0.00232905 -329.546 -eG 0.00931619 82.3865 -eG 0.0372648 -20.5966 -eG 0.149059 5.14916",""]
@@ -132,9 +132,9 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
                                range(6,18,2) +    # up to ~0.009;  6 epochs
                                range(18,58,5) +   # up to ~0.037;  8 epochs
                                range(58,162,13) + # up to ~0.149;  8 epochs
-                               range(162,261,11)] # up to ~0.596 and beyond; 8+1 epochs
-    # need to set pop sizes, migr rates and commands explicitly when change pts
-    # differ between simulation and inference:
+                               range(164,253,11)] # up to ~0.596 and beyond; 8+1 epochs
+
+    # need to set pop sizes, migr rates and commands explicitly when change pts differ between simulation and inference:
     #e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
     e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, rel_ne) ] for cp in e.smcsmc_change_points ]  ## TEST
     e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
