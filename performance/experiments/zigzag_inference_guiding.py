@@ -14,13 +14,12 @@ import math
 
 
 # parameters for this experiment
-inference_reps = 10
-particles = [500, 1000, 2000, 5000, 10000, 20000, 40000]
-particles2 = [500, 1000, 2000, 5000, 10000, 20000]
+inference_reps = 5
+particles = [30000]
 emiters = 10
-seqlen_infpar = 100e6
+seqlen_infpar = 200e6
 simseed = 1
-chunks = 4    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
+chunks = 8    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 
 mu = 1.25e-8  # from msmc paper (pg. 920)
 rho = 3.5e-9  # from msmc paper (supp pg. 11):  zigzag simulation uses -t 7156 -r 2000 => mu/rho = 3.578
@@ -33,25 +32,64 @@ experiment_name = "zigzag_inference_guiding"
 import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
-# define the experiments
+# define the experiments (old)
+#experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
+#                   for ( length, smcseed, simseed, np, em, guide, bias, mstep) in (
+#                           # unguided, unbiased, various numbers of particles, inferring parameters; variable data
+#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 1.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
+#                           # unguided, biased, various numbers of particles, inferring parameters; variable data
+#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 2.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
+#                           # guided, unbiased, smaller range of particles, inferring parameters; variable data
+#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 1.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))] +
+#                           # guided, biased, smaller range of particles, inferring parameters; variable data
+#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
+
+
+# for running without data;
+experiment_pars = [{'length':seqlen_infpar,
+                    'smcseed':1,
+                    'np':10,
+                    'em':0,
+                    'guide':0,
+                    'bias':0,
+                    'mstep':True}]
+
+# main experiment:
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
-                   for ( length, smcseed, simseed, np, em, guide, bias, mstep) in (
-                           # unguided, unbiased, various numbers of particles, inferring parameters; variable data
-                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 1.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-                           # unguided, biased, various numbers of particles, inferring parameters; variable data
-                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 2.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-                           # guided, unbiased, smaller range of particles, inferring parameters; variable data
-                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 1.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))] +
-                           # guided, biased, smaller range of particles, inferring parameters; variable data
-                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
+                   for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
+                           [seqlen_infpar],
+                           range(inference_reps),
+                           particles,
+                           [0],
+                           [0],
+                           [1,2,5,10,-2,-5,-10], #    ,20,50,100,-10,-20,-50,-100],
+                           [True] ) ]
 
 
+
+def schiffels_ne( t, n0=5 ):
+    T = [0.000582262,0.00232905,0.00931619,0.0372648,0.149059,0.596236,1e99]
+    e = [0,          1318.18,   -329.546,  82.3865,  -20.5966,5.14916, 0]
+    ne = n0
+    i = 0
+    t0 = 0
+    while t0 < t:
+        t1 = min( T[i], t )
+        ne = ne * math.exp( -e[i] * (t1 - t0) )
+        t0 = t1
+        i = i+1
+    return ne
 
 
 # run an experiment; keyword parameters agree with those in experiment_pars
 def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
-    missing_leaves = []
-    label = "L{}_S{}_N{}_G{}_B{}_M{}".format(int(length),smcseed,np,guide,bias,mstep)
+    missingdata = False
+    if missingdata:
+        missing_leaves = [0,1,2,3,4,5,6,7]  # TEST
+        label = "L{}_S{}_N{}_missing".format(int(length),smcseed,np)
+    else:
+        missing_leaves = []
+        label = "L{}_S{}_N{}_G{}_B{}_M{}".format(int(length),smcseed,np,guide,bias,mstep)
     strpar = "guide{}_bias{}_mstep{}".format(guide,bias,mstep)
     if experiment_base.have_result( name=experiment_name,
                                     sequence_length=length,
@@ -73,6 +111,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.pop.recombination_rate = rho
     e.pop.change_points = [0, 0.596236]
     e.pop.population_sizes = [[5], [0.5]]
+    e.missing_leaves = missing_leaves
     # use "migration commands" to set exponential growth parameters for zigzag model (see msmc paper, supp info, pg. 11)
     e.pop.migration_commands = ["-eG 0.000582262 1318.18 -eG 0.00232905 -329.546 -eG 0.00931619 82.3865 -eG 0.0372648 -20.5966 -eG 0.149059 5.14916",""]
     e.pop.sequence_length = length
@@ -86,13 +125,14 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     scale = 7
     e.smcsmc_change_points = [-math.log( 1-i/nT ) / scale for i in 
                                range(5) +         # up to ~0.0023; 1+4 epochs
-                               range(10,18,2) +   # up to ~0.009;  4 epochs
+                               range(6,18,2) +    # up to ~0.009;  6 epochs
                                range(18,58,5) +   # up to ~0.037;  8 epochs
                                range(58,162,13) + # up to ~0.149;  8 epochs
-                               range(162,256,10)] # up to ~0.596 and beyond; 9+1 epochs
+                               range(162,261,11)] # up to ~0.596 and beyond; 8+1 epochs
     # need to set pop sizes, migr rates and commands explicitly when change pts
     # differ between simulation and inference:
-    e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
+    #e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
+    e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, n0=1) ] for cp in e.smcsmc_change_points ]  ## TEST
     e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
     e.maxNE = 1e5
@@ -102,18 +142,16 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.np = np
     e.em = em
     e.chunks = chunks
-    if bias > 1.0:
-        e.bias_heights = [50,100,200,400,800]
-        e.bias_strengths = [5*bias,4*bias,3*bias,2*bias,bias,1]
+    e.aux_part_filt = 2
+    e.delay = 0              # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
+    if bias > 0:
+        e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1] ]  # 32
+        e.bias_strengths = [bias,1]
     else:
-        e.bias_heights = None
+        e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1,3,5] ] # 32, 96, 193
+        e.bias_strengths = [1.0-(bias+1), 1-(bias+1)/2.0, 1-(bias+1)/10.0, 1]
     e.guided_recomb_alpha = guide
     e.m_step = mstep
-
-    # testing
-    #e.np = 1
-    #e.em = 0
-    #e.missing_leaves = range(8)
 
     # perform inference and store results
     e.infer( case = smcseed )

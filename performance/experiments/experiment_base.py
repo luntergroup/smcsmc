@@ -12,7 +12,6 @@ import Queue
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
 
 ###################################################################################
 #
@@ -58,7 +57,7 @@ def run_experiment_queue():
 # check if this experiment has already been run
 def have_result( **kwargs ):
     """ see if the database already contains the required result """
-    engine = create_engine("sqlite:///" + db, poolclass=NullPool)
+    engine = create_engine("sqlite:///" + db)
     if not engine.dialect.has_table(engine, "experiment"): return False
     metadata = MetaData(bind=engine)
     Session = sessionmaker(bind=engine)
@@ -74,7 +73,7 @@ def have_result( **kwargs ):
 # remove all data for thsi experiment
 def remove( experiment_name ):
     """ remove any previous results for this experiment """
-    engine = create_engine("sqlite:///" + db, poolclass=NullPool)
+    engine = create_engine("sqlite:///" + db)
     if not engine.dialect.has_table(engine, "experiment"): return False
     metadata = MetaData(bind=engine)
     Session = sessionmaker(bind=engine)
