@@ -24,7 +24,6 @@
 #include "general.hpp"
 #include "count.hpp"
 #include "arena.hpp"
-#include "usage.hpp"
 #include "model_summary.hpp"
 
 #include <set>
