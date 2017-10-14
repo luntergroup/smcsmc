@@ -244,8 +244,8 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
                 median_survival_distances[epoch_idx] = earliest_survival_distance;
             }
         }
-        clog << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
-        clog << "   Survival distance set to " << median_survival_distances[epoch_idx] << endl;
+        clog << " Epoch " << epoch_idx << " (" << survival_distances[epoch_idx].size()
+             << " events): survival distance " << median_survival_distances[epoch_idx] << endl;
     }
     return median_survival_distances;
 }
@@ -281,8 +281,10 @@ void pfARG_core(PfParam &pfARG_para,
 
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
     model->lags_to_application_delays( median_survival, pfARG_para.delay );
-    for( size_t i=0; i<model->application_delays.size(); i++ ){
+    if (pfARG_para.delay > 0) {
+        for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    clog << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
+        }
     }
     // Now set the lag correctly according to the command
     if ( pfARG_para.calibrate_lag ){

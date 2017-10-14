@@ -46,6 +46,8 @@ ForestState::ForestState( Model* model,
     total_delayed_adjustment_ = 1.0;
     setSiteWhereWeightWasUpdated(0.0);
     first_event_height_ = -1.0;
+    first_coal_height_ = -1.0;
+    last_coal_height_ = -1.0;
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
@@ -188,9 +190,10 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 coal_event |= tmp_event_.isPwCoalescence();
             }
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
-            if (first_event_height_ < 0.0) {
-                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COALMIGR && migr_event) first_event_height_ = end_height;
-                if (coal_event) first_event_height_ = end_height;
+            if (coal_event || migr_event) {
+                if (first_event_height_ < 0.0)              first_event_height_ = end_height;
+                if (coal_event && first_coal_height_ < 0.0) first_coal_height_ = end_height;
+                last_coal_height_ = end_height;
             }
             if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             start_base = this->current_base();
@@ -490,7 +493,8 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         double p = p_nochange * p_splitdata + (1.0 - p_nochange) * p_correct_split * mut_rate * split_branch_length;
         likelihood *= p;
         //double mut_branch_length = p_splitdata / (this->model().mutation_rate()); // only for display
-        //cout << " Split L=" << p_splitdata << " true brlen=" << mut_branch_length << " dist=" << segment.first_split_distance << " p_noch=" << p_nochange << " p_avg=" << p_correct_split * mut_rate * split_branch_length << " p=" << p << endl;
+        //cout << " Split L=" << p_splitdata << " true brlen=" << mut_branch_length << " dist=" << segment.first_split_distance
+        //     << " p_noch=" << p_nochange << " p_avg=" << p_correct_split * mut_rate * split_branch_length << " p=" << p << endl;
     }
         
     //cout << "Lookahead: " << likelihood << endl;
@@ -703,6 +707,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         // Next, if we haven't reached extend_to now, sample new genealogy, and a new recomb point
         if ( updated_to < extend_to ) {
 
+            int mult = multiplicity();
             if (multiplicity() > 1 && updated_to > model().getCurrentSequencePosition()) {
                 // A recombination has occurred on a particle with multiplicity > 1.
                 // Spawn a new particle with multiplicity one less, resample its recombination
@@ -711,37 +716,65 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                 //  the normal way.
                 assert( pParticleContainer != NULL );
                 pParticleContainer->push_back( spawn() );
-                save_recomb_state();
-                pParticleContainer->back()->restore_recomb_state();
                 pParticleContainer->back()->set_current_base( updated_to );
-                pParticleContainer->back()->resample_recombination_position();
-                pParticleContainer->back()->save_recomb_state();
-                restore_recomb_state();
+                // Do not yet sample a new recombination point for the new particle with multiplicity mult-1,
+                // as particle clumping may yet change the multiplicity of this particle
             }
 
             // a recombination has occurred, or the recombination rate has changed;
             // forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
             first_event_height_ = -1.0;
+            first_coal_height_ = -1.0;
             recombination_bias_importance_weight_ = 1.0;
             double importance_weight = this->sampleNextGenealogy( true );
-            
-            if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
-            if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
-            
-            if (importance_weight >= 0.0) {
-                // a recomb has occurred. Implement importance weight, with appropriate delay
 
-                if (first_event_height_ == -1.0)
-                    throw std::runtime_error("No coalescence found where one was expected");
+            if (importance_weight >= 0.0) {
+                // a recombination has occurred.  see if this event needs to be clumped
+                bool clumping = (first_event_height_ > 5500) && (last_coal_height_ < 1e10);    // TESTING
+                int clump = max(1, (int)sqrt(mult) );  //min( mult, 250 );                      // TESTING
+                if (!clumping) clump = 1;     // spawn particle with mult 1
+                if (clump>1 && random_generator()->sample() * clump >= 1.0)
+                    clump = 0;                // do not keep this event
+
+                // set new multiplicity
+                setMultiplicity( clump );
+                if (mult>1) pParticleContainer->back()->setMultiplicity( mult - clump );
+
+                // now that multiplicity of pParticleContainer->back() is known, sample a new recombination point for it
+                if (mult - clump > 0) {
+                    // save recombination index, owned by singleton Model, into *this Particle, and restore from back() particle
+                    save_recomb_state();
+                    pParticleContainer->back()->restore_recomb_state();
+                    pParticleContainer->back()->resample_recombination_position();
+                    // save new index into particleContainer->back(), and restore from *this
+                    pParticleContainer->back()->save_recomb_state();
+                    restore_recomb_state();
+                } else if (mult > 1) {
+                    // spawned particle ends up having weight 0 -- remove it again
+                    delete pParticleContainer->back();
+                    pParticleContainer->pop_back();
+                }
+            
+                // if clump == 0, *this commits suicide.  It will be removed by particleContainer.  If >0, continuu
+                // (This common code path can be made more efficient -- first simulate the event before spawning a new particle)
+                if (clump == 0) break;
+            
+                if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
+                if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
+            
+                // Implement importance weight, with appropriate delay
+                if (first_event_height_ == -1.0) throw std::runtime_error("No coalescence found where one was expected");
 
                 // If the coalescence occurred above top bias height, i.e. the sampling failed
                 // to produce an early coalescence as intended, then apply the importance weight
                 // factor due to the recombination bias immediately, so that we don't pollute
                 // the particles.  However, always apply the importance weight due to guiding
                 // with the appropriate delay
-                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) first_event_height_ = rec_point.height();
+                double delay_height = first_event_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COAL)   delay_height = first_coal_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) delay_height = rec_point.height();
                 int idx = 0;
-                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < first_event_height_) ++idx;
+                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < delay_height) ++idx;
                 if (model().bias_strengths()[idx] == 1.0) {
                     // the height of the focal event (recombination, coalescence, or migration, as per delay_type)
                     // is not biased, so apply the importance weight for the recombination bias immediately, and factor
@@ -749,7 +782,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                     adjustWeights( recombination_bias_importance_weight_ );
                     importance_weight /= recombination_bias_importance_weight_;
                 }
-                double delay = find_delay( first_event_height_ );
+                double delay = find_delay( delay_height );
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
                 // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
@@ -763,14 +796,11 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
             // The new recombination position does take account of multiplicity(), so that
             // particles with high multiplicity() have higher effective recombination rates.
             this->sampleNextBase( true );
-
             record_recomb_extension();
 
             // If this is an extension after an actual recombination, record the recomb event
             if (importance_weight >= 0.0) {
-
                 record_recomb_event( rec_point.height() );
-                
             }
         }
         // record current position as recombination, so that resampling of recomb. position starts from here

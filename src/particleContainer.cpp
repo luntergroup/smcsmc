@@ -119,6 +119,13 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
         particles[particle_i]->restore_recomb_state();
         particles[particle_i]->extend_ARG ( extend_to, leaf_status, data_at_site, &particles );
         particles[particle_i]->save_recomb_state();
+        if (particles[particle_i]->multiplicity() == 0) {
+            // particle committed suicide -- remove, replace by back() of the array, and process
+            delete particles[particle_i];
+            particles[particle_i] = particles.back();
+            particles.pop_back();
+            particle_i--;
+        }
         dout << " after extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
     }
 }

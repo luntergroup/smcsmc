@@ -14,7 +14,7 @@ import math
 
 
 # parameters for this experiment
-inference_reps = 5
+inference_reps = 19
 particles = [30000]
 emiters = 10
 seqlen_infpar = 200e6
@@ -61,11 +61,11 @@ experiment_pars = [{'length':seqlen_infpar,
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
                    for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
                            [seqlen_infpar],
-                           range(inference_reps),
+                           range(17,inference_reps),
                            particles,
                            [0],
                            [0],
-                           [1,2,5,10,20,50,100,-2,-5,-10,-20,-50,-100],
+                           [1,2,5,10,20,-2,-5,-10],
                            [True] ) ]
 
 
