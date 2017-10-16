@@ -141,7 +141,7 @@ public:
 	bool unphased_1, unphased_2;
         bool incompatible;
         Doubleton( int i1, int i2, double d1, double d2, bool uph_1, bool uph_2 ) :
-            seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2), unphased_1(uph_1), unphased_2(uph_2) {}
+	  seq_idx_1(i1), seq_idx_2(i2), first_evidence_distance(d1), last_evidence_distance(d2), unphased_1(uph_1), unphased_2(uph_2), incompatible(false) {}
     };
 
     // singleton data:
