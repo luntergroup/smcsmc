@@ -207,13 +207,21 @@ private:
         assert( std::abs(posterior_weight_ - pilot_weight_ * total_delayed_adjustment_) <= .001 * posterior_weight_ );
     }
     
-    //// biased sampling    
+    // biased sampling    
     double find_delay( double coal_height );
     double importance_weight_over_segment( double previously_updated_to, double update_to );
     double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
     void inline accumulateBranchLengths( double rate, bool recomb_bias, const Node* node, double& length, double& weight );
     double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
     Node* trackLocalNode(Node *node) const;
+
+    // trial sampling
+    double sampleNextGenealogyWithoutImplementing();
+    void dontImplementFixedTimeEvent(TimeIntervalIterator &ti);
+    void dontImplementNoEvent(const TimeInterval &ti, bool &coalescence_finished);
+    void dontImplementRecombination(const Event &event, TimeIntervalIterator &ti);
+    void dontImplementCoalescence(const Event &event, TimeIntervalIterator &tii);
+    Node* virtualPossiblyMoveUpwards(Node* node, const TimeInterval &time_interval);
 
     // below are overloaded
     virtual double sampleNextBase( bool record_and_bias );

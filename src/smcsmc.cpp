@@ -216,9 +216,6 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
         }
       }
     }
-    clog << "Median survival: " << iterations << " iterations; per-epoch counts";
-    for (size_t idx = 0; idx < survival_distances.size(); idx++ ) clog << " " << survival_distances[idx].size();
-    clog << endl;
 
     // now deal with the possiblity that no or insufficient events have been sampled for an epoch
     vector <double> median_survival_distances;

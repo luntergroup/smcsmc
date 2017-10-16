@@ -726,8 +726,26 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
             first_event_height_ = -1.0;
             first_coal_height_ = -1.0;
             recombination_bias_importance_weight_ = 1.0;
+
+            // TESTING
+            RandomGenerator* rg_copy = new MersenneTwister( *dynamic_cast<MersenneTwister*>(this->random_generator()) );
+            this->sampleNextGenealogyWithoutImplementing();
+            (*dynamic_cast<MersenneTwister*>(this->random_generator())) = *dynamic_cast<MersenneTwister*>(rg_copy);
+            delete rg_copy;
+
+            // Keep copies of the previously sampled change, to check that we are indeed getting the same one
+            double feh = first_event_height_;
+            double fch = first_coal_height_;
+            double lch = last_coal_height_;            
+            
+            first_event_height_ = -1.0;
+            first_coal_height_ = -1.0;
             double importance_weight = this->sampleNextGenealogy( true );
 
+            if (feh != first_event_height_ ||
+                fch != first_coal_height_ ||
+                lch != last_coal_height_) throw std::runtime_error("Not identical");
+            
             if (importance_weight >= 0.0) {
                 // a recombination has occurred.  see if this event needs to be clumped
                 bool clumping = (first_event_height_ > 5500) && (last_coal_height_ < 1e10);    // TESTING
@@ -1154,3 +1172,257 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
     return 1.0;
 }
 
+
+
+/**
+ * Function to modify the tree after we encountered a recombination on the
+ * sequence. Also samples a place for this recombination on the tree, marks the
+ * branch above as non-local (and updates invariants) if needed, cuts the
+ * subtree below away and starts a coalescence from it's root.
+ * @ingroup group_scrm_next
+ * @ingroup group_pf_update
+ */
+double ForestState::sampleNextGenealogyWithoutImplementing() {
+
+    ++current_rec_;  // Move to next recombination (temporarily)
+
+    // Prune the tree (test if this is necessary; it may not be for coalescences since
+    //  the tree may be pruned before branches are sampled from)
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) { }
+
+    if (current_base() == model().getCurrentSequencePosition()) {
+        --current_rec_;
+        return -1;        // recombination rate change; signal that no recombination has occurred
+    }
+
+    this->contemporaries_.buffer(tmp_event_time_);
+
+    // Sample the recombination point into TreePoint rec_point member
+    double importance_weight = samplePoint( true );
+
+    // Virtual (local) root node that will be coalescing into the existing tree
+    Node start_node( rec_point.base_node()->height() );     // is_root() and local() by default
+    start_node.set_population( rec_point.base_node()->population() );
+    start_node.set_first_child( rec_point.base_node() );    // store actual node is first_child()
+
+    // We can have one or active local nodes: If the coalescing node passes the
+    // local root, it also starts a coalescence.
+    Node second_node( local_root()->height() );
+    second_node.set_population(  local_root()->population() );
+    second_node.set_parent(      local_root()->parent() );      // sets is_root()
+    second_node.make_nonlocal(   local_root()->last_update() ); // sets local()
+    second_node.set_first_child( local_root() );                // store actual node in first_child()
+
+    // Initialize Temporary Variables
+    // tmp_event_.time() is the time of the current event, and may not be
+    // part of the tree (the "new" events will not be, as the tree won't be
+    // modified).  The time intervals processed in the main loop below will
+    // start at tmp_event_time().
+    tmp_event_ = Event();
+    coalescence_finished_ = false;
+
+    if (start_node.height() > second_node.height()) {
+        tmp_event_.set_time( second_node.height() );
+        set_active_node(0, &second_node);
+        set_active_node(1, &start_node);
+    } else {
+        tmp_event_.set_time( rec_point.height() );   // recombination height, not height of start_node
+        set_active_node(0, &start_node);
+        set_active_node(1, &second_node);
+    }
+
+    // Start iterator from rec_point.base_node(), possibly several nodes
+    // below recombination
+    for (TimeIntervalIterator ti(this, rec_point.base_node()); ti.good(); ++ti) {
+
+        // Skip intervals before first event;
+        // remain processing this TimeInterval until no new events occur within it.
+        while ( tmp_event_.time() < (*ti).end_height() ) {
+
+            // Update States & Rates (see their declaration for explanation);
+            states_[0] = getNodeState(active_node(0), tmp_event_.time());
+            states_[1] = getNodeState(active_node(1), tmp_event_.time());
+
+            // Fixed time events (e.g pop splits/merges & single migration events first
+            if (model().hasFixedTimeEvent( tmp_event_.time() ))
+                dontImplementFixedTimeEvent(ti);
+
+            // Calculate the rates of events in this time interval
+            TimeInterval interval( &ti, tmp_event_.time(), (*ti).end_height() );
+            calcRates(interval);
+
+            // Sample the time at which the next event happens (if any)
+            // If no event, tmp_event_time_ and tmp_event_.time() are set to -1
+            sampleEvent(interval, tmp_event_time_, tmp_event_);
+
+            // Implement the event
+            if ( tmp_event_.isNoEvent() ) {
+                this->dontImplementNoEvent(*ti, coalescence_finished_);
+            }
+
+            else if ( tmp_event_.isPwCoalescence() ) {
+                last_coal_height_ = tmp_event_time_;
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                if (first_coal_height_ < 0.0)  first_coal_height_  = tmp_event_time_;
+                this->coalescence_finished_ = true;                  // we're done
+            }
+
+            else if ( tmp_event_.isRecombination() ) {
+                this->dontImplementRecombination(tmp_event_, ti);
+            }
+
+            else if ( tmp_event_.isMigration() ) {
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                tmp_event_.node()->set_population(tmp_event_.mig_pop());  // implement
+            }
+
+            else if ( tmp_event_.isCoalescence() ) {
+                last_coal_height_ = tmp_event_time_;
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                if (first_coal_height_ < 0.0)  first_coal_height_  = tmp_event_time_;
+                this->dontImplementCoalescence(tmp_event_, ti);
+            }
+
+            if (coalescence_finished()) {
+                --current_rec_;
+                return importance_weight;
+            }
+        }
+    }
+    throw std::logic_error("No final coalescence event was sampled!");
+}
+
+
+void ForestState::dontImplementFixedTimeEvent(TimeIntervalIterator &ti) {
+
+    double sample;
+    bool migrated;
+    size_t chain_cnt, pop_number = model().population_number();
+
+    for (size_t i = 0; i < 2; ++i) {
+        if (states_[i] != 1) continue;
+        chain_cnt = 0;
+        while (true) {
+            migrated = false;
+            sample = random_generator()->sample();
+            for (size_t j = 0; j < pop_number; ++j) {
+                sample -= model().single_mig_pop(active_node(i)->population(), j);
+                if (sample < 0) {
+                    tmp_event_ = Event((*ti).start_height());
+                    tmp_event_.setToMigration(active_node(i), i, j);
+                    tmp_event_.node()->set_population(tmp_event_.mig_pop());    // implement
+                    migrated = true;
+                    break;
+                }
+            }
+
+            // Stop if no migration occurred
+            if (!migrated) break;
+            
+            // Resolve a maximum of 10k chained events for each node
+            if (chain_cnt == 10000) throw std::logic_error("Cycle detected when moving individuals between populations");
+            ++chain_cnt;
+        }
+    }
+}
+
+
+void ForestState::dontImplementNoEvent(const TimeInterval &ti, bool &coalescence_finished) {
+
+    // set start-of-interval to end height
+    tmp_event_.set_time( ti.end_height() );
+
+    if (ti.end_height() == DBL_MAX) throw std::logic_error("Lines did not coalesce.");
+    if (states_[0] == 2) {
+        set_active_node(0, virtualPossiblyMoveUpwards(active_node(0), ti));
+        if (active_node(0)->local()) {
+            coalescence_finished = true;
+            tmp_event_time_ = active_node(0)->height();          // Update contemporaries for reuse
+            contemporaries_.replaceChildren(active_node(0)->first_child());  // Replace actual node
+            return;
+        }
+    }
+    
+    // There are no local node above the local root, which is the lowest node
+    // that active_node(1) can be.
+    if (states_[1] == 2) set_active_node(1, virtualPossiblyMoveUpwards(active_node(1), ti));
+    
+    if (active_node(0) == active_node(1)) {
+        coalescence_finished = true;
+        tmp_event_time_ = active_node(0)->height();            // Update contemporaries for reuse
+        contemporaries_.replaceChildren(active_node(0)->first_child());  // Replace actual node
+    }
+}
+
+
+void ForestState::dontImplementRecombination(const Event &event, TimeIntervalIterator &ti) {
+
+    Node* recombining_node = event.node();
+    recombining_node->make_local();                // it is now coalescing
+    recombining_node->set_parent(NULL);            // make root
+    recombining_node->set_height( event.time() );
+}
+
+
+void ForestState::dontImplementCoalescence(const Event &event, TimeIntervalIterator &tii) {
+
+  // Coalescence: sample target point and implement the coalescence
+  Node* coal_node = event.node();
+  Node* target = contemporaries_.sample(coal_node->population());
+
+  coal_node->set_parent( target->parent() );
+  coal_node->make_local();
+  coal_node->make_nonlocal( target->last_update() );
+  coal_node->set_first_child( target );
+  // not necessary to update population, or set active node
+
+  if ( getOtherNodesState() == 2 ) {
+      // If the coalescing node coalesced into the branch directly above
+      // a recombining node, we are done.
+      if ( getOtherNode()->parent() == getEventNode()->first_child() ) {
+          coalescence_finished_ = true;
+          return;
+      }
+  }
+
+  if ( target->local() ) {
+    // Only active_node(0) can coalescence into local nodes. active_node(1) is
+    // at least the local root and hence above all local nodes.
+    // If active_node(0) coalescences into the local tree, there are no more
+    // active nodes and we are done.
+    coalescence_finished_ = true;
+  }
+}
+
+
+/**
+ * Helper function for doing a coalescence.
+ * Moves the 'active' flag (i.e. the node stored in root_1 or root_2 in sampleCoalescence)
+ * from a node to it's parent if the branch above the node
+ * ends this the current time interval.
+ *
+ * This function is used the pass the active flag upwards in the tree if the
+ * node is active, but neither coalescing nor a recombination happens on the
+ * branch above, e.g. after a local-branch became active because it was hit by a
+ * coalescence or a non-local branch was active and no recombination occurred.
+ *
+ * Also updates the active node if it moves up.
+ *
+ * \param node An active node
+ * \param time_interval The time interval the coalescence is currently in.
+ *
+ * \return  Either the parent of 'node' if we need to move upwards or 'node'
+ *          itself
+ */
+Node* ForestState::virtualPossiblyMoveUpwards(Node* node, const TimeInterval &time_interval) {
+  if ( node->parent_height() == time_interval.end_height() ) {
+      Node* newnode = node->parent();
+      node->set_height( newnode->height() );
+      node->set_population( newnode->population() );
+      node->make_local();
+      node->make_nonlocal( newnode->last_update() );
+      node->set_first_child( newnode );
+      node->set_parent( newnode->parent() );
+  }
+  return node;
+}
