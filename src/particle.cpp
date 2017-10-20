@@ -736,11 +736,11 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                     if ((pfparam.SCRMparam->random_seed() % 4) == 0) {
                         clump = 1;                // no clumping
                     } else if ((pfparam.SCRMparam->random_seed() % 4) == 1) {
-                        clump = min( mult, 5 );   // factor 5 clumping
+                        clump = min( mult, 2 );   // factor 2 clumping
                     } else if ((pfparam.SCRMparam->random_seed() % 4) == 2) {
-                        clump = min( mult, 25 );  // factor 25 clumping
+                        clump = min( mult, 5 );   // factor 5 clumping
                     } else if ((pfparam.SCRMparam->random_seed() % 4) == 3) {
-                        clump = max(1, (int)sqrt(mult) );   // sqrt clumping
+                        clump = min( mult, 10 );  // factor 10 clumping
                     }
                     if (clump>1 && random_generator()->sample() * clump >= 1.0) {
                         clump = 0;                // keep the appropriate fraction of events

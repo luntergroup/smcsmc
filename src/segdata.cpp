@@ -206,7 +206,7 @@ void Segment::read_new_line(){
     allelic_state_at_Segment_end = sd.allele_state;
     chrom_ = 1; // dummy value
 
-    if ( current_buf_index_ > 0 && current_buf_index_ % 2000 == 0 ) {
+    if ( current_buf_index_ % 2000 == 1 ) {
         cout << "\r" << " Particle filtering " << setw(4) << int((segment_end() * 100) / seqlen_)
              << "% completed." << flush;
     }
