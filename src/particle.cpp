@@ -710,13 +710,12 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 	    if (updated_to == model().getCurrentSequencePosition()) {
 
 	        this->sampleNextGenealogy( true );    // only advances recombination event pointer in this case
-	        this->sampleNextBase( true );         // obtain/store next recombination (or r. rate change) event
+	        this->sampleNextBase( true );         // obtain nest recomb rate change event, and push it onto vector
                 record_recomb_extension();
 
 	    } else {
 
-		// a recombination has occurred, or the recombination rate has changed;
-		// forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
+		// a recombination has occurred
 		first_event_height_ = -1.0;
 		first_coal_height_ = -1.0;
 		
@@ -728,15 +727,23 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 		double fch = first_coal_height_;
 		double lch = last_coal_height_;            
 
+                // TESTING
 		// a recombination has occurred.  see if this event needs to be clumped
                 int clump = 1;
                 int mult = multiplicity();
-                if ((first_event_height_ > 5500) && (last_coal_height_ < 1e10)) {
+                if ((first_event_height_ > 1500) && (last_coal_height_ < 1e10)) {
                     // events in this range will be clumped, to save time
-                    clump = max(1, (int)sqrt(mult) );  //min( mult, 250 );
+                    if ((pfparam.SCRMparam->random_seed() % 4) == 0) {
+                        clump = 1;                // no clumping
+                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 1) {
+                        clump = min( mult, 5 );   // factor 5 clumping
+                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 2) {
+                        clump = min( mult, 25 );  // factor 25 clumping
+                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 3) {
+                        clump = max(1, (int)sqrt(mult) );   // sqrt clumping
+                    }
                     if (clump>1 && random_generator()->sample() * clump >= 1.0) {
-                        // only keep a fraction of events
-                        clump = 0;
+                        clump = 0;                // keep the appropriate fraction of events
                     }
                 }
 
