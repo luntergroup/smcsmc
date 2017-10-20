@@ -14,10 +14,10 @@ import math
 
 
 # parameters for this experiment
-inference_reps = 19
-particles = [30000]
+inference_reps = 8*12
+particles = [45000]
 emiters = 10
-seqlen_infpar = 200e6
+seqlen_infpar = 400e6
 simseed = 1
 chunks = 8    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 
@@ -57,15 +57,15 @@ experiment_pars = [{'length':seqlen_infpar,
 
 
 
-# main experiment:
+# main experiment - different clumped resampling strategies, keyed by smcseed  (see particle.cpp - hardcoded)
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
                    for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
                            [seqlen_infpar],
-                           range(17,inference_reps),
+                           range(1,inference_reps),
                            particles,
                            [0],
                            [0],
-                           [1,2,5,10,20,-2,-5,-10],
+                           [2],
                            [True] ) ]
 
 
