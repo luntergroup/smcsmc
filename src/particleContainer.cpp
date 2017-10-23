@@ -332,17 +332,7 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam, vector<Fo
             pfparam.append_resample_file( update_to, ess );
             to_sample = num_particles;
         }
-	// TESTING
-	int clumpsize = 1;
-	if (((pfparam.SCRMparam->random_seed() / 4) % 2) == 1) {
-	  switch (pfparam.SCRMparam->random_seed() % 4) {
-	  case 0: clumpsize = 1; break;
-	  case 1: clumpsize = 2; break;
-	  case 2: clumpsize = 5; break;
-	  case 3: clumpsize = 10; break;
-	  }
-	}
-        systematic_resampling( partial_sums, sample_count, to_sample, clumpsize );
+        systematic_resampling( partial_sums, sample_count, to_sample );
         *particles = implement_resampling( *particles, sample_count, wi_sum);
         result = 1;
         
@@ -534,29 +524,25 @@ void ParticleContainer::update_state_to_data( Segment * segment,
  */
 void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum,
                                               std::valarray<int>& sample_count,
-                                              int N,
-					      int clumpsize = 1 ) const {
+                                              int N ) const {
     int num_records = sample_count.size();
-    if (N % clumpsize != 0) throw std::runtime_error("Systematic resampling: clump size must divide number of particles evenly");
-    int Nc = N / clumpsize;
-    double invNc = 1.0 / Nc;
     size_t sample_i = 0;                                             // sample counter, 1 to N
-    double u_j = random_generator()->sample() / Nc;                  // quantile of record to sample
+    double u_j = random_generator()->sample() / N;                   // quantile of record to sample
     size_t interval_j = 0;                                           // index of record to sample
     double partial_sum_normalization = partial_sum[ num_records ];
 
     sample_count[ interval_j ] = 0;
-    while (sample_i < Nc) {
+    while (sample_i < N) {
 
         /* invariants: */
         assert( partial_sum[interval_j] / partial_sum_normalization < u_j );
-        assert( sample_i < Nc );
+        assert( sample_i < N );
         assert( interval_j < num_records );
 
-        if ( (sample_i == Nc ) || partial_sum[interval_j+1] > u_j * partial_sum_normalization ) {
-            sample_count[ interval_j ] += clumpsize;
+        if ( (sample_i == N) || partial_sum[interval_j+1] / partial_sum_normalization > u_j ) {
+            sample_count[ interval_j ] += 1;
             sample_i++;
-            u_j += invNc;
+            u_j += 1.0/double(N);
         } else {
             interval_j++;
             sample_count[ interval_j ] = 0;
