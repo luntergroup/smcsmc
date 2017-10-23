@@ -716,34 +716,32 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 	    } else {
 
 		// a recombination has occurred
+                int mult = multiplicity();
+                int clump = 1;
+                double feh, fch, lch;
+		RandomGenerator* rg_copy = NULL;
 		first_event_height_ = -1.0;
 		first_coal_height_ = -1.0;
-		
-		RandomGenerator* rg_copy = new MersenneTwister( *dynamic_cast<MersenneTwister*>(this->random_generator()) );
-		this->sampleNextGenealogyWithoutImplementing();
 
-		// Keep copies of the previously sampled change, to check that we are indeed getting the same one
-		double feh = first_event_height_;
-		double fch = first_coal_height_;
-		double lch = last_coal_height_;            
+                if (mult > 1) {
 
-                // TESTING
-		// a recombination has occurred.  see if this event needs to be clumped
-                int clump = 1;
-                int mult = multiplicity();
-                if ((first_event_height_ > 1500) && (last_coal_height_ < 1e10)) {
-                    // events in this range will be clumped, to save time
-                    if ((pfparam.SCRMparam->random_seed() % 4) == 0) {
-                        clump = 1;                // no clumping
-                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 1) {
-                        clump = min( mult, 2 );   // factor 2 clumping
-                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 2) {
-                        clump = min( mult, 5 );   // factor 5 clumping
-                    } else if ((pfparam.SCRMparam->random_seed() % 4) == 3) {
-                        clump = min( mult, 10 );  // factor 10 clumping
-                    }
-                    if (clump>1 && random_generator()->sample() * clump >= 1.0) {
-                        clump = 0;                // keep the appropriate fraction of events
+                    rg_copy = new MersenneTwister( *dynamic_cast<MersenneTwister*>(this->random_generator()) );
+                    this->sampleNextGenealogyWithoutImplementing();
+
+                    // Keep copies of the previously sampled change, to check that we are indeed getting the same one
+                    feh = first_event_height_;
+                    fch = first_coal_height_;
+                    lch = last_coal_height_;            
+
+                    // a recombination has occurred.  see if this event needs to be clumped
+                    clump = min( mult, 5 );
+                    if ((first_event_height_ > 1500) && (last_coal_height_ < 1e10)) {
+                        // events in this range will be clumped, to save time
+                        if (clump>1 && random_generator()->sample() * clump >= 1.0) {
+                            clump = 0;                // keep the appropriate fraction of events
+                        }
+                    } else {
+                        clump = 1;
                     }
                 }
 
@@ -767,8 +765,10 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 		    setMultiplicity( clump );
 
 		    // reset random number generator to its initial state
-		    (*dynamic_cast<MersenneTwister*>(this->random_generator())) = *dynamic_cast<MersenneTwister*>(rg_copy);
-		    delete rg_copy;
+                    if (rg_copy != NULL) {
+                        (*dynamic_cast<MersenneTwister*>(this->random_generator())) = *dynamic_cast<MersenneTwister*>(rg_copy);
+                        delete rg_copy;
+                    }
 
 		    // sample new tree
 		    first_event_height_ = -1.0;
@@ -780,14 +780,16 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 		    if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
 		
 		    // check we have the correct tree
-		    if (abs(feh-first_event_height_) > 1e-3 ||
-			abs(fch-first_coal_height_) > 1e-3 ||
-			abs(lch-last_coal_height_) > 1e-3) {
-		      cout << feh << " " << first_event_height_ << endl;
-		      cout << fch << " " << first_coal_height_ << endl;
-		      cout << lch << " " << last_coal_height_ << endl;
-		      throw std::runtime_error("Pre-sampled and actually sampled trees not identical!");
-		    }
+                    if (mult > 1) {
+                        if (abs(feh-first_event_height_) > 1e-3 ||
+                            abs(fch-first_coal_height_) > 1e-3 ||
+                            abs(lch-last_coal_height_) > 1e-3) {
+                            cout << feh << " " << first_event_height_ << endl;
+                            cout << fch << " " << first_coal_height_ << endl;
+                            cout << lch << " " << last_coal_height_ << endl;
+                            throw std::runtime_error("Pre-sampled and actually sampled trees not identical!");
+                        }
+                    }
 
 		    if (mult - clump > 0) {
 			// save recombination index, owned by singleton Model, into *this Particle, and restore from back() particle;
