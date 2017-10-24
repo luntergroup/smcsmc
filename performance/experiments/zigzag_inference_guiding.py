@@ -2,6 +2,8 @@ import itertools
 import math
 import sys
 
+import experiment_base
+
 ###################################################################################
 #
 # experiment:
@@ -14,7 +16,7 @@ import sys
 
 
 # parameters for this experiment
-nodata = True
+missingdata = True
 inference_reps = 8*12
 particles = [45000]
 emiters = 0
@@ -30,12 +32,10 @@ N0 = 14312    # from msmc paper (supp pg. 11):  7156 = 4 N0 mu L, L = 10e6
 experiment_name = "zigzag_inference_guiding"
 
 # class implementing the experiment outline
-sys.path.extend( ["../../newtests"] )
 import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 # at this point import experiment_base - to allow it to modify the execute settings imported by test_generic
-import experiment_base
 
 
 # define the experiments (old)
@@ -65,7 +65,7 @@ experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide
                            [True] ) ]
 
 
-if nodata:
+if missingdata:
     # for running without data;
     experiment_pars = [{'length':seqlen_infpar,
                         'smcseed':12345,
@@ -94,9 +94,8 @@ def schiffels_ne( t, n0=5 ):
 
 # run an experiment; keyword parameters agree with those in experiment_pars
 def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
-    missingdata = False
     if missingdata:
-        missing_leaves = [0,1,2,3,4,5,6,7]  # TEST
+        missing_leaves = [0,1,2,3,4,5,6,7]
         label = "L{}_S{}_N{}_missing".format(int(length),smcseed,np)
     else:
         missing_leaves = []
@@ -149,9 +148,10 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
 
     ## testing the simulation
-    e.pop.change_points = e.smcsmc_change_points          ## TEST
-    e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
-    e.pop.migration_commands = None                       ## TEST
+    if True:
+        e.pop.change_points = e.smcsmc_change_points          ## TEST
+        e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
+        e.pop.migration_commands = None                       ## TEST
     
     e.maxNE = 1e5
     e.seed = (smcseed,)

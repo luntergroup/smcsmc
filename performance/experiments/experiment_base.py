@@ -9,6 +9,7 @@ import traceback
 import time
 import random
 import Queue
+
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -27,10 +28,9 @@ scrmpath = "../../scrm"
 smcsmcpath = "../../python/smcsmc.py"
 datapath = "data/"
 
-#sys.path.extend( ["../../newtests","../newtests","../../python"] )
+sys.path.extend( ["../../newtests","../../python"] )
+import execute
 
-# module "execute" is imported by test_generic, itself imported by the high-level experiment
-execute = sys.modules['execute']
 
 
 # run a single experiment
