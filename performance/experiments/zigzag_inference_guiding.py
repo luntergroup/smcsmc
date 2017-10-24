@@ -15,14 +15,14 @@ import experiment_base
 
 
 
-# parameters for this experiment
-missingdata = True
-inference_reps = 8*12
+# parameters for this experiment.  Estimated to take 2.5 days for 100 chunks on the cluster
+missingdata = False
+inference_reps = 2
 particles = [45000]
-emiters = 0
-seqlen_infpar = 400e6
+emiters = 40
+seqlen_infpar = 2000e6
 simseed = 1
-chunks = 8    # don't forget to use -c -C "-P lunter.prjb -q long.qb"
+chunks = 100  # don't forget to use -c -C "-P lunter.prjb -q long.qb"
 
 mu = 1.25e-8  # from msmc paper (pg. 920)
 rho = 3.5e-9  # from msmc paper (supp pg. 11):  zigzag simulation uses -t 7156 -r 2000 => mu/rho = 3.578
@@ -35,29 +35,12 @@ experiment_name = "zigzag_inference_guiding"
 import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
-# at this point import experiment_base - to allow it to modify the execute settings imported by test_generic
-
-
-# define the experiments (old)
-#experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
-#                   for ( length, smcseed, simseed, np, em, guide, bias, mstep) in (
-#                           # unguided, unbiased, various numbers of particles, inferring parameters; variable data
-#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 1.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-#                           # unguided, biased, various numbers of particles, inferring parameters; variable data
-#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.0, 2.0, True)    for np, rep in itertools.product(particles, range(inference_reps))] +
-#                           # guided, unbiased, smaller range of particles, inferring parameters; variable data
-#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 1.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))] +
-#                           # guided, biased, smaller range of particles, inferring parameters; variable data
-#                           [(seqlen_infpar, 1+rep, 1+rep, np, emiters, 0.5, 2.0, True)    for np, rep in itertools.product(particles2, range(inference_reps))])]
-
-
-
 
 # main experiment - different clumped resampling strategies, keyed by smcseed  (see particle.cpp - hardcoded)
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
                    for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
                            [seqlen_infpar],
-                           range(1,inference_reps),
+                           range(inference_reps),
                            particles,
                            [emiters],
                            [0],
@@ -142,18 +125,21 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
                                range(164,253,11)] # up to ~0.596 and beyond; 8+1 epochs
 
     # need to set pop sizes, migr rates and commands explicitly when change pts differ between simulation and inference:
-    #e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
-    e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, rel_ne) ] for cp in e.smcsmc_change_points ]  ## TEST
+    if missingdata:
+        e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, rel_ne) ] for cp in e.smcsmc_change_points ]
+    else:
+        e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
+
     e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
 
     ## testing the simulation
-    if True:
+    if missingdata:
         e.pop.change_points = e.smcsmc_change_points          ## TEST
         e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
         e.pop.migration_commands = None                       ## TEST
     
-    e.maxNE = 1e5
+    e.maxNE = 5e4
     e.seed = (smcseed,)
     e.seqlen = length
     e.smcsmcpath = experiment_base.smcsmcpath

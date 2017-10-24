@@ -281,19 +281,18 @@ class TestGeneric(unittest.TestCase):
 
         # don't use the execute module to submit the smcsmc job to the cluster -- instead, pass the submission
         # options to the smcsmc script, which will then submit each chunk as a separate job to the cluster.
-        qsub_config = execute.qsub_config
-        if self.submit_chunks:
-            if qsub_config != None:
-                execute.qsub_config = None        # stop execute from submitting smcsmc.py to cluster
-                cmdelts = cmd.split(" ")          # instead pass option to submit to cluster to smcsmc.py
-                clustopts = "-c -C \"" + qsub_config + "\""
-                cmd = " ".join( [cmdelts[0], clustopts] + cmdelts[1:] )
+        submit_local = False
+        if self.submit_chunks and execute.qsub_config != None:
+            cmdelts = cmd.split(" ")          # instead pass option to submit to cluster to smcsmc.py
+            clustopts = "-c -C \"" + execute.qsub_config + "\""
+            cmd = " ".join( [cmdelts[0], clustopts] + cmdelts[1:] )
+            submit_local = True
         if self.debug:
             print (cmd)
         returnvalue = execute.check_call(cmd,
                                          outputdir=os.path.dirname(self.caseprefix),
-                                         name=os.path.basename(self.caseprefix))
-        execute.qsub_config = qsub_config
+                                         name=os.path.basename(self.caseprefix),
+                                         submit_local=submit_local)
         end = time.time()
         self.assertTrue( returnvalue == 0 )
         self.smcsmc_runtime = end-start

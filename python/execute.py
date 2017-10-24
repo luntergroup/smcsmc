@@ -8,8 +8,9 @@ import stat
 qsub_config = None
 
 
-def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False):
-    if qsub_config is None:
+def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, submit_local=False):
+
+    if submit_local or (qsub_config is None):
         return subprocess.check_call(cmd, shell=True)
 
     if outputdir is None: outputdir = "./"
@@ -44,5 +45,5 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False):
     return exitcode
 
 
-def Popen(cmd, shell=True, outputdir=None, name=None):
-    return check_call(cmd, shell, outputdir, use_popen=True)
+def Popen(cmd, shell=True, outputdir=None, name=None, submit_local=False):
+    return check_call(cmd, shell, outputdir, use_popen=True, submit_local=submit_local)

@@ -3,7 +3,13 @@ SMCSMCVERSION = $(shell git show HEAD | head -1 | sed -e "s/commit //g" | cat)
 SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/src.*//" | cat)
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 
-# disable for Darwin and rescomp
+# disable for Darwin
+# (for rescomp, do:
+#    git clone https://github.com/gperftools/gperftools.git;
+#    ./autogen.sh;
+#    ./configure --prefix=/pth/to/user/space
+#    make ; make install
+#    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/pth/to/user/space)
 TCMALLOC = -ltcmalloc
 
 # set for rescomp
