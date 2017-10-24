@@ -131,63 +131,6 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
 }
 
 
-void ParticleContainer::extend_ARGs_importance_sampling( double extend_to, const vector<int>& data_at_site, const Segment& segment,
-                                                         bool ancestral_aware, const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
-
-    dout << endl<<" IS: we are extending " << particles.size() << " particles" << endl<<endl;
-
-    const PfParam& pfparam = particles[0]->pfparam;
-    int num_importance_samples = pfparam.num_importance_samples;
-
-    // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
-    int num_leaves_missing = 0;
-    int leaf_status = 0;   // -1 all missing; 1 all present; 0 mixed
-    for (int i=0; i<data_at_site.size(); i++)      num_leaves_missing += data_at_site[i] == -1;
-    if (num_leaves_missing == 0)                   leaf_status = 1;
-    if (num_leaves_missing == data_at_site.size()) leaf_status = -1;
-
-    vector<ForestState*> is_particles;
-    int num_particles = particles.size();
-    for (size_t particle_i = 0; particle_i < num_particles; particle_i++) {
-        dout << "We are updating particle " << particle_i << endl;
-        dout << " before extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
-
-        int multiplicity = particles[particle_i]->multiplicity();
-        is_particles.push_back( particles[particle_i] );     // steal pointer!
-        particles[particle_i] = NULL;
-        is_particles[0]->setMultiplicity( multiplicity * num_importance_samples );
-        // extend the now enlarged set of particles as normal
-        for (size_t is_particle = 0; is_particle < is_particles.size(); is_particle++) {
-            is_particles[is_particle]->restore_recomb_state();
-            is_particles[is_particle]->extend_ARG ( extend_to, leaf_status, data_at_site, &is_particles );
-            is_particles[is_particle]->save_recomb_state();
-            dout << "  is.idx " << is_particle << " wt " << is_particles[is_particle]->posteriorWeight() << " mult " << is_particles[is_particle]->multiplicity()
-                 << " is_part.size " << is_particles.size() << endl;
-        }
-        // update the lookahead weights of these particles
-        update_lookahead_likelihood( segment, is_particles, ancestral_aware, terminal_branch_lengths );
-        // resample 'multiplicity' particles.  Must use only lookahead weights, not likelihood, but since the likelihood isn't yet
-        // updated and the particles all descend from a common one, the likelihoods are all the same, and only lookahead weights influence sampling
-        resample(extend_to, pfparam, &is_particles, multiplicity );
-        // replace particle by extended particle; also undo increase in weight due to num_importance_samples
-        particles[particle_i] = is_particles[0];
-        particles[particle_i]->adjustWeights( 1.0 / num_importance_samples );
-        is_particles[0] = NULL;
-        dout << " after extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
-        // put any additional particles at the back of the vector.  These do not have to be extended further,
-        // as they have been extended above (in order to calculate the apf likelihood)
-        for (size_t i = 1; i < is_particles.size(); i++) {
-            particles.push_back( is_particles[i] );
-            particles.back()->adjustWeights( 1.0 / num_importance_samples );
-            is_particles[i] = NULL;
-            dout << " additional: weight " << particles.back()->posteriorWeight() << " mult is " << particles.back()->multiplicity() << endl;
-        }
-        is_particles.clear();
-    }
-}
-
-    
-
 int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips,
                                                                   vector<int>& haplotype_at_tips ) const {
 
@@ -493,19 +436,11 @@ void ParticleContainer::update_state_to_data( Segment * segment,
     const vector<int>& data_at_site = segment->allelic_state_at_Segment_end;
     double extend_to = (double)min(segment->segment_end(), (double)model->loci_length() );
 
-    if (particles[0]->pfparam.num_importance_samples > 1) {
+    //Extend ARGs and update weight for not seeing mutations along the sequences
+    extend_ARGs( extend_to, data_at_site );
 
-        // When using importance sampling, extending the particles and updating the lookahead weights is done simultaneously
-        extend_ARGs_importance_sampling( extend_to, data_at_site, *segment, ancestral_aware, terminal_branch_lengths );
-
-    } else {
-    
-        //Extend ARGs and update weight for not seeing mutations along the sequences
-        extend_ARGs( extend_to, data_at_site );
-
-        //Update the lookahead likelihood
-        update_lookahead_likelihood( *segment, particles, ancestral_aware, terminal_branch_lengths );
-    }
+    //Update the lookahead likelihood
+    update_lookahead_likelihood( *segment, particles, ancestral_aware, terminal_branch_lengths );
     
     //Update weight for seeing mutation at the position
     update_weight_at_site( *segment, particles, ancestral_aware, terminal_branch_lengths );

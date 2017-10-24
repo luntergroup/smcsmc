@@ -142,11 +142,13 @@ void PfParam::parse(int argc, char *argv[]) {
 	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 4) {
 		throw OutOfRange( "-apf", *argv_i );
 	    }
-        } else if ( * argv_i == "-Nis" ) {
-            this->num_importance_samples = this->readNextInput<int>();
-            if (num_importance_samples < 1) {
-                throw OutOfRange( "-Nis", *argv_i );
-            }
+        } else if ( *argv_i == "-clump" ) {
+            this->clump_size = this->readNextInput<int>();
+            if (clump_size <= 1) throw OutOfRange( "-clump: invalid size ", *argv_i );
+            this->clump_start_gen = this->readNextInput<double>();
+            if (clump_start_gen < 0) throw OutOfRange( "-clump: invalid start generation ", *argv_i );
+            this->clump_end_gen = this->readNextInput<double>();
+            if (clump_end_gen < clump_start_gen) throw OutOfRange( "-clump: invalid end generation ", *argv_i );
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -212,7 +214,6 @@ void PfParam::init(){
     this->original_recombination_rate_ = 0;
     this->max_segment_length_factor_ = 4.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
-    this->num_importance_samples = 1;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
     this->lag_fraction     = 4.0;
@@ -220,6 +221,9 @@ void PfParam::init(){
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
     this->auxiliary_particle_filter = 0;
+    this->clump_size       = 1;
+    this->clump_start_gen  = 0;
+    this->clump_end_gen    = 0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;
@@ -324,12 +328,6 @@ void PfParam::finalize(){
 	throw std::invalid_argument(std::string("Recombination guiding and auxiliary particle filters cannot currently be used together"));
     }
 
-    // importance sampling of new particles must (currently) be combined with auxiliary particle filtering (because they use
-    //  the same model)
-    if ( num_importance_samples > 1 && auxiliary_particle_filter == 0 ) {
-        throw std::invalid_argument(std::string("When using importance sampling for extending particles (-Nis > 1), auxiliary particle filtering (-apf) must be used"));
-    }
-    
     // remove any existing files with these names
     remove( this->outFileName.c_str() );
     remove( this->log_NAME.c_str() );
@@ -540,7 +538,6 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
     cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
-    //cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
     cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
     cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
@@ -550,7 +547,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
-    cout << setw(15)<<"-Nis"           << setw(8) << "INT" << "  --  " << "Number of importance samples to use when extending particle" << endl;
+    cout << setw(15)<<"-clump"         << setw(8) << "(3)" << "  --  " << "Use particle clumping (three parameters: clump size; first generation; last generation)" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;

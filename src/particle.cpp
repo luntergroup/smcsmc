@@ -734,8 +734,8 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                     lch = last_coal_height_;            
 
                     // a recombination has occurred.  see if this event needs to be clumped
-                    clump = min( mult, 5 );
-                    if ((first_event_height_ > 1500) && (last_coal_height_ < 1e10)) {
+                    clump = min( mult, pfparam.clump_size );
+                    if ((first_event_height_ > pfparam.clump_start_gen) && (last_coal_height_ < pfparam.clump_end_gen)) {
                         // events in this range will be clumped, to save time
                         if (clump>1 && random_generator()->sample() * clump >= 1.0) {
                             clump = 0;                // keep the appropriate fraction of events

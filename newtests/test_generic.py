@@ -72,6 +72,7 @@ class TestGeneric(unittest.TestCase):
         self.bias_strengths = [2,1]
         self.filename_disambiguator = ""
         self.aux_part_filt = 0            # 1 to use auxiliary particle filter
+        self.clump = None                 # list of 3 values: clump size, start generation, end generation
         self.int_parameter = 0
         self.str_parameter = ""
         # state:
@@ -164,6 +165,7 @@ class TestGeneric(unittest.TestCase):
         maxneopt = ""
         chunksopt = ""
         apfopt = ""
+        clumpopt = ""
             
         if self.maxNE < 1e99: maxneopt = "-cap {}".format(self.maxNE)
 
@@ -195,8 +197,11 @@ class TestGeneric(unittest.TestCase):
 
         if self.aux_part_filt > 0:
             apfopt = "-apf {}".format(self.aux_part_filt)
+
+        if self.clump != None:
+            clumpopt = " ".join(map(str, self.clump))
             
-        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} {apf} " \
+        self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} {clump} {apf} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
@@ -207,6 +212,7 @@ class TestGeneric(unittest.TestCase):
                                      guide = guideopt,
                                      maxne = maxneopt,
                                      chunks = chunksopt,
+                                     clump = clumpopt,
                                      apf = apfopt,
                                      lag = lagopt,
                                      epochs = epochopt,
@@ -273,9 +279,20 @@ class TestGeneric(unittest.TestCase):
             f.write("--- test_generic: starting smcsmc on {} ---\n".format(datetime.datetime.now().isoformat()))
         with open(self.caseprefix + ".stderr",'a') as f: 
             f.write("--- test_generic: starting smcsmc on {} ---\n".format(datetime.datetime.now().isoformat()))
+
+        # don't use the execute module to submit the smcsmc job to the cluster -- instead, pass the submission
+        # options to the smcsmc script, which will then submit each chunk as a separate job to the cluster.
+        qsub_config = None
+        if execute.qsub_config != None:
+            qsub_config = execute.qsub_config
+            execute.qsub_config = None
+            cmdelts = cmd.split(" ")
+            clustopts = "-c -C \"" + qsub_config + "\""
+            cmd = " ".join( cmdelts[0], clustopts, cmdelts[1:] )
         returnvalue = execute.check_call(cmd,
                                          outputdir=os.path.dirname(self.caseprefix),
                                          name=os.path.basename(self.caseprefix))
+        execute.qsub_config = qsub_config
         end = time.time()
         self.assertTrue( returnvalue == 0 )
         self.smcsmc_runtime = end-start

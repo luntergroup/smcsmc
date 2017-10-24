@@ -7,8 +7,10 @@ import gzip
 import subprocess
 import time
 from collections import defaultdict
+
 import populationmodels
 import processrecombination
+import execute
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ class Smcsmc:
         self.maxNE = 1e99
         self._processes = []
         self.threads = True
+        self.cluster = False
+        self.cconfig = None
         
         self.smcsmcpath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../smcsmc'))
         
@@ -84,6 +88,8 @@ class Smcsmc:
             (3, '-smcsmcpath', 'f','Path to smcsmc executable ({})'.format(self.smcsmcpath)),
             (3, '-nothreads','','Calculate chunks sequentially rather than in parallel threads'),
             (3, '-log', 'f',    'Log file (stdout)'),
+            (3, '-c', '',       'Use qsub to submit job(s) to cluster (overrides use of threads)'),
+            (3, '-C', 'opts',   'Qsub config parameter(s) e.g. "-P project.prj -q long.q"; overrides ./qsub.conf'),
             (3, '-@', 'f',      'File with line-, space-, or tab-separated options'),
             (3, '-v', '',       'Show version of underlying smcsmc and scrm implementations'),  
             (3, "-help", '',    'This help')]
@@ -162,6 +168,12 @@ class Smcsmc:
             elif opts[idx] == '-log':
                 self.logfile = opts[idx+1]
                 idx += 2
+            elif opts[idx] == '-c':
+                self.cluster = True
+                idx += 1
+            elif opts[idx] == '-C':
+                self.cconfig = opts[idx+1]
+                idx += 2
             elif opts[idx] == '-nothreads':
                 self.threads = False
                 idx += 1
@@ -181,6 +193,13 @@ class Smcsmc:
             fh.setLevel( logging.DEBUG )
             fh.setFormatter(formatter)
             logger.addHandler( fh )
+        if self.cluster:
+            if self.cconfig is None:
+                try:
+                    self.cconfig = open("./qsub.conf").read().replace('\n',' ')
+                except:
+                    self.cconfig = ""
+            execute.qsub_config = self.cconfig   # assign to global variable within module 'execute'
         logger.info("Finished parsing EM-related options")
         logger.info("Parsed these options: '{}'".format(' '.join(parsed_opts)))
         logger.info("Options passed to populationmodels: '{}'".format(' '.join(unparsed_opts)))
@@ -337,11 +356,11 @@ class Smcsmc:
         # launch processes writing to the same file in parallel!
         command = " ".join(command)
         logger.info("Running: "+command)
-        if self.threads:
+        if self.threads and not self.cluster:
             p = subprocess.Popen(command, shell=True)
             self._processes.append(p)    # add to list of processes, so that we can wait for them to be done
         else:
-            subprocess.call(command, shell=True)
+            execute.check_call(command, shell=True)
             
                                  
     def do_iteration(self, iteration):

@@ -25,7 +25,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None):
 
     # execute using qrsh
     stdoutname = "{}/{}.stdout".format(dirname, hex(hash(cmd)))
-    exitcode = subprocess.check_call("qrsh -j y -cwd -now n -V -N {} -o {} {} {}".format(name, stdoutname, qsub_config, cmd), shell=True)
+    exitcode = subprocess.check_call("qrsh -j y -cwd -now n -V -N {} -o {} {} {}".format(name, stdoutname, qsub_config, cmd), shell=shell)
 
     # clean up if successful
     if exitcode == 0:

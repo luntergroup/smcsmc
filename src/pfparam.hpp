@@ -269,7 +269,6 @@ class PfParam{
     int    EM_steps;     /*!< \brief Number of EM iterations */
     double ESSthreshold; /*!< \brief Effective sample size, scaled by the number of particles = ESS * N , 0 < ESS < 1 */
     double max_segment_length_factor_;  /*!< \brief Allow segments of max length   mslf / (4 Ne rho) */
-    size_t num_importance_samples;      /*!< \brief Number of samples to use for importance sampling of prior */
     bool   useCap;
     double Ne_cap;
 
@@ -288,6 +287,9 @@ class PfParam{
     bool ancestral_aware;
     bool online_bool;
     int auxiliary_particle_filter;
+    int clump_size;
+    double clump_start_gen;
+    double clump_end_gen;
     double start_position;
 
     Segment * Segfile;

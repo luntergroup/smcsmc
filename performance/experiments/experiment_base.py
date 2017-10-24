@@ -29,7 +29,9 @@ datapath = "data/"
 
 sys.path.extend( ["../../newtests","../newtests","../../python"] )
 
-import execute
+#
+# module "execute" is imported by test_generic, itself imported by the high-level experiment
+#
 
 
 # run a single experiment
@@ -105,7 +107,7 @@ def main( experiment_name, experiment_pars ):
     global idle_queue
 
     parser = argparse.ArgumentParser(description='Run experiment ' + experiment_name)
-    parser.add_argument('-j', '--jobs', type=int, default=1, help='set number of threads')
+    parser.add_argument('-j', '--jobs', type=int, default=1, help='set number experiments to run in parallel')
     parser.add_argument('-f', '--force', action='store_true', help='overwrite existing results in db; reuse existing iteration files')
     parser.add_argument('-c', '--cluster', action='store_true', help='use qsub to submit job(s) to cluster')
     parser.add_argument('-C', '--cconfig', help='qsub config parameter(s); override ./qsub.conf')

@@ -14,9 +14,10 @@ import math
 
 
 # parameters for this experiment
+nodata = True
 inference_reps = 8*12
 particles = [45000]
-emiters = 10
+emiters = 0
 seqlen_infpar = 400e6
 simseed = 1
 chunks = 8    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
@@ -46,16 +47,6 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 
 
-# for running without data;
-experiment_pars = [{'length':seqlen_infpar,
-                    'smcseed':1,
-                    'np':10,
-                    'em':0,
-                    'guide':0,
-                    'bias':1,
-                    'mstep':True}]
-
-
 
 # main experiment - different clumped resampling strategies, keyed by smcseed  (see particle.cpp - hardcoded)
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
@@ -63,10 +54,22 @@ experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide
                            [seqlen_infpar],
                            range(1,inference_reps),
                            particles,
-                           [0],
+                           [emiters],
                            [0],
                            [2],
                            [True] ) ]
+
+
+if nodata:
+    # for running without data;
+    experiment_pars = [{'length':seqlen_infpar,
+                        'smcseed':12345,
+                        'np':10,
+                        'em':0,
+                        'guide':0,
+                        'bias':1,
+                        'mstep':True}]
+    inference_reps = 1
 
 
 
@@ -141,9 +144,9 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
 
     ## testing the simulation
-    #e.pop.change_points = e.smcsmc_change_points          ## TEST
-    #e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
-    #e.pop.migration_commands = None                       ## TEST
+    e.pop.change_points = e.smcsmc_change_points          ## TEST
+    e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
+    e.pop.migration_commands = None                       ## TEST
     
     e.maxNE = 1e5
     e.seed = (smcseed,)
