@@ -1,6 +1,6 @@
-import experiment_base
 import itertools
 import math
+import sys
 
 ###################################################################################
 #
@@ -20,7 +20,7 @@ particles = [45000]
 emiters = 0
 seqlen_infpar = 400e6
 simseed = 1
-chunks = 8    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
+chunks = 8    # don't forget to use -c -C "-P lunter.prjb -q long.qb"
 
 mu = 1.25e-8  # from msmc paper (pg. 920)
 rho = 3.5e-9  # from msmc paper (supp pg. 11):  zigzag simulation uses -t 7156 -r 2000 => mu/rho = 3.578
@@ -29,9 +29,14 @@ N0 = 14312    # from msmc paper (supp pg. 11):  7156 = 4 N0 mu L, L = 10e6
 # name of this experiment
 experiment_name = "zigzag_inference_guiding"
 
-# class
+# class implementing the experiment outline
+sys.path.extend( ["../../newtests"] )
 import test_const_pop_size
 experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
+
+# at this point import experiment_base - to allow it to modify the execute settings imported by test_generic
+import experiment_base
+
 
 # define the experiments (old)
 #experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
@@ -155,6 +160,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.np = np
     e.em = em
     e.chunks = chunks
+    e.submit_chunks = True
     e.aux_part_filt = 2      # always use apf=2
     e.delay = 0              # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
     if bias > 0:

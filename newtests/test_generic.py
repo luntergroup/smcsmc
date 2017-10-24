@@ -73,6 +73,7 @@ class TestGeneric(unittest.TestCase):
         self.filename_disambiguator = ""
         self.aux_part_filt = 0            # 1 to use auxiliary particle filter
         self.clump = None                 # list of 3 values: clump size, start generation, end generation
+        self.submit_chunks = False        # set to True to submit individual chunks as jobs to cluster
         self.int_parameter = 0
         self.str_parameter = ""
         # state:
@@ -221,8 +222,6 @@ class TestGeneric(unittest.TestCase):
                                      pilots = pilotsopt,
                                      ancestral_aware = ancawareopt,
                                      mstep = mstepopt)
-        if self.debug:
-            print (self.inference_command)
         return self.inference_command
 
     # helper -- generate simulated data, if this has not been done yet
@@ -282,13 +281,15 @@ class TestGeneric(unittest.TestCase):
 
         # don't use the execute module to submit the smcsmc job to the cluster -- instead, pass the submission
         # options to the smcsmc script, which will then submit each chunk as a separate job to the cluster.
-        qsub_config = None
-        if execute.qsub_config != None:
-            qsub_config = execute.qsub_config
-            execute.qsub_config = None
-            cmdelts = cmd.split(" ")
-            clustopts = "-c -C \"" + qsub_config + "\""
-            cmd = " ".join( cmdelts[0], clustopts, cmdelts[1:] )
+        qsub_config = execute.qsub_config
+        if self.submit_chunks:
+            if qsub_config != None:
+                execute.qsub_config = None        # stop execute from submitting smcsmc.py to cluster
+                cmdelts = cmd.split(" ")          # instead pass option to submit to cluster to smcsmc.py
+                clustopts = "-c -C \"" + qsub_config + "\""
+                cmd = " ".join( [cmdelts[0], clustopts] + cmdelts[1:] )
+        if self.debug:
+            print (cmd)
         returnvalue = execute.check_call(cmd,
                                          outputdir=os.path.dirname(self.caseprefix),
                                          name=os.path.basename(self.caseprefix))

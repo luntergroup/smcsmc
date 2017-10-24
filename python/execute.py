@@ -8,12 +8,13 @@ import stat
 qsub_config = None
 
 
-def check_call(cmd, shell=True, outputdir=None, name=None):
+def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False):
     if qsub_config is None:
         return subprocess.check_call(cmd, shell=True)
 
     if outputdir is None: outputdir = "./"
     if name is None: name = cmd.split(' ')[0]
+    name = name.split('/')[-1]
 
     # create output directory if necessary
     dirname = os.path.abspath( outputdir )
@@ -24,8 +25,13 @@ def check_call(cmd, shell=True, outputdir=None, name=None):
             raise ValueError("Cannot find or create directory '{}'".format( dirname ))
 
     # execute using qrsh
-    stdoutname = "{}/{}.stdout".format(dirname, hex(hash(cmd)))
-    exitcode = subprocess.check_call("qrsh -j y -cwd -now n -V -N {} -o {} {} {}".format(name, stdoutname, qsub_config, cmd), shell=shell)
+    stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
+    command = "qrsh -j y -cwd -now n -V -N {} -o {} {} {}".format(name, stdoutname, qsub_config, cmd)
+    if use_popen:
+        popen = subprocess.Popen( command, shell=shell )
+        return popen
+
+    exitcode = subprocess.check_call( command, shell=shell )
 
     # clean up if successful
     if exitcode == 0:
@@ -38,7 +44,5 @@ def check_call(cmd, shell=True, outputdir=None, name=None):
     return exitcode
 
 
-    
-    
-
-
+def Popen(cmd, shell=True, outputdir=None, name=None):
+    return check_call(cmd, shell, outputdir, use_popen=True)

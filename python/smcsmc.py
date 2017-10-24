@@ -360,7 +360,9 @@ class Smcsmc:
             p = subprocess.Popen(command, shell=True)
             self._processes.append(p)    # add to list of processes, so that we can wait for them to be done
         else:
-            execute.check_call(command, shell=True)
+            p = execute.Popen(command, shell=True)
+            self._processes.append(p)    # add to list of processes, so that we can wait for them to be done
+            #execute.check_call(command, shell=True)
             
                                  
     def do_iteration(self, iteration):

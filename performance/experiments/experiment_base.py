@@ -27,11 +27,10 @@ scrmpath = "../../scrm"
 smcsmcpath = "../../python/smcsmc.py"
 datapath = "data/"
 
-sys.path.extend( ["../../newtests","../newtests","../../python"] )
+#sys.path.extend( ["../../newtests","../newtests","../../python"] )
 
-#
 # module "execute" is imported by test_generic, itself imported by the high-level experiment
-#
+execute = sys.modules['execute']
 
 
 # run a single experiment
