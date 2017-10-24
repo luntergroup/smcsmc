@@ -147,8 +147,9 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.em = em
     e.chunks = chunks
     e.submit_chunks = True
-    e.aux_part_filt = 2      # always use apf=2
-    e.delay = 0              # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
+    e.aux_part_filt = 2       # always use apf=2
+    e.clump = [5, 1500, 1e10] # clump particles 5-fold, except in early epoch (speedup)
+    e.delay = 0               # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
     if bias > 0:
         e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1] ]  # 32
         e.bias_strengths = [bias,1]

@@ -200,7 +200,7 @@ class TestGeneric(unittest.TestCase):
             apfopt = "-apf {}".format(self.aux_part_filt)
 
         if self.clump != None:
-            clumpopt = " ".join(map(str, self.clump))
+            clumpopt = "-clump {}".format(" ".join(map(str, self.clump)))
             
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} {clump} {apf} " \
                                  "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
