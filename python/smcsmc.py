@@ -277,15 +277,29 @@ class Smcsmc:
         of.close()
 
 
+    def have_outfile(self, iteration, chunk):
+        if not os.path.exists( self.out_template.format(iteration,chunk) ):
+            return False
+        try:
+            data = self.parse_outfile( self.out_template.format(iteration,chunk) )
+            for key in data:
+                if key[0][0] == "LogL": 
+                    return True
+        except:
+            pass
+        return False
+
+
     def wait_for_outfile(self, iteration, chunk):
         sleeptime = 30
         while True:
-            if os.path.exists( self.out_template.format(iteration,chunk) ):
+            if self.have_outfile( iteration, chunk ):
+                logger.info("Found chunk {}".format(chunk))
                 break
             if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
             time.sleep( sleeptime )
             sleeptime *= 1.02
-        
+
 
     def merge_outfiles(self):
         of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
@@ -354,21 +368,23 @@ class Smcsmc:
         # the output files (e.g. self.stdout_template.format(iteration,chunk)).  This is
         # hard to do on a cluster system, so it's up to the user to make sure they don't
         # launch processes writing to the same file in parallel!
+        # However do check if a complete .out file is already present, and do not overwrite if so
+        if self.have_outfile(iteration, chunk):
+            logger.info("Results for iteration {} chunk {} already present -- continuing".format(iteration+1,chunk))
+            return                       # data is complete
         command = " ".join(command)
         logger.info("Running: "+command)
         if self.threads and not self.cluster:
             p = subprocess.Popen(command, shell=True)
             self._processes.append(p)    # add to list of processes, so that we can wait for them to be done
         else:
-            p = execute.Popen(command, shell=True)
-            self._processes.append(p)    # add to list of processes, so that we can wait for them to be done
-            #execute.check_call(command, shell=True)
+            execute.submit(command, shell=True)
             
                                  
     def do_iteration(self, iteration):
         # check if already done (combined .out file exists); if so finish
         self.prepare_folder( iteration )
-        if os.path.exists( self.out_template.format(iteration,"final") ):
+        if self.have_outfile( iteration, "final" ):
             logger.info("Results for iteration {} already exist -- continuing".format(iteration+1))
             if iteration == self.emiters:
                 logger.info("All iterations were already present -- results not recomputed")

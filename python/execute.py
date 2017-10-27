@@ -8,7 +8,7 @@ import stat
 qsub_config = None
 
 
-def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, submit_local=False):
+def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_submit=False, submit_local=False):
 
     if submit_local or (qsub_config is None):
         return subprocess.check_call(cmd, shell=True)
@@ -26,8 +26,13 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, subm
             raise ValueError("Cannot find or create directory '{}'".format( dirname ))
 
     # execute using qrsh
-    stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
-    command = "qrsh -j y -cwd -now n -V -N {} -o {} {} {}".format(name, stdoutname, qsub_config, cmd)
+    if use_submit:
+        qscript =     qscript = "qsub -b y"
+        stdoutname = "/dev/null"
+    else:
+        stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
+        qscript = "qrsh"
+    command = "{} -j y -cwd -now n -V -N {} -o {} {} {}".format(qscript, name, stdoutname, qsub_config, cmd)
     if use_popen:
         popen = subprocess.Popen( command, shell=shell )
         return popen
@@ -35,7 +40,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, subm
     exitcode = subprocess.check_call( command, shell=shell )
 
     # clean up if successful
-    if exitcode == 0:
+    if exitcode == 0 and not use_submit:
         try:
             os.unlink(stdoutname)
         except OSError:
@@ -47,3 +52,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, subm
 
 def Popen(cmd, shell=True, outputdir=None, name=None, submit_local=False):
     return check_call(cmd, shell, outputdir, use_popen=True, submit_local=submit_local)
+
+
+def submit(cmd, shell=True, outputdir=None, name=None, submit_local=False):
+    return check_call(cmd, shell, outputdir, use_submit=True, submit_local=submit_local)
