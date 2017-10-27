@@ -26,7 +26,7 @@
 using namespace std;
 
 Segment::Segment( string file_name, size_t nsam, double seqlen, double num_of_mut,
-                  double data_start, double max_segment_length )
+                  long long data_start, double max_segment_length )
     : file_name_(file_name), nsam_(nsam), data_start_(data_start),
       seqlen_(seqlen), max_segment_length_(max_segment_length)
 {
@@ -56,7 +56,7 @@ void Segment::prepare(){
     ifstream in_file;
     string tmp_line;
     in_file.open( this->file_name_.c_str() );
-    long next_start_pos = -1;
+    long long next_start_pos = -1;
     
     if ( in_file.good() ){
         this->buffer.clear();
@@ -79,7 +79,7 @@ void Segment::prepare(){
                 if (col_starts.size() < 3) throw InvalidSeg("Require 3 or 6 columns");
                 char* end_ptr;
                 vector<int> allele;
-                long new_seg_start = strtol( tmp_line.c_str(), &end_ptr, 10 );
+                long long new_seg_start = strtoll( tmp_line.c_str(), &end_ptr, 10 );
                 if (*end_ptr != '\t')
                     throw InvalidSegmentStartPosition(tmp_line, to_string(new_seg_start) );
                 long new_seg_len   = strtol( tmp_line.c_str() + col_starts[1], &end_ptr, 10 );
@@ -133,10 +133,12 @@ void Segment::prepare(){
                         } else {
                             state = SEGMENT_INVARIANT;
                         }
-                        buffer.push_back( SegDatum( new_seg_start,
-                                                    new_seg_len,
-                                                    state,
-                                                    allele ) );
+                        if (new_seg_start + new_seg_len > data_start_) {
+                            buffer.push_back( SegDatum( new_seg_start,
+                                                        new_seg_len,
+                                                        state,
+                                                        allele ) );
+                        }
                         new_seg_start += new_seg_len;
                         new_seg_len = next_start_pos - new_seg_start;
                     } while (new_seg_start < next_start_pos);
@@ -168,7 +170,7 @@ void Segment::reset_data_to_first_entry() {
 
     current_buf_index_ = 0;
     set_end_data(false);
-    segment_start_ = data_start_;
+    segment_start_ = 0;
     segment_length_ = 0;
     if ( empty_file_ ){
         segment_length_ = ceil( (size_t)seqlen_ / num_of_expected_mutations_ ) ;
@@ -195,13 +197,16 @@ void Segment::read_new_line(){
 
     /* new values, using segdatum buffer */
     const SegDatum sd = buffer[ current_buf_index_ ];
-    long new_seg_end = sd.segment_start + sd.segment_length;
-    if (sd.segment_start > segment_start_)
+    long new_seg_start = (long)(sd.segment_start - data_start_);
+    long new_seg_end = new_seg_start + sd.segment_length;
+    if (new_seg_start < 0) new_seg_start = 0;
+    if (new_seg_start > segment_start_)
         throw InvalidSeg("Internal error - segment computation problem (start)");
-    if (new_seg_end < segment_start_)
+    if (new_seg_end < 0)
         throw InvalidSeg("Internal error - segment computation problem (end)");
 
-    segment_length_ = new_seg_end - segment_start_;
+    segment_start_ = new_seg_start;
+    segment_length_ = new_seg_end - new_seg_start;
     segment_state_ = sd.segment_state;
     allelic_state_at_Segment_end = sd.allele_state;
     chrom_ = 1; // dummy value

@@ -85,7 +85,7 @@ enum Segment_State {SEGMENT_INVARIANT, SEGMENT_MISSING, SEGMENT_INVARIANT_PARTIA
 
 class Segment {
     Segment( string file_name , size_t nsam, double seqlen, double num_of_mut,
-             double data_start = 1, double max_segment_length = 1e99 );
+             long long data_start = 1, double max_segment_length = 1e99 );
     ~Segment(){};
 
     friend class PfParam;
@@ -97,7 +97,7 @@ class Segment {
 
     const string file_name_;
     const size_t nsam_;
-    const double data_start_;
+    const long long data_start_;
     const double seqlen_;
     const double max_segment_length_;
     double segment_start_;
@@ -109,8 +109,8 @@ class Segment {
     // buffering
     class SegDatum {
     public:
-        double segment_start;
-        double segment_length;
+        long long segment_start;
+        long long segment_length;
         Segment_State segment_state;
         vector<int> allele_state;
         SegDatum( double ss, double sl, Segment_State s, const vector<int>& as ) :
@@ -156,9 +156,9 @@ public:
 
     // Public methods
     bool empty_file () const      { return this->empty_file_; }
-    double segment_start() const  { return segment_start_ - data_start_; }
+    double segment_start() const  { return segment_start_; }
     double segment_length() const { return segment_length_; }
-    double segment_end() const    { return segment_start_ - data_start_ + segment_length_; }
+    double segment_end() const    { return segment_start_ + segment_length_; }
 
     void read_new_line();
     void reset_data_to_first_entry();
