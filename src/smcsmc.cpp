@@ -117,7 +117,7 @@ TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model&
     MersenneTwister randomgenerator( true, 1 );
     TerminalBranchLengthQuantiles tblq;
     double total_length = 0.0;
-    tblq.quantiles = {0.001,0.003,0.01,0.03,0.1,0.5};
+    tblq.quantiles = {0.001,0.003,0.01,0.03,0.1,0.5,0.95};
     tblq.lengths.resize( model.sample_size() );
     vector<vector<double>> tbls( model.sample_size() );
 

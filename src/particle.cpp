@@ -334,16 +334,30 @@ void ForestState::resample_recombination_position(void) {
 
 
 inline double fastexp(double x) {
-    // Based on a generalized continued fraction.  Just one division, two multiplications.
-    // The approximate branch is used only for |x|<0.03, where the relative error is < 1e-10
+    // Based on a generalized continued fraction.  Just two divisions, two multiplications.
+    // If |x|<0.71844823, the relative error is < 1e-6
     // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
     double xx = x*x;
-    if (xx < 0.0009) {
+    if (xx < 0.516167859) {
+        return 1 + 2*x / (2 - x + xx / (6 + xx * 0.1));
+    } else {
+        return exp(x);
+    }
+}
+
+
+inline double fastexp_approx(double x) {
+    // Based on a generalized continued fraction.  Just one division, two multiplications.
+    // The approximate branch is used only for |x|<1.44885, where the relative error is < 1e-2
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 2.099166) {
         return 1 + 2*x / (2 - x + xx * (1.0/6));
     } else {
         return exp(x);
     }
 }
+
 
 
 inline double nchoosek(int n, int k) {
@@ -371,6 +385,8 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
     }
     const double mut_rate = model().mutation_rate();
     const int nsam = model().sample_size();
+    double rel_rho[] = {1.0, 0.5};
+    double rel_rho_p[] = {0.5, 0.5};
     
     // compute the likelihood.  First singletons
     double likelihood = 1.0;
@@ -384,34 +400,38 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
             num_leaves++;
             int i = node->label() - 1;
             leaves[i] = node;
+            double p = 0;
             double li = node->getLocalParent()->height();
             double si = segment.first_singleton_distance[i];
-            double li_rho = li * rho_tbl;
             double rel_mut_rate = segment.relative_mutation_rate[i];
             double li_mu = li * mut_rate * rel_mut_rate;
-            double fe = fastexp(-(li_rho + li_mu) * abs(si));
-            double p = 0;
-            mut_prob[i] = li_mu;
-            for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
-                // integrate over the distribution of terminal branch lengths, for this branch i
-                double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
-                double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
-                double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
-                double lprime_mu = l_prime * mut_rate * rel_mut_rate;
-                double div = (li_rho + li_mu - lprime_mu);
-                if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
-                    lprime_mu = lprime_mu * 1.0001;
-                }
-                if (si > 0) {
-                    // mutation present
-                    p += (qtop-qbot) * (( li_rho * lprime_mu * fastexp(-lprime_mu * si) +
-                                          (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
-                                        / (li_rho + li_mu - lprime_mu) );
-                } else {
-                    // missing data - no mutation
-                    p += (qtop-qbot) * (( li_rho * fastexp(-lprime_mu * (-si)) +
-                                          (li_mu - lprime_mu) * fe )
-                                        / (li_rho + li_mu - lprime_mu) );
+            for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+                // integrate over rate of change: expected, and half expected, to
+                // model autocorrelation of branch lengths across recombination events
+                double li_rho = li * rho_tbl * rel_rho[r];
+                double fe = fastexp_approx(-(li_rho + li_mu) * abs(si));
+                mut_prob[i] = li_mu;
+                for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
+                    // integrate over the distribution of terminal branch lengths, for this branch i
+                    double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
+                    double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
+                    double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
+                    double lprime_mu = l_prime * mut_rate * rel_mut_rate;
+                    double div = (li_rho + li_mu - lprime_mu);
+                    if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
+                        lprime_mu = lprime_mu * 1.0001;
+                    }
+                    if (si > 0) {
+                        // mutation present
+                        p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * lprime_mu * fastexp_approx(-lprime_mu * si) +
+                                                             (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
+                                                           / (li_rho + li_mu - lprime_mu) );
+                    } else {
+                        // missing data - no mutation
+                        p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * fastexp_approx(-lprime_mu * (-si)) +
+                                                             (li_mu - lprime_mu) * fe )
+                                                           / (li_rho + li_mu - lprime_mu) );
+                    }
                 }
             }
             //cout << " Leaf " << i << " d=" << si << " ht=" << li << " p=" << p;
@@ -435,9 +455,14 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
                     if (leaves[d.seq_idx_1 + ph1]->parent() == leaves[d.seq_idx_2 + ph2]->parent()) {
                         // we do
                         double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
-                        double exp_rho = fastexp(-rho_c * l * d.last_evidence_distance);
-                        // note - do not include a factor for a mutation; we don't want to model the length of the cherry root branch
-                        double p = exp_rho + p_equilibrium * (1.0 - exp_rho);
+                        double p = 0;
+                        for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+                            // integrate over rate of change: expected, and half expected, to
+                            // model autocorrelation of branch lengths across recombination events
+                            double exp_rho = fastexp_approx(-rho_c * rel_rho[r] * l * d.last_evidence_distance);
+                            // note - do not include a factor for a mutation; we don't want to model the length of the cherry root branch
+                            p += rel_rho_p[r] * exp_rho + p_equilibrium * (1.0 - exp_rho);
+                        }
                         likelihood *= p;
                         //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
                         ph1 = ph2 = 99;
@@ -449,7 +474,12 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
                 // include a term for a double mutation (i.e. a single one, since one mutation isn't included normally), to cover the case that first_evidence_distance == 0
                 // the mutation rate is taken to be average of the mutation rates in the two terminal branches
                 double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.5;
-                double p = mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp(-rhoprime_c * l_mean * d.first_evidence_distance));
+                double p = 0;
+                for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+                    // integrate over rate of change: expected, and half expected, to
+                    // model autocorrelation of branch lengths across recombination events
+                    p += rel_rho_p[r] * (mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp_approx(-rhoprime_c * rel_rho[r] * l_mean * d.first_evidence_distance)));
+                }
                 likelihood *= p;
                 //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
             }
@@ -461,7 +491,7 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
         // probability of no change to the current topology.
         // Assume 1/2 of recombinations cause change in split
         double rate_of_change = getLocalTreeLength() * recomb_rate / 2;
-        double p_nochange = fastexp( -rate_of_change * segment.first_split_distance );
+        double p_nochange = fastexp_approx( -rate_of_change * segment.first_split_distance );
 
         // probability of split data given current tree.
         bool ancestral_aware = false;
