@@ -38,7 +38,7 @@ def run_experiment_queue():
     global error_bucket
     global task_queue
     global idle_queue
-    time.sleep( random.random() )    # avoid issues with sqlalchemy...
+    time.sleep( 3 * random.random() )    # avoid issues with sqlalchemy...
     while True:
         try:
             pars = task_queue.get(False)
@@ -142,7 +142,7 @@ def main( experiment_name, experiment_pars ):
         while idle_queue.qsize() < args.jobs:
             if not error_bucket.empty():
                 break
-            time.sleep( 1 )
+            time.sleep( 10 )
 
         try:
             exc = error_bucket.get(block=False)

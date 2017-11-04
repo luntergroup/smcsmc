@@ -262,15 +262,14 @@ class TestGeneric(unittest.TestCase):
             self.smcsmc_version = versiondata[1].strip().split()[-1]
             self.scrm_version   = versiondata[2].strip().split()[-1]
         if os.path.exists(self.outfile):
-            # note: smcsmc (c++) creates .out file at start; must be removed before re-starting,
-            #       and program will not re-use previous iterations
-            #       smcsmc.py creates final .out file at very end, and will re-use any previous
-            #       iterations when the relevant files exist.
-            #raise ValueError("File {} already exists".format(self.outfile))
-            #
-            # assume the results are trustworthy.  TODO: let smcsmc only create .out file at very end
-            self.smcsmc_runtime = -1
-            return
+            # continue if .out file nonexistent, badly formatted, or incomplete; otherwise done
+            try:
+                result = (item for item in self.readResults() if item['type'] == "LogL").next()
+                if len(result['rate']) == self.em+1:
+                    self.smcsmc_runtime = -1
+                    return
+            except:
+                pass
         start = time.time()
         # run, or submit to the cluster; note that the execution time is meaningless in the latter case...
         print (" running smcsmc for",self.__class__.__name__,", case",case,"...")

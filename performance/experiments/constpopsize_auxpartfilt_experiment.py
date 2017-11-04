@@ -24,7 +24,7 @@ import itertools
 inference_reps = 10
 seqlen = 50e6
 particles = [1000, 3000, 10000, 30000]
-emiters = 10
+emiters = 15
 lagfactor = 2
 nsam = 8
 chunks = 12    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
@@ -40,25 +40,23 @@ experiment_class = test_const_pop_size.TestConstPopSize
 
 
 # define the experiments
-experiment_pars_a = [{'length':seqlen,             # global
-                      'simseed':0,                 # repetitions with the same data
-                      'infseed':seed,
-                      'numparticles':numparticles, 
-                      'lag':lagfactor,             # global
-                      'nsam':nsam,                 # global
-                      'bias':bias,
-                      'delay':delay,
-                      'apf':apf}
+# HERE BE DRAGONS: 'delay' = -1 for unphased
+experiment_pars = [{'length':seqlen,             # global
+                    'simseed':0,                 # repetitions with the same data
+                    'infseed':seed,
+                    'numparticles':numparticles, 
+                    'lag':lagfactor,             # global
+                    'nsam':nsam,                 # global
+                    'bias':bias,
+                    'delay':delay,
+                    'apf':apf}
                    for (seed, numparticles, (bias, delay, apf)) in itertools.chain(
                            itertools.product(
                                range(inference_reps),
                                particles,
-                               [(1,0,0)]),
-                           itertools.product(
-                               range(inference_reps),
-                               [ particles[-1] ],
-                               [(1,0,2)])
-                           )]
+                               [(1,0,0),(1,0,2),(1,-1,0),(1,-1,2)]
+                           )
+                   )]
 
 # run an experiment.  keyword parameters must match those in experiment_pars
 def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, delay, apf ):
@@ -68,7 +66,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, del
                                     np = numparticles,
                                     num_samples = nsam,
                                     bias_strengths = ' '.join(map(str,[bias,1])),
-                                    int_parameter = int(2 * delay),
+                                    int_parameter = int(delay),
                                     aux_part_filt = apf ):
         print "Skipping " + label
         return
@@ -92,9 +90,12 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, del
     e.em = emiters
     e.bias_heights = [400]
     e.bias_strengths = [bias, 1]
-    e.delay = delay
+    #e.delay = delay
+    e.delay = 0
     e.delay_type = "coal"
-    e.int_parameter = int(2*delay)   # database does not store delay, so store in spare slot
+    e.int_parameter = int(delay)   # database does not store delay, so store in spare slot
+    if delay == -1:
+        e.phased = False
     e.aux_part_filt = apf
     e.smcsmcpath = experiment_base.smcsmcpath
     e.chunks = chunks
