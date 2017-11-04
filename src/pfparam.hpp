@@ -287,9 +287,6 @@ class PfParam{
     bool ancestral_aware;
     bool online_bool;
     int auxiliary_particle_filter;
-    int clump_size;
-    double clump_start_gen;
-    double clump_end_gen;
     double start_position;
 
     Segment * Segfile;

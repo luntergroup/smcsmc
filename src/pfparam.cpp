@@ -142,13 +142,6 @@ void PfParam::parse(int argc, char *argv[]) {
 	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 4) {
 		throw OutOfRange( "-apf", *argv_i );
 	    }
-        } else if ( *argv_i == "-clump" ) {
-            this->clump_size = this->readNextInput<int>();
-            if (clump_size <= 1) throw OutOfRange( "-clump: invalid size ", *argv_i );
-            this->clump_start_gen = this->readNextInput<double>();
-            if (clump_start_gen < 0) throw OutOfRange( "-clump: invalid start generation ", *argv_i );
-            this->clump_end_gen = this->readNextInput<double>();
-            if (clump_end_gen < clump_start_gen) throw OutOfRange( "-clump: invalid end generation ", *argv_i );
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -221,9 +214,6 @@ void PfParam::init(){
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
     this->auxiliary_particle_filter = 0;
-    this->clump_size       = 1;
-    this->clump_start_gen  = 0;
-    this->clump_end_gen    = 0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;
@@ -547,7 +537,6 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
-    cout << setw(15)<<"-clump"         << setw(8) << "(3)" << "  --  " << "Use particle clumping (three parameters: clump size; first generation; last generation)" << endl;
     cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;

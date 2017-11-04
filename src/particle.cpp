@@ -747,136 +747,78 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
 
 		// a recombination has occurred
                 int mult = multiplicity();
-                int clump = 1;
-                double feh, fch, lch;
-		RandomGenerator* rg_copy = NULL;
 		first_event_height_ = -1.0;
 		first_coal_height_ = -1.0;
 
+                // We shall implement the change.  Spawn a new particle if necessary
                 if (mult > 1) {
-
-                    rg_copy = new MersenneTwister( *dynamic_cast<MersenneTwister*>(this->random_generator()) );
-                    this->sampleNextGenealogyWithoutImplementing();
-
-                    // Keep copies of the previously sampled change, to check that we are indeed getting the same one
-                    feh = first_event_height_;
-                    fch = first_coal_height_;
-                    lch = last_coal_height_;            
-
-                    // a recombination has occurred.  see if this event needs to be clumped
-                    clump = min( mult, pfparam.clump_size );
-                    if ((first_event_height_ > pfparam.clump_start_gen) && (last_coal_height_ < pfparam.clump_end_gen)) {
-                        // events in this range will be clumped, to save time
-                        if (clump>1 && random_generator()->sample() * clump >= 1.0) {
-                            clump = 0;                // keep the appropriate fraction of events
-                        }
-                    } else {
-                        clump = 1;
-                    }
-                }
-
-		if (clump > 0) {
-
-		    // We shall implement the change.  Spawn a new particle if necessary
-		    if (mult - clump > 0) {
 		      
-		        // A recombination has occurred on a particle with multiplicity > 1.
-		        // Spawn a new particle with multiplicity one less, resample its recombination
-		        //  position, and deal with it later in the loop in particleContainer.  At the
-		        //  same time, make the current particle have multiplicity one, and deal with it
-		        //  the normal way.
-		        assert( pParticleContainer != NULL );
-			pParticleContainer->push_back( spawn() );
-			pParticleContainer->back()->set_current_base( updated_to );
-			pParticleContainer->back()->setMultiplicity( mult - clump );
-		    }
+                    // A recombination has occurred on a particle with multiplicity > 1.
+                    // Spawn a new particle with multiplicity one less, resample its recombination
+                    //  position, and deal with it later in the loop in particleContainer.  At the
+                    //  same time, make the current particle have multiplicity one, and deal with it
+                    //  the normal way.
+                    assert( pParticleContainer != NULL );
+                    pParticleContainer->push_back( spawn() );
+                    pParticleContainer->back()->set_current_base( updated_to );
+                    pParticleContainer->back()->setMultiplicity( mult - 1 );
+                    // save recombination index, owned by singleton Model, into *this Particle, and restore from back() particle;
+                    // then sample new recombination locus for the new particle; and recover recombination index
+                    save_recomb_state();
+                    pParticleContainer->back()->restore_recomb_state();
+                    pParticleContainer->back()->resample_recombination_position();
+                    pParticleContainer->back()->save_recomb_state();
+                    restore_recomb_state();
+                }
 		    
-		    // set new multiplicity
-		    setMultiplicity( clump );
+                // set new multiplicity
+                setMultiplicity( 1 );
 
-		    // reset random number generator to its initial state
-                    if (rg_copy != NULL) {
-                        (*dynamic_cast<MersenneTwister*>(this->random_generator())) = *dynamic_cast<MersenneTwister*>(rg_copy);
-                        delete rg_copy;
-                    }
+                // sample new tree
+                recombination_bias_importance_weight_ = 1.0;
+                double importance_weight = this->sampleNextGenealogy( true );
 
-		    // sample new tree
-		    first_event_height_ = -1.0;
-		    first_coal_height_ = -1.0;
-		    recombination_bias_importance_weight_ = 1.0;
-		    double importance_weight = this->sampleNextGenealogy( true );
-
-		    if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
-		    if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
+                if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
+                if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
 		
-		    // check we have the correct tree
-                    if (mult > 1) {
-                        if (abs(feh-first_event_height_) > 1e-3 ||
-                            abs(fch-first_coal_height_) > 1e-3 ||
-                            abs(lch-last_coal_height_) > 1e-3) {
-                            cout << feh << " " << first_event_height_ << endl;
-                            cout << fch << " " << first_coal_height_ << endl;
-                            cout << lch << " " << last_coal_height_ << endl;
-                            throw std::runtime_error("Pre-sampled and actually sampled trees not identical!");
-                        }
-                    }
-
-		    if (mult - clump > 0) {
-			// save recombination index, owned by singleton Model, into *this Particle, and restore from back() particle;
-		        // then sample new recombination locus for the new particle; and recover recombination index
-			save_recomb_state();
-			pParticleContainer->back()->restore_recomb_state();
-			pParticleContainer->back()->resample_recombination_position();
-			pParticleContainer->back()->save_recomb_state();
-			restore_recomb_state();
-		    }
-
-		    // Implement importance weight, with appropriate delay
-		    if (first_event_height_ == -1.0) throw std::runtime_error("No coalescence found where one was expected");
+                // Implement importance weight, with appropriate delay
+                if (first_event_height_ == -1.0) throw std::runtime_error("No coalescence found where one was expected");
 		    
-		    // If the coalescence occurred above top bias height, i.e. the sampling failed
-		    // to produce an early coalescence as intended, then apply the importance weight
-		    // factor due to the recombination bias immediately, so that we don't pollute
-		    // the particles.  However, always apply the importance weight due to guiding
-		    // with the appropriate delay
-		    double delay_height = first_event_height_;
-		    if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COAL)   delay_height = first_coal_height_;
-		    if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) delay_height = rec_point.height();
-		    int idx = 0;
-		    while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < delay_height) ++idx;
-		    if (model().bias_strengths()[idx] == 1.0) {
-		        // the height of the focal event (recombination, coalescence, or migration, as per delay_type)
-		        // is not biased, so apply the importance weight for the recombination bias immediately, and factor
-		        // it out of the overall importance weight (which may include a factor for recombination guiding)
-  		        adjustWeights( recombination_bias_importance_weight_ );
-			importance_weight /= recombination_bias_importance_weight_;
-		    }
-		    double delay = find_delay( delay_height );
-		    // enter the importance weight, and apply it semi-continuously:
-		    // in 3 equal factors, at geometric intervals (double each time)
-		    // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
-		    //  class DelayedFactor)
-		    adjustWeightsWithDelay( importance_weight, delay, 3 );
+                // If the coalescence occurred above top bias height, i.e. the sampling failed
+                // to produce an early coalescence as intended, then apply the importance weight
+                // factor due to the recombination bias immediately, so that we don't pollute
+                // the particles.  However, always apply the importance weight due to guiding
+                // with the appropriate delay
+                double delay_height = first_event_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COAL)   delay_height = first_coal_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) delay_height = rec_point.height();
+                int idx = 0;
+                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < delay_height) ++idx;
+                if (model().bias_strengths()[idx] == 1.0) {
+                    // the height of the focal event (recombination, coalescence, or migration, as per delay_type)
+                    // is not biased, so apply the importance weight for the recombination bias immediately, and factor
+                    // it out of the overall importance weight (which may include a factor for recombination guiding)
+                    adjustWeights( recombination_bias_importance_weight_ );
+                    importance_weight /= recombination_bias_importance_weight_;
+                }
+                double delay = find_delay( delay_height );
+                // enter the importance weight, and apply it semi-continuously:
+                // in 3 equal factors, at geometric intervals (double each time)
+                // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
+                //  class DelayedFactor)
+                adjustWeightsWithDelay( importance_weight, delay, 3 );
 		    
-		    // sample a new recombination position (this calls the virtual overloaded
-		    // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
-		    // see comments in sampleNextBase below.
-		    // The new recombination position does take account of multiplicity(), so that
-		    // particles with high multiplicity() have higher effective recombination rates.
-		    this->sampleNextBase( true );
-		    record_recomb_extension();
-		    
-		    // If this is an extension after an actual recombination, record the recomb event
-		    record_recomb_event( rec_point.height() );
+                // sample a new recombination position (this calls the virtual overloaded
+                // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
+                // see comments in sampleNextBase below.
+                // The new recombination position does take account of multiplicity(), so that
+                // particles with high multiplicity() have higher effective recombination rates.
+                this->sampleNextBase( true );
+                this->record_recomb_extension();
 
-		} else {
+                // If this is an extension after an actual recombination, record the recomb event
+                record_recomb_event( rec_point.height() );
 
-		    (*dynamic_cast<MersenneTwister*>(this->random_generator())) = *dynamic_cast<MersenneTwister*>(rg_copy);
-		    delete rg_copy;
-		    this->continueSamplingNextBase( true );   // replace previous record of this presumed recombination 
-		    record_recomb_extension();                // locus with new one; and record extension
-
-		}
 	    }
         }
         // record current position as recombination, so that resampling of recomb. position starts from here
