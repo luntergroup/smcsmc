@@ -17,9 +17,9 @@ import experiment_base
 
 # parameters for this experiment.  Estimated to take 2.5 days for 100 chunks on the cluster
 missingdata = False
-inference_reps = 2
-particles = [45000]
-emiters = 40
+inferences = range(10)
+particles = [30000]
+emiters = 30
 seqlen_infpar = 2000e6
 simseed = 1
 chunks = 100  # don't forget to use -c -C "-P lunter.prjb -q long.qb"
@@ -40,7 +40,7 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
                    for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
                            [seqlen_infpar],
-                           range(inference_reps),
+                           inferences,
                            particles,
                            [emiters],
                            [0],
@@ -77,6 +77,7 @@ def schiffels_ne( t, n0=5 ):
 
 # run an experiment; keyword parameters agree with those in experiment_pars
 def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
+    simseed = smcseed
     if missingdata:
         missing_leaves = [0,1,2,3,4,5,6,7]
         label = "L{}_S{}_N{}_missing".format(int(length),smcseed,np)
@@ -100,6 +101,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
 
     # set simulation parameters
     rel_ne = 1         # Schiffel's paper uses 5
+    #rel_ne = 5         # TEST: use Schiffel's original model
     e.pop.N0 = N0
     e.pop.mutation_rate = mu
     e.pop.recombination_rate = rho
@@ -128,7 +130,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     if missingdata:
         e.smcsmc_initial_pop_sizes = [ [ schiffels_ne(cp, rel_ne) ] for cp in e.smcsmc_change_points ]
     else:
-        e.smcsmc_initial_pop_sizes = [ [1] for cp in e.smcsmc_change_points ]
+        e.smcsmc_initial_pop_sizes = [ [rel_ne] for cp in e.smcsmc_change_points ]
 
     e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
     e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
@@ -148,7 +150,6 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     e.chunks = chunks
     e.submit_chunks = True
     e.aux_part_filt = 2       # always use apf=2
-    e.clump = [5, 1500, 1e10] # clump particles 5-fold, except in early epoch (speedup)
     e.delay = 0               # constpopsize_aux_part_filt experiments suggests delay never helps, and causes bias
     if bias > 0:
         e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1] ]  # 32
