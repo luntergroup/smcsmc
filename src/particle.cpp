@@ -400,44 +400,59 @@ void ForestState::includeLookaheadLikelihood( const Segment& segment, const Term
             num_leaves++;
             int i = node->label() - 1;
             leaves[i] = node;
-            double p = 0;
-            double li = node->getLocalParent()->height();
-            double si = segment.first_singleton_distance[i];
-            double rel_mut_rate = segment.relative_mutation_rate[i];
-            double li_mu = li * mut_rate * rel_mut_rate;
-            for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
-                // integrate over rate of change: expected, and half expected, to
-                // model autocorrelation of branch lengths across recombination events
-                double li_rho = li * rho_tbl * rel_rho[r];
-                double fe = fastexp_approx(-(li_rho + li_mu) * abs(si));
-                mut_prob[i] = li_mu;
-                for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
-                    // integrate over the distribution of terminal branch lengths, for this branch i
-                    double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
-                    double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
-                    double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
-                    double lprime_mu = l_prime * mut_rate * rel_mut_rate;
-                    double div = (li_rho + li_mu - lprime_mu);
-                    if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
-                        lprime_mu = lprime_mu * 1.0001;
-                    }
-                    if (si > 0) {
-                        // mutation present
-                        p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * lprime_mu * fastexp_approx(-lprime_mu * si) +
-                                                             (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
-                                                           / (li_rho + li_mu - lprime_mu) );
-                    } else {
-                        // missing data - no mutation
-                        p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * fastexp_approx(-lprime_mu * (-si)) +
-                                                             (li_mu - lprime_mu) * fe )
-                                                           / (li_rho + li_mu - lprime_mu) );
-                    }
-                }
-            }
-            //cout << " Leaf " << i << " d=" << si << " ht=" << li << " p=" << p;
-            likelihood *= p;
-        }
-        node = node->next();
+	}
+	node = node->next();
+    }
+    for (int i=0; i<num_leaves; i++) {
+      double p = 0;
+      double si = segment.first_singleton_distance[i];
+      double li = leaves[i]->getLocalParent()->height();
+      if (segment.is_singleton_unphased[i]) {
+	// we don't know which branch contained the singleton, so add length of alternative branch
+	li += leaves[i+1]->getLocalParent()->height();
+      }
+      double rel_mut_rate = segment.relative_mutation_rate[i];
+      double li_mu = li * mut_rate * rel_mut_rate;
+      mut_prob[i] = li_mu;
+      if (segment.is_singleton_unphased[i]) {
+	// NOTE: adding mutation rates is not strictly correct for usage in the cherry model below, but
+	// as the terms is there to provide a soft landing in an edge case, this will not affect overall behaviour.
+	mut_prob[i+1] = li_mu;
+      }
+      for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+	// integrate over rate of change: expected, and half expected, to
+	// model autocorrelation of branch lengths across recombination events
+	double li_rho = li * rho_tbl * rel_rho[r];
+	double fe = fastexp_approx(-(li_rho + li_mu) * abs(si));
+	for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
+	  // integrate over the distribution of terminal branch lengths, for this branch i
+	  double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
+	  double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
+	  double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
+	  double lprime_mu = l_prime * mut_rate * rel_mut_rate;
+	  double div = (li_rho + li_mu - lprime_mu);
+	  if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
+	    lprime_mu = lprime_mu * 1.0001;
+	  }
+	  if (si > 0) {
+	    // mutation present
+	    p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * lprime_mu * fastexp_approx(-lprime_mu * si) +
+						 (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
+					       / (li_rho + li_mu - lprime_mu) );
+	  } else {
+	    // missing data - no mutation
+	    p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * fastexp_approx(-lprime_mu * (-si)) +
+						 (li_mu - lprime_mu) * fe )
+					       / (li_rho + li_mu - lprime_mu) );
+	  }
+	}
+      }
+      //cout << " Leaf " << i << " d=" << si << " ht=" << li << " p=" << p;
+      likelihood *= p;
+      // do not double-count unphased singletons
+      if (segment.is_singleton_unphased[i]) {
+	i++;
+      }
     }
 
     // next doubletons

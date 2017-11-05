@@ -146,6 +146,7 @@ public:
 
     // singleton data:
     vector<double> first_singleton_distance;
+    vector<int> is_singleton_unphased;
     vector<double> relative_mutation_rate;       // to account for partially missing data
     // doubleton data:
     vector<Doubleton> doubleton;

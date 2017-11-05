@@ -158,7 +158,7 @@ void Segment::prepare(){
     this->phased.clear();
     for( SegDatum sd : buffer ) {
         for( size_t idx=0; idx < sd.allele_state.size(); ++idx ) {
-            if (phased.size() < idx) phased.push_back(true);
+            if (phased.size() <= idx) phased.push_back(true);
             if (sd.allele_state[idx] == 2)
                 phased[idx] = false;
         }
@@ -236,6 +236,7 @@ void Segment::set_lookahead() {
 
     vector<bool> found_doubleton( nsam_ );     // records which sequences have participated in a doubleton
     int num_singletons = 0;
+    int num_unphased_singletons = 0;
     int num_doubleton_sequences = 0;
     double total_length_times_branches = 0.1;  // used to calculate weighing for mutation rate due to missing data
     double total_length_times_branches_missing = 0.1;
@@ -248,13 +249,18 @@ void Segment::set_lookahead() {
         // also identify the samples; take the first possible in case of unphased hets
         int num_var = 0, num_missing = 0;
         int s1 = -1, s2 = -1;
+	is_singleton_unphased.clear();
         for ( size_t j = 0; j < nsam_ ; j++ ) {
+	    is_singleton_unphased.push_back( false );
             if (buffer[i].allele_state[j] > 0) {
                 num_var++;  // count the mutation
                 if (num_var==1) s1 = j;
                 if (num_var==2) s2 = j;
-                if (buffer[i].allele_state[j] == 2)
+                if (buffer[i].allele_state[j] == 2) {
+		    is_singleton_unphased[j] = true;
+		    is_singleton_unphased.push_back( true );
                     j++;    // skip next sample, in case of a diploid unphased het, to avoid counting het twice
+		}
             }
             if (buffer[i].allele_state[j] == -1) {                                       // missing data
                 num_missing++;
@@ -302,6 +308,12 @@ void Segment::set_lookahead() {
                 relative_mutation_rate[s1] = total_length_times_branches_missing / total_length_times_branches;
                 num_singletons++;
                 last_singleton_distance = first_singleton_distance[s1];
+		if (is_singleton_unphased[s1]) {
+		  first_singleton_distance[s1 + 1] = distance;
+		  relative_mutation_rate[s1 + 1] = relative_mutation_rate[s1];
+		  num_singletons++;   // actually, number of alleles for which singleton information is obtained
+		  num_unphased_singletons++;
+		}
             }
         } else { // not a singleton
             // now loop over doubletons, and see (i) if we already have this doubleton (if one),
@@ -310,9 +322,8 @@ void Segment::set_lookahead() {
                 if ( ( (d.seq_idx_1 | 1) == d.seq_idx_2 &&         // cherry involves one individual
                         buffer[i].allele_state[d.seq_idx_1] == 2)  // the non-singleton mutation has a het at the individual
                      ||
-                     ( (buffer[i].allele_state[d.seq_idx_1] != buffer[i].allele_state[d.seq_idx_2]) &&  // condition
-                       (buffer[i].allele_state[d.seq_idx_1] != 2) &&                                    // tests for 0,1 
-                       (buffer[i].allele_state[d.seq_idx_2] != 2) ) ) {                                 // or 1,0
+                     ( (buffer[i].allele_state[d.seq_idx_1] + buffer[i].allele_state[d.seq_idx_2] == 1) &&     // condition tests
+                       ((buffer[i].allele_state[d.seq_idx_1] | buffer[i].allele_state[d.seq_idx_2]) == 1))) {  // for 0,1 or 1,0
                     // either a diploid individual carrying the cherry has an unphased het which is not a singleton,
                     // or the two individuals have differing genotypes neither of which are hets -- an incompatibility
                     d.incompatible = true;
@@ -329,7 +340,7 @@ void Segment::set_lookahead() {
             }
         }
         // enter new doubleton, if any, if we haven't entered it already, and if it is compatible with earlier doubletons
-        if (num_var == 2 && have_doubleton == false) {
+	if (num_var == 2 && have_doubleton == false && buffer[i].allele_state[s1] > -1 && buffer[i].allele_state[s2] > -1) {
             // in the case of unphased individuals, see if we can make this doubleton compatible by using the
             // other allele of the diploid individual
             for (int d1 = 0 ; d1 <= (buffer[i].allele_state[s1] == 2) ; d1++) {
@@ -358,7 +369,7 @@ void Segment::set_lookahead() {
         // bail out if we're done
         if ((num_singletons == (int)nsam_) && num_doubleton_sequences >= (int)nsam_ - 1) break;
         // also bail out if way beyond last singleton, to avoid very long searches (it's a quadratic algo after all!)
-        if ((num_singletons == (int)nsam_) && distance > 2*last_singleton_distance) break;
+        if ((num_singletons == (int)nsam_) && distance > (2+num_unphased_singletons)*last_singleton_distance) break;
     }
     // If we ran off the input sequence, fill in any missing singleton entries
     if (num_singletons < (int)nsam_) {
