@@ -27,7 +27,8 @@ particles = [1000, 3000, 10000, 30000]
 emiters = 15
 lagfactor = 2
 nsam = 8
-chunks = 12    # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
+chunks = 12
+submit_jobs = True          # if submit_jobs=False, don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 initial_ne_factor = 0.75
 
 # name of this experiment
@@ -54,7 +55,10 @@ experiment_pars = [{'length':seqlen,             # global
                            itertools.product(
                                range(inference_reps),
                                particles,
-                               [(1,0,0),(1,0,2),(1,-1,0),(1,-1,2)]
+                               [(1,0,0),
+                                (1,0,2),
+                                (1,-1,0),
+                                (1,-1,2)]
                            )
                    )]
 
@@ -77,36 +81,36 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, del
     e.pop.num_samples = nsam
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
-    e.pop.scrmpath = experiment_base.scrmpath
-    e.filename_disambiguator = label
     e.pop.change_points = [0, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.5, 1, 1.5]
     e.pop.population_sizes = [[1], [1], [1], [1], [1], [1], [1], [1], [1], [1]]
+    e.pop.scrmpath = experiment_base.scrmpath
+    e.filename_disambiguator = label
 
     # set inference parameters
+    # need to set pop sizes, migr rates and commands explicitly when change pts
+    # differ between simulation and inference:
     e.seqlen = length
     e.seed = (infseed,)
+    e.smcsmc_change_points = [0, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.5, 1, 1.5]
+    e.smcsmc_initial_pop_sizes = [ [initial_ne_factor * ne]
+                                   for ne in [1,1,1,1,1,1,1,1,1,1] ]
+    e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
+    e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
+    e.smcsmcpath = experiment_base.smcsmcpath
     e.np = numparticles
     e.lag = lag
     e.em = emiters
     e.bias_heights = [400]
     e.bias_strengths = [bias, 1]
-    #e.delay = delay
-    e.delay = 0
+    e.delay = 0                    # I came off the idea of using delay, in favour of APF.  However for unphased data it may still have merit
     e.delay_type = "coal"
     e.int_parameter = int(delay)   # database does not store delay, so store in spare slot
     if delay == -1:
         e.phased = False
     e.aux_part_filt = apf
-    e.smcsmcpath = experiment_base.smcsmcpath
     e.chunks = chunks
+    e.submit_chunks = submit_jobs  # submit chunks using qsub, rather than submitting toplevel script using qrsh & threading
     e.popt = None
-    e.smcsmc_change_points = [0, 0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.5, 1, 1.5]
-    # need to set pop sizes, migr rates and commands explicitly when change pts
-    # differ between simulation and inference:
-    e.smcsmc_initial_pop_sizes = [ [initial_ne_factor * ne]
-                                   for ne in [1,1,1,1,1,1,1,1,1,1] ]
-    e.smcsmc_initial_migr_rates = [ [[0]] for cp in e.smcsmc_change_points ]
-    e.smcsmc_migration_commands = [ None for cp in e.smcsmc_change_points ]
 
     # perform inference and store results
     e.infer( case = infseed )
