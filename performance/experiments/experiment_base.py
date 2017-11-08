@@ -30,7 +30,7 @@ datapath = "data/"
 
 sys.path.extend( ["../../newtests","../../python"] )
 import execute
-
+import test_generic
 
 
 # run a single experiment
@@ -58,7 +58,10 @@ def run_experiment_queue():
 # check if this experiment has already been run
 def have_result( **kwargs ):
     """ see if the database already contains the required result """
-    engine = create_engine("sqlite:///" + db)
+    if db != None:
+        engine = create_engine("sqlite:///" + db)
+    else:
+        engine = create_engine("sqlite://")     # dummy, e.g. for cleanup action
     if not engine.dialect.has_table(engine, "experiment"): return False
     metadata = MetaData(bind=engine)
     Session = sessionmaker(bind=engine)
@@ -93,6 +96,19 @@ def remove( experiment_name ):
     session.close()
 
 
+# action: clean up
+def clean_up( experiment_class ):
+    prefix = experiment_class.caseprefix
+    print("Removing non-critical output files for case {}".format(prefix))
+    os.system("rm {}.stderr".format(prefix))
+    os.system("rm {}.stdout".format(prefix))
+    os.system("rm {}/emiter*/*.log".format(prefix))
+    os.system("rm {}/emiter*/*.stderr".format(prefix))
+    os.system("rm {}/emiter*/*.stdout".format(prefix))
+    os.system("rm {}/emiter*/*.recomb.gz".format(prefix))
+
+
+    
 #
 # main code.  Requires one function to be defined:
 #
@@ -111,8 +127,15 @@ def main( experiment_name, experiment_pars ):
     parser.add_argument('-c', '--cluster', action='store_true', help='use qsub to submit job(s) to cluster')
     parser.add_argument('-C', '--cconfig', help='qsub config parameter(s); override ./qsub.conf')
     parser.add_argument('-D', '--db', help='set database to write result into (default: {})'.format(db))
+    parser.add_argument('-X', '--clean', action='store_true', help='remove non-critical output files; do not run experiment')
     args = parser.parse_args()
 
+    if args.clean:
+        db = None                         # force a 'not found', so that experiment is called back
+        test_generic.inference_callback = clean_up
+        for pars in experiment_pars:
+            run_experiment( **pars )
+        sys.exit(0)
     if args.cluster:
         if args.cconfig is None:
             try:

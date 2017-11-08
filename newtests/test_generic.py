@@ -21,6 +21,7 @@ except:
 from context import populationmodels
 from context import execute
 
+inference_callback = lambda _:_
 
 # All tests are derived from TestGeneric.  A class implementing a test should
 # implement a setUp(self) method that
@@ -227,9 +228,6 @@ class TestGeneric(unittest.TestCase):
     # helper -- generate simulated data, if this has not been done yet
     def simulate(self):
         if self.simulated: return
-        if not self.pop: raise ValueError("Must define population before simulating")
-        if not self.prefix: raise ValueError("Must define prefix before simulating")
-        self.pop.filename = self.prefix + self.filename_disambiguator + ".seg"
         print ("\n simulating for",self.__class__.__name__," to ",self.pop.filename)
         pathname = os.path.dirname(self.pop.filename)
         if pathname != '' and not os.path.exists(pathname):
@@ -243,10 +241,14 @@ class TestGeneric(unittest.TestCase):
 
     # helper -- run smcsmc
     def infer(self, case = 0):
+        if not self.pop: raise ValueError("Must define population before simulating")
+        if not self.prefix: raise ValueError("Must define prefix before simulating")
+        self.pop.filename = self.prefix + self.filename_disambiguator + ".seg"
+        self.caseprefix = "{}_C{}".format(self.pop.filename[:-4], case)
+        if not inference_callback(self): return
         self.simulate()
         if case in self.cases: raise ValueError("Must run case " + str(case) + " only once")
         self.cases.append(case)
-        self.caseprefix = "{}_C{}".format(self.pop.filename[:-4], case)
         self.outfile = self.caseprefix + ".out"
         # append to .stdout and .stderr, so as not to overwrite output from possible previous runs
         cmd = "{cmd} -o {caseprefix} >> {caseprefix}.stdout 2>> {caseprefix}.stderr".format(
@@ -452,6 +454,9 @@ class TestGeneric(unittest.TestCase):
 
         # bail out of SQLAlchemy not installed
         if Base == None: return
+
+        # bail out if doing other actions (e.g. cleaning up files)
+        if db == None: return
 
         # make a connection
         engine = create_engine(dbtype + db, connect_args = connect_args)
