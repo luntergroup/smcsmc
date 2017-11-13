@@ -1,4 +1,5 @@
 from __future__ import print_function
+from collections import namedtuple
 import sys
 import os
 import inspect
@@ -12,7 +13,7 @@ import Queue
 
 from sqlalchemy import Table, MetaData, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 ###################################################################################
 #
@@ -31,6 +32,11 @@ datapath = "data/"
 sys.path.extend( ["../../newtests","../../python"] )
 import execute
 import test_generic
+
+
+# stub
+def plot_experiment():
+    print ("No plots defined - nothing to do")
 
 
 # run a single experiment
@@ -108,6 +114,23 @@ def clean_up( experiment_class ):
     os.system("rm {}/emiter*/*.recomb.gz".format(prefix))
 
 
+# helper: extract data from database as named tuples
+def get_data_from_database( experiment_name ):
+    if Base == None: raise ValueError("SQLAlchemy not installed - bailing out")
+    if db == None: raise ValueError("Have no database - ?")
+    dbtype = "sqlite:///"
+    engine = create_engine(dbtype + db)
+    if not engine.dialect.has_table(engine, "experiment"): raise ValueError("No Experiment table in database")
+    Session = scoped_session(sessionmaker(bind=engine))
+    session = Session()
+    dbvars = ['result.'+v for v in ['id','exp_id','epoch','start','end','iter','type','ne','rate','frm']] + \
+             ['experiment.'+v for v in ['np','num_samples','sequence_length','dataseed','infseed','bias_heights','bias_strengths','str_parameter','int_parameter','inference_command']]
+    result = session.execute('SELECT {} FROM experiment INNER JOIN result ON experiment.id = result.exp_id WHERE experiment.name = \'{}\''
+                             .format( ', '.join(dbvars), experiment_name ))
+    Record = namedtuple('Record', result.keys())
+    records = [Record(*r) for r in result.fetchall()]
+    return records
+    
     
 #
 # main code.  Requires one function to be defined:
@@ -117,6 +140,7 @@ def clean_up( experiment_class ):
 def main( experiment_name, experiment_pars ):
 
     global db
+    global datapath
     global error_bucket
     global task_queue
     global idle_queue
@@ -127,7 +151,9 @@ def main( experiment_name, experiment_pars ):
     parser.add_argument('-c', '--cluster', action='store_true', help='use qsub to submit job(s) to cluster')
     parser.add_argument('-C', '--cconfig', help='qsub config parameter(s); override ./qsub.conf')
     parser.add_argument('-D', '--db', help='set database to write result into (default: {})'.format(db))
+    parser.add_argument('-p', '--datapath', help='set data directionry (default: {})'.format(datapath))
     parser.add_argument('-X', '--clean', action='store_true', help='remove non-critical output files; do not run experiment')
+    parser.add_argument('-P', '--plot', action='store_true', help='make experiment-specific plots')
     args = parser.parse_args()
 
     if args.clean:
@@ -145,6 +171,11 @@ def main( experiment_name, experiment_pars ):
         execute.qsub_config = args.cconfig   # assign to global variable within module 'execute'
     if args.db:
         db = args.db
+    if args.datapath:
+        datapath = args.datapath + "/"
+    if args.plot:
+        plot_experiment()
+        sys.exit(0)
     if args.force:
         remove( experiment_name )
     error_bucket = Queue.Queue()                   # to hold exceptions that occur in threads

@@ -17,9 +17,9 @@ import experiment_base
 
 # parameters for this experiment.  Estimated to take 2.5 days for 100 chunks on the cluster
 missingdata = False
-inferences = range(10)
+inferences = range(8) #range(10)
 particles = [30000]
-emiters = 30
+emiters = 20 # 30
 seqlen_infpar = 2000e6
 simseed = 1
 chunks = 100  # don't forget to use -c -C "-P lunter.prjb -q long.qb"
@@ -167,6 +167,16 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     print "Done " + label
 
 
+def plot_experiment():
+    import pandas as pd
+    from rpy2.robjects import pandas2ri, r
+    pandas2ri.activate()
+    records = experiment_base.get_data_from_database( experiment_name )
+    df = pd.DataFrame( data = records )
+    r.source("zigzag_inference_guiding.R")
+    r('plot.smcsmc')( df )
+        
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
+    experiment_base.plot_experiment = plot_experiment
     experiment_base.main( experiment_name, experiment_pars )
