@@ -172,9 +172,16 @@ def plot_experiment():
     from rpy2.robjects import pandas2ri, r
     pandas2ri.activate()
     records = experiment_base.get_data_from_database( experiment_name )
+    
     df = pd.DataFrame( data = records )
     r.source("zigzag_inference_guiding.R")
-    r('plot.smcsmc')( df )
+    g = 30.0
+    rel_ne = 1  # must be synced with code above!
+    truth = pd.DataFrame( data = [ (t*4*N0, N0*schiffels_ne(t, n0=rel_ne))
+                                   for t in [ math.pow(10,j/100.0)/(g*4*N0)
+                                              for j in range(250,650)]],
+                          columns = ["t","Ne"] )
+    r('plot.smcsmc')( df, truth, g )
         
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
