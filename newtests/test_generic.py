@@ -251,7 +251,7 @@ class TestGeneric(unittest.TestCase):
         self.cases.append(case)
         self.outfile = self.caseprefix + ".out"
         # append to .stdout and .stderr, so as not to overwrite output from possible previous runs
-        cmd = "{cmd} -o {caseprefix} >> {caseprefix}.stdout 2>> {caseprefix}.stderr".format(
+        cmd = "{cmd} -o {caseprefix} >>{caseprefix}.stdout 2>>{caseprefix}.stderr".format(
             cmd = self.build_command(),
             caseprefix = self.caseprefix )
         versioncmd = [self.smcsmcpath,"-v"]

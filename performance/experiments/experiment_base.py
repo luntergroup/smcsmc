@@ -112,6 +112,7 @@ def clean_up( experiment_class ):
     os.system("rm {}/emiter*/*.stderr".format(prefix))
     os.system("rm {}/emiter*/*.stdout".format(prefix))
     os.system("rm {}/emiter*/*.recomb.gz".format(prefix))
+    os.system("for f in {}/emiter* ; do pth=`pwd`; cd $f; tar --remove-files -czf chunkNN.tar.gz chunk[0123456789]*.out ; cd $pth ; done".format(prefix))
 
 
 # helper: extract data from database as named tuples

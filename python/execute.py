@@ -29,10 +29,21 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
     if use_submit:
         qscript =     qscript = "qsub -b y"
         stdoutname = "/dev/null"
+        stderrname = "/dev/null"
+        cmdelts = cmd.split(' ')
+        for i, elt in enumerate(cmdelts):
+            if elt.startswith(">>"):
+                stdoutname = elt[2:]
+                cmdelts[i] = ""
+            if elt.startswith("2>>"):
+                stderrname = elt[3:]
+                cmdelts[i] = ""
+        cmd = " ".join(cmdelts)
     else:
         stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
+        stderrname = "{}/qrsh.{}.stderr".format(dirname, hex(hash(cmd)))
         qscript = "qrsh"
-    command = "{} -j y -cwd -now n -V -N {} -o {} {} {}".format(qscript, name, stdoutname, qsub_config, cmd)
+    command = "{} -j y -cwd -now n -V -N {} -o {} -e {} {} {}".format(qscript, name, stdoutname, stderrname, qsub_config, cmd)
     if use_popen:
         popen = subprocess.Popen( command, shell=shell )
         return popen
@@ -43,6 +54,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
     if exitcode == 0 and not use_submit:
         try:
             os.unlink(stdoutname)
+            os.unlink(stderrname)
         except OSError:
             pass
 

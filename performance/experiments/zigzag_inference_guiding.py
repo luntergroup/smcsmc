@@ -17,7 +17,7 @@ import experiment_base
 
 # parameters for this experiment.  Estimated to take 2.5 days for 100 chunks on the cluster
 missingdata = False
-inferences = range(8) #range(10)
+inferences = range(12)
 particles = [30000]
 emiters = 20 # 30
 seqlen_infpar = 2000e6
