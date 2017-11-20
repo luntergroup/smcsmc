@@ -1,5 +1,6 @@
 import experiment_base
 import itertools
+import math
 
 ###################################################################################
 #
@@ -30,6 +31,7 @@ nsam = 8
 chunks = 12
 submit_jobs = True          # if submit_jobs=False, don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
 initial_ne_factor = 0.75
+N0 = 10000
 
 # name of this experiment
 experiment_name = "constpopsize_auxpartfilt"
@@ -120,7 +122,23 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, bias, del
     return
 
 
+def plot_experiment():
+    import pandas as pd
+    from rpy2.robjects import pandas2ri, r
+    pandas2ri.activate()
+    records = experiment_base.get_data_from_database( experiment_name )
+    
+    df = pd.DataFrame( data = records )
+    r.source("constpopsize_auxpartfilt_experiment.R")
+    g = 30.0
+    truth = pd.DataFrame( data = [ (t*4*N0, N0*1)
+                                   for t in [ math.pow(10,j/10.0)/(g*4*N0)
+                                              for j in range(25,65)]],
+                          columns = ["t","Ne"] )
+    r('plot.smcsmc')( df, truth, g )
+        
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
+    experiment_base.plot_experiment = plot_experiment
     experiment_base.main( experiment_name, experiment_pars )
 
