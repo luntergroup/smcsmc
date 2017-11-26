@@ -571,13 +571,15 @@ class TestGeneric(unittest.TestCase):
         with open(self.outfile) as f:
             for line in f:
                 elts = line.strip().split()
-                if elts[0] == "Iter": continue                     # skip header line
-                assert len(elts) == 12
+                if elts[0] == "Iter":
+                    header = { elt : idx for idx, elt in enumerate(elts) }
+                    continue
+                assert "ESS" in header
                 session.add( Result( exp_id = this_exp.id,
-                                     iter = int(elts[0]), epoch = int(elts[1]), start = float(elts[2]),
-                                     end = float(elts[3]), type = elts[4], frm = int(elts[5]),
-                                     to = int(elts[6]), opp = float(elts[7]), count = float(elts[8]),
-                                     rate = float(elts[9]), ne = float(elts[10]), ess = float(elts[11])))
+                                     iter = int(elts[header["Iter"]]), epoch = int(elts[header["Epoch"]]), start = float(elts[header["Start"]]),
+                                     end = float(elts[header["End"]]), type = elts[header["Type"]], frm = int(elts[header["From"]]),
+                                     to = int(elts[header["To"]]), opp = float(elts[header["Opp"]]), count = float(elts[header["Count"]]),
+                                     rate = float(elts[header["Rate"]]), ne = float(elts[header["Ne"]]), ess = float(elts[header["ESS"]])))
         session.commit()
         session.close()
 

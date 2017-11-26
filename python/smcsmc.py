@@ -240,40 +240,49 @@ class Smcsmc:
                 raise ValueError("Cannot find or create directory '{}'".format( os.path.abspath( dirname ) ) )
                                  
             
-    def parse_outfile(self, outfname, data=None):
+    def parse_outfile(self, outfname, data=None, clump=None):
         of = open(outfname,'r')
-        of.readline()
         if data == None: data = defaultdict(float)
+        header = { idx:elt for idx, elt in enumerate( of.readline().strip().split() ) }
         iters = set()
         for line in of:
-            elts = line.strip().split()
-            itr, epoch, frm, to = map(int, [elts[0],elts[1],elts[5],elts[6]])
-            start, end, opp, count, rate, ne, ess = map(float, [elts[2],elts[3],elts[7],elts[8],elts[9],elts[10],elts[11]])
-            typ = elts[4]
-            iters.add(itr)
+            elts = { header[idx] : elt for idx, elt in enumerate(line.strip().split()) }
+            for name, val in list(elts.iteritems()):  # Leave "Type" as String
+                if name in ["Iter","Epoch","From","To","Clump"]:
+                    elts[name] = int(val)
+                elif name in ["Start","End","Opp","Count","Rate","Ne","ESS","InitRate"]:
+                    elts[name] = float(val)
+            iters.add( elts["Iter"] )
             if len(iters) > 1: raise ValueError("Found multiple iterations in .out file {}; expected only one".format(outfname))
-            key = (typ,epoch,frm,to)
-            data[(key,"Opp")] += opp
-            data[(key,"Count")] += count
-            data[(key,"Wt")] += max(0.0, (1.0/ess - 1e-10)) * opp
-            data[(key,"Start")] = start
-            data[(key,"End")] = end
+            keys = [(elts["Type"],elts["Epoch"],elts["From"],elts["To"], -1)]
+            if "Clump" in elts:
+                clump = elts["Clump"]
+            if clump != None:
+                keys.append((elts["Type"],elts["Epoch"],elts["From"],elts["To"], clump))
+            for key in keys:
+                data[(key,"Opp")] += elts["Opp"]
+                data[(key,"Count")] += elts["Count"]
+                data[(key,"Wt")] += max(0.0, (1.0/elts["ESS"] - 1e-10)) * elts["Opp"]
+                data[(key,"Start")] = elts["Start"]
+                data[(key,"End")] = elts["End"]
+                if "InitRate" in elts:
+                    data[(key,"InitRate")] = elts["InitRate"]
         return data
 
 
     def write_outfile(self, outfname, data, iteration):
         of = open(outfname,'w')
-        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS\n")
-        for key in sorted(data.keys()):
+        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS  Clump\n")
+        for key in sorted(data.keys(), key = lambda elt : (elt[0][-1]>=0,elt) ):
             if key[1] == "Count":
                 start, end, opp, count, wt = map(lambda label:data[(key[0],label)], ["Start","End","Opp","Count","Wt"])
-                typ,epoch,frm,to = key[0]
+                typ,epoch,frm,to,clump = key[0]
                 if typ == "LogL": opp, wt = 1.0, 1.0    # just add log likelihoods, don't average them
                 rate = count / (opp + 1e-30)
                 ne = (opp + 1e-10) / (2.0 * count + 1e-30) if typ == "Coal" else 0.0
                 ess = 1.0 / (wt / (opp + 1e-30))
-                of.write("{:6d} {:>6d} {:11.5g} {:11.5g} {:>6s}  {:>5d}  {:>5d} {:11.5g} {:11.5g} {:11.5g} {:11.5g} {:11.5g}\n".format(
-                    iteration, epoch, start, end, typ, frm, to, opp, count, rate, ne, ess))
+                of.write("{:6d} {:>6d} {:11.5g} {:11.5g} {:>6s}  {:>5d}  {:>5d} {:11.5g} {:11.5g} {:11.5g} {:11.5g} {:11.5g} {:>6d}\n".format(
+                    iteration, epoch, start, end, typ, frm, to, opp, count, rate, ne, ess, clump))
         of.close()
 
 
@@ -303,10 +312,10 @@ class Smcsmc:
 
     def merge_outfiles(self):
         of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
-        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS\n")
         for em_iter in range(0, smcsmc.emiters+1):
             ifile = open( self.out_template.format(em_iter, "final"), 'r')
-            ifile.readline()
+            header = ifile.readline()
+            if em_iter == 0: of.write(header)
             for line in ifile:
                 of.write(line)
         of.close()
@@ -319,7 +328,7 @@ class Smcsmc:
         # set population sizes
         for epoch in range(len(self.pop.change_points)):
             for pop in range(self.pop.num_populations):
-                key = ("Coal",epoch,pop,-1)
+                key = ("Coal",epoch,pop,-1,-1)
                 rate = data[ (key,"Count") ] / (data[ (key,"Opp") ] + 1e-30)
                 popsize = min( self.maxNE / self.pop.N0, 1.0 / (2.0 * rate * self.pop.N0) )
                 self.pop.population_sizes[ epoch ][ pop ] = popsize
@@ -329,7 +338,7 @@ class Smcsmc:
             for frompop in range(self.pop.num_populations):
                 for topop in range(self.pop.num_populations):
                     if frompop != topop:
-                        key = ("Migr",epoch,frompop,topop)
+                        key = ("Migr",epoch,frompop,topop,-1)
                         rate = data[ (key,"Count") ] / data[ (key,"Opp") ]
                         # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
                         #       true units (events per nt per generation).  Reporting the 
@@ -338,7 +347,7 @@ class Smcsmc:
                                     format(epoch, frompop, topop, rate, rate*4*self.pop.N0))
         # set recombination rate
         if self.infer_recomb:
-            key = ("Recomb",-1,-1,-1)
+            key = ("Recomb",-1,-1,-1,-1)
             rate = data[ (key,"Count") ] / data[ (key,"Opp") ]
             self.pop.recombination_rate = rate
             logger.info("Setting recombination rate to {}".format(rate))
@@ -434,7 +443,7 @@ class Smcsmc:
         # combine the .out files
         data = None
         for chunk in range(self.chunks):
-            data = self.parse_outfile( self.out_template.format(iteration,chunk), data )
+            data = self.parse_outfile( self.out_template.format(iteration,chunk), data, chunk )
         self.write_outfile( self.out_template.format(iteration,"final"), data, iteration )
 
         
