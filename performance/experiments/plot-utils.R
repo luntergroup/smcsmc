@@ -1,4 +1,4 @@
-calculate.quartiles <- function( frame, field="Ne", min=1000, max=100000, mint=30, maxt=10000 ) {
+calculate.quartiles <- function( frame, field="Ne", miny=1000, maxy=100000, mint=30, maxt=10000, scale=1 ) {
 
     options( stringsAsFactors=FALSE ) # seems not possible to give this as option to rbind
     new.df <- data.frame()
@@ -8,12 +8,14 @@ calculate.quartiles <- function( frame, field="Ne", min=1000, max=100000, mint=3
     for (i in 1:nrow(keys)) {
         data <- subset(frame, type==keys[i,1] & frm==keys[i,2] & epoch==keys[i,3] &
                               aux_part_filt==keys[i,4] & int_parameter==keys[i,5] & np==keys[i,6])
-        if (field == "Ne") values <- data$ne else data <- values$rate
-        q <- quantile(values)
+        if (field == "Ne") values <- data$ne else values <- data$rate
+        q <- quantile(values * scale)
         if (field == "Ne") data$ne <- q[3] else data$rate <- q[3]   # set to median
-        new.row <- c( data[1,], pmin(max,pmax(min,q)))
+        new.row <- c( data[1,], pmin(maxy,pmax(miny,q)))
         names(new.row) <- c( names(frame), "Q0","Q1","Q2","Q3","Q4" )
-        new.df <- rbind( new.df, new.row)
+        if (new.row$start < maxt && new.row$end > mint) {
+            new.df <- rbind( new.df, new.row)
+        }
     }
     ## make first epoch start at t0
     if (sum(new.df$start < mint) > 0)

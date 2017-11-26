@@ -13,10 +13,10 @@ import math
 # parameters for this experiment
 inference_reps = range(5)
 focus_heights_strengths_delays = [ (None, None, 0) ] # , ([2000],[3,.9999],0.5) ]
-aux_part_filt = [2] # [0,2]
+aux_part_filt = [2] # [,0]
 seqlen = 1000e6
 particles = [30000]
-emiters = 30
+emiters = 15
 lagfactor = 1.0
 nsam = 8
 chunks = 50   # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
@@ -43,14 +43,13 @@ experiment_pars = [{'length':seqlen,
                     'infseed':infseed,
                     'numparticles':numparticles,
                     'lag':lag,
-                    'nsam':nsam,
                     'biasheights':biasheights,
                     'biasstrengths':biasstrengths,
                     'delay':delay,
                     'apf':apf}
-                   for (seqlen, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay, apf) in (
+                   for (seqlen, simseed, infseed, numparticles, lag, biasheights, biasstrengths, delay, apf) in (
                            # repetitions with unique data
-                           [(seqlen, 100+rep, 100+rep, np, lagfactor, nsam, bh, bs, d, apf)
+                           [(seqlen, 100+rep, 100+rep, np, lagfactor, bh, bs, d, apf)
                             for rep, np, (bh, bs, d), apf in
                             itertools.product(inference_reps,
                                               particles,
@@ -65,6 +64,27 @@ experiment_pars = [{'length':seqlen,
 def quantile( k, n, M=4 ):
     if k == 0: return 0.0
     return -math.log(1-k/(n+0.0)) / (M * (M-1)/2.0)
+
+
+def setup_experiment():
+    e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
+    e.setUp( experiment_base.datapath + experiment_name )
+
+    # set simulation parameters
+    e.pop.N0 = N0
+    e.pop.mutation_rate = mu
+    e.pop.recombination_rate = rho
+    e.pop.num_samples = nsam
+    e.pop.scrmpath = experiment_base.scrmpath
+    e.pop.sample_populations = [1]*(nsam/2) + [2]*(nsam/2)
+    e.pop.change_points = [ 0, migr_time / (4*N0*g), split_time / (4*N0*g) ]
+    e.pop.population_sizes = [ [1,1], [1,1], [1,1] ]
+    e.pop.migration_rates = [ [[0,0],[0,0]],
+                              [[0,1],[0,0]],
+                              [[0,0],[0,0]] ]
+    e.pop.migration_commands = [ None, None, "-ej {} 2 1".format( split_time / (4*N0*g) ) ]
+    return e
+    
 
 
 # run an experiment.  keyword parameters must match those in experiment_pars
@@ -83,24 +103,12 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
                                     str_parameter = str(delay)):
         print "Skipping " + label
         return
-    e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
-    e.setUp( experiment_base.datapath + experiment_name )
 
-    # set simulation parameters
-    e.pop.N0 = N0
-    e.pop.mutation_rate = mu
-    e.pop.recombination_rate = rho
-    e.pop.num_samples = nsam
+    e = setup_experiment()
+    
     e.pop.sequence_length = length
     e.pop.seed = (simseed,)
-    e.pop.scrmpath = experiment_base.scrmpath
     e.filename_disambiguator = label
-    e.pop.sample_populations = [1]*(nsam/2) + [2]*(nsam/2)
-    e.pop.change_points = [ 0, migr_time / (4*N0*g), split_time / (4*N0*g) ]
-    e.pop.migration_rates = [ [[0,0],[0,0]],
-                              [[0,1],[0,0]],
-                              [[0,0],[0,0]] ]
-    e.pop.migration_commands = [ None, None, "-ej {} 2 1".format( split_time / (4*N0*g) ) ]
 
     quantiles = 30
     e.smcsmc_change_points = [ quantile(k,quantiles) for k in range(quantiles) ]
@@ -134,7 +142,41 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     return
 
 
+def plot_experiment():
+    import pandas as pd
+    from rpy2.robjects import pandas2ri, r
+    pandas2ri.activate()
+    r.source("unidirmigr_apf.R")
+
+    e = setup_experiment()
+    records = experiment_base.get_data_from_database( experiment_name )
+    df = pd.DataFrame( data = records )
+
+    truth = pd.DataFrame( data =
+                          [ (t*4*N0,
+                             N0 * e.pop.population_sizes[0][0],
+                             N0 * e.pop.population_sizes[0][1],
+                             e.pop.migration_rates[0][0][1] / (4.0 * N0),
+                             e.pop.migration_rates[0][1][0] / (4.0 * N0))
+                            for t in [ math.pow(10,j/100.0)/(g*4*N0) for j in range(250,650) ]
+                            if t < e.pop.change_points[1] ] +
+                          [ (t*4*N0,
+                             N0 * e.pop.population_sizes[1][0],
+                             N0 * e.pop.population_sizes[1][1],
+                             e.pop.migration_rates[1][0][1] / (4.0 * N0),
+                             e.pop.migration_rates[1][1][0] / (4.0 * N0))
+                            for t in [ math.pow(10,j/100.0)/(g*4*N0) for j in range(250,650) ]
+                            if t > e.pop.change_points[1] ],
+                          columns = ["t","Ne_1","Ne_2","u12","u21"] )
+    r('plot.smcsmc')( df, truth, split_time, g )
+        
+
+
+
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
+    experiment_base.plot_experiment = plot_experiment
     experiment_base.main( experiment_name, experiment_pars )
+
+
 
