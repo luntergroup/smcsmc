@@ -9,8 +9,13 @@ use.intercept = FALSE
 use.clumps = TRUE
 
 ## maximum epoch distance for explanatory variables
-min.epoch = -8
-max.epoch = 8
+min.epoch = -10
+max.epoch = 10
+
+## select part of the data, and setup explanatory (x) and response (y) variables
+start = 1
+end = 999
+
 
 #############################################################################################################
 
@@ -23,7 +28,7 @@ data$sd <- sqrt( pmax(0,data$Count) ) / pmax(1.0,data$Opp)
 data.recast.sd <- recastvar( data, "sd" )
 
 clumps <- 1 + max(data.recast$Clump)
-iters <- max(data.recast$Iter)
+iters <- min( end, max(data.recast$Iter))
 
 ## rescale (by fixed scaling factor, relative standard deviation) each variable, to normalize
 ## variance so that equal penalties can be applied.  This is done per clump, but the data
@@ -44,9 +49,6 @@ if (use.intercept & use.clumps) {
     }
 }
 
-## select part of the data, and setup explanatory (x) and response (y) variables
-start = 0
-
 ## for the response data, remove the EM outcome data ($Clump == -1), and remove
 ## iteration and Clump columns (columns 1 and 2)
 if (use.clumps) {
@@ -54,7 +56,9 @@ if (use.clumps) {
 } else {
     clumps.to.use <- c(-1)
 }
-ydata <- data.recast[ data.recast$Iter > start & data.recast$Clump %in% clumps.to.use, 3:length(data.recast) ]
+ydata <- data.recast[ data.recast$Iter > start &
+                      data.recast$Iter <= iters &
+                      data.recast$Clump %in% clumps.to.use, 3:length(data.recast) ]
 
 ## for the explanatory data, only use the EM outcome data, but of the previous iteration
 ## start by selecting the right iterations and columns; but leave the Iter column in
@@ -72,6 +76,7 @@ xdata$Iter <- NULL
 ## fit the model
 fit.mx <- data.frame()
 fit.b <- c()
+fit.mx.sampled <- list()
 if (use.intercept & use.clumps) {
     maxvars <- clumps+dim0
     mprior = 0.01
@@ -93,7 +98,9 @@ for ( idx in 1:dim0 ) {
     model <- blasso( as.matrix(xdata.nulled), ydata[,idx], lambda2=0, RJ=TRUE, mprior=mprior, rd=rd,
                      theta=0, icept=TRUE, normalize=FALSE, verb=1, M=maxvars, T=samples )
     fit.b <- c( fit.b, median( model$mu[ floor(samples/2):samples ] ) )
+    ## choosing the mean in fit.mx appears to give better results
     fit.mx <- rbind( fit.mx, apply( model$beta[ floor(samples/2):samples, ], 2, mean ) )
+    fit.mx.sampled[[ idx ]] <- model$beta[ floor(samples/2):samples, ]
     colnames(fit.mx) <- colnames(xdata)
 }
 
@@ -108,7 +115,12 @@ ggplot(data = melted.sq.mx, aes(x=X, y=variable, fill=abs(value))) +
   geom_tile()
 
 ## compute final answer
-final.answer <- function( iter.final ) {
+final.answer <- function( iter.final, sample=NULL ) {
+    if (is.null(sample)) {
+        A <- matrix( unlist(fit.mx[1:dim0,1:dim0]), nrow=dim0)
+    } else {
+        A <- matrix( unlist( lapply(fit.mx.sampled, function(mx) mx[sample,])), nrow=dim0, byrow=TRUE)
+    }
     x.final <- c(0)
     y.final <- c(0)
     for (it in iter.final) {
@@ -117,7 +129,6 @@ final.answer <- function( iter.final ) {
     }
     x.final <- x.final / length(iter.final)
     y.final <- y.final / length(iter.final)
-    A <- matrix( unlist(fit.mx[1:dim0,1:dim0]), nrow=dim0)
     result <- solve( diag(dim0) - A, y.final - A %*% x.final )
     return (result / scaling0)
 }
@@ -127,10 +138,23 @@ em.answer <- function( iter.final ) {
     return( y.final / scaling0 )
 }
 
-its <- c(3,5,10,iters-3,iters-2,iters-1,iters)
-mt <- apply( matrix(its), 1, function(x) 0.5/final.answer(x) )
-mt2 <- apply( matrix(its), 1, function(x) 0.5/em.answer(x) )
-matplot( mt, type="b", pch=1, col=1:length(its), ylim=c(0,20000) )
-matlines( mt2, type="l", pch=1, col=1:length(its), lty=3 )
 
-lines( 0.5 / final.answer( c(21,22,26,27,28,29,30) ), type="l", lty=5, lwd=3 )
+plot( 0.5/em.answer( iters ), col="darkred", lwd=2, type="l", lty=1, ylim=c(0,20000) )
+
+its <- c(iters)
+#mt <- apply( matrix(its), 1, function(x) 0.5/final.answer(x) )
+#matplot( mt, type="b", pch=1, col=1:length(its), ylim=c(0,20000), lty=3 )
+#mt2 <- apply( matrix(its), 1, function(x) 0.5/em.answer(x) )
+#matlines( mt2, type="l", pch=1, col=1:length(its), lty=1, lwd=2 )
+
+## the averaged answer seems pretty good
+useiters <- c(iters=10,iters-9,iters-8,iters-7,iters-6,iters-5,iters-4,iters-3,iters-2,iters-1,iters)
+lines( 0.5 / final.answer( useiters ), type="l", lty=5, lwd=3 )
+
+## the resampled answer seems not better than the averaged one
+answers <- c()
+for (sample in 1:(dim(fit.mx.sampled[[1]])[1])) {
+    answers <- c(answers, final.answer( useiters, sample=sample ))
+}
+real.final.answer <- apply( matrix( answers, ncol=36, byrow=TRUE ), 2, median )
+lines( 0.5 / real.final.answer, type="l", lty=2, lwd=3, col="darkgreen" )
