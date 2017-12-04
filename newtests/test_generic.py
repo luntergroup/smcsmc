@@ -143,7 +143,7 @@ class TestGeneric(unittest.TestCase):
         emopt = "-EM {em}".format(em=self.em)
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
-        guideopt = "-alpha {}".format( self.guided_recomb_alpha ) if self.guided_recomb_alpha>0 else ""
+        guideopt = "-alpha {}".format( self.guided_recomb_alpha ) if self.guided_recomb_alpha != 0 else ""
 
         ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
         ###       specifies the epochs to infer.  That's probably what we want to do anyway,

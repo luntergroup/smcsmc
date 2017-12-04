@@ -37,7 +37,7 @@ class Smcsmc:
         self.chunks = 1
         self.infer_recomb = True
         self.do_m_step = True
-        self.alpha = 0.0            # posterior mix-in; 0 means use prior
+        self.alpha = 0.0            # posterior mix-in; 0 means use prior; <0 means remove .recomb.gz files
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self.maxNE = 1e99
         self._processes = []
@@ -84,7 +84,7 @@ class Smcsmc:
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
             (3, '-no_m_step','','Do not update parameters (but do infer recombination guide)'),
-            (3, '-alpha', 't',  'Fraction of posterior recombination to mix in to recombination guide ({})'.format(self.alpha)),
+            (3, '-alpha', 't',  'Fraction of posterior recombination to mix in to recombination guide ({}); negative removes files'.format(self.alpha)),
             (3, '-smcsmcpath', 'f','Path to smcsmc executable ({})'.format(self.smcsmcpath)),
             (3, '-nothreads','','Calculate chunks sequentially rather than in parallel threads'),
             (3, '-log', 'f',    'Log file (stdout)'),
@@ -101,7 +101,7 @@ class Smcsmc:
         if len(self.opts) == 1 and self.opts[0] == "-v":
             subprocess.check_call(" ".join([self.smcsmcpath] + self.opts), shell=True)
             sys.exit(0)
-        if set(self.opts).isdisjoint( set(['-help','--help','-?']) ) and len(self.opts)>0:
+        if set(self.opts).isdisjoint( set(['-help','--help','-h', '-?']) ) and len(self.opts)>0:
             return
         print ("SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - Demographic Inference with Particle Filters")
         print ("       Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
@@ -272,7 +272,7 @@ class Smcsmc:
 
     def write_outfile(self, outfname, data, iteration):
         of = open(outfname,'w')
-        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp       Count        Rate          Ne         ESS  Clump\n")
+        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp          Count           Rate             Ne            ESS  Clump\n")
         for key in sorted(data.keys(), key = lambda elt : (elt[0][-1]>=0,elt) ):
             if key[1] == "Count":
                 start, end, opp, count, wt = map(lambda label:data[(key[0],label)], ["Start","End","Opp","Count","Wt"])
@@ -281,7 +281,7 @@ class Smcsmc:
                 rate = count / (opp + 1e-30)
                 ne = (opp + 1e-10) / (2.0 * count + 1e-30) if typ == "Coal" else 0.0
                 ess = 1.0 / (wt / (opp + 1e-30))
-                of.write("{:6d} {:>6d} {:11.5g} {:11.5g} {:>6s}  {:>5d}  {:>5d} {:11.5g} {:11.5g} {:11.5g} {:11.5g} {:11.5g} {:>6d}\n".format(
+                of.write("{:6d} {:>6d} {:11.5g} {:11.5g} {:>6s}  {:>5d}  {:>5d} {:14.8g} {:14.8g} {:14.8g} {:14.8g} {:11.5g} {:>6d}\n".format(
                     iteration, epoch, start, end, typ, frm, to, opp, count, rate, ne, ess, clump))
         of.close()
 
@@ -420,6 +420,13 @@ class Smcsmc:
                     fout = gzip.open( self.recombination_guide, 'w' )
                     lr.write_data( fout )
                     fout.close()
+            elif self.alpha < 0.0:
+                # remove the (large) .recomb files
+                for chunk in range(self.chunks):
+                    try:
+                        os.remove( self.recomb_template.format(iteration-1,chunk) )
+                    except:
+                        pass
 
         # launch the chunks (either return immediately, or actually process)
         # also check if already in progress, and raise error if so
