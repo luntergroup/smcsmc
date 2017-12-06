@@ -272,7 +272,7 @@ class Smcsmc:
 
     def write_outfile(self, outfname, data, iteration):
         of = open(outfname,'w')
-        of.write("  Iter  Epoch       Start         End   Type   From     To         Opp          Count           Rate             Ne            ESS  Clump\n")
+        of.write("  Iter  Epoch       Start         End   Type   From     To            Opp          Count           Rate             Ne         ESS  Clump\n")
         for key in sorted(data.keys(), key = lambda elt : (elt[0][-1]>=0,elt) ):
             if key[1] == "Count":
                 start, end, opp, count, wt = map(lambda label:data[(key[0],label)], ["Start","End","Opp","Count","Wt"])

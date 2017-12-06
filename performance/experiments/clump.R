@@ -2,33 +2,50 @@ library(reshape2)
 library(plyr)
 library(monomvn)
 
-## use per-clump intercept vector?
-use.intercept = FALSE
-
 ## use clump data (as opposed to aggregate data)?
 use.clumps = TRUE
 
 ## maximum epoch distance for explanatory variables
-min.epoch = -10
-max.epoch = 10
+min.epoch = -40
+max.epoch = 40
 
 ## select part of the data, and setup explanatory (x) and response (y) variables
-start = 1
+start = 0
 end = 999
-
 
 #############################################################################################################
 
 ## recast data, including the EM outcome column (Clump == -1)
-data <- read.table("zz-clump.out",header=T)
+infile <- "zz-clump.out"
+infile <- "udm-apf-clump.out"
+data <- read.table(infile,header=T)
+
+## !! Clean (for udm-apf-clump.out) -- missing data on iteration 39 (why?)
+data <- data[ data$Iter != 39, ]
+
+## add standard error in measurement
+data$sd <- sqrt( pmax(0,data$Count) ) / pmax(1.0,data$Opp)
+
+## recast
 recastvar <- function( data, var) { return(dcast( data=data, Iter + Clump ~ Type + From + Epoch, value.var=var,
                                                  subset=.(Type %in% c("Coal","Migr")))) }
 data.recast <- recastvar( data, "Rate" )
-data$sd <- sqrt( pmax(0,data$Count) ) / pmax(1.0,data$Opp)
 data.recast.sd <- recastvar( data, "sd" )
+data.recast.count <- recastvar( data, "Count" )
 
+## remove variables that have little or no counts at end of iterations -- either pegged to 0 or converged to 0
 clumps <- 1 + max(data.recast$Clump)
 iters <- min( end, max(data.recast$Iter))
+keepcols <- c(1, 2, 2 + which(data.recast.count[ data.recast$Clump == -1 & data.recast$Iter == iters , c(-1,-2) ] > 0.5))
+data.recast <- data.recast[ , keepcols ]
+data.recast.sd <- data.recast.sd[ , keepcols ]
+dim0 <- dim(data.recast)[2] - 2  ## number of inferred variables; do not include Iter and Clump
+
+## sanity check - are all data present?
+mlt <- melt(data.recast, id.vars=c("Iter","Clump"))
+if (sum(is.na(mlt$value))>0) {
+    stop("Missing data! stopping")
+}
 
 ## rescale (by fixed scaling factor, relative standard deviation) each variable, to normalize
 ## variance so that equal penalties can be applied.  This is done per clump, but the data
@@ -37,17 +54,6 @@ scaling0 <- unlist( 1.0 / (data.recast.sd[ data.recast$Iter == iters & data.reca
 if (use.clumps)  scaling0 <- scaling0 * sqrt(clumps)
 scaling <- c(1, 1, scaling0)
 data.recast <- as.data.frame( t(t(data.recast) * scaling ) )
-
-## set up auxiliary response variables, to infer per-clumb b vectors
-dim0 <- dim(data.recast)[2] - 2  ## do not include Iter and Clump
-if (use.intercept & use.clumps) {
-    vars <- paste("Clump", unique(subset(data,data$Clump >= 0)$Clump), sep="_")
-    data.recast[vars] <- 0
-    for (i in 1:length(vars)) {
-        clump <- as.integer(unlist(strsplit(vars[i],"_"))[2])
-        data.recast[ data.recast$Clump == clump ,vars[i] ] <- 1
-    }
-}
 
 ## for the response data, remove the EM outcome data ($Clump == -1), and remove
 ## iteration and Clump columns (columns 1 and 2)
@@ -77,21 +83,14 @@ xdata$Iter <- NULL
 fit.mx <- data.frame()
 fit.b <- c()
 fit.mx.sampled <- list()
-if (use.intercept & use.clumps) {
-    maxvars <- clumps+dim0
-    mprior = 0.01
-    samples <- 30
-    rd <- c(0.5,10)
-} else {
-    maxvars = dim0
-    mprior = 0.1
-    samples <- 50
-    rd <- FALSE ### c(5,200) # first=shape, larger=broader; first/second = mean lambda ~ 1/nonzero terms
-}
+maxvars = dim0
+mprior = 0.1
+samples <- 50
+rd <- FALSE ### c(5,200) # first=shape, larger=broader; first/second = mean lambda ~ 1/nonzero terms
 for ( idx in 1:dim0 ) {
-    epoch <- idx - 1
-    cat("Computing row for epoch ",epoch,"\n")
     epochs <- unlist(lapply(strsplit(names(xdata),"_"), function(x) as.integer(x[3])))
+    epoch <- epochs[idx]
+    cat("Computing row ",idx," for epoch ",epoch," and measurement ",names(xdata)[idx],"\n")
     keep.epochidx <- which( epochs >= epoch + min.epoch & epochs <= epoch + max.epoch )
     xdata.nulled <- xdata
     xdata.nulled[ , -keep.epochidx ] <- 0
@@ -105,9 +104,9 @@ for ( idx in 1:dim0 ) {
 }
 
 ## heatmap
-sq.mx <- fit.mx[1:36,1:36]
-colnames(sq.mx) <- 0:35
-sq.mx$X <- 1:36
+sq.mx <- fit.mx[1:dim0,1:dim0]
+colnames(sq.mx) <- 1:dim0
+sq.mx$X <- 1:dim0
 melted.sq.mx <- melt(sq.mx, id="X")
 sq.mx$X <- NULL
 library(ggplot2)
@@ -139,7 +138,9 @@ em.answer <- function( iter.final ) {
 }
 
 
+## plot the final EM result
 plot( 0.5/em.answer( iters ), col="darkred", lwd=2, type="l", lty=1, ylim=c(0,20000) )
+text( rep(100, length(xdata)), names(xdata), srt=90, cex=0.75, adj=c(0,0) )
 
 its <- c(iters)
 #mt <- apply( matrix(its), 1, function(x) 0.5/final.answer(x) )
@@ -148,7 +149,8 @@ its <- c(iters)
 #matlines( mt2, type="l", pch=1, col=1:length(its), lty=1, lwd=2 )
 
 ## the averaged answer seems pretty good
-useiters <- c(iters=10,iters-9,iters-8,iters-7,iters-6,iters-5,iters-4,iters-3,iters-2,iters-1,iters)
+##useiters <- c(iters=10,iters-9,iters-8,iters-7,iters-6,iters-5,iters-4,iters-3,iters-2,iters-1,iters)
+useiters <- c(1:iters)
 lines( 0.5 / final.answer( useiters ), type="l", lty=5, lwd=3 )
 
 ## the resampled answer seems not better than the averaged one
@@ -156,5 +158,5 @@ answers <- c()
 for (sample in 1:(dim(fit.mx.sampled[[1]])[1])) {
     answers <- c(answers, final.answer( useiters, sample=sample ))
 }
-real.final.answer <- apply( matrix( answers, ncol=36, byrow=TRUE ), 2, median )
+real.final.answer <- apply( matrix( answers, ncol=dim0, byrow=TRUE ), 2, median )
 lines( 0.5 / real.final.answer, type="l", lty=2, lwd=3, col="darkgreen" )
