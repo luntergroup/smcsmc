@@ -1,27 +1,38 @@
 library(reshape2)
 library(plyr)
 library(monomvn)
+library(glmnet)
 
 ## use clump data (as opposed to aggregate data)?
 use.clumps = TRUE
 
-## maximum epoch distance for explanatory variables
-min.epoch = -40
-max.epoch = 40
+use.log = TRUE
 
-## select part of the data, and setup explanatory (x) and response (y) variables
-start = 0
-end = 999
+## maximum epoch distance for explanatory variables
+min.epoch = -2
+max.epoch = 2
+
+## select subset of iterations to use
+start = 5
+end = 10
 
 #############################################################################################################
 
 ## recast data, including the EM outcome column (Clump == -1)
 infile <- "zz-clump.out"
 infile <- "udm-apf-clump.out"
-data <- read.table(infile,header=T)
+infile <- "udm-split-m0.out"
+data0 <- read.table(infile,header=T)
+
+if (use.log) {
+    data0[ data0$Type == "Migr", ]$Rate <- log( data0[ data0$Type == "Migr", ]$Rate + 1e-8 )
+}
+
+data <- data0[ data0$Iter <= end & data0$Iter >= start, ]
+data$Iter <- data$Iter - start
 
 ## !! Clean (for udm-apf-clump.out) -- missing data on iteration 39 (why?)
-data <- data[ data$Iter != 39, ]
+#data <- data[ data$Iter != 39, ]
 
 ## add standard error in measurement
 data$sd <- sqrt( pmax(0,data$Count) ) / pmax(1.0,data$Opp)
@@ -35,11 +46,15 @@ data.recast.count <- recastvar( data, "Count" )
 
 ## remove variables that have little or no counts at end of iterations -- either pegged to 0 or converged to 0
 clumps <- 1 + max(data.recast$Clump)
-iters <- min( end, max(data.recast$Iter))
+iters <- max(data.recast$Iter)
 keepcols <- c(1, 2, 2 + which(data.recast.count[ data.recast$Clump == -1 & data.recast$Iter == iters , c(-1,-2) ] > 0.5))
 data.recast <- data.recast[ , keepcols ]
 data.recast.sd <- data.recast.sd[ , keepcols ]
 dim0 <- dim(data.recast)[2] - 2  ## number of inferred variables; do not include Iter and Clump
+
+data0.recast <- recastvar( data0, "Rate" )
+iters0 <- max(data0.recast$Iter)
+data0.recast <- data0.recast[ , keepcols ]
 
 ## sanity check - are all data present?
 mlt <- melt(data.recast, id.vars=c("Iter","Clump"))
@@ -54,6 +69,7 @@ scaling0 <- unlist( 1.0 / (data.recast.sd[ data.recast$Iter == iters & data.reca
 if (use.clumps)  scaling0 <- scaling0 * sqrt(clumps)
 scaling <- c(1, 1, scaling0)
 data.recast <- as.data.frame( t(t(data.recast) * scaling ) )
+data0.recast <- as.data.frame( t(t(data0.recast) * scaling ) )
 
 ## for the response data, remove the EM outcome data ($Clump == -1), and remove
 ## iteration and Clump columns (columns 1 and 2)
@@ -62,7 +78,7 @@ if (use.clumps) {
 } else {
     clumps.to.use <- c(-1)
 }
-ydata <- data.recast[ data.recast$Iter > start &
+ydata <- data.recast[ data.recast$Iter > 0 &
                       data.recast$Iter <= iters &
                       data.recast$Clump %in% clumps.to.use, 3:length(data.recast) ]
 
@@ -70,10 +86,10 @@ ydata <- data.recast[ data.recast$Iter > start &
 ## start by selecting the right iterations and columns; but leave the Iter column in
 ## then replace the data columns by the EM outcome data of the correct iteration
 ## finally, remove Iter column
-xdata <- data.recast[ data.recast$Iter >= start &
+xdata <- data.recast[ data.recast$Iter >= 0 &
                       data.recast$Iter < iters &
                       data.recast$Clump %in% clumps.to.use, c(1,3:length(data.recast)) ]
-for (iter in start:(iters-1)) {
+for (iter in 0:(iters-1)) {
     xdata[ xdata$Iter == iter, 2:(dim0+1) ] <- data.recast[ data.recast$Clump == -1 &
                                                             data.recast$Iter == iter, 3:(dim0+2) ]
 }
@@ -94,14 +110,20 @@ for ( idx in 1:dim0 ) {
     keep.epochidx <- which( epochs >= epoch + min.epoch & epochs <= epoch + max.epoch )
     xdata.nulled <- xdata
     xdata.nulled[ , -keep.epochidx ] <- 0
-    model <- blasso( as.matrix(xdata.nulled), ydata[,idx], lambda2=0, RJ=TRUE, mprior=mprior, rd=rd,
-                     theta=0, icept=TRUE, normalize=FALSE, verb=1, M=maxvars, T=samples )
-    fit.b <- c( fit.b, median( model$mu[ floor(samples/2):samples ] ) )
-    ## choosing the mean in fit.mx appears to give better results
-    fit.mx <- rbind( fit.mx, apply( model$beta[ floor(samples/2):samples, ], 2, mean ) )
-    fit.mx.sampled[[ idx ]] <- model$beta[ floor(samples/2):samples, ]
+    if (TRUE) {
+        model <- cv.glmnet( as.matrix(xdata.nulled), ydata[,idx], standardize=FALSE, family="gaussian", alpha=0.5 )
+        fit.mx <- rbind( fit.mx, as.matrix(coef( model, s="lambda.min" ))[-1] )
+    } else {
+        model <- blasso( as.matrix(xdata.nulled), ydata[,idx], lambda2=0, RJ=TRUE, mprior=mprior, rd=rd,
+                        theta=0, icept=TRUE, normalize=FALSE, verb=1, M=maxvars, T=samples, ab=c(2,0.25) )
+        fit.b <- c( fit.b, median( model$mu[ floor(samples/2):samples ] ) )
+        ## choosing the mean in fit.mx appears to give better results
+        fit.mx <- rbind( fit.mx, apply( model$beta[ floor(samples/2):samples, ], 2, mean ) )
+        fit.mx.sampled[[ idx ]] <- model$beta[ floor(samples/2):samples, ]
+    }
     colnames(fit.mx) <- colnames(xdata)
 }
+
 
 ## heatmap
 sq.mx <- fit.mx[1:dim0,1:dim0]
@@ -110,7 +132,7 @@ sq.mx$X <- 1:dim0
 melted.sq.mx <- melt(sq.mx, id="X")
 sq.mx$X <- NULL
 library(ggplot2)
-ggplot(data = melted.sq.mx, aes(x=X, y=variable, fill=abs(value))) + 
+ggplot(data = melted.sq.mx, aes(x=X, y=variable, fill=abs(value))) +
   geom_tile()
 
 ## compute final answer
@@ -132,31 +154,49 @@ final.answer <- function( iter.final, sample=NULL ) {
     return (result / scaling0)
 }
 
-em.answer <- function( iter.final ) {
-    y.final <- unlist( data.recast[ data.recast$Iter == iter.final & data.recast$Clump == -1, c(-1,-2) ] )
+em.answer <- function( iter.final, data.r=NULL ) {
+    if (is.null(data.r)) data.r <- data.recast
+    y.final <- unlist( data.r[ data.r$Iter == iter.final & data.r$Clump == -1, c(-1,-2) ] )
     return( y.final / scaling0 )
 }
 
 
 ## plot the final EM result
-plot( 0.5/em.answer( iters ), col="darkred", lwd=2, type="l", lty=1, ylim=c(0,20000) )
-text( rep(100, length(xdata)), names(xdata), srt=90, cex=0.75, adj=c(0,0) )
+if (FALSE) {
+    to.plot <- grep("Coal", names(xdata))
+    ylim <- c(0,20000)
+    tx <- function(x) return(0.5/x)
+} else {
+    to.plot <- grep("Migr", names(xdata))
+    ylim <- c(0,2e-4)
+    tx <- function(x) return(x)
+    tx <- function(x) return(exp(x))
+}
 
-its <- c(iters)
+plot( tx(em.answer( iters )[ to.plot ]), col="darkred", lwd=2, type="l", lty=1, ylim=ylim )
+text( rep(ylim[1]/200, length(to.plot)), names(xdata)[to.plot], srt=90, cex=0.75, adj=c(0,0) )
+
+lines( tx(em.answer( iters0, data.r=data0.recast )[ to.plot ]), col="blue", lwd=1, type="l", lty=1, ylim=ylim )
+## text( rep(ylim[1]/200, length(to.plot)), names(xdata)[to.plot], srt=90, cex=0.75, adj=c(0,0) )
+
+
+#its <- c(iters)
 #mt <- apply( matrix(its), 1, function(x) 0.5/final.answer(x) )
 #matplot( mt, type="b", pch=1, col=1:length(its), ylim=c(0,20000), lty=3 )
 #mt2 <- apply( matrix(its), 1, function(x) 0.5/em.answer(x) )
 #matlines( mt2, type="l", pch=1, col=1:length(its), lty=1, lwd=2 )
 
-## the averaged answer seems pretty good
+## the averaged answer can be pretty good
+## but not on the split-m0 data where it is very noisy
 ##useiters <- c(iters=10,iters-9,iters-8,iters-7,iters-6,iters-5,iters-4,iters-3,iters-2,iters-1,iters)
-useiters <- c(1:iters)
-lines( 0.5 / final.answer( useiters ), type="l", lty=5, lwd=3 )
+useiters <- c(iters)
+lines( tx(final.answer( useiters )[to.plot]), type="l", lty=5, lwd=3 )
 
 ## the resampled answer seems not better than the averaged one
+## but on the split-m0 data it is much less noisy, and slightly better than final EM esimate
 answers <- c()
 for (sample in 1:(dim(fit.mx.sampled[[1]])[1])) {
     answers <- c(answers, final.answer( useiters, sample=sample ))
 }
 real.final.answer <- apply( matrix( answers, ncol=dim0, byrow=TRUE ), 2, median )
-lines( 0.5 / real.final.answer, type="l", lty=2, lwd=3, col="darkgreen" )
+lines( tx(real.final.answer[to.plot]), type="l", lty=2, lwd=3, col="darkgreen" )
