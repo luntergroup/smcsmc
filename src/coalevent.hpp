@@ -221,7 +221,10 @@ public:
         // recombination events are recorded in the sequence segment following the event (arbitrary choice).  Therefore,
         // the sequence position of the recombination event is the start of the current event record's sequence segment
         // (for events that occur when sweeping in the x direction)
-        return event_data_ == -1 ? a.recomb_pos : start_base_; } 
+        return event_data_ == -1 ? a.recomb_pos : start_base_; }
+    double recomb_event_time() const {
+        if (!is_recomb_event()) return -1;
+        return event_data_ == 0 ? a.recomb_pos : end_height; }
     void set_descendants( const Descendants_t descendants_ ) {
         descendants = descendants_; }
     Descendants_t get_descendants() const {

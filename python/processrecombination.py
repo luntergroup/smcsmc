@@ -11,6 +11,7 @@ import itertools
 # seems to work nicely; for beta=4 segment count is about half number of recombinations
 # next: sub-segment the leaves; write averages
 
+# NOTE: will not work properly with the newfangled output files that include time-weighted counts!
 
 class LocalRecombination:
     
@@ -66,7 +67,7 @@ class LocalRecombination:
     def _read_data(self, infile, iter=0):
         data = []
         gcd = 0
-        if infile.upper().endswith('GZ'):
+        if infile.upper().endswith('.GZ'):
             rfile = gzip.open(infile,'r')
         else:
             rfile = open(infile,'r')

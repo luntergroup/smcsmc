@@ -76,7 +76,7 @@ class CountModel: public Model {
 
         void update_all_counts( EvolutionaryEvent** event_ptr, double weight, vector<double>& update_to, size_t epoch_idx );
         void update_all_counts_single_evolevent( EvolutionaryEvent* event, double weight, vector<double>& update_to, size_t first_epoch_to_update );
-        void record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, Descendants_t descendants );
+        void record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base, double event_time, Descendants_t descendants );
         void update_delayed_weight_count( double opportunity ) { total_delayed_weight_count += opportunity; }
         void update_delayed_weight_opportunity( double opportunity ) { total_delayed_weight_opportunity += opportunity; }
         //
