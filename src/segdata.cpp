@@ -232,7 +232,7 @@ void Segment::set_lookahead() {
     first_split_distance = -1;
 
     /* hardcoded threshold of total length of missing data; beyond this no mutation will be recorded */
-    double max_missing_data = 2000;
+    double max_missing_data = 2000000;
 
     vector<bool> found_doubleton( nsam_ );     // records which sequences have participated in a doubleton
     int num_singletons = 0;
