@@ -27,17 +27,28 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
 
     # execute using qrsh
     if use_submit:
-        qscript =     qscript = "qsub -b y"
+        qscript = "qsub -b y"
         stdoutname = "/dev/null"
         stderrname = "/dev/null"
         cmdelts = cmd.split(' ')
-        for i, elt in enumerate(cmdelts):
-            if elt.startswith(">>"):
-                stdoutname = elt[2:]
+        i = 0
+        while i < len(cmdelts):
+            elt = cmdelts[i]
+            if elt.startswith(">"):
+                stdoutname = elt.lstrip('>')
                 cmdelts[i] = ""
-            if elt.startswith("2>>"):
-                stderrname = elt[3:]
+                if stdoutname == "":
+                    i += 1
+                    stdoutname = cmdelts[i]
+                    cmdelts[i] = ""
+            if elt.startswith("2>"):
+                stderrname = elt[1:].lstrip('>')
                 cmdelts[i] = ""
+                if stderrname == "":
+                    i += 1
+                    stderrname = cmdelts[i]
+                    cmdelts[i] = ""
+            i += 1
         cmd = " ".join(cmdelts)
     else:
         stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
