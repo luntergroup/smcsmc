@@ -26,6 +26,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
             raise ValueError("Cannot find or create directory '{}'".format( dirname ))
 
     # execute using qrsh
+    initial_cmd = cmd
     if use_submit:
         qscript = "qsub -b y"
         stdoutname = "/dev/null"
@@ -55,6 +56,7 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
         stderrname = "{}/qrsh.{}.stderr".format(dirname, hex(hash(cmd)))
         qscript = "qrsh"
     command = "{} -j y -cwd -now n -V -N {} -o {} -e {} {} {}".format(qscript, name, stdoutname, stderrname, qsub_config, cmd)
+    print("command=",command)
     if use_popen:
         popen = subprocess.Popen( command, shell=shell )
         return popen

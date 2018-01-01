@@ -613,7 +613,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
 };
 
 
-void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration ) {
+void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration, double start_position ) {
 
     // find last nonzero entry
     size_t last_idx = min( local_recomb_opportunity.size(), (size_t)(locus_length / local_recording_interval_) );
@@ -637,7 +637,7 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
         stream << iteration
                << "\t" 
                << fixed << setprecision(0)
-               << idx * local_recording_interval_
+               << idx * local_recording_interval_ + start_position
                << "\t"
                << local_recording_interval_
                << "\t"

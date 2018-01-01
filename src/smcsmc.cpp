@@ -288,13 +288,13 @@ void pfARG_core(PfParam &pfARG_para,
       countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
     clog << "    Lags set to: " << countNe->check_lags() << endl;
-
+    clog << " Starting position: " << fixed << setprecision(0) << pfARG_para.start_position << endl;
 
     /*! Go through seg data */
     bool force_update = false;
     int total_resample_count = 0;
     do{
-        dout <<"Current base is "<<Segfile->segment_start() << endl;
+        dout <<"Current base is " << fixed << setprecision(0) << Segfile->segment_start() << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
@@ -350,7 +350,7 @@ void pfARG_core(PfParam &pfARG_para,
         boost::iostreams::filtering_ostream out;
         out.push( boost::iostreams::gzip_compressor() );
         out.push( recombFile );
-        countNe->dump_local_recomb_logs( out, model->loci_length(), pfARG_para.EMcounter() );
+        countNe->dump_local_recomb_logs( out, model->loci_length(), pfARG_para.EMcounter(), pfARG_para.start_position );
     }
     
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap,

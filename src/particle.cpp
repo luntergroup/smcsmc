@@ -1168,7 +1168,7 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
         double current_position = current_base();
         double next_position = current_base() + length;
         if (current_position == next_position) {
-            cerr << "Next recombination position is identical due to underflow at "
+            cerr << "Warning: Next recombination position is identical due to underflow at "
                  << "pos=" << current_position << "; length=" << length << endl;
             cerr << "Check that recombination rates are sensible! (at this position, rate = " << recomb_rate << " per nt;"
                  << " tree length " << wtd_local_tree_len << " generations; multiplicity = " << multiplicity() << ")" << endl;

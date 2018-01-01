@@ -251,10 +251,15 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam, vector<Fo
         int mult   = (*particles)[i]->multiplicity();
         actual_num_particles += mult;
         wi_sum += w_i * mult;
-        wi_sq_sum += w_i * w_i * mult;
+    }
+    double scaling = 1.0/wi_sum;
+    for (size_t i = 0; i < num_particle_records; i++) {
+        double w_i = (*particles)[i]->pilotWeight();
+        int mult   = (*particles)[i]->multiplicity();
+        wi_sq_sum += (w_i * scaling) * (w_i * scaling * mult);
     }
     partial_sums[ num_particle_records ] = wi_sum;
-    double ess = wi_sum * wi_sum / wi_sq_sum;
+    double ess = 1.0 / wi_sq_sum;
 
     if (to_sample == -1 && actual_num_particles != num_particles) {    // only check if used for main particle set, not importance sampling
         cout << "Problem: expected " << num_particles << " particles but found " << actual_num_particles << endl;
