@@ -5,7 +5,7 @@ source("plot-utils.R")
 
 plot.smcsmc <- function( data, truth, g=30 ) {
 
-    ##write.table(data, file="zigzag.dta", sep="\t")
+    write.table(data, file="zigzag.dta", sep="\t")
     data <- read.table(file="zigzag.dta", header=TRUE)
 
     t0 <- 500

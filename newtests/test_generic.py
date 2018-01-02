@@ -570,7 +570,7 @@ class TestGeneric(unittest.TestCase):
         session = Session()
         with open(self.outfile) as f:
             for line in f:
-                elts = line.strip().split()
+                elts = line.split()
                 if elts[0] == "Iter":
                     header = { elt : idx for idx, elt in enumerate(elts) }
                     continue
@@ -582,6 +582,3 @@ class TestGeneric(unittest.TestCase):
                                      rate = float(elts[header["Rate"]]), ne = float(elts[header["Ne"]]), ess = float(elts[header["ESS"]])))
         session.commit()
         session.close()
-
-
-

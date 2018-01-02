@@ -19,7 +19,7 @@ import experiment_base
 missingdata = False
 inferences = range(12)
 particles = [30000]
-emiters = 20 # 30
+emiters = 30
 seqlen_infpar = 2000e6
 simseed = 1
 chunks = 100  # don't forget to use -c -C "-P lunter.prjb -q long.qb"

@@ -538,10 +538,13 @@ class Smcsmc:
 
     def merge_outfiles(self):
         of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
+        write_header = True
         for em_iter in range(smcsmc.emiters, -1, -1):
             ifile = open( self.out_template.format(em_iter, "final"), 'r')
             header = ifile.readline()
-            if em_iter == 0: of.write(header)
+            if write_header:
+                of.write(header)
+                write_header = False
             for line in ifile:
                 of.write(line)
         of.close()
