@@ -17,7 +17,7 @@ split_epochs = [12] # [11,12,13]
 seqlen = 1000e6
 particles = [30000]
 models = [0,1,2,3]
-emiters = 30
+emiters = 12 # 30
 lagfactor = 1.0
 nsam = 8
 chunks = 20   # don't forget to use -C "-P lunter.prjb -q long.qb -pe shmem <chunks>"
@@ -46,7 +46,7 @@ def uniq_chain(*args, **kwargs):
 
 
 # define the experiments - repetitions with fixed data, varying split point
-experiment_pars = [{'length':seqlen, 'simseed':102, 'infseed':infseed, 'numparticles':numparticles, 'lag':lagfactor, 
+experiment_pars = [{'length':seqlen, 'simseed':102, 'infseed':infseed, 'numparticles':numparticles, 'lag':lagfactor,
                     'nsam':nsam, 'biasheights':None, 'biasstrengths':None, 'delay':0, 'apf':2, 'splitepoch':splitepoch, 'model':model}
                    for (infseed, numparticles, splitepoch, model) in uniq_chain(
                            itertools.product(
@@ -109,7 +109,7 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.smcsmc_initial_migr_rates = [[[0,1],[1,0]]] * (splitepoch // 2) + \
                                   [[[0,1],[1,0]]] * (splitepoch - splitepoch//2) + \
                                   [[[0,0],[0,0]]] * (quantiles-splitepoch)
-    
+
     if model == 0:
         e.pop.migration_rates = [ [[0,0],[0,0]],
                                   [[0,5],[0,0]],    # [[x, M12],[M21, x]] -- migration rate 5 from pop 2 to 1
@@ -154,7 +154,21 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     return
 
 
+def plot_experiment():
+    import pandas as pd
+    from rpy2.robjects import pandas2ri, r
+    pandas2ri.activate()
+    records = experiment_base.get_data_from_database( experiment_name )
+
+    df = pd.DataFrame( data = records )
+    r.source("unidirmigr_split.R")
+    g = 30.0
+
+    r('plot.smcsmc')( df, truth, g )
+
+
 if __name__ == "__main__":
     experiment_base.run_experiment = run_experiment
+    experiment_base.plot_experiment = plot_experiment
     experiment_base.main( experiment_name, experiment_pars )
 
