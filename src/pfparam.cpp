@@ -437,7 +437,7 @@ void PfParam::writeLog(ostream * writeTo){
 
 void PfParam::outFileHeader(){
     string file_name = outFileName;
-    ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    ofstream count_file( file_name.c_str(), ios::binary );
     int field_length_1 = 6;
     int field_length_2 = 14;
     count_file << setw(field_length_1) << "Iter"   << " "
