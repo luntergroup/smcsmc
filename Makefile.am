@@ -50,7 +50,7 @@ generate_vcf$(EXEEXT):
 common_flags = -std=c++11 -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
 
 # Binary flags
-smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 $(boostinclude)
+smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 ${CXXMARCH} $(boostinclude)
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 smcsmc_LDADD             = -lboost_iostreams -lz ${TCMALLOC}

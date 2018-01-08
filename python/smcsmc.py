@@ -55,7 +55,8 @@ class Smcsmc:
         self.threads = True
         self.cluster = False
         self.cconfig = None
-        self.maxgap = 1000000
+        self.maxgap = 200000
+        self.minseg = 500000
         self.samples_in_segfile = None
         
         self.smcsmcpath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../smcsmc'))
@@ -87,7 +88,8 @@ class Smcsmc:
             (2, '-o', 'f',     '[*] Output prefix'),
             (2, '-seg', 'f',   '[+] Input .seg file'),
             (2, '-segs', 'f1,...', '[+] Input .seg files (must be last option on command line)'),
-            (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (1Mb)'),
+            (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (500 kb)'),
+            (2, '-minseg', 'n', 'After splitting ignore segments shorter than minseg (500 kb)'),
             (2, '-startpos', 'x', 'First locus to process (1)'),
             (2, '-P', 's e p', 'Divide time interval [s,e] (in generations) equally on log scale, using pattern p'),
             (2, '-Np', 'n',    'Number of particles'),
@@ -122,7 +124,7 @@ class Smcsmc:
             sys.exit(0)
         if set(self.opts).isdisjoint( set(['-help','--help','-h', '-?']) ) and len(self.opts)>0:
             return
-        print ("SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - Demographic Inference with Particle Filters")
+        print ("SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - demographic inference with particle filters")
         print ("       Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
         for idx, clas in enumerate(self.classes):
             print ("\n"+clas)
@@ -175,6 +177,12 @@ class Smcsmc:
             elif opts[idx] == '-segs':
                 idx, self.segfile = self.process_segfiles( idx, opts )
                 unparsed_opts += ['-seg',self.segfile]
+            elif opts[idx] == '-maxgap':
+                self.maxgap = int(float(opts[idx+1]))
+                idx += 2
+            elif opts[idx] == '-minseg':
+                self.minseg = int(float(opts[idx+1]))
+                idx += 2
             elif opts[idx] == '-o':
                 self.outprefix = opts[idx+1]
                 idx += 2
@@ -228,7 +236,7 @@ class Smcsmc:
         if self.logfile == None:
             logger.addHandler( logging.StreamHandler() )
         else:
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter('%(asctime)s - %(message)s')
             fh = logging.FileHandler( self.logfile )
             fh.setLevel( logging.DEBUG )
             fh.setFormatter(formatter)
@@ -270,10 +278,22 @@ class Smcsmc:
         times = [0] + [start * math.exp( math.log(end/start) * i / (len(mask)-2.0)) / (4 * self.N0)
                        for i in range(len(mask))]
         # generate -eN commands
-        time_opts += [(time, "-eN {} 1.0".format(time)) for m,time in zip(mask,times) if m == 1]
-        time_opts.sort()
-        self.opts = remain_opts + [opt for t,opt in time_opts]
+        new_time_opts = []
+        for idx, time in enumerate(times[:-1]):
+            if mask[idx] == 1:
+                # add -eN command setting the population size at this epoch to the last set population size, or 1.0 if none was set
+                last_en_opt = sorted( [(-1.0, ['-eN', '0.0', '1.0'])] + [ to for to in time_opts if to[0] <= time and to[1][0] == '-eN'] )[-1]
+                new_time_opts.append( (time, ['-eN {} {}'.format(time, last_en_opt[1][2])]) )
+        # set times of other commands to the appropriate epoch time
+        # remove -eN commands line opts.  Note: -en commands are left in, and might introduce new epochs; best not to use -en and -P simultaneously
+        for to in time_opts:
+            if to[1][0] == '-eN': continue
+            newtime = sorted( [t for t in times if t <= to[0]] )[-1]
+            new_time_opts.append( (newtime, [to[1][0], str(newtime)] + to[1][2:]) )
+        new_time_opts.sort()
+        self.opts = remain_opts + [' '.join(opt) for t,opt in new_time_opts]
         logger.info("Pattern mask: {}".format(' '.join(map(str,mask))))
+        logger.info("Population structure options: {}".format( ' '.join( [' '.join(opt) for t,opt in new_time_opts] ) ) )
 
 
     def set_environment(self):
@@ -299,7 +319,7 @@ class Smcsmc:
 
     def define_chunks(self):
         last = self.startpos
-        chunkstarts = []
+        chunkstarts = [last]
         weighted_length = 1e-10
         segregating_sites = 0
         harmonic = None
@@ -307,29 +327,28 @@ class Smcsmc:
             elts = self.read_segline(line)
             start = int(elts[0])
             size = int(elts[1])
+            alleles = len(elts[2])
+            missing = elts[2].count('.')
             if start + size < self.startpos:
                 continue
             if self.length != None and start > self.startpos + self.length:
                 last = start
                 break
-            if elts[2].count('.') == len(elts[2]):
+            if missing == alleles:
                 continue
             if harmonic is None:
-                harmonic = [ sum(1.0/(i) for i in range(1,k)) for k in range(1,len(elts[2]) + 1)]
-            weighted_length += size * harmonic[ len(elts[2].replace('.','')) - 1 ]
+                harmonic = [ sum(1.0/(i) for i in range(1,k+1)) for k in range(alleles)]
+            weighted_length += size * harmonic[ alleles - missing - 1 ]
             segregating_sites += (elts[2].count('0') > 0 and elts[2].count('1') > 0)
-            if len(chunkstarts) == 0:
-                chunkstarts = [last]
-            elif start - last >= self.maxgap:
+            if start - last >= self.maxgap:
                 chunkstarts.append( last )
                 chunkstarts.append( start )
             last = start + size
         chunkstarts.append( last )
-        chunkcounts = [1] * (len(chunkstarts) // 2)
-        self.watterson_estimator = segregating_sites / weighted_length
         if self.length is None:
             self.length = last - self.startpos
         else:
+            self.minseg = min(self.minseg, self.length)
             if self.length > last - self.startpos:
                 if self.length > last - self.startpos + 1000000:
                     raise ValueError("Asked to process {} bp, but .seg file(s) provided only cover positions {}-{} ({} bp)".format(
@@ -337,11 +356,18 @@ class Smcsmc:
                 else:
                     logger.info("Warning: asked to process {} bp, but .seg file(s) provided only cover positions {}-{} ({} bp)".format(
                         self.length, self.startpos, last, last - self.startpos))
-        print("Found {} segments in data separated by gaps larger than {} bp (including chromosome boundaries)".format(len(chunkcounts), self.maxgap))
+        smallchunks = [i for i in range(len(chunkstarts)//2) if chunkstarts[2*i+1]-chunkstarts[2*i] < self.minseg]
+        smallchunklen = sum( chunkstarts[2*i+1]-chunkstarts[2*i] for i in smallchunks )
+        for i in reversed( smallchunks ):
+            chunkstarts = chunkstarts[:2*i] + chunkstarts[2*(i+1):]
+        chunkcounts = [1] * (len(chunkstarts) // 2)
+        self.watterson_estimator = segregating_sites / weighted_length
+        logger.info("Found {} segments in data separated by gaps larger than {} bp (including chromosome boundaries)".format(len(chunkcounts), self.maxgap))
+        logger.info("Skipped {} small segments covering {} bp".format(len(smallchunks), smallchunklen))
         if len(chunkcounts) > self.chunks:
-            print("Note: using more chunks ({}) than asked for ({}); to reduce, decrease the number of chromosomes and/or increase -maxgap".format(len(chunkcounts), self.chunks))
-        # add end of final chunk
-        chunkstarts.append( self.startpos + self.length )
+            logger.info("Note: using more chunks ({}) than asked for ({}); to reduce, decrease the number of chromosomes and/or increase -maxgap".format(len(chunkcounts), self.chunks))
+        if len(chunkcounts) == 0:
+            raise ValueError("No segments left - nothing to do...")
         # iteratively increase the number of pieces for the chunk with the current largest piece size
         while sum(chunkcounts) < self.chunks:
             chunksizes = [ (chunkstarts[2*i+1]-chunkstarts[2*i])/c for i,c in enumerate(chunkcounts) ]
@@ -355,6 +381,9 @@ class Smcsmc:
                 chunksize = chunkstarts[2*i+1] - chunkstarts[2*i]
                 self.chunkstarts.append( chunkstarts[2*i] + (chunksize * ii) // c )
                 self.chunkends.append( chunkstarts[2*i] + (chunksize * (ii+1)) // c )
+                logger.info(" Chunk {}: start {} length {}".format(len(self.chunkstarts)-1,
+                                                                   self.chunkstarts[-1],
+                                                                   self.chunkends[-1]-self.chunkstarts[-1]))
 
     def validate(self):
         # infer mutation rate from -t and N0
