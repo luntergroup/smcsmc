@@ -447,7 +447,8 @@ class Smcsmc:
 
     def process_segfiles(self, idx0, files):
         if self.segfile != None: raise ValueError("You can only provide the --seg or --segs option once!")
-        fout_name = "{}.merged.seg".format(self.outprefix)
+        fout_name = "{}/merged.seg".format(self.outprefix)
+        fmap_name = "{}/merged.map".format(self.outprefix)
         fout = open(fout_name,'w')
         chrom_map = []
         start = 1
@@ -471,7 +472,7 @@ class Smcsmc:
                 fout.write("{}\t{}\t{}\n".format( abs_pos, gap, "."*len(elts[2]) ) )
                 start = new_abs_pos
         fout.close()
-        fout = self.open_file("{}.map".format(self.outprefix),'w')
+        fout = self.open_file(fmap_name,'w')
         for name, start in chrom_map:
             fout.write("{}\t{}\n".format(name,start))
         fout.close()
@@ -566,7 +567,7 @@ class Smcsmc:
 
 
     def merge_outfiles(self):
-        of = open( os.path.abspath( self.outprefix + ".out" ), 'w' )
+        of = open( os.path.abspath( self.outprefix + "/final.out" ), 'w' )
         write_header = True
         for em_iter in range(smcsmc.emiters, -1, -1):
             ifile = open( self.out_template.format(em_iter, "final"), 'r')
