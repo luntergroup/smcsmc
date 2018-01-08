@@ -68,6 +68,7 @@ class Population:
         self.migration_rates = []
         self.sample_populations = []
         self.sample_times = []
+        self.empty_populations = []
         self.num_populations = 1
         opts, unparsed_opts = cmdline.split(), []
         idx = 0
@@ -90,10 +91,14 @@ class Population:
                 idx = self._parse_time( idx+1, opts )
                 source, sink = int(opts[idx]), int(opts[idx+1])
                 # the migration commands list needs to hold the -ej command at the element that corresponds to its time in the change points list
-                # below works only if the -ej is provided in the correct order with -eNs, and only for models with 0 or 1 split times
-                if self.migration_commands is None:
-                    self.migration_commands = [None] * len(self.change_points)
-                self.migration_commands[ len(self.change_points)-1 ] = "-ej {} {} {}".format( self.change_points[-1], source, sink )
+                if self.migration_commands is None: 
+                    self.migration_commands = []
+                while len(self.migration_commands) < len(self.change_points):
+                    self.migration_commands.append( None )
+                if self.migration_commands[ len(self.change_points)-1 ] == None:
+                    self.migration_commands[ len(self.change_points)-1 ] = ""
+                self.migration_commands[ len(self.change_points)-1 ] += " -ej {} {} {}".format( self.change_points[-1], source, sink )
+                self.empty_populations.append( (self.change_points[-1], sink) )
                 idx += 2
             elif opts[idx] == "-eM":
                 idx = self._parse_time( idx+1, opts )
@@ -213,6 +218,13 @@ class Population:
                 assert migr_vec[popidx] == 0
                 assert min(migr_vec) == 0
 
+        # ensure non-existing populations do not receive migrants
+        for idx, cp in enumerate(self.change_points):
+            for time, sink in self.empty_populations:
+                if time <= cp:
+                    for j in range(self.num_populations):
+                        self.migration_rates[idx][j][sink] = 0
+                
         # require the population size at time 0 to be set explicitly
         assert( self.change_points[0] == 0.0 )
 

@@ -1,4 +1,5 @@
 """ helper for executing a system command either on the current node or a compute cluster """
+from __future__ import print_function
 
 import subprocess
 import os
