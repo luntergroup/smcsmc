@@ -64,7 +64,8 @@ def quantile( k, n, M=4 ):
 def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheights, biasstrengths, delay, apf, splitepoch, model ):
     label = "L{}_I{}_P{}_NSAM{}_SPLT{}_M{}".format(int(length),infseed,numparticles,nsam,splitepoch,model)
     label = label.replace(" ","").replace("[","").replace("]","")
-    str_param = "{}_{}".format(delay,model)
+    str_parameter = "{}".format(model)
+    int_parameter = splitepoch
     if experiment_base.have_result( name = experiment_name,
                                     sequence_length = length,
                                     dataseed = simseed,
@@ -74,8 +75,8 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
                                     bias_heights = str(biasheights),
                                     bias_strengths = str(biasstrengths),
                                     aux_part_filt = apf,
-                                    int_parameter = splitepoch,
-                                    str_parameter = str_param):
+                                    int_parameter = int_parameter,
+                                    str_parameter = str_parameter):
         print "Skipping " + label
         return
     e = experiment_class( 'setUp' )  # fake test fn to keep TestCase.__init__ happy
@@ -83,6 +84,8 @@ def run_experiment( length, simseed, infseed, numparticles, lag, nsam, biasheigh
     e.filename_disambiguator = label
 
     # set simulation parameters
+    e.str_parameter = str_parameter
+    e.int_parameter = int_parameter
     e.pop.N0 = N0
     e.pop.mutation_rate = mu
     e.pop.recombination_rate = rho

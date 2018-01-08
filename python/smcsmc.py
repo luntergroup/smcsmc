@@ -546,7 +546,9 @@ class Smcsmc:
                 of.write(header)
                 write_header = False
             for line in ifile:
-                of.write(line)
+                elts = line.split()
+                if elts[-1] == "-1":  # only pass through aggregate data
+                    of.write(line)
         of.close()
         
     

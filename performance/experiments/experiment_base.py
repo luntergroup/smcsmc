@@ -80,7 +80,7 @@ def have_result( **kwargs ):
     return result != None
 
 
-# remove all data for thsi experiment
+# remove all data for this experiment
 def remove( experiment_name ):
     """ remove any previous results for this experiment """
     engine = create_engine("sqlite:///" + db)
