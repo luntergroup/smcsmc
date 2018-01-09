@@ -44,6 +44,7 @@ class Smcsmc:
         self.outprefix = None
         self.logfile = None
         self.patt_args = None
+        self.segfiles = []
         self.emiters = 0
         self.chunks = 1
         self.infer_recomb = True
@@ -74,7 +75,7 @@ class Smcsmc:
             (0, '-t', 'th',     '[+] Set mutation rate (expected number of mutations) for the locus (=4 N0 mu L )'),
             (0, '-length', 'L', '[+] Set locus length (nucleotides)'),
             (0, '-I', 'n s1..sn','Use an n-population island model with si individuals sampled'),
-            (0, '-ej', 't i j', 'Speciation event at t*4N0; creates population j from population i'),
+            (0, '-ej', 't i j', 'Speciation event at t*4N0; creates population i from population j in forward direction'),
             (0, '-eI','t s1..sn','Sample s1..sn indiviuals from their populations at time t*4N0 generations'),
 
             (1, '-rho', 'rh',  '[+] Set recombination rate (per nucleotide per generation)'),
@@ -87,7 +88,7 @@ class Smcsmc:
             
             (2, '-o', 'f',     '[*] Output prefix'),
             (2, '-seg', 'f',   '[+] Input .seg file'),
-            (2, '-segs', 'f1,...', '[+] Input .seg files (must be last option on command line)'),
+            (2, '-segs', 'f1 f2 ...', '[+] Input .seg files (will be merged into a single .seg file'),
             (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (500 kb)'),
             (2, '-minseg', 'n', 'After splitting ignore segments shorter than minseg (500 kb)'),
             (2, '-startpos', 'x', 'First locus to process (1)'),
@@ -175,7 +176,7 @@ class Smcsmc:
                 unparsed_opts += opts[idx:idx+2]   # also pass to smc^2
                 idx += 2
             elif opts[idx] == '-segs':
-                idx, self.segfile = self.process_segfiles( idx, opts )
+                idx, self.segfile = self.parse_segfiles( idx, opts )
                 unparsed_opts += ['-seg',self.segfile]
             elif opts[idx] == '-maxgap':
                 self.maxgap = int(float(opts[idx+1]))
@@ -233,14 +234,7 @@ class Smcsmc:
                 prev_idx = idx
             parsed_opts += opts[prev_idx : idx]
         self.opts = unparsed_opts
-        if self.logfile == None:
-            logger.addHandler( logging.StreamHandler() )
-        else:
-            formatter = logging.Formatter('%(asctime)s - %(message)s')
-            fh = logging.FileHandler( self.logfile )
-            fh.setLevel( logging.DEBUG )
-            fh.setFormatter(formatter)
-            logger.addHandler( fh )
+        self.parsed_opts = parsed_opts
         if self.cluster:
             if self.cconfig is None:
                 try:
@@ -248,13 +242,11 @@ class Smcsmc:
                 except:
                     self.cconfig = ""
             execute.qsub_config = self.cconfig   # assign to global variable within module 'execute'
-        logger.info("Parsed these options: '{}'".format(' '.join(parsed_opts)))
-        logger.info("Options passed to populationmodels: '{}'".format(' '.join(unparsed_opts)))
 
 
     def set_pattern(self):
         if self.patt_args is None: return
-        if len(self.patt_args) != 3: raise ValueError("-P should get 3 arguments")
+        if len(self.patt_args) != 3: raise ValueError("-P should get 3 arguments (start and end generation; and pattern)")
         start, end = map(float, self.patt_args[:2])
         patt = self.patt_args[2]
         # extract all timed options to smcsmc, and separate them from all others (including -I)
@@ -365,7 +357,8 @@ class Smcsmc:
         logger.info("Found {} segments in data separated by gaps larger than {} bp (including chromosome boundaries)".format(len(chunkcounts), self.maxgap))
         logger.info("Skipped {} small segments covering {} bp".format(len(smallchunks), smallchunklen))
         if len(chunkcounts) > self.chunks:
-            logger.info("Note: using more chunks ({}) than asked for ({}); to reduce, decrease the number of chromosomes and/or increase -maxgap".format(len(chunkcounts), self.chunks))
+            logger.info("Note: using more chunks ({}) than asked for ({}); to reduce, decrease the number of chromosomes and/or increase -maxgap".format(
+                    len(chunkcounts), self.chunks))
         if len(chunkcounts) == 0:
             raise ValueError("No segments left - nothing to do...")
         # iteratively increase the number of pieces for the chunk with the current largest piece size
@@ -385,7 +378,28 @@ class Smcsmc:
                                                                    self.chunkstarts[-1],
                                                                    self.chunkends[-1]-self.chunkstarts[-1]))
 
+
     def validate(self):
+        if self.segfile == None:   raise ValueError("Option -seg or -segs required")
+        if self.outprefix == None: raise ValueError("Option -o required")
+        if not os.path.exists(self.smcsmcpath):
+            raise ValueError("Can't find executable "+self.smcsmcpath+"; check -smcsmcpath")
+        smcsmc.prepare_folder(0, log=False)
+
+        if self.logfile == None:
+            self.logfile = "{}/result.log".format( self.outprefix )
+            #logger.addHandler( logging.StreamHandler() )
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        fh = logging.FileHandler( self.logfile )
+        fh.setLevel( logging.DEBUG )
+        fh.setFormatter(formatter)
+        logger.addHandler( fh )
+        logger.info("Parsed these options: '{}'".format(' '.join(self.parsed_opts)))
+        logger.info("Options passed to populationmodels: '{}'".format(' '.join(self.opts)))
+
+
+
+    def validate_parameters(self):
         # infer mutation rate from -t and N0
         if self.mutation_rate == None:
             if self.theta != None and self.N0 != None:
@@ -427,13 +441,9 @@ class Smcsmc:
         if abs( 4*self.N0*self.recombination_rate*self.length / self.rho - 1.0 ) > 1e-5:
             raise ValueError("Values for -r and -N0, -rho, -length not consistent")
 
-        if self.segfile == None:   raise ValueError("Option -seg required")
-        if self.outprefix == None: raise ValueError("Option -o required")
         if self.emiters < 0:       raise ValueError("-EM set to {}; must be >=0".format(self.emiters))
         if self.length < 1:        raise ValueError("Locus length ({}) must be >=1".format(self.length))
         if self.chunks < 1:        raise ValueError("Number of chunks ({}) must be >=1".format(self.chunks))
-        if not os.path.exists(self.smcsmcpath):
-            raise ValueError("Can't find executable "+self.smcsmcpath+"; check -smcsmcpath")
         logger.info("Parameter value:-")
         logger.info("  mutation rate:        {}".format(self.mutation_rate))
         logger.info("  recombination rate:   {}".format(self.recombination_rate))
@@ -445,19 +455,32 @@ class Smcsmc:
         logger.info("Unique chunk sizes (ordered): {}".format( ' '.join( map(str, sorted(list(set((self.chunkends[i]-start for i, start in enumerate(self.chunkstarts)))))))))
     
 
-    def process_segfiles(self, idx0, files):
+    def parse_segfiles(self, idx0, files):
         if self.segfile != None: raise ValueError("You can only provide the --seg or --segs option once!")
-        fout_name = "{}/merged.seg".format(self.outprefix)
-        fmap_name = "{}/merged.map".format(self.outprefix)
-        fout = open(fout_name,'w')
-        chrom_map = []
-        start = 1
+        segfiles = []
         for idx in range(idx0 + 1, len(files) + 1):
             if idx == len(files): break
             fname = files[idx]
             if fname.startswith('-'): break
-            print("Merging .seg files -- processing {}...".format(fname))
-            name = fname.strip('.gz').strip('.seg').replace('/','.')
+            segfiles.append( fname )
+        self.segfiles = segfiles
+        self.mergedseg_name = "{}/merged.seg".format(self.outprefix)
+        self.mergedmap_name = "{}/merged.map".format(self.outprefix)
+        return idx, self.mergedseg_name
+
+
+    def process_segfiles(self):
+        if len(self.segfiles) == 0: return
+        fout_name = self.mergedseg_name
+        fmap_name = self.mergedmap_name
+        fout = open(fout_name,'w')
+        chrom_map = []
+        start = 1
+        for idx, fname in enumerate(self.segfiles):
+            logger.info("Merging .seg files -- processing {}...".format(fname))
+            name = fname[:-3] if fname.endswith('.gz') else fname
+            name = name[:-4] if name.endswith('.seg') else name
+            name = name.replace('/','.')
             chrom_map.append( (name, start) )
             for line in self.open_file(fname,'r'):
                 elts = self.read_segline(line)
@@ -467,7 +490,7 @@ class Smcsmc:
             new_abs_pos = abs_pos + self.maxgap
             new_abs_pos = 1000000 * ((new_abs_pos // 1000000) + 1) + 1
             gap = new_abs_pos - abs_pos
-            if idx < len(files)-1:
+            if idx < len(self.segfiles)-1:
                 ## add gap
                 fout.write("{}\t{}\t{}\n".format( abs_pos, gap, "."*len(elts[2]) ) )
                 start = new_abs_pos
@@ -476,10 +499,9 @@ class Smcsmc:
         for name, start in chrom_map:
             fout.write("{}\t{}\n".format(name,start))
         fout.close()
-        return idx, fout_name
 
         
-    def prepare_folder(self, iteration):
+    def prepare_folder(self, iteration, log=True):
         self.template = os.path.abspath( self.outprefix + "/emiter{}/chunk{}" )
         self.out_template = os.path.abspath( self.template + ".out" )
         self.log_template = os.path.abspath( self.template + ".log" )
@@ -488,7 +510,7 @@ class Smcsmc:
         self.recomb_template = os.path.abspath( self.template + ".recomb.gz" )
         self.recomb_guide_template = os.path.abspath( self.template + ".recomb_guide.gz" )
         dirname = os.path.dirname( self.template.format(iteration, "dummy") )
-        logger.info("Preparing directory {} for EM iteration {}".format( dirname, iteration ) )
+        if log: logger.info("Preparing directory {} for EM iteration {}".format( dirname, iteration ) )
         if not os.path.isdir( dirname ):
             try:
                 os.makedirs( os.path.abspath( dirname ) )
@@ -567,7 +589,7 @@ class Smcsmc:
 
 
     def merge_outfiles(self):
-        of = open( os.path.abspath( self.outprefix + "/final.out" ), 'w' )
+        of = open( os.path.abspath( self.outprefix + "/result.out" ), 'w' )
         write_header = True
         for em_iter in range(smcsmc.emiters, -1, -1):
             ifile = open( self.out_template.format(em_iter, "final"), 'r')
@@ -615,14 +637,11 @@ class Smcsmc:
 
             
     def e_step(self, iteration, chunk):
-        #start = self.startpos + (self.length * chunk) // self.chunks
-        #end   = self.startpos + (self.length * (chunk+1)) // self.chunks
         start = self.chunkstarts[chunk]
         end   = self.chunkends[chunk]
         self.pop.startpos = start
         self.pop.sequence_length = end - start
         self.pop.mutation_rate = self.theta / (4 * self.pop.N0 * self.length)
-        self.pop.recombination_rate = self.rho / (4 * self.pop.N0 * self.length)
         command = [self.smcsmcpath, self.pop.core_command_line()]
         if not self.infer_recomb:
             command.append( "-xr 1-{}".format( len(self.pop.change_points) ) )
@@ -664,8 +683,8 @@ class Smcsmc:
         
         # build default population class.  Just need to set sequence_length, and we're good to go
         self.pop = populationmodels.Population()
-        #self.pop.mutation_rate = self.theta / (4 * self.pop.N0)
-        #self.pop.recombination_rate = self.rho / (4 * self.pop.N0)
+        self.pop.recombination_rate = self.recombination_rate
+        self.pop.mutation_rate = self.mutation_rate
         self.smcsmc_opts = self.pop.parse_command_line( " ".join(self.opts) )
         logger.info("Options passed to smcsmc: '{}'".format(' '.join(self.smcsmc_opts)))
 
@@ -725,9 +744,11 @@ smcsmc = Smcsmc( sys.argv[1:] )
 smcsmc.print_help_and_exit()
 smcsmc.load_option_file()
 smcsmc.parse_opts()
+smcsmc.validate()
+smcsmc.process_segfiles()
 smcsmc.set_environment()
 smcsmc.define_chunks()
-smcsmc.validate()
+smcsmc.validate_parameters()
 smcsmc.set_pattern()
 for em_iter in range(0, smcsmc.emiters+1):
     smcsmc.do_iteration(em_iter)
