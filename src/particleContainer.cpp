@@ -77,12 +77,14 @@ void ParticleContainer::print_recent_recombination_histogram() {
         cout << i << "\t" << hist[i] << endl;
     }
     */
+    /*
     double rec_acc = 0, rec_wt = 0;
     for (size_t i=0; i<particles.size(); i++) {
         rec_acc += particles[i]->recent_recombination_count * particles[i]->posteriorWeight() * particles[i]->multiplicity();
         rec_wt  += particles[i]->posteriorWeight() * particles[i]->multiplicity();
     }
     cout << "Posterior mean recent recombination count: " << rec_acc / rec_wt << endl;
+    */
     
 }
 
@@ -92,7 +94,7 @@ void ParticleContainer::print_recent_recombination_histogram() {
  * \brief Update the current state to the next state, at the given site, update all particles to its latest genealogy state.  
  * \brief Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site ){
+void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site, int max_record_epoch ){
 
     dout << endl<<" We are extending " << particles.size() << " particles" << endl<<endl;
 
@@ -117,6 +119,7 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
          */
         dout << " before extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
         particles[particle_i]->restore_recomb_state();
+        particles[particle_i]->set_max_epoch_to_record( max_record_epoch );
         particles[particle_i]->extend_ARG ( extend_to, leaf_status, data_at_site, &particles );
         particles[particle_i]->save_recomb_state();
         if (particles[particle_i]->multiplicity() == 0) {
@@ -432,7 +435,8 @@ void ParticleContainer::normalize_probability() {
 
 void ParticleContainer::update_state_to_data( Segment * segment,
 					      bool ancestral_aware,
-					      const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
+					      const TerminalBranchLengthQuantiles& terminal_branch_lengths,
+                                              int max_update_epoch ) {
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
     dout << " ### PROGRESS: update weight at " << segment->segment_start()<<endl;
@@ -442,7 +446,7 @@ void ParticleContainer::update_state_to_data( Segment * segment,
     double extend_to = (double)min(segment->segment_end(), (double)model->loci_length() );
 
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    extend_ARGs( extend_to, data_at_site );
+    extend_ARGs( extend_to, data_at_site, max_update_epoch );
 
     //Update the lookahead likelihood
     update_lookahead_likelihood( *segment, particles, ancestral_aware, terminal_branch_lengths );

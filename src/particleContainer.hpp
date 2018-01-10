@@ -57,8 +57,8 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( Segment * Segfile, bool ancestral_aware, const TerminalBranchLengthQuantiles& term_branch_lengths );
-        void extend_ARGs( double extend_to, const vector<int>& data_at_site );
+        void update_state_to_data( Segment * Segfile, bool ancestral_aware, const TerminalBranchLengthQuantiles& term_branch_lengths, int max_record_epoch );
+        void extend_ARGs( double extend_to, const vector<int>& data_at_site, int max_record_epoch );
 
         void extend_ARGs_importance_sampling( double extend_to, const vector<int>& data_at_site, const Segment& segment,
                                               bool ancestral_aware, const TerminalBranchLengthQuantiles& terminal_branch_lengths );

@@ -211,7 +211,7 @@ void Segment::read_new_line(){
     allelic_state_at_Segment_end = sd.allele_state;
     chrom_ = 1; // dummy value
 
-    if ( current_buf_index_ % 2000 == 1 ) {
+    if ( current_buf_index_ % 1000 == 1 ) {
         cout << "\r" << " Particle filtering " << setw(4) << int((segment_end() * 100) / seqlen_)
              << "% completed." << flush;
     }
@@ -231,6 +231,15 @@ void Segment::set_lookahead() {
     doubleton.clear();
     first_split_distance = -1;
 
+    /* set distance to mutation on left */
+    distance_to_mutation_ = 0;
+    for (int i = current_buf_index_; i >= 0; i-- ) {
+        if (!buffer[i].all_alleles_missing()) {
+            break;
+        }
+        distance_to_mutation_ = buffer[current_buf_index_].segment_start - buffer[i].segment_start;
+    }
+
     /* hardcoded threshold of total length of missing data; beyond this no mutation will be recorded */
     double max_missing_data = 2000000;
 
@@ -245,6 +254,12 @@ void Segment::set_lookahead() {
 
     double distance = 0.0;
     for ( size_t i = current_buf_index_; i < buffer.size(); i++ ) {
+        // update distance to mutation
+        if (!buffer[i].all_alleles_missing()) {
+            distance_to_mutation_ = min( distance_to_mutation_,
+                                         (double)(buffer[i].segment_start + buffer[i].segment_length 
+                                                  - buffer[current_buf_index_].segment_start) );
+        }
         // is mutation at  i  a singleton, doubleton, or something else?
         // also identify the samples; take the first possible in case of unphased hets
         int num_var = 0, num_missing = 0;
@@ -391,6 +406,7 @@ void Segment::set_lookahead() {
         cout << endl;
         for ( size_t j = 0; j < nsam_ ; j++ ) cout << " M:" << relative_mutation_rate[j]; cout << endl;
     }
+    // cout << current_buf_index_ << " " << buffer[current_buf_index_].segment_start << " dist=" << distance_to_mutation() << endl;
 }
 
 

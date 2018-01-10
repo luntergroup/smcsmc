@@ -166,6 +166,10 @@ void PfParam::parse(int argc, char *argv[]) {
     }
 
     this->finalize( );
+
+    clog << "Command line:-" << endl << argv[0];
+    for (int i=1; i<argc; i++) clog << " " << argv[i];
+    clog << endl;
 }
 
 
@@ -209,7 +213,7 @@ void PfParam::init(){
     this->N                = 100;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
-    this->lag_fraction     = 4.0;
+    this->lag_fraction     = 2.0;
     this->delay            = 0.5;
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
@@ -282,7 +286,6 @@ void PfParam::finalize_scrm_input (  ) {
     } else {
         this->scrm_input = "scrm " + this->scrm_input;
     }
-    clog << scrm_input << endl;
     this->convert_scrm_input ();
 }
 

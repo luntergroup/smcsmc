@@ -36,8 +36,9 @@ ForestState::ForestState( Model* model,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
               lookahead_weight_(1.0),
-              pfparam( *pfparam ),
-              recent_recombination_count(0) {
+              pfparam( *pfparam )
+              // , recent_recombination_count(0) 
+            {
 
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     setPosteriorWeight( 1.0 );
@@ -65,8 +66,9 @@ ForestState::ForestState( Model* model,
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
              lookahead_weight_( copied_state.lookahead_weight_), 
-             pfparam( copied_state.pfparam ),
-             recent_recombination_count( copied_state.recent_recombination_count) {
+             pfparam( copied_state.pfparam )
+             // , recent_recombination_count( copied_state.recent_recombination_count) 
+           {
 
     setPosteriorWeight( copied_state.posteriorWeight() );
     setPilotWeight( copied_state.pilotWeight() );
@@ -163,6 +165,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
         if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
             if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
@@ -196,6 +199,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 last_coal_height_ = end_height;
             }
             if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
@@ -223,7 +227,9 @@ void ForestState::record_recomb_extension (){
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.contemporaries_->numberOfLocalContemporaries();
-        if (contemporaries > 0 && (pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
+        if (contemporaries > 0 && 
+            (pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT) &&
+            model().current_time_idx_ <= max_epoch_to_record_ ) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
             size_t start_height_epoch = ti.forest()->model().current_time_idx_;
@@ -276,12 +282,15 @@ void ForestState::record_recomb_event( double event_height )
     size_t epoch_i = this->model().current_time_idx_;
     if (!(pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
         return;
+    if (epoch_i > max_epoch_to_record_)    /* skip events in long missing data segments */
+        return;
     // find the EvolutionaryEvent to add this event to.
     EvolutionaryEvent* event = eventTrees[ epoch_i ];
     while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
         event = event->parent();
         assert (event != NULL);
     }
+    if (event->start_base() != this->current_base()) return;  /* to deal with events on edge of long missing data segments */
     assert (event->start_base() == this->current_base());
     event->set_recomb_event_time( event_height );
     event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
@@ -296,7 +305,8 @@ void ForestState::resample_recombination_position(void) {
 
     // then, create private event records, in effect re-doing the work of record_recomb_event
     for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
-        if (pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
+        if ((pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) &&
+            epoch <= max_epoch_to_record_) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no recombination opportunity has been recorded at this epoch,
@@ -319,9 +329,9 @@ void ForestState::resample_recombination_position(void) {
                     new_event->add_leaf_to_tree( new_chain, true );
                     new_chain = &(new_event->parent_);              // friend function access
                     // update record
-                    new_event->end_base_ = this->next_base();        // friend function access
+                    new_event->set_end_base( this->next_base() );
                 } else {
-                    old_event->end_base_ = this->next_base();
+                    old_event->set_end_base( this->next_base() );
                     new_chain = &(old_event->parent_);
                 }
                 old_event = old_event->parent();
@@ -972,8 +982,9 @@ void inline ForestState::accumulateBranchLengths( double rate_above,
             local_weight = local_weight_;                                              // store local weight
             double sampled_height = lower_end + (-cumul_length) / local_weight_;       // compute height
             rec_point = TreePoint(const_cast<Node*>(node), sampled_height, false);     // store node and height
-            if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1])
-                recent_recombination_count++;  // DEBUG
+            if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1]) {
+                //recent_recombination_count++;
+            }
         }
         cumul_length += weighted_branch_length;
         lower_end = upper_end;

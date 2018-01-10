@@ -98,7 +98,7 @@ class Smcsmc:
             (2, '-ancestral_aware', '', 'Assume that haplotype 0 is ancestral'),
             (2, '-bias_heights', 't0..tn', 'Set recombination bias times to h0..hn * 4N0'),
             (2, '-bias_strengths','s1..sn','Set recombination bias strenghts'),
-            (2, '-calibrate_lag','s','Explanation required!'),
+            (2, '-calibrate_lag','s','Accumulate inferred events with a lag of  s  times the survival time (2)'),
             (2, '-apf', 'b',    'Auxiliary particle filter: none (0), singletons (1), cherries (2)  (0)'),
             
             (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),

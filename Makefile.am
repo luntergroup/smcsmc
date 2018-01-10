@@ -11,6 +11,7 @@ COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 #    make ; make install
 #    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/pth/to/user/space)
 TCMALLOC = -ltcmalloc
+TCMALLOC_FLAGS = "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free"
 
 # set for rescomp
 boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include
@@ -50,7 +51,7 @@ generate_vcf$(EXEEXT):
 common_flags = -std=c++11 -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/scrm/src/random -DSMCSMCVERSION=\"${SMCSMCVERSION}\" -DSCRMVERSION=\"${SCRMVERSION}\" -DCOMPILEDATE=\"${COMPILEDATE}\" -DLANE_MAX_SIZE=50 -g
 
 # Binary flags
-smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 ${CXXMARCH} $(boostinclude)
+smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 ${CXXMARCH} $(boostinclude) $(TCMALLOC_FLAGS)
 smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 smcsmc_LDADD             = -lboost_iostreams -lz ${TCMALLOC}

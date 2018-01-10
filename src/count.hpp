@@ -55,10 +55,11 @@ class CountModel: public Model {
         void log_counts( PfParam& param );
         void reset_lag( std::vector<double> survival, double lag_fraction = 1 );
         void update_resample_count() { total_resample_count++; }
+        double get_lag( int idx ) { return lags[idx]; }
 
         // DEBUG
         void print_recomb_count();
-        vector<double> check_lags() const {return lags;}
+        const vector<double>& get_lags() const {return lags;}
         void dump_local_recomb_logs( ostream& stream, double locus_length, int iteration, double start_position );
 
     private:

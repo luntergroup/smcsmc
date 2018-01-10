@@ -171,6 +171,7 @@ private:
     double pilotWeight() const { return this->pilot_weight_; }
     int multiplicity() const { return multiplicity_; }
     void setMultiplicity( int multiplicity ) { multiplicity_ = multiplicity; }
+    void set_max_epoch_to_record( int max_epoch_to_record ) { max_epoch_to_record_ = max_epoch_to_record; }
 
     // Save and restore recombination rate index
     void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
@@ -248,8 +249,9 @@ private:
     bool owning_model_and_random_generator;
 
     // DEBUG
-    int recent_recombination_count;
+    //int recent_recombination_count;
     double total_delayed_adjustment_;
+    int max_epoch_to_record_;
     
 };
 #endif

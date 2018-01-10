@@ -248,6 +248,18 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
 }
 
 
+int max_epoch_to_update( const vector<double>& lags, double distance_to_mutation ) {
+    int epoch = 0;
+    // There's not real justification for the factor 0.5 below; but large gaps in the data are infrequent,
+    // and cause significant memory usage, so stop recording events a bit sooner than you would idealy want to do.
+    double scale_factor = 0.5;
+    while (epoch < lags.size() && 
+           distance_to_mutation < scale_factor * lags[epoch])
+        epoch++;
+    return epoch - 1;
+}
+
+
 void pfARG_core(PfParam &pfARG_para,
                 CountModel *countNe,
                 bool print_update_count ) {
@@ -287,7 +299,8 @@ void pfARG_core(PfParam &pfARG_para,
     if ( pfARG_para.calibrate_lag ){
       countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
-    clog << "    Lags set to: " << countNe->check_lags() << endl;
+    const vector<double>& lags = countNe->get_lags();
+    clog << "    Lags set to: " << lags << endl;
     clog << " Starting position: " << fixed << setprecision(0) << pfARG_para.start_position << endl;
 
     /*! Go through seg data */
@@ -299,7 +312,8 @@ void pfARG_core(PfParam &pfARG_para,
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware, tblq );
+        int max_update_epoch = max_epoch_to_update( lags, Segfile->distance_to_mutation() );
+        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware, tblq, max_update_epoch );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );

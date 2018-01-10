@@ -5,6 +5,9 @@ import subprocess
 import os
 import stat
 
+import logging
+logger = logging.getLogger(__name__)
+
 # global configuration settings; None to not submit jobs to cluster
 qsub_config = None
 
@@ -57,12 +60,17 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
         stderrname = "{}/qrsh.{}.stderr".format(dirname, hex(hash(cmd)))
         qscript = "qrsh"
     command = "{} -j y -cwd -now n -V -N {} -o {} -e {} {} {}".format(qscript, name, stdoutname, stderrname, qsub_config, cmd)
-    print("command=",command)
+    logger.info("command={}".format(command))
     if use_popen:
         popen = subprocess.Popen( command, shell=shell )
         return popen
 
-    exitcode = subprocess.check_call( command, shell=shell )
+    p = subprocess.Popen( command, shell=shell, stderr=subprocess.STDOUT, stdout=subprocess.PIPE )
+    output = str(p.communicate()[0])
+    exitcode = p.returncode
+    logger.info(output)
+
+    #exitcode = subprocess.check_call( command, shell=shell )
 
     # clean up if successful
     if exitcode == 0 and not use_submit:
