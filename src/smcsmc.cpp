@@ -111,6 +111,18 @@ bool is_height_in_tree( const Forest& forest, double height ) {
 }
 
 
+double parent_height_ignoring_migrations( const Node* node ) {
+    while (!node->is_root()) {
+        node = node->parent();
+        if ((!node->is_migrating()) && 
+            (node->countChildren( /* only_local = */ true ) == 2 )) {
+            break;
+        }
+    }
+    return node->height();
+}
+
+
 TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model& model ) {
 
     const int max_iterations = 1000000;
@@ -131,7 +143,7 @@ TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model&
         total_length += tree.getLocalTreeLength();
         for ( auto it = tree.getNodes()->iterator(); it.good(); ++it) {
             if ((*it)->in_sample()) {
-                double height = (*it)->parent_height();
+                double height = parent_height_ignoring_migrations( (*it) );
                 int sample = (*it)->label() - 1;
                 tbls[ sample ].push_back( height );
             }
@@ -181,7 +193,8 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
       arg.buildInitialTree( false );
       std::set<double> original_node_heights;
       for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
-          if (!(*it)->in_sample()) {
+          if ((!(*it)->in_sample()) &&
+              (!(*it)->is_migrating())) {
               double height = (*it)->height();
               original_node_heights.insert( height );
               for (epoch_idx = 0;
