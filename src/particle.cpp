@@ -50,6 +50,7 @@ ForestState::ForestState( Model* model,
     first_coal_height_ = -1.0;
     last_coal_height_ = -1.0;
     owning_model_and_random_generator = own_model_and_random_generator;
+    likelihood_cache = -1.0;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
         size_t new_seed = (size_t)random_generator_->sampleInt( INT_MAX );
@@ -84,6 +85,7 @@ ForestState::ForestState( const ForestState & copied_state )
         random_generator_ = new MersenneTwister( new_seed , random_generator_->ff() );
         model_ = new Model( *model_ );
     }
+    likelihood_cache = copied_state.likelihood_cache;
     _current_seq_idx = copied_state._current_seq_idx;
     setMultiplicity( 1 );
 }
@@ -802,6 +804,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                 // sample new tree
                 recombination_bias_importance_weight_ = 1.0;
                 double importance_weight = this->sampleNextGenealogy( true );
+                this->likelihood_cache = -1;          // new tree, so invalidate likelihood cache
 
                 if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
                 if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();

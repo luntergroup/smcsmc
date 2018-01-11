@@ -209,7 +209,7 @@ void PfParam::init(){
     #endif
 
     this->original_recombination_rate_ = 0;
-    this->max_segment_length_factor_ = 4.0;  // allow segments of max length   mslf / (4 Ne rho)
+    this->max_segment_length_factor_ = 2.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
