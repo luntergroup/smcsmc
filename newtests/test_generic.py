@@ -12,9 +12,10 @@ try:
     from sqlalchemy import Column, Integer, Float, Boolean, String, DateTime, ForeignKey, Table, MetaData, create_engine
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import scoped_session
     from sqlalchemy.sql import func
     Base = declarative_base()
-    Session = sessionmaker()
+    Session = scoped_session(sessionmaker())
 except:
     Base = None
 
@@ -249,7 +250,7 @@ class TestGeneric(unittest.TestCase):
         self.simulate()
         if case in self.cases: raise ValueError("Must run case " + str(case) + " only once")
         self.cases.append(case)
-        self.outfile = self.caseprefix + ".out"
+        self.outfile = self.caseprefix + "/result.out"
         # append to .stdout and .stderr, so as not to overwrite output from possible previous runs
         cmd = "{cmd} -o {caseprefix} >>{caseprefix}.stdout 2>>{caseprefix}.stderr".format(
             cmd = self.build_command(),
@@ -460,6 +461,17 @@ class TestGeneric(unittest.TestCase):
 
         # make a connection
         engine = create_engine(dbtype + db, connect_args = connect_args)
+        engine.pool_size = 1
+        engine.pool_timeout = 180000
+
+        # set WAL mode (https://github.com/reedriley/home-assistant/commit/e437de0a290d8f37cd7460014a4976e08056c0f1)
+        connection = engine.raw_connection()
+        old_isolation = connection.isolation_level
+        connection.isolation_level = None
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.close()
+        connection.isolation_level = old_isolation
 
         # load or create tables
         if engine.dialect.has_table(engine, "experiment"):

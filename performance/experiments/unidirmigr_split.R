@@ -108,7 +108,7 @@ plot.smcsmc <- function( data, g=30 ) {
 
     grid.draw( cbind( gr0,gr1,gr2,gr3,size="last" ))
 
-    """this doesn't work..."""
+    ## """this doesn't work..."""
     emstep <- max( data$iter )
     ggsave(paste("udm_split_",emstep,"EMsteps.png",sep=""),
            width = 12, height = 8, units = "cm")

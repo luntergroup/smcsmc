@@ -126,8 +126,8 @@ def get_data_from_database( experiment_name ):
     session = Session()
     dbvars = ['result.'+v for v in ['id','exp_id','epoch','start','end','iter','type','ne','rate','frm']] + \
              ['experiment.'+v for v in ['np','num_samples','sequence_length','dataseed','infseed','bias_heights','bias_strengths','str_parameter','int_parameter','aux_part_filt']]
-    result = session.execute('SELECT {} FROM experiment INNER JOIN result ON experiment.id = result.exp_id WHERE experiment.name = \'{}\''
-                             .format( ', '.join(dbvars), experiment_name ))
+    selection = 'SELECT {} FROM experiment INNER JOIN result ON experiment.id = result.exp_id WHERE experiment.name = \'{}\''.format( ', '.join(dbvars), experiment_name )
+    result = session.execute(selection)
     Record = namedtuple('Record', result.keys())
     records = [Record(*r) for r in result.fetchall()]
     return records

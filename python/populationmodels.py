@@ -53,6 +53,7 @@ class Population:
         self.sample_populations = sample_populations    # encoded as sample_populations_ in model.h
         self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
         self.migration_commands = migration_commands    # to implement speciation events
+        self.empty_populations = []
         self.seed = seed
         self.filename = filename
         self.scrmpath = scrmpath
@@ -219,6 +220,7 @@ class Population:
                 assert min(migr_vec) == 0
 
         # ensure non-existing populations do not receive migrants
+                # WARNING: using 'sink' here can't be right; it is 1-based
         for idx, cp in enumerate(self.change_points):
             for time, sink in self.empty_populations:
                 if time <= cp:

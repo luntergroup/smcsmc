@@ -167,7 +167,7 @@ def plot_experiment():
     r.source("unidirmigr_split.R")
     g = 30.0
 
-    r('plot.smcsmc')( df, truth, g )
+    r('plot.smcsmc')( df, g )
 
 
 if __name__ == "__main__":
