@@ -89,7 +89,7 @@ class Smcsmc:
             (2, '-o', 'f',     '[*] Output prefix'),
             (2, '-seg', 'f',   '[+] Input .seg file'),
             (2, '-segs', 'f1 f2 ...', '[+] Input .seg files (will be merged into a single .seg file'),
-            (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (500 kb)'),
+            (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (200 kb)'),
             (2, '-minseg', 'n', 'After splitting ignore segments shorter than minseg (500 kb)'),
             (2, '-startpos', 'x', 'First locus to process (1)'),
             (2, '-P', 's e p', 'Divide time interval [s,e] (in generations) equally on log scale, using pattern p'),
