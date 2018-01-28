@@ -115,7 +115,7 @@ class Segment {
         vector<int> allele_state;
         SegDatum( double ss, double sl, Segment_State s, const vector<int>& as ) :
             segment_start(ss), segment_length(sl), segment_state(s), allele_state(as) {}
-        bool all_alleles_missing() const {
+        bool all_alleles_missing() {
             int num_missing = 0;
             for (size_t i=0; i<allele_state.size(); i++) 
                 num_missing += allele_state[i];
@@ -168,7 +168,6 @@ public:
     double segment_length() const { return segment_length_; }
     double segment_end() const    { return segment_start_ + segment_length_; }
     double distance_to_mutation() const { return distance_to_mutation_; }
-    bool is_repeated_allele() const;
 
     void read_new_line();
     void reset_data_to_first_entry();

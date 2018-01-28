@@ -446,18 +446,3 @@ void Segment::calculate_num_of_expected_mutations ( size_t nsam, double theta ){
     sum_of_one_over *= theta;
     this->num_of_expected_mutations_ = sum_of_one_over;
 }
-
-
-bool Segment::is_repeated_allele() const {
-    if (current_buf_index_ == 0 || buffer[current_buf_index_ - 1].all_alleles_missing()) 
-        return false;
-    int idx = (int)current_buf_index_ - 2;
-    while (idx > 0 && buffer[idx].all_alleles_missing()) 
-        --idx;
-    for (int j=0; j<(int)buffer[idx].allele_state.size(); j++) {
-        if (buffer[idx].allele_state[j] != buffer[current_buf_index_ - 1].allele_state[j])
-            return false;
-    }
-    return true;
-}
-

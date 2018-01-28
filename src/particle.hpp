@@ -172,10 +172,6 @@ private:
     int multiplicity() const { return multiplicity_; }
     void setMultiplicity( int multiplicity ) { multiplicity_ = multiplicity; }
     void set_max_epoch_to_record( int max_epoch_to_record ) { max_epoch_to_record_ = max_epoch_to_record; }
-    bool tree_modified_after_last_mutation() const { 
-        // this works because the likelihood cache is updated at every mutation, and reset to -1.0 after any change
-        return (likelihood_cache < 0.0); 
-    }
 
     // Save and restore recombination rate index
     void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
@@ -251,12 +247,11 @@ private:
     double recombination_bias_importance_weight_;    // factor of importance weight due to recombination biasing; delay is treated specially for this IW
     std::priority_queue<DelayedFactor, std::vector<DelayedFactor>, CompareDFs > delayed_adjustments;
     bool owning_model_and_random_generator;
-    int max_epoch_to_record_;
-    double likelihood_cache;
 
     // DEBUG
     //int recent_recombination_count;
     double total_delayed_adjustment_;
+    int max_epoch_to_record_;
     
 };
 #endif

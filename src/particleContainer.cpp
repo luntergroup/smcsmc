@@ -143,9 +143,7 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
 
     haplotype_at_tips = data_at_tips;
     int num_configurations = 1;
-    bool have_data = false;
     for (int i=0; i < data_at_tips.size(); i+=2) {
-        have_data |= (data_at_tips[i] != -1);
         if (data_at_tips[i] == 2) {
             num_configurations *= 2;
             assert (data_at_tips[i+1] == 2);
@@ -155,7 +153,6 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
             assert (data_at_tips[i+1] != 2);
         }
     }
-    if (!have_data) num_configurations = 0;
     return num_configurations;
 }
 
@@ -203,36 +200,21 @@ void ParticleContainer::update_weight_at_site( const Segment& segment,
     const vector<int>& data_at_tips = segment.allelic_state_at_Segment_end;
     vector<int> haplotype_at_tips;
     int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
-    if (num_configurations == 0) {
-        // special case -- no need to compute the likelihood, so bail out
-        return;
-    }
-    bool is_repeated = segment.is_repeated_allele();
     double normalization_factor = 1.0 / num_configurations;
 
     // now update the weights of all particles, by calculating the likelihood of the data over the previous segment
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
-
 	// marginalize over haplotype configurations consistent with (possibly unphased) genotype configuration
         double likelihood_of_haplotype_at_tips = 0;
-        if (is_repeated && particles[particle_i]->likelihood_cache > 0.0) {
+        do {
+            likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware, haplotype_at_tips );
+        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
 
-            likelihood_of_haplotype_at_tips = particles[particle_i]->likelihood_cache;
+        likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        } else {
-
-            do {
-                likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware, haplotype_at_tips );
-            } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
-
-            likelihood_of_haplotype_at_tips *= normalization_factor;
-
-        }
-
-        // include likelihood
+	// include likelihood
         particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
-        particles[particle_i]->likelihood_cache = likelihood_of_haplotype_at_tips;
-        
+
     }
 }
 
@@ -243,18 +225,12 @@ void ParticleContainer::update_lookahead_likelihood( const Segment& segment,
                                                      const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
 
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+    
+	// remove possible previous lookahead likelihood for auxiliary particle filter
+	particles[particle_i]->removeLookaheadLikelihood();
 
-        // don't bother to update the lookahead likelihood if the tree didn't change -- the lookahead likelihood
-        // is only sensitive to "long" features along the sequence
-        if (particles[particle_i]->tree_modified_after_last_mutation()) {
-        
-            // remove possible previous lookahead likelihood for auxiliary particle filter
-            particles[particle_i]->removeLookaheadLikelihood();
-
-            // include lookahead likelihood into pilotWeight, to guide resampling
-            particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
-
-        }
+	// include lookahead likelihood into pilotWeight, to guide resampling
+	particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
     }
 }
 
