@@ -314,13 +314,13 @@ void pfARG_core(PfParam &pfARG_para,
     }
     const vector<double>& lags = countNe->get_lags();
     clog << "    Lags set to: " << lags << endl;
-    clog << " Starting position: " << fixed << setprecision(0) << pfARG_para.start_position << endl;
+    clog << " Starting position: " << fixed << setprecision(0) << pfARG_para.start_position << setprecision(6) << scientific << endl;
 
     /*! Go through seg data */
     bool force_update = false;
     int total_resample_count = 0;
     do{
-        dout <<"Current base is " << fixed << setprecision(0) << Segfile->segment_start() << endl;
+        dout <<"Current base is " << fixed << setprecision(0) << Segfile->segment_start() << setprecision(6) << scientific << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
