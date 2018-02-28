@@ -193,8 +193,9 @@ class Smcsmc:
             elif opts[idx] == '-EM':
                 self.emiters = int(opts[idx+1])
                 idx += 2
-            elif opts[idx] == '-VB':
+            elif opts[idx] in ['-VB','-vb']:
                 self.vb = True
+                idx += 1
             elif opts[idx] == '-P':
                 self.patt_args = opts[idx+1:idx+4]
                 idx += 4
