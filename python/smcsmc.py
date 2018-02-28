@@ -49,6 +49,8 @@ class Smcsmc:
         self.chunks = 1
         self.infer_recomb = True
         self.do_m_step = True
+        self.vb = False
+        self.vb_dirichlet = {'ne':[1,1],'migr':[1,1]}
         self.alpha = 0.0            # posterior mix-in; 0 means use prior; <0 means remove .recomb.gz files
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self.maxNE = 1e99
@@ -101,7 +103,8 @@ class Smcsmc:
             (2, '-calibrate_lag','s','Accumulate inferred events with a lag of  s  times the survival time (2)'),
             (2, '-apf', 'b',    'Auxiliary particle filter: none (0), singletons (1), cherries (2)  (0)'),
             
-            (3, '-EM', 'n',     'Number of EM iterations-1 ({})'.format(self.emiters)),
+            (3, '-EM', 'n',     'Number of EM (or VB) iterations-1 ({})'.format(self.emiters)),
+            (3, '-VB', '',      'Use Variational Bayes rather than EM (uniform prior for all rates)'),
             (3, '-cap', 'n',    'Set (unscaled) upper bound on effective population size'),
             (3, '-chunks','n',  'Number of chunks computed in parallel ({})'.format(self.chunks)),
             (3, '-no_infer_recomb', '', 'Do not infer recombination rate'),
@@ -190,6 +193,8 @@ class Smcsmc:
             elif opts[idx] == '-EM':
                 self.emiters = int(opts[idx+1])
                 idx += 2
+            elif opts[idx] == '-VB':
+                self.vb = True
             elif opts[idx] == '-P':
                 self.patt_args = opts[idx+1:idx+4]
                 idx += 4
@@ -612,7 +617,11 @@ class Smcsmc:
         for epoch in range(len(self.pop.change_points)):
             for pop in range(self.pop.num_populations):
                 key = ("Coal",epoch,pop,-1,-1)
-                rate = data[ (key,"Count") ] / (data[ (key,"Opp") ] + 1e-30)
+                if self.vb:
+                    c0, c1 = self.vb_dirichlet['ne']
+                else:
+                    c0, c1 = 1e-30, 0
+                rate = data[ (key,"Count") + c1 ] / (data[ (key,"Opp") ] + c0 + c1)
                 popsize = min( self.maxNE / self.pop.N0, 1.0 / (2.0 * rate * self.pop.N0) )
                 self.pop.population_sizes[ epoch ][ pop ] = popsize
                 logger.info("Setting population size (epoch {} population {}) to {}".format(epoch, pop, popsize))
@@ -622,7 +631,11 @@ class Smcsmc:
                 for topop in range(self.pop.num_populations):
                     if frompop != topop:
                         key = ("Migr",epoch,frompop,topop,-1)
-                        rate = data[ (key,"Count") ] / data[ (key,"Opp") ]
+                        if self.vb:
+                            c0, c1 = self.vb_dirichlet['migr']
+                        else:
+                            c0, c1 = 1e-30, 0
+                        rate = data[ (key,"Count") + c1 ] / data[ (key,"Opp") + c0 + c1 ]
                         # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
                         #       true units (events per nt per generation).  Reporting the 
                         self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate * 4 * self.pop.N0
