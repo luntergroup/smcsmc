@@ -50,7 +50,7 @@ class Smcsmc:
         self.infer_recomb = True
         self.do_m_step = True
         self.vb = False
-        self.vb_dirichlet = {'ne':[1,1],'migr':[1,1]}
+        self.vb_dirichlet = {'ne':[1.0,1.0],'migr':[1.0,1.0]}
         self.alpha = 0.0            # posterior mix-in; 0 means use prior; <0 means remove .recomb.gz files
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self.maxNE = 1e99
@@ -621,8 +621,8 @@ class Smcsmc:
                 if self.vb:
                     c0, c1 = self.vb_dirichlet['ne']
                 else:
-                    c0, c1 = 1e-30, 0
-                rate = data[ (key,"Count") + c1 ] / (data[ (key,"Opp") ] + c0 + c1)
+                    c0, c1 = 1e-30, 0.0
+                rate = (data[ (key,"Count") ] + c1) / (data[ (key,"Opp") ] + c0 + c1)
                 popsize = min( self.maxNE / self.pop.N0, 1.0 / (2.0 * rate * self.pop.N0) )
                 self.pop.population_sizes[ epoch ][ pop ] = popsize
                 logger.info("Setting population size (epoch {} population {}) to {}".format(epoch, pop, popsize))
@@ -635,8 +635,8 @@ class Smcsmc:
                         if self.vb:
                             c0, c1 = self.vb_dirichlet['migr']
                         else:
-                            c0, c1 = 1e-30, 0
-                        rate = data[ (key,"Count") + c1 ] / data[ (key,"Opp") + c0 + c1 ]
+                            c0, c1 = 1e-30, 0.0
+                        rate = (data[ (key,"Count") ] + c1 ) / (data[ (key,"Opp") ] + c0 + c1)
                         # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
                         #       true units (events per nt per generation).  Reporting the 
                         self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate * 4 * self.pop.N0
