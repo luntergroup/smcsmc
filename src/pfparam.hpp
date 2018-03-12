@@ -285,6 +285,7 @@ class PfParam{
     double delay;
     ResampleDelayType delay_type;
     bool ancestral_aware;
+    bool dephase;
     bool online_bool;
     int auxiliary_particle_filter;
     double start_position;

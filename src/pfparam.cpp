@@ -137,6 +137,8 @@ void PfParam::parse(int argc, char *argv[]) {
             this->delay_type = RESAMPLE_DELAY_COALMIGR;
         } else if ( *argv_i == "-ancestral_aware" ){
             this->ancestral_aware = true;
+        } else if ( *argv_i == "-dephase" ){
+            this->dephase = true;
 	} else if ( *argv_i == "-apf" ) {
 	    this->auxiliary_particle_filter = this->readNextInput<int>();
 	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 4) {
@@ -217,6 +219,7 @@ void PfParam::init(){
     this->delay            = 0.5;
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
+    this->dephase          = false;
     this->auxiliary_particle_filter = 0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
@@ -523,26 +526,29 @@ void PfParam::append_resample_file( int position, double ESS) const {
 void PfParam::helpOption(){
     cout << "Options:" << endl;
     cout << setw(15)<<"-Np"            << setw(8) << "INT" << "  --  " << "Number of particles [ " << N << " ]" << endl;
-    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ " << ESS_fraction << " ]" << endl;
-    cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
-    cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
-    cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
     cout << setw(15)<<"-seg"           << setw(8) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
-    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
-    cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
+    cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
+    cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
+    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
+    cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+    cout << endl << "Inference tuning:" << endl;
+    cout << setw(15)<<"-dephase"       << setw(8) << " "   << "  --  " << "Dephase heterozygous sites (but use phasing for -apf) [ false ]" << endl;
+    cout << setw(15)<<"-calibrate_lag" << setw(8) << "FLT" << "  --  " << "Lag before extracting events (multiple of survival time) [ " << lag_fraction << " ]" << endl;
+    cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum tree height, in unit of 4N0 [ 3 ]" <<endl;
+    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling [ " << ESS_fraction << " ]" << endl;
     cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
-    cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
-    cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
-    cout << setw(15)<<"-calibrate_lag" << setw(8) << "FLT" << "  --  " << "Lag before extracting events (multiple of survival time) [ " << lag_fraction << " ]" << endl;
+    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
+    cout << endl << "Less frequently used options:" << endl;
+    cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-delay"         << setw(8) << "FLT" << "  --  " << "How much to delay application of importance weight due to bias (fraction of survival time)[ " << delay << "]" << endl;
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
-    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
-    cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
-    cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+    cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
+    cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
+    //cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
 };
 
 

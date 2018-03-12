@@ -135,7 +135,8 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
 
 
 int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips,
-                                                                  vector<int>& haplotype_at_tips ) const {
+                                                                  vector<int>& haplotype_at_tips,
+                                                                  bool dephase ) const {
 
     // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
     // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
@@ -144,36 +145,38 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
     haplotype_at_tips = data_at_tips;
     int num_configurations = 1;
     for (int i=0; i < data_at_tips.size(); i+=2) {
-        if (data_at_tips[i] == 2) {
+        bool is_unphased_het = (data_at_tips[i] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1);
+        if (is_unphased_het) {
             num_configurations *= 2;
-            assert (data_at_tips[i+1] == 2);
+            assert ((data_at_tips[i+1] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1));
             haplotype_at_tips[i] = 0;    // initialize phase vector
             haplotype_at_tips[i+1] = 1;
         } else {
-            assert (data_at_tips[i+1] != 2);
+            assert ((data_at_tips[i+1] != 2) && (!(dephase && data_at_tips[i] + data_at_tips[i+1] == 1)));
         }
     }
     return num_configurations;
 }
 
 
-bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const {
+bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips, bool dephase ) const {
 
-        // find the next haplotype that is compatible with the genotype encoded in data_at_tips
-        for (int i=0; i<haplotype_at_tips.size(); i+=2) {
+    // find the next haplotype that is compatible with the genotype encoded in data_at_tips
+    for (int i=0; i<haplotype_at_tips.size(); i+=2) {
 
-                if (data_at_tips[i] != 2) continue;   // phased site -- ignore
-                if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
-                        haplotype_at_tips[i] = 1;
-                        haplotype_at_tips[i+1] = 0;
-                        return true;
-                }
-                haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
-                haplotype_at_tips[i+1] = 1;
-
+        bool is_unphased_het = (data_at_tips[i] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1);
+        if (!is_unphased_het) continue;        // phased site -- ignore
+        if (haplotype_at_tips[i] == 0) {       // phase 0 -- change to phase 1, and done
+            haplotype_at_tips[i] = 1;
+            haplotype_at_tips[i+1] = 0;
+            return true;
         }
-        // we fell through, so we have considered all haplotypes; stop main loop
-        return false;
+        haplotype_at_tips[i] = 0;              // phase 1 -- flip back, and continue
+        haplotype_at_tips[i+1] = 1;
+        
+    }
+    // we fell through, so we have considered all haplotypes; stop main loop
+    return false;
 }
 
 
@@ -199,7 +202,8 @@ void ParticleContainer::update_weight_at_site( const Segment& segment,
     
     const vector<int>& data_at_tips = segment.allelic_state_at_Segment_end;
     vector<int> haplotype_at_tips;
-    int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
+    bool dephase = particles[0]->pfparam.dephase;
+    int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips, dephase );
     double normalization_factor = 1.0 / num_configurations;
 
     // now update the weights of all particles, by calculating the likelihood of the data over the previous segment
@@ -208,7 +212,7 @@ void ParticleContainer::update_weight_at_site( const Segment& segment,
         double likelihood_of_haplotype_at_tips = 0;
         do {
             likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware, haplotype_at_tips );
-        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
+        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips, dephase));
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 

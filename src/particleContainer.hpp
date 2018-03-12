@@ -81,7 +81,7 @@ class ParticleContainer {
         // Methods
         //
         void update_data_status_at_leaf_nodes( const vector<int>& data_at_tips );
-        int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
+        int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips, bool dephase ) const;
         void update_weight_at_site( const Segment &segment,
                                     const vector<ForestState*>& particles,
                                     bool ancestral_aware,
@@ -90,7 +90,7 @@ class ParticleContainer {
                                           const vector<ForestState*>& particles,
                                           bool ancestral_aware,
                                           const TerminalBranchLengthQuantiles& terminal_branch_lengths );
-        bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
+        bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips, bool dephase ) const;
         // Resampling
         vector<ForestState*> implement_resampling( const vector<ForestState*>& particles, valarray<int> & sample_count, double total_pilot_weight) const;
         void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count, int N) const;
