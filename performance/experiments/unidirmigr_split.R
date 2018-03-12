@@ -7,14 +7,14 @@ source("plot-utils.R")
 
 plot.ribbon <- function( p, data, col="blue", g=30, lwd=1 ) {
     p <- p + geom_ribbon(data=data, aes(ymin=Q0, ymax=Q4),
-                     stat="stepribbon", fill=col, alpha=.15)
+                     stat="stepribbon", fill=col, alpha=.10)
     p <- p + geom_ribbon(data=data, aes(ymin=Q1, ymax=Q3),
                          stat="stepribbon", fill=col, alpha=.25)
     p <- p + geom_step(data=data, aes( y=Q2, x=start*g, colour=Population), lwd=lwd )
     return (p)
 }
 
-plot.truth <- function( p, x, y, pop, g=30, lwd=1,lty=1 ) {
+plot.truth <- function( p, x, y, pop, g=30, lwd=1.5,lty=1 ) {
     data <- data.frame(start=x,
                        end=c(x[-1],tail(x,1)),
                        Q2=y,
@@ -24,7 +24,7 @@ plot.truth <- function( p, x, y, pop, g=30, lwd=1,lty=1 ) {
 }
 
 
-plot.model <- function( data, model, g=30 ) {
+plot.model <- function( data, model, g=30, minne=100 ) {
 
     migr_time <- 50e3
     split_time <- 100e3
@@ -35,7 +35,7 @@ plot.model <- function( data, model, g=30 ) {
     emstep <- max( data$iter )
 
     plot.data <- subset(data, iter==emstep & type=="Coal" & str_parameter==model)
-    quartiles <- calculate.quartiles( plot.data, min=100, max=1e5, mint=t0/g, maxt=t1/g )
+    quartiles <- calculate.quartiles( plot.data, min=minne, max=1e5, mint=t0/g, maxt=t1/g )
     quartiles$Population <- paste( "Pop", quartiles$frm + 1, sep="" )
 
     data.pop1 = subset(quartiles, Population=="Pop1")
@@ -46,15 +46,15 @@ plot.model <- function( data, model, g=30 ) {
     p <- ggplot(data=quartiles, aes(x=start*g))
     p <- p + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000), labels=NULL)
     labels <- NULL
-    if (model == 0) labels <- waiver()
-    p <- p + scale_y_log10(limits=c(400,100000),breaks=c(500,1000,2000,5000,10000,20000,50000), labels=labels)
+    if (model == 2) labels <- waiver()
+    p <- p + scale_y_log10(limits=c(minne,100000),breaks=c(500,1000,2000,5000,10000,20000,50000), labels=labels)
     p <- plot.ribbon( p, data.pop2, "darkcyan" )
     p <- plot.truth( p, c(500, migr_time, split_time), c(0.5*N0, 0.05*N0, 1*N0), "Pop2", lty="11", lwd=0.5 )
     p <- plot.ribbon( p, data.pop1, "blue" )
     p <- plot.truth( p, c(500, migr_time, split_time, t1), c(1*N0, 0.95*N0, 1*N0, 1*N0), "Pop1", lty="11", lwd=0.5 )
 
-    if (model == 0) {
-        p <- p + ylab("Ne")
+    if (model == 2) {
+        p <- p + theme(text = element_text(size=16)) + ylab("Ne")
     } else {
         p <- p + theme(axis.title.y = element_blank() )
     }
@@ -73,19 +73,27 @@ plot.model <- function( data, model, g=30 ) {
     data.pop2 = subset(quartiles, Population=="Pop2" & epoch < 12)
 
     pm <- ggplot(data=quartiles, aes(x=start*g))
-    pm <- pm + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000))
-    labels <- NULL
-    if (model == 0) labels <- waiver()
-    pm <- pm + scale_y_continuous(limits=c(0,5), labels=labels)
-    pm <- plot.ribbon( pm, data.pop1, "blue" )
-    pm <- plot.ribbon( pm, data.pop2, "darkcyan" )
-
-    pm <- pm + xlab("years ago")
-    if (model == 0) {
+    if (model == 2) {
         pm <- pm + ylab("Migration rate") + theme(text = element_text(size=16), legend.position="none")
     } else {
         pm <- pm + theme(axis.title.y = element_blank() ) + theme(legend.position="none")
     }
+    pm <- pm + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000))
+    labels <- NULL
+    if (model == 0) labels <- waiver()
+    pm <- pm + scale_y_continuous(limits=c(0,5.5), labels=labels)
+    pm <- plot.ribbon( pm, data.pop1, "blue" )
+    pm <- plot.ribbon( pm, data.pop2, "darkcyan" )
+
+    truth1 <- c(0,0,0)
+    truth2 <- c(0,0,0)
+    if (model %in% c(0,3)) { truth1 <- c(0,5,0) }
+    if (model %in% c(1,3)) { truth2 <- c(0.02,5.02,0.02) }
+        
+    pm <- plot.truth( pm, c(500, migr_time, split_time), truth1, "Pop1", lty="11", lwd=0.5 )
+    pm <- plot.truth( pm, c(500, migr_time, split_time), truth2, "Pop2", lty="11", lwd=0.5 )    
+    
+    pm <- pm + xlab("years ago")
     pm <- pm + scale_colour_manual("",
                                  breaks = c("Pop1","Pop2"),
                                  values = c("Pop1"="blue","Pop2"="darkcyan"))
@@ -101,17 +109,19 @@ plot.smcsmc <- function( data, g=30 ) {
     write.table(data, file="udm_split.dta", sep="\t")
     data <- read.table(file="udm_split.dta", header=TRUE)
 
-    gr0 <- plot.model( data, 0 )
-    gr1 <- plot.model( data, 1 )
-    gr2 <- plot.model( data, 2 )
-    gr3 <- plot.model( data, 3 )
+    gr0 <- plot.model( data, 2, minne=100 )
+    gr1 <- plot.model( data, 1, minne=100 )
+    gr2 <- plot.model( data, 0, minne=100 )
+    gr3 <- plot.model( data, 3, minne=100 )
 
-    grid.draw( cbind( gr0,gr1,gr2,gr3,size="last" ))
+    gr <- cbind(gr0,gr1,gr2,gr3,size="last")
+    
+    grid.draw( gr )
 
-    ## """this doesn't work..."""
     emstep <- max( data$iter )
     ggsave(paste("udm_split_",emstep,"EMsteps.png",sep=""),
-           width = 12, height = 8, units = "cm")
+           gr,
+           width = 18, height = 12, units = "cm")
 
 
 }

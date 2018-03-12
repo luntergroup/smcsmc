@@ -1,4 +1,35 @@
-calculate.quartiles <- function( frame, field="Ne", miny=1000, maxy=100000, mint=30, maxt=10000, scale=1 ) {
+load.from.out <- function( fname, data=NULL, np=10000, int_parameter=0 ) {
+    newdata <- read.table( fname, header=T )
+    names(newdata) <- c("iter","epoch","start","end","type","frm","to","opp","count","rate","ne","ess","clump")
+    newdata <- subset(newdata, clump == -1)
+    newdata$aux_part_filt <- 0
+    newdata$int_parameter <- int_parameter
+    newdata$np <- np
+    if (!is.null(data)) {
+        newdata <- rbind( newdata, data )
+    }
+    return(newdata)
+}
+
+plot.ribbon <- function( p, data, col="blue", g=30, lwd=1 ) {
+    p <- p + geom_ribbon(data=data, aes(ymin=Q0, ymax=Q4),
+                     stat="stepribbon", fill=col, alpha=.15)
+    p <- p + geom_ribbon(data=data, aes(ymin=Q1, ymax=Q3),
+                         stat="stepribbon", fill=col, alpha=.25)
+    p <- p + geom_step(data=data, aes( y=Q2, x=start*g, colour=Population), lwd=lwd )
+    return (p)
+}
+
+plot.truth <- function( p, x, y, pop, g=30, lwd=1,lty=1 ) {
+    data <- data.frame(start=x,
+                       end=c(x[-1],tail(x,1)),
+                       Q2=y,
+                       Population=pop)
+    p <- p + geom_step(data=data, aes( y=Q2, x=start, colour=Population), lwd=lwd, lty=lty )
+    return (p)
+}
+
+calculate.quartiles <- function( frame, field="Ne", miny=1000, maxy=100000, mint=30, maxt=10000, scale=1, add=0 ) {
 
     options( stringsAsFactors=FALSE ) # seems not possible to give this as option to rbind
     new.df <- data.frame()
@@ -9,7 +40,7 @@ calculate.quartiles <- function( frame, field="Ne", miny=1000, maxy=100000, mint
         data <- subset(frame, type==keys[i,1] & frm==keys[i,2] & epoch==keys[i,3] &
                               aux_part_filt==keys[i,4] & int_parameter==keys[i,5] & np==keys[i,6])
         if (field == "Ne") values <- data$ne else values <- data$rate
-        q <- quantile(values * scale)
+        q <- quantile(values * scale + add)
         if (field == "Ne") data$ne <- q[3] else data$rate <- q[3]   # set to median
         new.row <- c( data[1,], pmin(maxy,pmax(miny,q)))
         names(new.row) <- c( names(frame), "Q0","Q1","Q2","Q3","Q4" )
