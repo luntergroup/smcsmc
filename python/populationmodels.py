@@ -49,6 +49,8 @@ class Population:
         self.change_points = change_points              # list of times, in 4Ne units
         self.population_sizes = population_sizes        # list, or list of lists (per population)
         self.migration_rates = migration_rates          # None, or list of lists of lists
+        self.population_event_counts = None             # filled with dummy values for 1st iteration; updated by hand later
+        self.migration_event_counts = None              # filled with dummy values for 1st iteration; updated by hand later
         self.num_populations = num_populations
         self.sample_populations = sample_populations    # encoded as sample_populations_ in model.h
         self.sample_times = sample_times                # encoded as sample_times_ in scrm/model.h
@@ -226,7 +228,13 @@ class Population:
                 if time <= cp:
                     for j in range(self.num_populations):
                         self.migration_rates[idx][j][sink] = 0
-                
+
+        # set default event counts
+        if self.population_event_counts is None:
+            self.population_event_counts = [ [1e10] * self.num_populations for popsizes in self.population_sizes ]
+        if self.migration_event_counts is None:
+            self.migration_event_counts = [ [ [1e10 for rate in migr_vec ] for migr_vec in migr_mat ] for migr_mat in self.migration_rates ]
+
         # require the population size at time 0 to be set explicitly
         assert( self.change_points[0] == 0.0 )
 
@@ -253,10 +261,11 @@ class Population:
 
 
     def _create_popsize_migration_command_line_options(self,
-                                                      inference_popsizes = None,
-                                                      inference_migrationrates = None,
-                                                      inference_changepoints = None,
-                                                      inference_migrationcommands = None):
+                                                       inference_popsizes = None,
+                                                       inference_migrationrates = None,
+                                                       inference_changepoints = None,
+                                                       inference_migrationcommands = None,
+                                                       vb = False):
         self._finalize_and_validate()
         my_popsizes =          self.population_sizes   if inference_popsizes is None          else inference_popsizes
         my_migrationrates =    self.migration_rates    if inference_migrationrates is None    else inference_migrationrates
@@ -264,14 +273,17 @@ class Population:
         my_migrationcommands = self.migration_commands if inference_migrationcommands is None else inference_migrationcommands
 
         expression = []
+        if self.vb: expression.append("-vb")
         for i in range(len(my_changepoints)):
             time = my_changepoints[i]
             popsizes = my_popsizes[i]
             if len(set(popsizes)) == 1:
-                expression.append("-eN {} {}".format(time, popsizes[0]))
+                if self.vb: expression.append("-eN {} {} {}".format(time, popsizes[0], self.population_event_counts[i][0]))
+                else:       expression.append("-eN {} {}".format(time, popsizes[0]))
             else:
                 for idx, popsize in enumerate(popsizes):
-                    expression.append("-en {} {} {}".format(time, idx+1, popsize))
+                    if self.vb: expression.append("-en {} {} {} {}".format(time, idx+1, popsize, self.population_event_counts[i][idx]))
+                    else:       expression.append("-en {} {} {}".format(time, idx+1, popsize))
             migration_matrix = my_migrationrates[i]
             all_rates = set( migration_matrix[j][k]
                              for j,k in itertools.product( range(self.num_populations),
@@ -281,7 +293,10 @@ class Population:
                 rate = all_rates.pop()
                 #if rate != 0:
                 total_symmetric_rate = rate * (self.num_populations - 1)
-                expression.append("-eM {} {}".format(time, total_symmetric_rate))
+                total_event_count = sum( self.migration_event_counts[i][j][k] for j,k in itertools.product(range(self.num_populations),
+                                                                                                           range(self.num_populations) ) )
+                if self.vb: expression.append("-eM {} {} {}".format(time, total_symmetric_rate, total_event_count))
+                else:       expression.append("-eM {} {}".format(time, total_symmetric_rate))
             else:
                 if len(all_rates) > 1:
                     expression.append("-ema {}".format(time))
@@ -291,7 +306,8 @@ class Population:
                     # which seems to contradict the help text of scrm.
                     for j in range(self.num_populations):
                         for k in range(self.num_populations):
-                            expression.append("{}".format(migration_matrix[j][k]))
+                            if self.vb: expression.append("{} {}".format(migration_matrix[j][k], self.migration_event_counts[i][j][k]))
+                            else:       expression.append("{}".format(migration_matrix[j][k]))
             migration_command = my_migrationcommands[i]
             if migration_command is not None:
                 expression.append(migration_command)
@@ -302,7 +318,8 @@ class Population:
                            inference_popsizes = None,
                            inference_migrationrates = None,
                            inference_changepoints = None,
-                           inference_migrationcommands = None):
+                           inference_migrationcommands = None,
+                           vb = False ):
         """ builds core command line common to simulation and inference;
             without the initial "num_samples num_loci" parameters, and without
             output-related commands """
@@ -320,7 +337,8 @@ class Population:
                 inference_popsizes,
                 inference_migrationrates,
                 inference_changepoints,
-                inference_migrationcommands
+                inference_migrationcommands,
+                vb
             )
         )
         return command

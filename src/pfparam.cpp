@@ -297,6 +297,7 @@ void PfParam::convert_scrm_input (){
     enum { kMaxArgs = 1024 };
     int scrm_argc = 0;
     char *scrm_argv[kMaxArgs];
+    cout << "Scrm input: " << scrm_input << endl;//DEBUG
     char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
     while (p2 && scrm_argc < kMaxArgs) {
         scrm_argv[scrm_argc++] = p2;

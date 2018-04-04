@@ -27,6 +27,53 @@
 #include "descendants.hpp"
 
 
+inline double fastexp(double x) {
+    // Based on a generalized continued fraction.  Just two divisions, two multiplications.
+    // If |x|<0.71844823, the relative error is < 1e-6
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 0.516167859) {
+        return 1 + 2*x / (2 - x + xx / (6 + xx * 0.1));
+    } else {
+        return exp(x);
+    }
+}
+
+
+inline double fastexp_approx(double x) {
+    // Based on a generalized continued fraction.  Just one division, two multiplications.
+    // The approximate branch is used only for |x|<1.44885, where the relative error is < 1e-2
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 2.099166) {
+        return 1 + 2*x / (2 - x + xx * (1.0/6));
+    } else {
+        return exp(x);
+    }
+}
+
+
+inline double nchoosek(int n, int k) {
+    double nCk = 1.0;
+    for (int i=1; i<=k; i++) {
+        nCk *= (n-i+1)/double(i);
+    }
+    return nCk;
+}
+
+
+inline double exp_digamma( double x ) {
+  if (x > 10) return x - 0.5 + (x+0.5)/(24*x*x);
+  double f = 0.0;
+  while (x < 6) {
+    f = f + 1.0/x; // psi(x) = psi(x+1) - 1/x
+    x = x + 1.0;
+  }
+  double psi = log(x) - 1/(2*x) - 1/(12*x*x);
+  return exp(psi - f);
+}
+
+
 /*! \brief Initialize a new ForestState.  A copy of model/random_generator is made if own_m_and_rg==True; either way the objects are not stolen
  * @ingroup group_pf_init
  * */
@@ -140,6 +187,9 @@ void ForestState::clear_eventContainer() {
 }
 
 
+/*! Records recombination, coalescent and migration events as they occur while simulating a tree backwards in time.
+ *  Also applies Variational Bayes likelihood factor
+ */
 void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
     double start_base, end_base;
@@ -197,6 +247,15 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 if (first_event_height_ < 0.0)              first_event_height_ = end_height;
                 if (coal_event && first_coal_height_ < 0.0) first_coal_height_ = end_height;
                 last_coal_height_ = end_height;
+                if (model().variational_bayes_correction_) {
+                    double event_count =
+                        coal_event ?
+                        model().coalescent_event_count( active_node(i)->population() ) :
+                        model().migration_event_count( active_node(i)->population(), tmp_event_.mig_pop() );
+                    adjustWeights( exp_digamma( event_count ) / event_count );
+                    //cout << "Adjusting (coal=" << coal_event << ") count=" << event_count;
+                    //cout << " edg=" << exp_digamma(event_count) << " wt= " << exp_digamma( event_count ) / event_count << endl;
+                }
             }
             if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
             if (start_height_epoch > max_epoch_to_record_) continue;
@@ -340,42 +399,6 @@ void ForestState::resample_recombination_position(void) {
                       old_event->recomb_event_overlaps_opportunity_x( current_base() ) );
         }
     }
-}
-
-
-inline double fastexp(double x) {
-    // Based on a generalized continued fraction.  Just two divisions, two multiplications.
-    // If |x|<0.71844823, the relative error is < 1e-6
-    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
-    double xx = x*x;
-    if (xx < 0.516167859) {
-        return 1 + 2*x / (2 - x + xx / (6 + xx * 0.1));
-    } else {
-        return exp(x);
-    }
-}
-
-
-inline double fastexp_approx(double x) {
-    // Based on a generalized continued fraction.  Just one division, two multiplications.
-    // The approximate branch is used only for |x|<1.44885, where the relative error is < 1e-2
-    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
-    double xx = x*x;
-    if (xx < 2.099166) {
-        return 1 + 2*x / (2 - x + xx * (1.0/6));
-    } else {
-        return exp(x);
-    }
-}
-
-
-
-inline double nchoosek(int n, int k) {
-    double nCk = 1.0;
-    for (int i=1; i<=k; i++) {
-        nCk *= (n-i+1)/double(i);
-    }
-    return nCk;
 }
 
 

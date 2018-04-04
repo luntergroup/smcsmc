@@ -623,10 +623,12 @@ class Smcsmc:
                     c0, c1 = self.vb_dirichlet['ne']
                 else:
                     c0, c1 = 1e-30, 0.0
-                rate = (data[ (key,"Count") ] + c1) / (data[ (key,"Opp") ] + c0 + c1)
+                count, opp = data[ (key,"Count") ] + c1, data[ (key,"Opp") ] + c0 + c1
+                rate = count / opp
                 popsize = min( self.maxNE / self.pop.N0, 1.0 / (2.0 * rate * self.pop.N0) )
                 self.pop.population_sizes[ epoch ][ pop ] = popsize
-                logger.info("Setting population size (epoch {} population {}) to {}".format(epoch, pop, popsize))
+                self.pop.population_event_counts[ epoch ][ pop ] = count
+                logger.info("Setting population size (epoch {} population {}) to {}   ({} coalescence events)".format(epoch, pop, popsize, count))
         # set migration rates
         for epoch in range(len(self.pop.change_points)):
             for frompop in range(self.pop.num_populations):
@@ -637,12 +639,14 @@ class Smcsmc:
                             c0, c1 = self.vb_dirichlet['migr']
                         else:
                             c0, c1 = 1e-30, 0.0
-                        rate = (data[ (key,"Count") ] + c1 ) / (data[ (key,"Opp") ] + c0 + c1)
+                        count, opp = (data[ (key,"Count") ] + c1 ) , (data[ (key,"Opp") ] + c0 + c1)
+                        rate = count / opp
                         # Note: pop.migration_rates are in units of 4Ne, while pop.mutation_rate and pop.recombination_rate are in
                         #       true units (events per nt per generation).  Reporting the 
                         self.pop.migration_rates[ epoch ][ frompop ][ topop ] = rate * 4 * self.pop.N0
-                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}  ({})".
-                                    format(epoch, frompop, topop, rate, rate*4*self.pop.N0))
+                        self.pop.migration_event_counts[ epoch ][ frompop ][ topop ] = count
+                        logger.info("Setting migration rate (epoch {} population {}->{}) to {}  ({})  ({} migration events)".
+                                    format(epoch, frompop, topop, rate, rate*4*self.pop.N0, count))
         # set recombination rate
         if self.infer_recomb:
             key = ("Recomb",-1,-1,-1,-1)
@@ -657,7 +661,7 @@ class Smcsmc:
         self.pop.startpos = start
         self.pop.sequence_length = end - start
         self.pop.mutation_rate = self.theta / (4 * self.pop.N0 * self.length)
-        command = [self.smcsmcpath, self.pop.core_command_line()]
+        command = [self.smcsmcpath, self.pop.core_command_line( vb = self.vb )]
         if not self.infer_recomb:
             command.append( "-xr 1-{}".format( len(self.pop.change_points) ) )
         if self.recombination_guide != None:
