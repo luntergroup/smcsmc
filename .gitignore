@@ -57,6 +57,7 @@ tests/unittest/.dirstamp
 doxygen_sqlite3.db
 html/
 scrm
+.Rhistory        
 smcsmcSCRM_dbg
 tests/pfARGHIST
 tests/scrm_tmp_tree
