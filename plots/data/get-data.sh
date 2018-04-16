@@ -1,5 +1,11 @@
 pth=/well/gerton/Tasks/smcsmc-analyses/run-singlepops
 
+for run in simb-P simb-PE simb-PL ; do
+    dir=ceuyri4-${run}-vb
+    mkdir -p ${dir}
+    cat $pth/${dir}/emiter*/chunkfinal.out | awk '$13==-1 || NR==1' > ${dir}/result.out
+done
+
 mkdir -p ceuyri4-vb-dephase-30k
 cp $pth/ceuyri4-vb-dephase-30k/result.out ceuyri4-vb-dephase-30k/result.out
 

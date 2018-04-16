@@ -1,23 +1,25 @@
 library(ggplot2)
 library(grid)
 library(gridExtra)
+library(reshape)
 
 source("stat-stepribbon.R")
 source("plot-utils.R")
+source("model.R")
 
-plot.model <- function( data, popidx, g=30, minne=100 ) {
+
+plot.model <- function( data, popidx, g=29, minne=100, modeldata=NULL, p.modelvars=NULL, m.modelvars=NULL, splitepoch=21 ) {
 
     split_time <- 385e3
-    splitepoch <- 21
     t0 <- 1000
     t1 <- 1500000
     t1m = split_time
-    N0 <- 10000
+    N0 <- 14312
     maxne <- 3e5
     min.migr.rate <- 2e-2
     ##max.migr.rate <- 5e2   ## for log scale
     max.migr.rate <- 20      ## for continuous scale
-    emstep <- max( data$iter )
+    emstep <- max( data[ data$int_parameter==popidx, ]$iter )
 
     model <- 2  ## for now
 
@@ -41,6 +43,10 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
     p <- plot.ribbon( p, data.pop2, "darkcyan" )
     p <- plot.ribbon( p, data.pop1, "blue" )
 
+    for (m in p.modelvars) {
+        p <- p + geom_line(data=subset(modeldata, variable==m) , aes(x=sim.t, y=value))
+    }
+
     if (model == 2) {
         p <- p + theme(text = element_text(size=16)) + ylab("Ne")
     } else {
@@ -49,9 +55,8 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
     p <- p + theme(text = element_text(size=16), legend.position="top")
     p <- p + theme(axis.title.x = element_blank())
     p <- p + scale_colour_manual("",
-                                 breaks = c("Pop1","Pop2"),
-                                 values = c("Pop1"="blue","Pop2"="darkcyan"))
-
+                                 breaks = c("Pop1","Pop2","model"),
+                                 values = c("Pop1"="blue","Pop2"="darkcyan","model"="black"))
     "migration"
     plot.data <- plot.data.migration
     quartiles <- calculate.quartiles( plot.data, field="rate", mint=t0/g, maxt=t1m/g, miny=0, maxy=100, scale=4*N0, add=min.migr.rate )
@@ -61,6 +66,9 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
     data.pop2 = subset(quartiles, Population=="Pop2" & epoch < splitepoch)
 
     pm <- ggplot(data=quartiles, aes(x=start*g))
+    for (m in m.modelvars) {
+        pm <- pm + geom_line(data=subset(modeldata,variable==m), aes(x=sim.t, y=pmin(max.migr.rate,pmax(min.migr.rate,value))))
+    }
     if (model == 2) {
         pm <- pm + ylab("Migration rate") + theme(text = element_text(size=16), legend.position="none")
     } else {
@@ -68,7 +76,7 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
     }
     pm <- pm + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000))
     pm <- pm + annotation_logticks(sides="b")
-    labels <- NULL
+    labels <- waiver()
     if (model == 0) labels <- waiver()
     pm <- pm + scale_y_continuous(limits=c(min.migr.rate,max.migr.rate), labels=labels)
     pm <- plot.ribbon( pm, data.pop1, "blue", maxy=max.migr.rate )
@@ -76,8 +84,8 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
 
     pm <- pm + xlab("years ago")
     pm <- pm + scale_colour_manual("",
-                                 breaks = c("Pop1","Pop2"),
-                                 values = c("Pop1"="blue","Pop2"="darkcyan"))
+                                 breaks = c("Pop1","Pop2","model"),
+                                 values = c("Pop1"="blue","Pop2"="darkcyan", "model"="black"))
 
 
     grob <- rbind(ggplotGrob(p), ggplotGrob(pm), size="last")
@@ -86,18 +94,16 @@ plot.model <- function( data, popidx, g=30, minne=100 ) {
 
 
 
-plot.model.allemsteps <- function( data, popidx, g=30, minne=100 ) {
+plot.model.allemsteps <- function( data, popidx, g=29, minne=100, max.migr.rate=10 ) {
 
     split_time <- 385e3
     splitepoch <- 21
     t0 <- 1000
     t1 <- 1500000
     t1m = split_time
-    N0 <- 10000
+    N0 <- 14312
     maxne <- 3e5
     min.migr.rate <- 2e-2
-    ##max.migr.rate <- 5e2   ## for log scale
-    max.migr.rate <- 20      ## for continuous scale
     emstep <- max( data$iter )
 
     plot.data <- subset(data, type=="Coal" & int_parameter==popidx)
@@ -155,17 +161,54 @@ plot.model.allemsteps <- function( data, popidx, g=30, minne=100 ) {
 
 
 
-data <- load.from.out( "ceuchb4/result.out", int_parameter=1 )
-data <- load.from.out( "ceugih4/result.out", data=data, int_parameter=2 )
-data <- load.from.out( "ceumxl4/result.out", data=data, int_parameter=3 )
-data <- load.from.out( "ceutsi4/result.out", data=data, int_parameter=4 )
-data <- load.from.out( "ceuyri4/result.out", data=data, int_parameter=5 )
-data$Population <- c("CHB","GIH","MXL","TSI","YRI")[ data$int_parameter ]
+data <- load.from.out( "data/ceuchb4-vb/result.out", int_parameter=1 )
+data <- load.from.out( "data/ceugih4-vb/result.out", data=data, int_parameter=2 )
+data <- load.from.out( "data/ceumxl4-vb/result.out", data=data, int_parameter=3 )
+data <- load.from.out( "data/ceutsi4-vb/result.out", data=data, int_parameter=4 )
+data <- load.from.out( "data/ceuyri4-vb/result.out", data=data, int_parameter=5 )
+data <- load.from.out( "data/ceuyri4-simb-PE-vb/result.out", data=data, int_parameter=6 )
+data <- load.from.out( "data/ceuyri4-simb-P-vb/result.out", data=data, int_parameter=7 )
+data <- load.from.out( "data/ceuyri4-simb-PL-vb/result.out", data=data, int_parameter=8 )
+data$Population <- c("CHB","GIH","MXL","TSI","YRI","YRIsim-PE","YRIsim-P","YRIsim-PL")[ data$int_parameter ]
 
-gr1 <- plot.model( data, 5, minne=1000 )
+if (FALSE) {
+    data <- load.from.out( "data/ceuyri4-vb/result.out", int_parameter=1 )
+    data <- load.from.out( "data/ceuyri4-simb-P-vb/result.out", data=data, int_parameter=2 )
+    data <- load.from.out( "data/ceuyri4-simb-PE-vb/result.out", data=data, int_parameter=3 )
+    data <- load.from.out( "data/ceuyri4-simb-PL-vb/result.out", data=data, int_parameter=4 )
+    data$Population <- c("YRI","P","PE","PL")[ data$int_parameter ]
+    data <- data[ data$iter <= 7 , ]
+}
+
+
+g <- 29
+sim.t <- exp( seq( log(133),log(385e3/g),length.out=100) )
+N0 <- 14312
+modeldata <- data.frame(sim.t= sim.t * g,
+                        pop.ceu=ceu(sim.t / 1.12),
+                        pop.yri=yri(sim.t / 1.12),
+                        migr.ceu=apply(matrix(sim.t / 1.12),1,migr_ceu) * 4 * N0,
+                        migr.yri.early=apply(matrix(sim.t / 1.12),1,function(x) migr_yri( x, -1 )) * 4 * N0,
+                        migr.yri=apply(matrix(sim.t / 1.12),1,function(x) migr_yri(x, 0)) * 4 * N0,
+                        migr.yri.late=apply(matrix(sim.t / 1.12),1,function(x) migr_yri(x, 1)) * 4 * N0 )
+modeldata <- melt( modeldata, id=c("sim.t") )
+                        
+
+
+gr1 <- plot.model( data, 5, minne=2000)
 grid.draw( gr1 )
 
-gr2 <- plot.model.allemsteps( data, 5, minne=1000 )
+gr1 <- plot.model( data, 6, minne=2000, splitepoch=16, modeldata=modeldata, p.modelvars=c("pop.ceu","pop.yri"), m.modelvars=c("migr.ceu","migr.yri.early") )
+grid.draw( gr1 )
+
+gr1 <- plot.model( data, 7, minne=2000, splitepoch=16, modeldata=modeldata, p.modelvars=c("pop.ceu","pop.yri"), m.modelvars=c("migr.ceu","migr.yri") )
+grid.draw( gr1 )
+
+gr1 <- plot.model( data, 8, minne=2000, splitepoch=16, modeldata=modeldata, p.modelvars=c("pop.ceu","pop.yri"), m.modelvars=c("migr.ceu","migr.yri.late") )
+grid.draw( gr1 )
+
+
+gr2 <- plot.model.allemsteps( data, 7, minne=1000, max.migr.rate=20 )
 grid.draw( gr2 )
 
 gr1 <- plot.model( data, 1, minne=1000 )

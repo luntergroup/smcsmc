@@ -5,19 +5,25 @@ library(gridExtra)
 source("stat-stepribbon.R")
 source("plot-utils.R")
 
-data <- load.from.out( "ceu4.out", int_parameter=1 )
-data <- load.from.out( "chb4.out", data=data, int_parameter=2 )
-data <- load.from.out( "yri4.out", data=data, int_parameter=3 )
-data <- load.from.out( "yri4-vb/emiter11/chunkfinal.out", data=data, int_parameter=4 )
-data <- load.from.out( "ceu4-vb/emiter11/chunkfinal.out", data=data, int_parameter=5 )
-data$Population <- c("CEU","CHB","YRI","CEUvb","YRIvb")[ data$int_parameter ]
+if (FALSE) {
+    data <- load.from.out( "ceu4.out", int_parameter=1 )
+    data <- load.from.out( "chb4.out", data=data, int_parameter=2 )
+    data <- load.from.out( "yri4.out", data=data, int_parameter=3 )
+    data <- load.from.out( "yri4-vb/emiter11/chunkfinal.out", data=data, int_parameter=4 )
+    data <- load.from.out( "ceu4-vb/emiter11/chunkfinal.out", data=data, int_parameter=5 )
+    data$Population <- c("CEU","CHB","YRI","CEUvb","YRIvb")[ data$int_parameter ]
+}
+
+data <- load.from.out( "data/ceu4-vb/result.out", int_parameter=1 )
+data <- load.from.out( "data/chb4-vb/result.out", data, int_parameter=2 )
+data <- load.from.out( "data/yri4-vb/result.out", data, int_parameter=3 )
+data$Population <- c("CEU","CHB","YRI")[ data$int_parameter ]
 
 t0 <- 5000
 t1 <- 2500000
 g <- 29
 N0 <- 14312
 emstep <- max( data$iter )
-emstep <- 11
 
 plot.data <- subset(data, iter==emstep & type=="Coal")
 quartiles <- calculate.quartiles( plot.data, min=100, max=1e7, mint=t0/g, maxt=t1/g )
@@ -34,8 +40,8 @@ p <- p + ylab("Ne")
 p <- p + theme(text = element_text(size=16), legend.position="top")
 p <- p + theme(axis.title.x = element_blank())
 p <- p + scale_colour_manual("",
-                             breaks = c("CEU","CHB","YRI","CEUvb","YRIvb"),
-                             values = c("CEU"="blue","CHB"="darkcyan","YRI"="darkred","CEUvb"="cyan","YRIvb"="red"))
+                             breaks = c("CEU","CHB","YRI"),
+                             values = c("CEU"="blue","YRI"="darkcyan","CHB"="darkred"))
 
 ggsave(paste("singlepops_",emstep,"EMsteps.png",sep=""),
        p,
