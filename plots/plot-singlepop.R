@@ -1,48 +1,101 @@
 library(ggplot2)
 library(grid)
 library(gridExtra)
+library(extrafont)
+
+##font_import() ## once
 
 source("stat-stepribbon.R")
 source("plot-utils.R")
+source("plot-themes.R")
 
-if (FALSE) {
-    data <- load.from.out( "ceu4.out", int_parameter=1 )
-    data <- load.from.out( "chb4.out", data=data, int_parameter=2 )
-    data <- load.from.out( "yri4.out", data=data, int_parameter=3 )
-    data <- load.from.out( "yri4-vb/emiter11/chunkfinal.out", data=data, int_parameter=4 )
-    data <- load.from.out( "ceu4-vb/emiter11/chunkfinal.out", data=data, int_parameter=5 )
-    data$Population <- c("CEU","CHB","YRI","CEUvb","YRIvb")[ data$int_parameter ]
+pops=c("ceu4","chb4","yri4","ceu4-vb","chb4-vb","yri4-vb")
+labels=pops
+data=NULL
+for (popidx in 1:(length(pops))) {
+    pop = pops[popidx]
+    data <- load.from.out( paste("data/",pop,"/result.out",sep=""), data=data, int_parameter=popidx )
 }
+data$Population <- pops[ data$int_parameter ]
 
-data <- load.from.out( "data/ceu4-vb/result.out", int_parameter=1 )
-data <- load.from.out( "data/chb4-vb/result.out", data, int_parameter=2 )
-data <- load.from.out( "data/yri4-vb/result.out", data, int_parameter=3 )
-data$Population <- c("CEU","CHB","YRI")[ data$int_parameter ]
-
-t0 <- 5000
-t1 <- 2500000
+t0 <- 3000
+t1 <- 5000000
+ne0 <- 3000
+ne1 <- 1000000
 g <- 29
 N0 <- 14312
+tbreaks=c(1000,10000,100000,1000000)
+nebreaks=c(1000,10000,100000,1000000)
 emstep <- max( data$iter )
 
 plot.data <- subset(data, iter==emstep & type=="Coal")
-quartiles <- calculate.quartiles( plot.data, min=100, max=1e7, mint=t0/g, maxt=t1/g )
+quartiles <- calculate.quartiles( plot.data, miny=ne0, maxy=ne1, mint=t0/g, maxt=t1/g )
 
 p <- ggplot(data=quartiles, aes(x=start*g))
-labels <- waiver()
-p <- p + scale_x_log10(limits=c(t0,t1),breaks=c(1000,3000,10000,30000,100000,300000,1000000), labels=labels)
-p <- p + scale_y_log10(limits=c(2000,1000000),breaks=c(2000,5000,10000,20000,50000,100000,200000,500000,1000000), labels=labels)
-p <- plot.ribbon( p, subset(quartiles, Population=="CEU"), "darkcyan" )
-p <- plot.ribbon( p, subset(quartiles, Population=="CHB"), "blue" )
-p <- plot.ribbon( p, subset(quartiles, Population=="YRI"), "darkred" )
+xlabels <- waiver()
+ylabels <- waiver()
+xlabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+ylabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+p <- p + scale_x_log10(limits=c(t0,t1),breaks=tbreaks, labels=xlabels)
+p <- p + scale_y_log10(limits=c(ne0,ne1),breaks=nebreaks, labels=ylabels)
+p <- plot.ribbon( p, subset(quartiles, Population=="ceu4-vb"), "darkcyan", g=g, lwd=0.5 )
+p <- plot.ribbon( p, subset(quartiles, Population=="chb4-vb"), "blue", g=g, lwd=0.5 )
+p <- plot.ribbon( p, subset(quartiles, Population=="yri4-vb"), "darkred", g=g, lwd=0.5 )
 
-p <- p + ylab("Ne")
+p <- p + ylab("Ne") + xlab("time [years ago]")
 p <- p + theme(text = element_text(size=16), legend.position="top")
 p <- p + theme(axis.title.x = element_blank())
+p <- p + annotation_logticks(sides="bl", mid=unit(0.1,"cm"),long=unit(0.1,"cm"))
 p <- p + scale_colour_manual("",
-                             breaks = c("CEU","CHB","YRI"),
-                             values = c("CEU"="blue","YRI"="darkcyan","CHB"="darkred"))
+                             breaks = c("ceu4-vb","chb4-vb","yri4-vb"),
+                             values = c("ceu4-vb"="blue","chb4-vb"="darkcyan","yri4-vb"="darkred"),
+                             labels = c("CEU","CHB","YRI"))
 
-ggsave(paste("singlepops_",emstep,"EMsteps.png",sep=""),
+# publication tweaks
+p <- p + scale_colour_Publication( labels=c("CEU","CHB","YRI"))
+p <- p + theme_Publication(base_size=10,base_family="Helvetica",
+                                                        legend.direction=c("vertical"),
+                                                        legend.position=c(.6,.8),
+                                                        legend.title=element_blank(),
+                                                        legend.key.size=0.4)
+
+ggsave(paste("singlepops_",emstep,"EMsteps.pdf",sep=""),
        p,
-       width = 12, height = 8, units = "cm")
+       width = 9, height = 7, units = "cm")
+
+##
+## make plot showing effect of VB.  Incomparable runs; need to re-run
+##
+
+quartiles2 = quartiles
+quartiles2$vb = FALSE; quartiles2$vb[ grep("-vb",quartiles2$Population) ] =TRUE
+quartiles2$int_parameter[ quartiles$int_parameter > 3 ] = quartiles2$int_parameter[ quartiles$int_parameter > 3 ] -3
+quartiles2$Population <- pops[ quartiles2$int_parameter ]
+
+p <- ggplot(data=quartiles2, aes(x=start*g))
+xlabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+ylabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+p <- p + scale_x_log10(limits=c(t0,t1),breaks=tbreaks, labels=xlabels)
+p <- p + scale_y_log10(limits=c(ne0,ne1),breaks=nebreaks, labels=ylabels)
+p <- plot.ribbon( p, subset(quartiles2, Population=="ceu4"), "darkcyan", g=g, lwd=0.5, linetype="solid2" )
+p <- plot.ribbon( p, subset(quartiles2, Population=="chb4"), "blue", g=g, lwd=0.5, linetype="solid2" )
+p <- plot.ribbon( p, subset(quartiles2, Population=="yri4"), "darkred", g=g, lwd=0.5, linetype="solid2" )
+
+p <- p + ylab("Ne") + xlab("time [years ago]")
+p <- p + theme(text = element_text(size=16), legend.position="top")
+p <- p + theme(axis.title.x = element_blank())
+p <- p + annotation_logticks(sides="bl", mid=unit(0.1,"cm"),long=unit(0.1,"cm"))
+
+
+# publication tweaks
+p <- p + scale_colour_Publication( labels=c("CEU","CHB","YRI"))
+p <- p + scale_linetype_manual(breaks=c(TRUE,FALSE),values=c("11","solid"),labels=c("VB","EM"))
+p <- p + theme_Publication(base_size=10,base_family="Helvetica",
+                                                        legend.direction=c("vertical"),
+                                                        legend.position=c(.6,.8),
+                                                        legend.title=element_blank(),
+                                                        legend.key.size=0.4)
+
+ggsave(paste("singlepops_vb_em",emstep,"EMsteps.pdf",sep=""),
+       p,
+       width = 9, height = 7, units = "cm")

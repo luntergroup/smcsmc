@@ -2,31 +2,48 @@ library(ggplot2)
 library(grid)
 library(gridExtra)
 library(reshape)
+library(extrafont)
 
 source("stat-stepribbon.R")
 source("plot-utils.R")
 source("model.R")
 
 
+pops=c("ceutsi4-vb","ceugih4-vb","ceumxl4-vb","ceuchb4-vb","ceuyri4-vb","ceutsi4","ceugih4","ceumxl4","ceuchb4","ceuyri4")
+labels=pops
+data=NULL
+for (popidx in 1:(length(pops))) {
+    pop = pops[popidx]
+    data <- load.from.out( paste("data/",pop,"/result.out",sep=""), data=data, int_parameter=popidx )
+}
+data$Population <- pops[ data$int_parameter ]
+
+
 plot.model <- function( data, popidx, g=29, minne=100, modeldata=NULL, p.modelvars=NULL, m.modelvars=NULL, splitepoch=21 ) {
 
     split_time <- 385e3
-    t0 <- 1000
+    t0 <- 3000
     t1 <- 1500000
+    ne0 <- 1000
+    ne1 <- 1000000
     t1m = split_time
     N0 <- 14312
     maxne <- 3e5
     min.migr.rate <- 2e-2
+    emstep <- max( data[ data$int_parameter==popidx, ]$iter )
     ##max.migr.rate <- 5e2   ## for log scale
     max.migr.rate <- 20      ## for continuous scale
-    emstep <- max( data[ data$int_parameter==popidx, ]$iter )
+    nebreaks=c(1000,10000,100000,1000000)
+    xlabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+    ylabels <- c(expression(10^3),expression(10^4),expression(10^5),expression(10^6))
+    if (is.null(emstep)) emstep <- max( data$iter )
 
     model <- 2  ## for now
 
     plot.data <- subset(data, iter==emstep & type=="Coal" & int_parameter==popidx)
     plot.data.migration <- subset(data, iter==emstep & type=="Migr" & int_parameter==popidx)
     
-    quartiles <- calculate.quartiles( plot.data, min=minne, max=maxne, mint=t0/g, maxt=t1/g )
+    quartiles <- calculate.quartiles( plot.data, miny=ne0, maxy=ne1, mint=t0/g, maxt=t1/g )
     quartiles$Population <- paste( "Pop", quartiles$frm + 1, sep="" )
 
     data.pop1 = subset(quartiles, Population=="Pop1")
@@ -35,11 +52,11 @@ plot.model <- function( data, popidx, g=29, minne=100, modeldata=NULL, p.modelva
     data.pop2$Population <- "Pop2"
 
     p <- ggplot(data=quartiles, aes(x=start*g))
-    p <- p + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000), labels=NULL)
+    p <- p + scale_x_log10(limits=c(t0,t1),breaks=c(1000,10000,100000,1000000), labels=xlabels)
     p <- p + annotation_logticks(sides="b")
     labels <- NULL
     if (model == 2) labels <- waiver()
-    p <- p + scale_y_log10(limits=c(minne,200000),breaks=c(500,1000,2000,5000,10000,20000,50000), labels=labels)
+    p <- p + scale_y_log10(limits=c(ne0,ne1),breaks=nebreaks, labels=ylabels)
     p <- plot.ribbon( p, data.pop2, "darkcyan" )
     p <- plot.ribbon( p, data.pop1, "blue" )
 
@@ -94,22 +111,24 @@ plot.model <- function( data, popidx, g=29, minne=100, modeldata=NULL, p.modelva
 
 
 
-plot.model.allemsteps <- function( data, popidx, g=29, minne=100, max.migr.rate=10 ) {
+plot.model.allemsteps <- function( data, popidx, g=29, minne=2000, max.migr.rate=10, emstep=NULL ) {
 
-    split_time <- 385e3
+    split_time <- 386e3
     splitepoch <- 21
-    t0 <- 1000
+    t0 <- 3000
     t1 <- 1500000
     t1m = split_time
     N0 <- 14312
     maxne <- 3e5
     min.migr.rate <- 2e-2
-    emstep <- max( data$iter )
+    ##max.migr.rate <- 5e2   ## for log scale
+    max.migr.rate <- 20      ## for continuous scale
+    if (is.null(emstep)) emstep <- max( data$iter )
 
     plot.data <- subset(data, type=="Coal" & int_parameter==popidx)
     plot.data.migration <- subset(data, type=="Migr" & int_parameter==popidx)
     
-    quartiles <- calculate.quartiles( plot.data, min=minne, max=maxne, mint=t0/g, maxt=t1/g )
+    quartiles <- calculate.quartiles( plot.data, miny=minne, maxy=maxne, mint=t0/g, maxt=t1/g )
     quartiles$Population <- paste( "Pop", quartiles$frm + 1, sep="" )
 
     data.pop1 = subset(quartiles, Population=="Pop1")
@@ -133,7 +152,7 @@ plot.model.allemsteps <- function( data, popidx, g=29, minne=100, max.migr.rate=
 
     "migration"
     plot.data <- plot.data.migration
-    quartiles <- calculate.quartiles( plot.data, field="rate", mint=t0/g, maxt=t1m/g, miny=0, maxy=100, scale=4*N0, add=min.migr.rate )
+    quartiles <- calculate.quartiles( plot.data, field="rate", mint=t0/g, maxt=t1m/g, miny=0, maxy=max.migr.rate, scale=4*N0, add=min.migr.rate )
     quartiles$Population <- paste( "Pop", quartiles$frm + 1, sep="" )
 
     data.pop1 = subset(quartiles, Population=="Pop1")
@@ -209,6 +228,8 @@ grid.draw( gr1 )
 
 
 gr2 <- plot.model.allemsteps( data, 7, minne=1000, max.migr.rate=20 )
+
+
 grid.draw( gr2 )
 
 gr1 <- plot.model( data, 1, minne=1000 )

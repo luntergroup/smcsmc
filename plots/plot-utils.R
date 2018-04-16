@@ -13,11 +13,15 @@ load.from.out <- function( fname, data=NULL, np=10000, int_parameter=0 ) {
 
 plot.ribbon <- function( p, data, col="blue", g=30, lwd=1, linetype="solid", maxy=1e10 ) {
     data$maxy <- maxy
-    p <- p + geom_ribbon(data=data, aes(ymin=pmin(maxy,Q0), ymax=pmin(maxy,Q4)),
-                     stat="stepribbon", fill=col, alpha=.15, linetype=linetype)
-    p <- p + geom_ribbon(data=data, aes(ymin=pmin(maxy,Q1), ymax=pmin(maxy,Q3)),
-                         stat="stepribbon", fill=col, alpha=.25, linetype=linetype)
-    if (linetype=="solid") {
+    if (linetype != "solid2") {
+        p <- p + geom_ribbon(data=data, aes(ymin=pmin(maxy,Q0), ymax=pmin(maxy,Q4)),
+                             stat="stepribbon", fill=col, alpha=.15, linetype=linetype)
+        p <- p + geom_ribbon(data=data, aes(ymin=pmin(maxy,Q1), ymax=pmin(maxy,Q3)),
+                             stat="stepribbon", fill=col, alpha=.25, linetype=linetype)
+    }
+    if (linetype=="solid2") {
+        p <- p + geom_step(data=data, aes( y=pmin(maxy,Q2), x=start*g, colour=Population, linetype=vb), lwd=lwd )
+    } else if (linetype=="solid") {
         p <- p + geom_step(data=data, aes( y=pmin(maxy,Q2), x=start*g, colour=Population), lwd=lwd )
     } else {
         p <- p + geom_step(data=data, aes( y=pmin(maxy,Q2), x=start*g), lwd=lwd, linetype=linetype )
