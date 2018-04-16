@@ -388,6 +388,10 @@ void pfARG_core(PfParam &pfARG_para,
     // write log likelihood to out file
     pfARG_para.appendToOutFile( pfARG_para.EMcounter(), -1, 0, 1e+99, "LogL", -1, -1, 1.0, current_states.ln_normalization_factor(), 1.0 );
     clog << " Estimated log likelihood: " << current_states.ln_normalization_factor() << endl;
+
+    // write out trees
+    current_states.resample( (double)model->loci_length(), pfARG_para, NULL, 1 );
+    current_states.printTrees( pfARG_para );
     
     current_states.clear();
     Segfile->reset_data_to_first_entry();

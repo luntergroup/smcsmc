@@ -7,6 +7,7 @@
 #ifndef DESCENDANTS_H
 #define DESCENDANTS_H
 
+#include <iostream>
 
 #include "scrm/src/model.h"
 
@@ -45,5 +46,21 @@ inline bool get_next_descendant( Descendants_t& descendants, int& sample ) {
     return true;
 }
 
+
+inline void print_descendants( std::ostream& str, Descendants_t descendants ) {
+
+    int sample = 0;
+    int this_sample = 0;
+    if (get_next_descendant( descendants, sample )) {
+        do {
+            while (++this_sample < sample) {
+                str << "0";
+            }
+            str << "1";
+        } while (get_next_descendant( descendants, sample ));
+    } else {
+        str << "0";
+    }
+}
 
 #endif

@@ -277,6 +277,7 @@ class PfParam{
     // ------------------------------------------------------------------
     static const int RECORD_RECOMB_EVENT = 1;
     static const int RECORD_COALMIGR_EVENT = 2;
+    static const int RECORD_TREE_EVENT = 4;
     enum ResampleDelayType { RESAMPLE_DELAY_RECOMB, RESAMPLE_DELAY_COAL, RESAMPLE_DELAY_COALMIGR };
 
     double lag;
@@ -409,6 +410,7 @@ class PfParam{
     string recombination_map_NAME;
     string log_NAME;
     string resample_NAME;
+    string tree_NAME;
 
     // ------------------------------------------------------------------
     // Version Info

@@ -73,23 +73,23 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-EM"   ){
             this->EM_steps = readNextInput<int>();
             this->EM_bool = true;
-        } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
+        } else if ( *argv_i == "-xr" || *argv_i == "-xc" || *argv_i == "-arg" ) {
             string tmpFlag = *argv_i;
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
             first_epoch--;                                  // turn into 0-based half-open
             for (int i=0; i<last_epoch; i++) {
                 if (record_event_in_epoch.size() <= i) {
-                    // extend vector, and set default: record both recomb and coal/migr events
+                    // extend vector, and set default: record both recomb and coal/migr events, don't record ARG
                     record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT
                                                      | PfParam::RECORD_RECOMB_EVENT );
                 }
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ?
-                                                   PfParam::RECORD_COALMIGR_EVENT :
-                                                   PfParam::RECORD_RECOMB_EVENT );
+                    if (tmpFlag == "-xc")      record_event_in_epoch[i] &= ~PfParam::RECORD_COALMIGR_EVENT;
+                    else if (tmpFlag == "-xr") record_event_in_epoch[i] &= ~PfParam::RECORD_RECOMB_EVENT;
+                    else                       record_event_in_epoch[i] |= PfParam::RECORD_TREE_EVENT;
                 }
             }
         } else if ( *argv_i == "-cap"  ){
@@ -319,6 +319,7 @@ void PfParam::finalize(){
     this->log_NAME               = out_NAME_prefix + ".log";
     this->recombination_map_NAME = out_NAME_prefix + ".recomb.gz";
     this->resample_NAME          = out_NAME_prefix + ".resample";
+    this->tree_NAME              = out_NAME_prefix + ".trees.gz";
 
     // currently, using guided sampling is incompatible with auxiliary particle filters (see includeLookaheadLikelihood)
     if ( (input_RecombinationBiasFileName.size() > 0) && (auxiliary_particle_filter > 0) ) {
@@ -541,6 +542,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling [ " << ESS_fraction << " ]" << endl;
     cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(15)<<"-arg"           << setw(8) << "INT" << "  --  " << "Epoch or epoch range to record full ARG for " << endl;
     cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
     cout << endl << "Less frequently used options:" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;

@@ -119,6 +119,22 @@ public:
         event_data_ = obj.event_data_;
         children_updated_ = obj.children_updated_;
     }
+    // Copy constructor that does not steal the parent pointer -- used for building tree modifying events
+    EvolutionaryEvent( const int _dummy, const EvolutionaryEvent& obj ) :
+        start_height(obj.start_height),
+        end_height(obj.end_height),
+        start_base_(obj.start_base_),
+        end_base_(obj.end_base_),
+        a( obj.a.coal_migr_population ),
+        parent_(NULL),
+        weight(obj.weight),
+        event_data_(obj.event_data_),
+        descendants( obj.descendants )
+    {
+        this->init();
+        event_data_ = obj.event_data_;
+        children_updated_ = obj.children_updated_;
+    }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
         std::cout << "Destructor is called -- problem!" << std::endl;
@@ -136,6 +152,7 @@ public:
     bool is_coalmigr() const          { return start_base_ < 0; }
     bool is_no_event() const          { return event_data_ == -2; }
     bool is_recomb_event() const      { assert(is_recomb()); return event_data_ > -2; }
+    bool is_time_recomb_event() const { assert(is_recomb()); return event_data_ == 0; }
     bool is_coal_event() const        { assert(is_coalmigr()); return event_data_ == -1; }
     bool is_migr_event() const        { assert(is_coalmigr()); return event_data_ >= 0; }
     int recomb_event_count() const    { return is_recomb_event(); }
@@ -237,6 +254,8 @@ public:
         return start_height; }
     double get_end_height() const {
         return end_height; }
+    double get_recomb_pos() const {
+        return a.recomb_pos; }
     int get_weight() const {
         return weight;
     }

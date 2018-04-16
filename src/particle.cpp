@@ -149,7 +149,7 @@ void ForestState::copyEventContainers(const ForestState & copied_state ) {
 
 
 void ForestState::init_EventContainers( Model * model ) {
-    for (size_t i=0; i < model->change_times_.size(); i++) {
+    for (size_t i=0; i < model->change_times_.size() + 1; i++) {
         eventTrees.push_back( NULL );
     }
 }
@@ -231,6 +231,14 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
             }
             // add event in tree data structure
             recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
+            if ((pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_TREE_EVENT) &&
+                recomb_event->is_recomb_event()) {
+                int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
+                event_mem = Arena::allocate( tree_epoch );   // allocate memory
+                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *recomb_event );
+                tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+            }
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -274,6 +282,15 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
             }
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
+            if ((pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_TREE_EVENT) &&
+                !migrcoal_event->is_no_event()) {
+                int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
+                event_mem = Arena::allocate( tree_epoch );   // allocate memory
+                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *migrcoal_event );
+                tree_event->set_descendants( coal_event ? get_descendants( active_node(i) ) : 0 ); // set signature for node's descendants
+                tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+            }
             assert(migrcoal_event->print_event());
         }
     }
@@ -353,6 +370,14 @@ void ForestState::record_recomb_event( double event_height )
     assert (event->start_base() == this->current_base());
     event->set_recomb_event_time( event_height );
     event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+    // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
+    if ((pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_TREE_EVENT) &&
+        !event->is_no_event()) {
+        int tree_epoch = eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+        void* event_mem = Arena::allocate( tree_epoch );   // allocate memory
+        EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *event );
+        tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+    }
 }
 
 
@@ -363,7 +388,7 @@ void ForestState::resample_recombination_position(void) {
     this->resampleNextBase();
 
     // then, create private event records, in effect re-doing the work of record_recomb_event
-    for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
+    for (int epoch = 0; epoch < model().change_times_.size(); epoch++) {
         if ((pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) &&
             epoch <= max_epoch_to_record_) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying

@@ -22,6 +22,7 @@
 */
 
 #include "particleContainer.hpp"
+#include "descendants.hpp"
 
 
 /*! \brief Particle filtering Initialization
@@ -510,3 +511,45 @@ void ParticleContainer::set_particles_with_random_weight(){
     }
 }
 
+
+void ParticleContainer::printTrees( const PfParam& pfparam ) {
+
+    int tree_epoch = particles[0]->eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+    EvolutionaryEvent* event = particles[0]->eventTrees[ tree_epoch ];
+    if (event == NULL) return;                                       // no trees were stored
+    {
+        // put in a scope to close the files automatically after dumping trees
+        ofstream tree_file( pfparam.tree_NAME.c_str(), ios::out | ios::binary );
+        boost::iostreams::filtering_ostream out;
+        out.push( boost::iostreams::gzip_compressor() );
+        out.push( tree_file );
+        out << setiosflags(ios::fixed) << setprecision(1);
+        while (event) {
+            double x = event->end_base();
+            double t = event->get_end_height();
+            int from_pop = -1;
+            int to_pop = -1;
+            string eventcode = "R";
+            if (event->is_recomb()) {
+                if (event->is_time_recomb_event()) {
+                    t = event->get_recomb_pos();
+                    x = event->start_base();   // a recombination event is associated to the opportunity of subsequent recombinations
+                } else {
+                    x = event->get_recomb_pos();
+                }
+            }
+            if (event->is_coalmigr()) {
+                from_pop = event->get_population();
+                eventcode = "C";
+                if (event->is_migr_event()) {
+                    to_pop = event->get_migr_to_population();
+                    eventcode = "M";
+                }
+            }
+            out << eventcode << "\t" << x + pfparam.start_position - 1 << "\t" << t << "\t" << from_pop << "\t" << to_pop << "\t";
+            print_descendants( out, event->get_descendants() );
+            out << endl;
+            event = event->parent();
+        }
+    }
+}

@@ -67,6 +67,7 @@ class ParticleContainer {
         void normalize_probability();
         void clear();
         double ln_normalization_factor() const { return this->ln_normalization_factor_; }
+        void printTrees( const PfParam& pfparam );
 
         //
         // Debugging tools
