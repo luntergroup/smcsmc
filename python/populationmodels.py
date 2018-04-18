@@ -273,17 +273,17 @@ class Population:
         my_migrationcommands = self.migration_commands if inference_migrationcommands is None else inference_migrationcommands
 
         expression = []
-        if self.vb: expression.append("-vb")
+        if vb: expression.append("-vb")
         for i in range(len(my_changepoints)):
             time = my_changepoints[i]
             popsizes = my_popsizes[i]
             if len(set(popsizes)) == 1:
-                if self.vb: expression.append("-eN {} {} {}".format(time, popsizes[0], self.population_event_counts[i][0]))
-                else:       expression.append("-eN {} {}".format(time, popsizes[0]))
+                if vb: expression.append("-eN {} {} {}".format(time, popsizes[0], self.population_event_counts[i][0]))
+                else:  expression.append("-eN {} {}".format(time, popsizes[0]))
             else:
                 for idx, popsize in enumerate(popsizes):
-                    if self.vb: expression.append("-en {} {} {} {}".format(time, idx+1, popsize, self.population_event_counts[i][idx]))
-                    else:       expression.append("-en {} {} {}".format(time, idx+1, popsize))
+                    if vb: expression.append("-en {} {} {} {}".format(time, idx+1, popsize, self.population_event_counts[i][idx]))
+                    else:  expression.append("-en {} {} {}".format(time, idx+1, popsize))
             migration_matrix = my_migrationrates[i]
             all_rates = set( migration_matrix[j][k]
                              for j,k in itertools.product( range(self.num_populations),
@@ -295,8 +295,8 @@ class Population:
                 total_symmetric_rate = rate * (self.num_populations - 1)
                 total_event_count = sum( self.migration_event_counts[i][j][k] for j,k in itertools.product(range(self.num_populations),
                                                                                                            range(self.num_populations) ) )
-                if self.vb: expression.append("-eM {} {} {}".format(time, total_symmetric_rate, total_event_count))
-                else:       expression.append("-eM {} {}".format(time, total_symmetric_rate))
+                if vb: expression.append("-eM {} {} {}".format(time, total_symmetric_rate, total_event_count))
+                else:  expression.append("-eM {} {}".format(time, total_symmetric_rate))
             else:
                 if len(all_rates) > 1:
                     expression.append("-ema {}".format(time))
@@ -306,8 +306,8 @@ class Population:
                     # which seems to contradict the help text of scrm.
                     for j in range(self.num_populations):
                         for k in range(self.num_populations):
-                            if self.vb: expression.append("{} {}".format(migration_matrix[j][k], self.migration_event_counts[i][j][k]))
-                            else:       expression.append("{}".format(migration_matrix[j][k]))
+                            if vb: expression.append("{} {}".format(migration_matrix[j][k], self.migration_event_counts[i][j][k]))
+                            else:  expression.append("{}".format(migration_matrix[j][k]))
             migration_command = my_migrationcommands[i]
             if migration_command is not None:
                 expression.append(migration_command)

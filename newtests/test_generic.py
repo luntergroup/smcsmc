@@ -58,6 +58,7 @@ class TestGeneric(unittest.TestCase):
         self.m_step = True
         self.ancestral_aware = False
         self.phased = True
+        self.vb = False
         self.chunks = 1
         self.lag = 1.0
         self.smcsmc_change_points = None
@@ -145,6 +146,7 @@ class TestGeneric(unittest.TestCase):
         seedopt = "-seed {seed}".format(seed=' '.join(map(str,self.seed)))
         segopt = "-seg {}".format( self.pop.filename )
         guideopt = "-alpha {}".format( self.guided_recomb_alpha ) if self.guided_recomb_alpha != 0 else ""
+        vbopt = "-vb" if self.vb else ""
 
         ### TODO: I suspect this doesn't work anymore, as self.pop.core_command_line already
         ###       specifies the epochs to infer.  That's probably what we want to do anyway,
@@ -190,7 +192,7 @@ class TestGeneric(unittest.TestCase):
                     raise ValueError("Unknown delay_type")
 
         if not self.infer_recombination:
-            recinfopt = "-no_infer_recomb" if ".py" in self.inference_command else "-xr 1-{}".format(num_epochs)
+            recinfopt = "-no_infer_recomb" if ".py" in self.smcsmcpath else "-xr 1-{}".format(num_epochs)
 
         if self.ancestral_aware:
             ancawareopt = "-ancestral_aware"
@@ -205,7 +207,7 @@ class TestGeneric(unittest.TestCase):
             clumpopt = "-clump {}".format(" ".join(map(str, self.clump)))
             
         self.inference_command = "{smcsmc} {core} {nsam} {recinf} {np} {em} {guide} {maxne} {chunks} {clump} {apf} " \
-                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep}".format(
+                                 "{lag} {epochs} {seed} {seg} {pilots} {ancestral_aware} {mstep} {vb}".format(
                                      smcsmc = self.smcsmcpath,
                                      core = core_cmd,
                                      nsam = nsamopt,
@@ -223,7 +225,8 @@ class TestGeneric(unittest.TestCase):
                                      seg = segopt,
                                      pilots = pilotsopt,
                                      ancestral_aware = ancawareopt,
-                                     mstep = mstepopt)
+                                     mstep = mstepopt,
+                                     vb = vbopt)
         return self.inference_command
 
     # helper -- generate simulated data, if this has not been done yet

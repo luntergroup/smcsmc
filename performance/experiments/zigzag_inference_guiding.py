@@ -29,7 +29,7 @@ rho = 3.5e-9  # from msmc paper (supp pg. 11):  zigzag simulation uses -t 7156 -
 N0 = 14312    # from msmc paper (supp pg. 11):  7156 = 4 N0 mu L, L = 10e6
 
 # name of this experiment
-experiment_name = "zigzag_inference_guiding"
+experiment_name = "zigzag_vb"
 
 # class implementing the experiment outline
 import test_const_pop_size
@@ -37,8 +37,8 @@ experiment_class = test_const_pop_size.TestConstPopSize_FourEpochs
 
 
 # main experiment - different clumped resampling strategies, keyed by smcseed  (see particle.cpp - hardcoded)
-experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'mstep':mstep }
-                   for ( length, smcseed, np, em, guide, bias, mstep) in itertools.product(
+experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide':guide, 'bias':bias, 'vb':vb }
+                   for ( length, smcseed, np, em, guide, bias, vb) in itertools.product(
                            [seqlen_infpar],
                            inferences,
                            particles,
@@ -56,7 +56,7 @@ if missingdata:
                         'em':0,
                         'guide':0,
                         'bias':1,
-                        'mstep':True}]
+                        'vb':True}]
     inference_reps = 1
 
 
@@ -76,15 +76,15 @@ def schiffels_ne( t, n0=5 ):
 
 
 # run an experiment; keyword parameters agree with those in experiment_pars
-def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
+def run_experiment( length, smcseed, np, em, guide, bias, vb ):
     simseed = smcseed
     if missingdata:
         missing_leaves = [0,1,2,3,4,5,6,7]
         label = "L{}_S{}_N{}_missing".format(int(length),smcseed,np)
     else:
         missing_leaves = []
-        label = "L{}_S{}_N{}_G{}_B{}_M{}".format(int(length),smcseed,np,guide,bias,mstep)
-    strpar = "guide{}_bias{}_mstep{}".format(guide,bias,mstep)
+        label = "L{}_S{}_N{}_G{}_B{}_VB{}".format(int(length),smcseed,np,guide,bias,vb)
+    strpar = "guide{}_bias{}_vb{}".format(guide,bias,vb)
     if experiment_base.have_result( name=experiment_name,
                                     sequence_length=length,
                                     dataseed=simseed,
@@ -118,13 +118,14 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
     # set inference parameters
     e.popt = None
     nT = 256.0     # number of segments before joining; msmc paper, online methods "parameter inference"
-    scale = 7
+    scale = 8
     e.smcsmc_change_points = [-math.log( 1-i/nT ) / scale for i in 
                                range(5) +         # up to ~0.0023; 1+4 epochs
                                range(6,18,2) +    # up to ~0.009;  6 epochs
                                range(18,58,5) +   # up to ~0.037;  8 epochs
                                range(58,162,13) + # up to ~0.149;  8 epochs
                                range(164,253,11)] # up to ~0.596 and beyond; 8+1 epochs
+    e.smcsmc_change_points.append(0.693)
 
     # need to set pop sizes, migr rates and commands explicitly when change pts differ between simulation and inference:
     if missingdata:
@@ -141,12 +142,14 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
         e.pop.population_sizes = e.smcsmc_initial_pop_sizes   ## TEST
         e.pop.migration_commands = None                       ## TEST
     
-    e.maxNE = 5e4
+    e.maxNE = 1e7   # was 5e4, but changed to show that EM converges to infty
     e.seed = (smcseed,)
     e.seqlen = length
     e.smcsmcpath = experiment_base.smcsmcpath
+    e.infer_recombination = False
     e.np = np
     e.em = em
+    e.vb = vb
     e.chunks = chunks
     e.submit_chunks = True
     e.aux_part_filt = 2       # always use apf=2
@@ -158,7 +161,7 @@ def run_experiment( length, smcseed, np, em, guide, bias, mstep ):
         e.bias_heights = [ e.smcsmc_change_points[i] * 4 * N0 for i in [1,3,5] ] # 32, 96, 193
         e.bias_strengths = [1.0-(bias+1), 1-(bias+1)/2.0, 1-(bias+1)/10.0, 1]
     e.guided_recomb_alpha = guide
-    e.m_step = mstep
+    e.m_step = True
 
     # perform inference and store results
     e.infer( case = smcseed )
