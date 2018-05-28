@@ -103,7 +103,8 @@ class Smcsmc:
             (2, '-ancestral_aware', '', 'Assume that haplotype 0 is ancestral'),
             (2, '-bias_heights', 't0..tn', 'Set recombination bias times to h0..hn * 4N0'),
             (2, '-bias_strengths','s1..sn','Set recombination bias strenghts'),
-            
+	    (2, '-arg','e1..en','Sample ARG from posterior at given epoch(s)'),
+
             (3, '-EM', 'n',     'Number of EM (or VB) iterations-1 ({})'.format(self.emiters)),
             (3, '-VB', '',      'Use Variational Bayes rather than EM (uniform prior for all rates)'),
             (3, '-cap', 'n',    'Set (unscaled) upper bound on effective population size'),
@@ -230,6 +231,10 @@ class Smcsmc:
             elif opts[idx] == '-C':
                 self.cconfig = opts[idx+1]
                 idx += 2
+	    elif opts[idx] == '-arg':
+		self.argb = True
+		self.argv = opts[idx+1]	
+		idx += 2
             elif opts[idx] == '-nothreads':
                 self.threads = False
                 idx += 1
@@ -389,7 +394,7 @@ class Smcsmc:
     def validate(self):
         if self.segfile == None:   raise ValueError("Option -seg or -segs required")
         if self.outprefix == None: raise ValueError("Option -o required")
-        if not os.path.exists(self.smcsmcpath):
+        if not os.path.exists(self.smcsmcpath):	
             raise ValueError("Can't find executable "+self.smcsmcpath+"; check -smcsmcpath")
         smcsmc.prepare_folder(0, log=False)
 
@@ -661,12 +666,19 @@ class Smcsmc:
         self.pop.startpos = start
         self.pop.sequence_length = end - start
         self.pop.mutation_rate = self.theta / (4 * self.pop.N0 * self.length)
+
         command = [self.smcsmcpath, self.pop.core_command_line( vb = self.vb )]
         if not self.infer_recomb:
             command.append( "-xr 1-{}".format( len(self.pop.change_points) ) )
         if self.recombination_guide != None:
             command.append( "-guide {}".format( self.recombination_guide ) )
-        command += self.smcsmc_opts
+
+	# If there is supposed to be an arg value given, append with the actual 
+	# value of the arg. 
+	if self.argb:
+		command.append( "-arg {}".format( self.argv ) ) 
+
+	command += self.smcsmc_opts
         command += ["-nsam", str(len(self.pop.sample_populations)),
                     "-startpos", str(self.pop.startpos),
                     "-EM 0",
