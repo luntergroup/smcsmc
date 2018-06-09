@@ -195,6 +195,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
     double start_base, end_base;
     double start_height, end_height;
     size_t start_height_epoch, end_height_epoch;
+    int record_mode = pfparam.record_event_in_epoch[ model().current_time_idx_ ];
 
     // find extent of time interval where an event may have occurred
     start_height = (*ti).start_height();
@@ -214,29 +215,36 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
         if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
-            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            if (!(record_mode & (PfParam::RECORD_RECOMB_EVENT | PfParam::RECORD_TREE_EVENT))) continue;
             if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
-            void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
-                                                                                end_height, end_height_epoch,
-                                                                                start_base, end_base, 1 );
             double recomb_pos = -1;
             if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
                 recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
-                recomb_event->set_recomb_event_pos( recomb_pos );
-                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
             }
-            // add event in tree data structure
-            recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
-            // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
-            if ((pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_TREE_EVENT) &&
-                recomb_event->is_recomb_event()) {
-                int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
-                event_mem = Arena::allocate( tree_epoch );   // allocate memory
-                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *recomb_event );
+            // recording recombination events?  Then add event / opportunity in tree data structure
+            if (record_mode & PfParam::RECORD_RECOMB_EVENT) {
+                void* event_mem = Arena::allocate( start_height_epoch );
+                EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                    end_height, end_height_epoch,
+                                                                                    start_base, end_base, 1 );
+                if (recomb_pos > -1) {
+                    recomb_event->set_recomb_event_pos( recomb_pos );
+                    recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
+                }
+                recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            }
+            // recording coalescent-tree-modifying events?
+            if ((record_mode & PfParam::RECORD_TREE_EVENT) && recomb_pos > -1) {
+                int tree_epoch = eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+                void* event_mem = Arena::allocate( tree_epoch );   // allocate memory
+                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                  end_height, end_height_epoch,
+                                                                                  start_base, end_base, 1 );
+                tree_event->set_recomb_event_pos( recomb_pos );
+                tree_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
                 tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
             }
             assert(recomb_event->print_event());
@@ -261,11 +269,9 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                         model().coalescent_event_count( active_node(i)->population() ) :
                         model().migration_event_count( active_node(i)->population(), tmp_event_.mig_pop() );
                     adjustWeights( exp_digamma( event_count ) / event_count );
-                    //cout << "Adjusting (coal=" << coal_event << ") count=" << event_count;
-                    //cout << " edg=" << exp_digamma(event_count) << " wt= " << exp_digamma( event_count ) / event_count << endl;
                 }
             }
-            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (!(record_mode & PfParam::RECORD_COALMIGR_EVENT)) continue;
             if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
@@ -282,9 +288,8 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
             }
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
-            // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
-            if ((pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_TREE_EVENT) &&
-                !migrcoal_event->is_no_event()) {
+            // add coalescent-tree-modifying event in data structure.  Note - must be recording coal/migr events!
+            if ((record_mode & PfParam::RECORD_TREE_EVENT) && !migrcoal_event->is_no_event()) {
                 int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
                 event_mem = Arena::allocate( tree_epoch );   // allocate memory
                 EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *migrcoal_event );
@@ -356,26 +361,30 @@ void ForestState::record_recomb_event( double event_height )
 {
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->model().current_time_idx_;
-    if (!(pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
-        return;
-    if (epoch_i > max_epoch_to_record_)    /* skip events in long missing data segments */
-        return;
-    // find the EvolutionaryEvent to add this event to.
-    EvolutionaryEvent* event = eventTrees[ epoch_i ];
-    while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
-        event = event->parent();
-        assert (event != NULL);
+    int record_mode = pfparam.record_event_in_epoch[ epoch_i ];
+    if (epoch_i > max_epoch_to_record_) return;    /* skip events in long missing data segments */
+    if (record_mode & PfParam::RECORD_RECOMB_EVENT) {
+        // find the EvolutionaryEvent to add this event to.
+        EvolutionaryEvent* event = eventTrees[ epoch_i ];
+        while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
+            event = event->parent();
+            assert (event != NULL);
+        }
+        if (event->start_base() == this->current_base()) { /* to deal with events on edge of long missing data segments */
+            event->set_recomb_event_time( event_height );
+            event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+        }
     }
-    if (event->start_base() != this->current_base()) return;  /* to deal with events on edge of long missing data segments */
-    assert (event->start_base() == this->current_base());
-    event->set_recomb_event_time( event_height );
-    event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
     // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
-    if ((pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_TREE_EVENT) &&
-        !event->is_no_event()) {
+    if ((record_mode & PfParam::RECORD_TREE_EVENT)) {
         int tree_epoch = eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
         void* event_mem = Arena::allocate( tree_epoch );   // allocate memory
-        EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *event );
+        //EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *event );
+        EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( event_height, epoch_i,
+                                                                          event_height, epoch_i,
+                                                                          this->current_base(), this->current_base(), 1 );
+        tree_event->set_recomb_event_time( event_height );
+        tree_event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
         tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
     }
 }
