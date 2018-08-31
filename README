@@ -1,1 +1,16 @@
-README.md
+# SMCSMC -- demographic inference using particle filters
+
+## Installation
+On Debian/Ubuntu based systems:
+```bash
+apt-get install build-essential autoconf autoconf-archive libgoogle-perftools-dev libboost-dev libboost-iostreams-dev libz-dev libcppunit-dev
+./bootstrap
+make
+```
+
+On Mac OS:
+```bash
+port install autoconf autoconf-archive doxygen cppunit
+./bootstrap
+make
+```
