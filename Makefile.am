@@ -1,10 +1,9 @@
-EXTRA_DIST = Doxyfile bootstrap pfpsmc/R/*r pfpsmc/R/ms_vcf.py #acinclude.m4
 SMCSMCVERSION = $(shell git show HEAD | head -1 | sed -e "s/commit //g" | cat)
 SCRMVERSION = $(shell git submodule status | grep scrm | sed -e "s/ //g" -e "s/src.*//" | cat)
 COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 
 # disable for Darwin and rescomp
-#TCMALLOC = -ltcmalloc
+TCMALLOC = -ltcmalloc
 
 # set for rescomp
 boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include
