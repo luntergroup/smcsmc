@@ -598,7 +598,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
             local_recomb_counts[ descendant-1 ][ index ] += weight / num_descendants;
         }
     }
-};
+}
 
 
 void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration ) {

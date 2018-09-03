@@ -1,7 +1,5 @@
 #!/bin/bash
 git submodule update --init --recursive
-aclocal
-autoconf
-automake -a
-./configure
+cmake .
+make
 
