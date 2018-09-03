@@ -6,28 +6,17 @@ COMPILEDATE = $(shell date -u | sed -e "s/ /-/g")
 TCMALLOC = -ltcmalloc
 
 # set for rescomp
-boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include
-boostldflags = -L/apps/well/boost/1.59.0-gcc5.4.0-py27/lib -Wl,-rpath,/apps/well/boost/1.59.0-gcc5.4.0-py27
+#boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include
+#boostldflags = -L/apps/well/boost/1.59.0-gcc5.4.0-py27/lib -Wl,-rpath,/apps/well/boost/1.59.0-gcc5.4.0-py27
 
 #############################################
 
-distdir = $(PACKAGE)-$(VERSION)
-
-bin_PROGRAMS = smcsmc smcsmc_dbg smcsmc_static
+bin_PROGRAMS = smcsmc scrm smcsmc_dbg # smcsmc_static
 check_PROGRAMS = unittests smcsmc_prof smcsmc_gperf
-scrmcheck_PROGRAMS = scrm smcsmcSCRM smcsmcSCRM_dbg scrm_dbg
-scrmcheckdir = bindir
 
 PROG = SMCSMC
 
 TESTS = unittests
-
-.PHONY: scrmcheck
-scrmcheck:
-	make scrm scrm_dbg
-	make smcsmcSCRM
-	make smcsmcSCRM_dbg
-
 
 .PHONY: generate_vcf$(EXEEXT)
 generate_vcf$(EXEEXT):
@@ -44,7 +33,6 @@ common_flags = -std=c++11 -O3 -Wall -Wno-unknown-pragmas -Isrc/scrm/src/ -Isrc/s
 
 # Binary flags
 smcsmc_CXXFLAGS          = $(common_flags) -DNDEBUG -O3 $(boostinclude)
-smcsmcSCRM_CXXFLAGS      = $(smcsmc_CXXFLAGS) -D_SCRM
 scrm_CXXFLAGS            = $(common_flags) -DNDEBUG -O3
 smcsmc_LDADD             = -lboost_iostreams -lz ${TCMALLOC}
 scrm_LDADD               = -lboost_iostreams -lz ${TCMALLOC}
@@ -52,9 +40,7 @@ smcsmc_LDFLAGS           = $(boostldflags)
 scrm_LDFLAGS             = $(boostldflags)
 
 # Debugger flags
-scrm_dbg_CXXFLAGS            = $(common_flags)
 smcsmc_dbg_CXXFLAGS          = -std=c++0x -I src/scrm/src/ -Isrc/ -Isrc/scrm/src/random -fno-omit-frame-pointer -O3
-smcsmcSCRM_dbg_CXXFLAGS      = $(smcsmc_dbg_CXXFLAGS) -D_SCRM
 smcsmc_dbg_LDADD             = -lboost_iostreams -lz ${TCMALLOC}
 
 # Profiler flags
@@ -62,9 +48,9 @@ smcsmc_prof_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std
 smcsmc_prof_LDADD        = -lboost_iostreams -lz ${TCMALLOC}
 
 # Static flags
-smcsmc_static_CXXFLAGS   = $(smcsmc_CXXFLAGS)
-smcsmc_static_LDFLAGS    = -static -static-libgcc -static-libstdc++
-smcsmc_static_LDADD      = -lboost_iostreams -lz ${TCMALLOC}
+#smcsmc_static_CXXFLAGS   = $(smcsmc_CXXFLAGS)
+#smcsmc_static_LDFLAGS    = -static -static-libgcc -static-libstdc++
+#smcsmc_static_LDADD      = -lboost_iostreams -lz ${TCMALLOC}
 
 # Gperf flags
 smcsmc_gperf_CXXFLAGS     = $(common_flags) -DNDEBUG -fno-omit-frame-pointer -std=c++0x -DGPERF -O3
@@ -80,8 +66,6 @@ smcsmc_gperf_LDADD        = /usr/lib/libtcmalloc.so -lboost_iostreams -lz -lprof
 # Tester flags
 unittests_CXXFLAGS       = -DUNITTEST -DNDEBUG -std=c++0x -Isrc/ -I src/scrm/src/ -Isrc/scrm/src/random --coverage
 unittests_LDADD          = -lcppunit -ldl -lboost_iostreams -lz
-
-
 
 scrm_src = src/scrm/src/node.cc \
            src/scrm/src/node.h \
@@ -130,16 +114,13 @@ smcsmc_shared_SOURCES = $(shared_SOURCES)
 
 # Binary sources
 smcsmc_SOURCES          = $(smcsmc_shared_SOURCES) src/smcsmc.cpp
-smcsmcSCRM_SOURCES      = $(smcsmc_SOURCES)
 scrm_SOURCES            = $(scrm_src) src/scrm/src/scrm.cc
 
 # Debugger sources
-scrm_dbg_SOURCES  = $(scrm_debug_src) $(scrm_SOURCES)
 smcsmc_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
-smcsmcSCRM_dbg_SOURCES = $(smcsmc_SOURCES) $(debug_src)
 
 # Static sources
-smcsmc_static_SOURCES = $(smcsmc_SOURCES)
+#smcsmc_static_SOURCES = $(smcsmc_SOURCES)
 
 # Profiler sources
 smcsmc_prof_SOURCES = $(smcsmc_SOURCES)
