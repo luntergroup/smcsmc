@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
 project(smcsmc)
 
 set(VERSION 0.1-beta)
@@ -57,11 +59,13 @@ string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}"
                               "-DCOMPILEDATE=\\\"${COMPILEDATE}\\\" "
                               "-DVERSION=\\\"${VERSION}\\\" ")
 
+find_package(Tcmalloc)
+
 find_package(Boost 1.45.0 COMPONENTS iostreams regex)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_executable(smcsmc ${SMCSMC_SRC} ${SCRM_SRC} src/smcsmc.cpp)
 add_executable(scrm ${SCRM_SRC} src/scrm/src/scrm.cc)
 
-target_link_libraries(smcsmc ${Boost_LIBRARIES})
+target_link_libraries(smcsmc ${Boost_LIBRARIES} ${Tcmalloc_LIBRARIES})
 target_include_directories(smcsmc PRIVATE src/scrm/src src/scrm/src/random)
