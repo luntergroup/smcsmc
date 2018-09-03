@@ -1,4 +1,18 @@
 pth=/well/gerton/Tasks/smcsmc-analyses/run-singlepops
+#simpth=/well/gerton/Tasks/smcsmc-analyses/smcsmc/performance/experiments/data-goodsimulation1/
+simpth=/well/gerton/Tasks/smcsmc-analyses/smcsmc/performance/experiments/data/
+
+mkdir -p msmc
+cp /well/gerton/Tasks/smcsmc-analyses/run-msmc/*.out msmc/
+
+for pop in ceu yri ; do
+    for run in 0 ; do
+        dir=sim-${pop}-${run}
+        mkdir ${dir}
+        cat $simpth/simulate-${pop}L2500000000_S${run}_*/result.out | awk '$13==-1 || NR==1' > ${dir}/result.out
+    done
+done
+exit(1)
 
 # first, run plot-zigzag.sh on bender to update .dta
 scp rescomp:/well/gerton/Tasks/smcsmc-analyses/smcsmc-bender/performance/experiments/zigzag.dta .

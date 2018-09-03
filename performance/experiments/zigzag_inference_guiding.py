@@ -16,13 +16,21 @@ import experiment_base
 
 
 # parameters for this experiment.  Estimated to take 2.5 days for 100 chunks on the cluster
-missingdata = False
-inferences = range(12)
+inferences = range(8)  ## start with a handful at first, as the cluster is very busy
 particles = [30000]
-emiters = 30
+emiters = 50
 seqlen_infpar = 2000e6
-simseed = 1
 chunks = 100  # don't forget to use -c -C "-P lunter.prjb -q long.qb"
+
+# second run - shorter sequence, fewer particles, more iterations, more repeats
+inferences = range(15)
+particles = [10000]
+emiters = 75
+seqlen_infpar = 1000e6
+chunks = 25
+
+missingdata = False
+simseed = 1
 
 mu = 1.25e-8  # from msmc paper (pg. 920)
 rho = 3.5e-9  # from msmc paper (supp pg. 11):  zigzag simulation uses -t 7156 -r 2000 => mu/rho = 3.578
@@ -45,7 +53,7 @@ experiment_pars = [{'length':length, 'smcseed':smcseed, 'np':np, 'em':em, 'guide
                            [emiters],
                            [0],
                            [2],
-                           [True] ) ]
+                           [False,True] ) ]
 
 
 if missingdata:
@@ -183,7 +191,7 @@ def plot_experiment():
     truth = pd.DataFrame( data = [ (t*4*N0, N0*schiffels_ne(t, n0=rel_ne))
                                    for t in [ math.pow(10,j/100.0)/(g*4*N0)
                                               for j in range(250,650)]],
-                          columns = ["t","Ne"] )
+                          columns = ["start","Ne"] )
     r('plot.smcsmc')( df, truth, g )
         
 if __name__ == "__main__":

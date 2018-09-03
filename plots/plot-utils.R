@@ -11,6 +11,16 @@ load.from.out <- function( fname, data=NULL, np=10000, int_parameter=0 ) {
     return(newdata)
 }
 
+load.msmc <- function( fname, data=NULL, np=10000, int_parameter=0 ) {
+    newdata <- read.table( fname, header=T )
+    names(newdata) <- c("idx","start","end","ne")
+    newdata$aux_part_filt <- 0
+    newdata$int_parameter <- int_parameter
+    newdata$np <- np
+    if (!is.null(data)) newdata <- rbind( newdata, data )
+    return(newdata)
+}
+
 plot.ribbon <- function( p, data, col="blue", g=30, lwd=1, linetype="solid", maxy=1e10 ) {
     data$maxy <- maxy
     if (linetype != "solid2") {
