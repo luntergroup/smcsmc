@@ -1,5 +1,8 @@
 pth=/well/gerton/Tasks/smcsmc-analyses/run-singlepops
 
+# first, run plot-zigzag.sh on bender to update .dta
+scp rescomp:/well/gerton/Tasks/smcsmc-analyses/smcsmc-bender/performance/experiments/zigzag.dta .
+
 for run in simb-P simb-PE simb-PL ; do
     dir=ceuyri4-${run}-vb
     mkdir -p ${dir}
