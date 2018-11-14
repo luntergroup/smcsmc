@@ -76,8 +76,8 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-xr" || *argv_i == "-xc" || *argv_i == "-arg" ) {
             string tmpFlag = *argv_i;
             int last_epoch;
-            int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
-            first_epoch--;                                  // turn into 0-based half-open
+            int first_epoch = readRange(last_epoch);        // obtain 0-based closed interval
+            last_epoch++;                                   // turn into 0-based half-open
             for (int i=0; i<last_epoch; i++) {
                 if (record_event_in_epoch.size() <= i) {
                     // extend vector, and set default: record both recomb and coal/migr events, don't record ARG
@@ -346,7 +346,7 @@ void PfParam::finalize(){
     }
     if (record_event_in_epoch.size() > this->model.change_times_.size()) {
         //throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
-        throw OutOfEpochRange(to_string(record_event_in_epoch.size()), to_string(this->model.change_times_.size()));
+        throw OutOfEpochRange(to_string(record_event_in_epoch.size()-1), to_string(this->model.change_times_.size()-1));
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
@@ -540,9 +540,9 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-calibrate_lag" << setw(8) << "FLT" << "  --  " << "Lag before extracting events (multiple of survival time) [ " << lag_fraction << " ]" << endl;
     cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum tree height, in unit of 4N0 [ 3 ]" <<endl;
     cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling [ " << ESS_fraction << " ]" << endl;
-    cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
-    cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
-    cout << setw(15)<<"-arg"           << setw(8) << "INT" << "  --  " << "Epoch or epoch range to record full ARG for " << endl;
+    cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (0-based, closed)" << endl;
+    cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 0-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(15)<<"-arg"           << setw(8) << "INT" << "  --  " << "Epoch or epoch range to record full ARG for" << endl;
     cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
     cout << endl << "Less frequently used options:" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;

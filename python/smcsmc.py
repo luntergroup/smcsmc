@@ -13,6 +13,17 @@ import populationmodels
 import processrecombination
 import execute
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def listitems(d):
+        return list(d.items())
+else:
+    # Python 2
+    def listitems(d):
+        return d.items()
+
 #
 # pattern + start/end time (generations)
 #
@@ -95,7 +106,7 @@ class Smcsmc:
             (2, '-maxgap', 'n', 'Split .seg files over gaps larger than maxgap (200 kb)'),
             (2, '-minseg', 'n', 'After splitting ignore segments shorter than minseg (500 kb)'),
             (2, '-startpos', 'x', 'First locus to process (1)'),
-            (2, '-P', 's e p', 'Divide time interval [s,e] (in generations) equally on log scale, using pattern p'),
+            (2, '-P', 's e p', 'Divide time interval [s,e] (generations; s>0) equally on log scale, using pattern p (e.g. 1*2+8*1)'),
             (2, '-Np', 'n',    'Number of particles'),
             (2, '-seed', 's',  'Random number seed'),
             (2, '-calibrate_lag','s','Accumulate inferred events with a lag of  s  times the survival time (2)'),
@@ -104,7 +115,7 @@ class Smcsmc:
             (2, '-ancestral_aware', '', 'Assume that haplotype 0 is ancestral'),
             (2, '-bias_heights', 't0..tn', 'Set recombination bias times to h0..hn * 4N0'),
             (2, '-bias_strengths','s1..sn','Set recombination bias strenghts'),
-	    (2, '-arg','range','Sample posterior ARG at given epoch or epoch range (1-based, closed; e.g. 1-10)'),
+	    (2, '-arg','range','Sample posterior ARG at given epoch or epoch range (0-based, closed; e.g. 0-10)'),
 
             (3, '-EM', 'n',     'Number of EM (or VB) iterations-1 ({})'.format(self.emiters)),
             (3, '-VB', '',      'Use Variational Bayes rather than EM (uniform prior for all rates)'),
@@ -232,9 +243,9 @@ class Smcsmc:
             elif opts[idx] == '-C':
                 self.cconfig = opts[idx+1]
                 idx += 2
-	    elif opts[idx] == '-arg':
-		self.argv = opts[idx+1]	
-		idx += 2
+            elif opts[idx] == '-arg':
+                self.argv = opts[idx+1]
+                idx += 2
             elif opts[idx] == '-nothreads':
                 self.threads = False
                 idx += 1
@@ -279,7 +290,7 @@ class Smcsmc:
                 mask += masklet * a
         except:
             raise ValueError("Problem parsing pattern '{}'".format(patt))
-        times = [0] + [start * math.exp( math.log(end/start) * i / (len(mask)-2.0)) / (4 * self.N0)
+        times = [0] + [start * math.exp( math.log(end/start) * i / (len(mask)-1.0)) / (4 * self.N0)
                        for i in range(len(mask))]
         # generate -eN commands
         new_time_opts = []
@@ -537,7 +548,7 @@ class Smcsmc:
         iters = set()
         for line in of:
             elts = { header[idx] : elt for idx, elt in enumerate(line.strip().split()) }
-            for name, val in list(elts.iteritems()):  # Leave "Type" as String
+            for name, val in listitems(elts):  # Was list(elts.iteritems(); 2.x/3.x portability.  [Leave "Type" as String]
                 if name in ["Iter","Epoch","From","To","Clump"]:
                     elts[name] = int(val)
                 elif name in ["Start","End","Opp","Count","Rate","Ne","ESS","InitRate"]:
@@ -590,12 +601,15 @@ class Smcsmc:
 
 
     def wait_for_outfile(self, iteration, chunk):
-        sleeptime = 30
+        sleeptime = 0.5
+        totaltime = 0
         while True:
             if self.have_outfile( iteration, chunk ):
                 logger.info("Found chunk {}".format(chunk))
                 break
-            if sleeptime == 30: logger.info("Waiting for chunk {} to appear...".format(chunk))
+            totaltime += sleeptime
+            if totaltime > 30 and totaltime < 30+sleeptime:
+                logger.info("Waiting for chunk {} to appear...".format(chunk))
             time.sleep( sleeptime )
             sleeptime *= 1.02
 
@@ -669,13 +683,13 @@ class Smcsmc:
 
         command = [self.smcsmcpath, self.pop.core_command_line( vb = self.vb )]
         if not self.infer_recomb:
-            command.append( "-xr 1-{}".format( len(self.pop.change_points) ) )
+            command.append( "-xr 0-{}".format( len(self.pop.change_points)-1 ) )
         if self.recombination_guide != None:
             command.append( "-guide {}".format( self.recombination_guide ) )
-	if self.argv:
-	    command.append( "-arg {}".format( self.argv ) )
+        if self.argv:
+            command.append( "-arg {}".format( self.argv ) )
 
-	command += self.smcsmc_opts
+        command += self.smcsmc_opts
         command += ["-nsam", str(len(self.pop.sample_populations)),
                     "-startpos", str(self.pop.startpos),
                     "-EM 0",

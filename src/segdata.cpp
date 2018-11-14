@@ -413,9 +413,22 @@ void Segment::set_lookahead() {
 vector<int> Segment::extract_field_VARIANT ( const string field ) {
 
     vector<int> allelic_state_at_seg_end;
+    static int number_of_fields = -1;
     assert( nsam_ == field.size() );
-    if ( nsam_ != field.size() ){
+    if ( nsam_ > field.size() ){
         throw WrongNumberOfEntry(field);
+    }
+    if ( number_of_fields == -1 ) {
+      number_of_fields = field.size();
+      if ( nsam_ != field.size() ){
+	cout << "Warning: analyzing " << nsam_ << " haplotypes, but input .seg file contains "
+	     << field.size() << " haplotypes.  Ignoring remainder." << endl;
+      }
+    } else {
+      if ( number_of_fields != field.size() ) {
+	// require input to be consistent
+        throw WrongNumberOfEntry(field);
+      }
     }
 
     for ( size_t i = 0; i < nsam_; i++ ) {
