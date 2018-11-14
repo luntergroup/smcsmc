@@ -271,6 +271,7 @@ class Smcsmc:
         if self.patt_args is None: return
         if len(self.patt_args) != 3: raise ValueError("-P should get 3 arguments (start and end generation; and pattern)")
         start, end = map(float, self.patt_args[:2])
+        if start <= 0: raise ValueError("-P: start generation should be > 0")
         patt = self.patt_args[2]
         # extract all timed options to smcsmc, and separate them from all others (including -I)
         opts = self.opts
@@ -281,7 +282,7 @@ class Smcsmc:
                 time_opts.append( (float(opts[idx+1]), opts[idx : opt_indices[ii+1]]))
             else:
                 remain_opts += opts[idx : opt_indices[ii+1] ]
-        # parse patt and generate times
+        # parse patt and generate times.  Add initial time
         mask = [1]
         try:
             for pat in patt.split('+'):
@@ -290,11 +291,14 @@ class Smcsmc:
                 mask += masklet * a
         except:
             raise ValueError("Problem parsing pattern '{}'".format(patt))
-        times = [0] + [start * math.exp( math.log(end/start) * i / (len(mask)-1.0)) / (4 * self.N0)
-                       for i in range(len(mask))]
+        # add final time, corresponding to epoch [end,infinity)
+        mask += [1]
+        # generate times
+        times = [0] + [start * math.exp( math.log(end/start) * (i-1) / (len(mask)-2.0)) / (4 * self.N0)
+                       for i in range(1,len(mask))]
         # generate -eN commands
         new_time_opts = []
-        for idx, time in enumerate(times[:-1]):
+        for idx, time in enumerate(times):
             if mask[idx] == 1:
                 # add -eN command setting the population size at this epoch to the last set population size, or 1.0 if none was set
                 last_en_opt = sorted( [(-1.0, ['-eN', '0.0', '1.0'])] + [ to for to in time_opts if to[0] <= time and to[1][0] == '-eN'] )[-1]
