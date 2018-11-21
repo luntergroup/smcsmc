@@ -293,7 +293,7 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
                 event_mem = Arena::allocate( tree_epoch );   // allocate memory
                 EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *migrcoal_event );
-                tree_event->set_descendants( coal_event ? get_descendants( active_node(i) ) : 0 ); // set signature for node's descendants
+		tree_event->set_descendants( get_descendants( active_node(i) ) );   // set signature for node's descendants
                 tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
             }
             assert(migrcoal_event->print_event());
