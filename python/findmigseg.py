@@ -75,9 +75,9 @@ h.append(h_init[:])
 events = []
 pos = []
 times = [0,0,0,0]
+# So the rest of the loop works
 
 # Read in the first line and initialize an object
-# So the rest of the loop works
 line = tree.readline()
 e,p,T,f,t,l = line.rstrip().split("\t") 
 c = Event(e,p,T,f,t,l)
@@ -102,7 +102,7 @@ for c in events :
     #   blank the record
     #   but only if it is BEFORE the last event (otherwise the event is still on the tree) 
     for j in c.l[0] :
-        if ( c.T[1] > times [j] ): 
+        if c.T[0] < times [j] and c.T[1] > times [j]:
             upd [j] = 0
             times [ j ] = 0
         # Then check if there's a migration event that is
@@ -119,15 +119,4 @@ for c in events :
 
     h.append(upd[:])
 
-#print_h(h)
 make_bed (h, pos)
-
-    
-
-
-
-
-    
-
-
-
