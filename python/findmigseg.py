@@ -1,7 +1,7 @@
 import gzip
 import sys
-import numpy as np
-tree = gzip.open(sys.argv[1], 'r')
+from optparse import OptionParser
+
 
 class Event:
 
@@ -57,13 +57,48 @@ def make_bed (h, pos) :
                 end = 0
 
 
-# From and to populations
-fp = '1'
-tp = '0'
+parser = OptionParser()
+parser.add_option("-f",
+                  "--from",
+                  dest="fp",
+                  action="store",
+                  help="From population X",
+                  type="string")
+parser.add_option("-t",
+                  "--to",
+                  dest="tp",
+                  action="store",
+                  help="To population Y",
+                  type="string")
+parser.add_option("-i",
+                  "--input",
+                  action="store",
+                  dest="tree_path",
+                  help="Path to gzipped tree file",
+                  type="string")
+parser.add_option("-s",
+                  "--start",
+                  dest="start_years",
+                  action="store",
+                  help="Upper end of era (i.e. 70 kya).",
+                  type="float")
+parser.add_option("-e",
+                  "--end",
+                  dest="end_years",
+                  action="store",
+                  help="Lower end of era (i.e. 50 kya).",
+                  type="float")
+
+(options, args) = parser.parse_args()
+
+tree = gzip.open(options.tree_path, 'r')
 
 # Start and end in generations
-start = 70000 / 29
-end = 50000 / 29
+start = options.start_years / 29
+end = options.end_years / 29
+
+fp = options.fp
+tp = options.tp
 
 # 2D Array of haplotype states
 h = []
