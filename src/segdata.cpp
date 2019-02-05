@@ -316,7 +316,7 @@ void Segment::set_lookahead() {
             continue;
 
         double have_doubleton = false;
-        distance = buffer[i].segment_start + buffer[i].segment_length - buffer[current_buf_index_].segment_start;
+        distance = buffer[i].segment_start + buffer[i].segment_length - buffer[current_buf_index_].segment_start + 0.5;
         if (num_var == 1) { // a singleton
             if (first_singleton_distance[s1] == 0) {
                 first_singleton_distance[s1] = distance;
