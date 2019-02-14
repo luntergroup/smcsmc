@@ -23,7 +23,19 @@ inline Descendants_t get_descendants( const Node* node ) {
 
     Descendants_t result = 0;
     while (node->label() == 0) {
-        result |= get_descendants( node->getLocalChild1() );
+
+	/* 02/14/19
+	 * When inferring recombination and reporting ARGs
+	 * getLocalChild1() occasionally returns a null pointer
+	 * as documented. Accounting for this possibility.
+	 *
+	 * There is probably a more appropriate fix for this issue.*/	
+        if(!node->getLocalChild1()) {
+                 std::cout << "Child pointer is null" << std::endl;
+         } else {
+               result |= get_descendants( node->getLocalChild1() );
+         }
+	result |= get_descendants( node->getLocalChild1() );
         node = node->getLocalChild2();  // could be NULL
         if (!node) return result;
     }
