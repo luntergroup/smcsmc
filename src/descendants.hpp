@@ -35,7 +35,6 @@ inline Descendants_t get_descendants( const Node* node ) {
          } else {
                result |= get_descendants( node->getLocalChild1() );
          }
-	result |= get_descendants( node->getLocalChild1() );
         node = node->getLocalChild2();  // could be NULL
         if (!node) return result;
     }
