@@ -33,11 +33,12 @@ inline Descendants_t get_descendants( const Node* node ) {
 	 * and after checking, this appears to always be the case. 
 	 *
 	 * To remedy this, I've ensured that the node is local prior
-	 * to retrieving *any* children (not just the first). */ 
+	 * to retrieving children. */ 
        	if(node->local()) {         
               	result |= get_descendants( node->getLocalChild1() );
-		node = node->getLocalChild2();  // could be NULL
-         }
+	}
+	node = node->getLocalChild2();  // could be NULL
+         
         if (!node) return result;
     }
     assert (node->label() <= 64);
