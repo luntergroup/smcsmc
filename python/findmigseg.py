@@ -1,5 +1,9 @@
 import gzip
 import sys
+import time
+import pdb
+import pandas as pd
+from tqdm import tqdm
 from optparse import OptionParser
 
 
@@ -38,24 +42,33 @@ class Event:
         print("\n")
 
 def print_h (h) : 
-    for i in range(len(h)) : 
-        print h[i]
-   
+	for i in range(len(h)) : 
+		print h[i]
+
+def convert_position ( pos, map ) :
+	idx = map[ map[1] < pos ][1].idxmax()
+	new_pos = pos - map[1][idx]
+	chr = map[0][idx].split('.')[-1]
+	return new_pos, chr
+
 def make_bed (h, pos) : 
-    for j in range(4) : 
-        start =0 
-        end = 0
-        for i in range(1, len(h)) : 
-            if( h[i][j] - h[i-1][j] == 1) :
-                start = i
-            elif ( h[i][j] - h[i-1][j] == -1) :
-                end = i
+	for j in range(4) : 
+		start =0 
+		end = 0
+		for i in range(1, len(h)) : 
+			if( h[i][j] - h[i-1][j] == 1) :
+				start = i
+			elif ( h[i][j] - h[i-1][j] == -1) :
+				end = i
 
-            if ( start > 0 and end > 0): 
-                print j, float(pos[start-1]) ,float(pos[end-1]), float(pos[start-1]) - float(pos[end-1])
-                start = 0
-                end = 0
-
+		if ( start > 0 and end > 0): 
+			print convert_position( float(pos[end-1]), map = merged)[1],  \
+				convert_position( float(pos[start-1]), map = merged)[0], \
+				convert_position( float(pos[end-1]), map = merged)[0], \
+				convert_position( float(pos[start-1]), map = merged)[0] - \
+				convert_position( float(pos[end-1]), map = merged)[0] 
+			start = 0
+			end = 0
 
 parser = OptionParser()
 parser.add_option("-f",
@@ -82,16 +95,28 @@ parser.add_option("-s",
                   action="store",
                   help="Upper end of era (i.e. 70 kya).",
                   type="float")
+parser.add_option("-m", 
+                    "--map",
+                    dest="map",
+                    action="store",
+                    help="Merged map file with relative positions.")
 parser.add_option("-e",
                   "--end",
                   dest="end_years",
                   action="store",
                   help="Lower end of era (i.e. 50 kya).",
                   type="float")
+parser.add_option("-n",
+                  "--nhap",
+                  dest="nhap",
+                  action="store",
+                  help="Number of haplotypes",
+                  type="int")
 
 (options, args) = parser.parse_args()
 
 tree = gzip.open(options.tree_path, 'r')
+merged = pd.read_csv(options.map, sep = '\t', header=None)
 
 # Start and end in generations
 start = options.start_years / 29
@@ -100,22 +125,23 @@ end = options.end_years / 29
 fp = options.fp
 tp = options.tp
 
+
+# Read in the first line and initialize an object
+line = tree.readline()
+e,p,T,f,t,l = line.rstrip().split("\t") 
+c = Event(e,p,T,f,t,l)
+
 # 2D Array of haplotype states
 h = []
-h_init = [0,0,0,0]
+h_init = [0] * options.nhap
 h.append(h_init[:])
 
 # List of events, positions (for convenience), and the times of the 
 # last events for comparison with R events
 events = []
 pos = []
-times = [0,0,0,0]
+times = [0] * options.nhap
 # So the rest of the loop works
-
-# Read in the first line and initialize an object
-line = tree.readline()
-e,p,T,f,t,l = line.rstrip().split("\t") 
-c = Event(e,p,T,f,t,l)
 
 for line in tree:
     e,p,T,f,t,l = line.rstrip().split("\t")    
@@ -127,7 +153,7 @@ for line in tree:
     else:
         c.update(e,p,T,f,t,l)
 
-for c in events : 
+for c in tqdm(events) : 
     upd = h[-1] [:]
     if( len(c.T) == 1 ): 
         h.append(upd[:])
@@ -154,4 +180,5 @@ for c in events :
 
     h.append(upd[:])
 
+#pdb.set_trace()
 make_bed (h, pos)
