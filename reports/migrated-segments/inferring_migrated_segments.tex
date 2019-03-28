@@ -1,0 +1,62 @@
+%        File: inferring_migrated_segments.tex
+%     Created: Thu Mar 21 10:00 am 2019 G
+% Last Change: Thu Mar 21 10:00 am 2019 G
+%
+\documentclass[a4paper]{article}
+
+\usepackage{geometry}	
+
+
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue}
+}
+
+\geometry{scale = 0.85}
+
+\def\SMC{SMC$^2$ }
+
+\title{Inferring Migrated Segments}
+\date{}
+\begin{document}
+\maketitle
+
+\vspace{-30pt}
+
+\abstract{In this document I detail the algorithm for inferring segments which \SMC believes experienced migration in a certain period. This algorithm is implimented in findmigseg.py distributed with \SMC.}
+
+\paragraph{Data format} \SMC must be invoked with the \texttt{-args} option spanning all epochs in order to produce, along with each chunk, a \texttt{chunkN.trees.gz} file, from which we are able to derive our segments. This file details all changes to the inferred local trees along the sequence, and from it we are able to reconstruct the internal inferred ancestral recombination graph (ARG). Given below is a representative example of tree files.
+
+\lstset{tabsize=4}
+\begin{lstlisting}[xleftmargin=0.25\textwidth, caption = {An example of a tree file output from \SMC referring to a particular chunk of the genome.}, captionpos={b}]
+C	61992779.6	45050.8		0	-1	1001
+R	61992727.7	17534.6		-1	-1	1001
+C	61992727.7	25680.4		0	-1	1101
+R	61991313.0	3664.3		-1	-1	1
+C	61991313.0	5444.1		1	-1	0
+M	61991313.0	4484.5		0	1	1
+R	61989256.9	13978.3		-1	-1	01
+\end{lstlisting}
+
+This particular tree was constructed from analysing a coalescent simulation by SCRM. Each line takes the form of an event, which is either a coalescence (C), recombination (R), or migration (M). Recombinations (can) change the topology of the local tree, and going along the sequence, the place at which this happens is given in the second column. The unit here is base pairs and refers to the genomic coordinates in the build that the samples were input, though do note that the coordinates must be dereferenced against the merged map file to fully recover the input positions should there have been multiple input segment files. The third column refers to the time, in generations, that this event has been inferred to have occured. The fourth column details the population in which there was a coalescence, while the fifth column is only meaningful for migrations. In this latter case, the fourth and fifth columns denote the source and sink of migration, backwards in time.  The sixth column refers to the haplotypes involved in the event, with unnecessary zeros omitted (i.e. 1000 = 1, 1100 = 11, 1001 = 1001). Haplotypes are coded in the same order in which they were input in the segment file, while population 0 refers to the population of the first individual (in the case of multiple populations).
+
+\paragraph{Migration Segment Identification} First define a start (ancient) and end (recent) time of interest, along with a desired source (from) and sink (to) population.  We record changes to local trees across the sequence and identify trees which possess migration events of interest. We proceed through the sequence until a migration event fitting the given criteria is found; its time is recorded along with the haplotypes which were involved. We proceed to process recombinations, taking note that should a recombination event influence the identified haplotype prior to (further pastward) the identified migration, it will remove the migration signal, and the opposite is also true. We note that if a migration event is found in the recombining segment which would maintain the segment, we retain it. The retained segments are printed as a bed file format for further analysis. An example is given below.
+
+\lstdefinestyle{mystyle}{commentstyle=\color{codegreen}}
+
+\begin{lstlisting}[xleftmargin=0.1\textwidth, caption={Example usage of findmigseg.py}, captionpos={b}, language=bash]
+python2.7 findmigseg.py \
+	-i example.tree.gz 	#Input tree file
+	-f 0 -t 1 			#Source population is 0; sink is 1.
+	-s 50000 -e 10000 	#Look for migrations between 10 and 50 kya
+	-n 4 				#Four haplotypes.
+\end{lstlisting}
+
+\paragraph{Implimentation details} The algorithm is written in Python version 2.7. Note that times are input in years, rather than generations, and to and from populations are (as is consistant with \SMC, and SCRM) refering to source and sink population backwards in time. Because each chunk of the genome is processed seperately, the script must be concatinated across all chunks. The positions must be modified to respect the order given in the merged bed file. Printing is done to standard output for consistency with other tools and further manipulation.
+
+\end{document}
+
+
