@@ -14,8 +14,8 @@ TCMALLOC = -ltcmalloc
 TCMALLOC_FLAGS = "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free"
 
 # set for rescomp
-boostinclude = -I/apps/well/boost/1.59.0-gcc5.4.0-py27/include
-boostldflags = -L/apps/well/boost/1.59.0-gcc5.4.0-py27/lib -Wl,-rpath,/apps/well/boost/1.59.0-gcc5.4.0-py27
+boostinclude = -I${CONDA_PREFIX}/include
+boostldflags = -L${CONDA_PREFIX}/lib -Wl,-rpath,${CONDA_PREFIX}
 
 #############################################
 
