@@ -4,6 +4,3 @@
 [submodule "tests/utility"]
 	path = tests/utility
 	url = git@github.com:luntergroup/utilities.git
-[submodule "performance/CGATReport"]
-	path = performance/CGATReport
-	url = git@github.com:AndreasHeger/CGATReport.git
