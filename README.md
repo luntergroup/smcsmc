@@ -1,4 +1,3 @@
-# SMCSMC
 ## Demographic Inference using Particle Filters
 
 SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. 
