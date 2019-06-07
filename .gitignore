@@ -50,7 +50,6 @@ test-driver
 *_exp
 smcsmc_dbg
 smcsmc_static
-smcsmc
 src/.dirstamp
 unittests
 tests/unittest/.dirstamp
