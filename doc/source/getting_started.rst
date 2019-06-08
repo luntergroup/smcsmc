@@ -12,7 +12,7 @@ Basic Concepts
 SMCSMC is a particle filter, which means that a given number of :term:`particles<Particle>` are simulated, evaluated for an approximate likelihood, and resampled until demographic parameters have converged. Many of the options relate to the behaviour of this particle filter, and the remainder deal with the demographic model that you wish to infer. SMCSMC can infer complex demographic models involving several populations, though you should be weary of overspecifying your model. Run time increases drastically with the number of parameters needed to specify the model.   
 
 Input Format
-+++++++++++
+++++++++++++++
 
 Suppose we have the following data, saved into a file named :code:`toy.seg`. 
 
@@ -39,7 +39,7 @@ This gives the state of four haplotypes along the sequence, indicating segment s
 Segment files are specified by the :code:`seg` flag, or if more than one are used, by the :code:`segs` flag. Globs are encouraged for readability. In the case of multiple files, genetic breaks are inferred from the beginnings and ends of files. Additionally, we tell :code:`smcsmc` the number of samples we expect with :code:`nsam`, so it knows to check the :code:`seg` file for formatting issues.
 
 Basic Arguements
-++++++++++++++++
+++++++++++++++++++
 
 In addition to the segment file, we need a few more pieces of information to kick off the particle filter.
 
@@ -53,7 +53,7 @@ We also give the path to the output folder with :code:`o`.
 
 
 Running :code:`smcsmc`
----------------------
+------------------------
 
 
 .. tip:: 
@@ -69,16 +69,17 @@ Once :code:`smcsmc` is installed, we can format the arguements detailed above in
 .. code-block:: python
 
    args = {
-        'seg':    'test.seg',
-        'nsam':   '4',
-        'Np':     '10',
-        'EM':     '1',
-        'mu':     '1.25e-8',
-        'rho':    'rho',
-        'N0':     '10000',
-        'tmax':   '3.5'
-        'P':      '133 133032 31*1'
-        'o':      'smcsmc_output'
+        'seg':                  'test.seg',
+        'nsam':                 '4',
+        'Np':                   '10',
+        'EM':                   '1',
+        'mu':                   '1.25e-8',
+        'rho':                  'rho',
+        'N0':                   '10000',
+        'tmax':                 '3.5'
+        'P':                    '133 133032 31*1'
+        'no-infer-recomb':      '',
+        'o':                    'smcsmc_output'
    }
 
 We directly use this dictionary with the :code:`run_smcsmc` command, which takes as its only arguement a dictionary of arguements.
@@ -114,31 +115,75 @@ If you are following this tutorial and are only using a single input :code:`seg`
 
 An example of a `results.out` file is given here:
 
-.. code-block: bash
+.. code-block:: bash
 
-        EMstep EpochIndex EpochBegin   EpochEnd  EventType    FromPop      ToPop     Opportunity           Count            Rate              NE             ESS
-             0          0   0.000000        Inf       Coal          0         -1     1.43803e+07         720.833     5.01264e-05     9974.779387               6
-             0         -1   0.000000        Inf     Recomb         -1         -1      7.3339e+11         719.833     9.81516e-10              -1               6
-             1          0   0.000000        Inf       Coal          0         -1     1.59149e+07         793.167      4.9838e-05    10032.496392               6
-             1         -1   0.000000        Inf     Recomb         -1         -1     8.20343e+11         792.167     9.65653e-10              -1               6
-             2          0   0.000000        Inf       Coal          0         -1     1.53825e+07             769      4.9992e-05    10001.597264               6
-             2         -1   0.000000        Inf     Recomb         -1         -1     7.87734e+11             768     9.74948e-10              -1               6
-             3          0   0.000000        Inf       Coal          0         -1     1.59971e+07         800.333       5.003e-05     9994.012474               6
-             3         -1   0.000000        Inf     Recomb         -1         -1     8.21027e+11         799.333     9.73577e-10              -1               6
-             4          0   0.000000        Inf       Coal          0         -1     1.57724e+07         771.833     4.89357e-05    10217.492772               6
-             4         -1   0.000000        Inf     Recomb         -1         -1     7.97319e+11         770.833     9.66782e-10              -1               6
-             5          0   0.000000        Inf       Coal          0         -1     1.61938e+07         796.333     4.91752e-05    10167.727706               6
-             5         -1   0.000000        Inf     Recomb         -1         -1     8.21524e+11         795.333      9.6812e-10              -1               6
-             6          0   0.000000        Inf       Coal          0         -1     1.49512e+07           752.5     5.03303e-05     9934.372706               6
-             6         -1   0.000000        Inf     Recomb         -1         -1     7.64212e+11           751.5     9.83366e-10              -1               6
-             7          0   0.000000        Inf       Coal          0         -1     1.68871e+07           846.5     5.01271e-05     9974.637421               6
-             7         -1   0.000000        Inf     Recomb         -1         -1     8.43795e+11           845.5     1.00202e-09              -1               6
-             8          0   0.000000        Inf       Coal          0         -1     1.63813e+07         816.333     4.98333e-05    10033.452317               6
-             8         -1   0.000000        Inf     Recomb         -1         -1      8.2094e+11         815.333     9.93171e-10              -1               6
-             9          0   0.000000        Inf       Coal          0         -1     1.72288e+07         862.333     5.00518e-05     9989.652610               6
-             9         -1   0.000000        Inf     Recomb         -1         -1     8.82067e+11         861.333     9.76494e-10              -1               6
-            10          0   0.000000        Inf       Coal          0         -1     1.48676e+07             751     5.05127e-05     9898.501864               6
-            10         -1   0.000000        Inf     Recomb         -1         -1     7.67899e+11             750     9.76691e-10              -1               6
+        Iter  Epoch       Start       End   Type   From     To            Opp          Count           Rate             Ne         ESS  Clump
+        15      0           0         133   Coal      0     -1      307466.77      18.798649  6.1140424e-05      8177.8955      1.0272     -1
+        15      0           0         133   Coal      1     -1      324087.66      55.469939  0.00017115721      2921.2909      1.0225     -1
+        15      1         133       166.2   Coal      0     -1       167571.8      1.0002328  5.9689802e-06      83766.402      1.0791     -1
+        15      1         133       166.2   Coal      1     -1      174231.23    0.067992116  3.9024069e-07      1281260.5      1.0674     -1
+        15      2       166.2      207.68   Coal      0     -1      259801.05      40.479172  0.00015580835      3209.0707      1.1686     -1
+        15      2       166.2      207.68   Coal      1     -1      267803.96  0.00028150086  1.0511452e-09  4.7567166e+08      1.1522     -1
+        15     -1           0       1e+99  Delay     -1     -1  2.6001037e+09              0              0              0           1     -1
+        15     -1           0       1e+99   LogL     -1     -1              1      -31005174      -31005174              0           1     -1
+        15      0           0         133   Migr      0      1       178112.7      7.1251662  4.0003695e-05              0      1.0385     -1
+        15      0           0         133   Migr      1      0      186343.02  0.00022362676  1.2000812e-09              0      1.0338     -1
+        15      1         133       166.2   Migr      0      1       87712.37      0.5934193  6.7655144e-06              0      1.0819     -1
+        15      1         133       166.2   Migr      1      0       91253.03      3.0913275  3.3876437e-05              0      1.0713     -1
+        15      2       166.2      207.68   Migr      0      1      134755.98      1.0135379  7.5212833e-06              0      1.1711     -1
+        15      2       166.2      207.68   Migr      1      0      139267.34      6.0189739  4.3218847e-05              0      1.1565     -1
 
 
+
+The full interpretation of the output is somewhat involved, and we recommend referring to the supporting publication for a complete explaination of all relevant quantities. However, in brief: 
+
+* **Iter**: The EM iteration to which this file refers. In the case of aggregated files (:code:`chunkfinal.out`, :code:`result.out`), multiple iterations are represented in the same file, and it is often useful either to graph each iteration seperately to show convergence, or to select the last iteration to show the final inference.
+* **Epoch**: The discrete piece of time in which rates are assumed to be constant. The pattern which epochs follow is set by the :code:`P` flag. 
+* **Start**: The beginning of the epoch, in generations. 
+* **End**: The end of the poch, in generations.
+* **Type**: Either :code:`Coal` (coalescence), :code:`Delay`, :code:`LogL` (Log likelihood), or :code:`Migr`. The important lines for interpreting output are:
+
+  * :code:`Coal`: This line refers to coalescent events. For :code:`Coal` events, the :code:`From` refers to the population of interest while the :code:`To` is meaningless. An estimate of :code:`Ne` is shown only in :code:`Coal` lines.
+  * :code:`Migr`: This line refers to migration events. :code:`From` and :code:`To` refer to the source and the sink of migration, backwards in time. 
+
+* **Opp**: The possible time where events of this can may happen in this sequence. For recombination inference, this refers to the amount of time multiplied by the amount of sequence. 
+* **Count**: The number of events of this type inferred in this epoch. 
+* **Rate**: Either the coalescent, recombination, or migration rate. This is equal to the :code:`Count` divided by :code:`Opp`. Coalescent rates are number of coalescentn events per generation. Migration rates represent proportion migration from the source (:code:`From`) to the sink (:code:`To`) **backwards in time**.
+
+.. note::
+
+        :code:`SCRM` reports migration rates **forwards in time** while :code:`smcsmc` reports it **backwards in time**.
+
+* **Ne**: The estimated population size in this epoch. Defined to be :code:`Opp` divded by :code:`2*Count`.
+* **ESS**: Effective sample size, which is an indicator of the diversity of our particles. This is used when deciding to resample, or when to spawn new particles.
+* **Clump**: This is defined in aggregated output, and not defined in intermediary files.
+
+Important diagnostic information about the reliability of inferred rates is contained in the results file. For instance, it is often useful to look at the amount of events inferred for each epoch. In general, it should monotonically increase, though this will depend on the definition of your epochs.  Can you spot the oddity above?
+
+Very low counts in a particular epoch can be due to any number of reasons, but a good first step is to increase the number of particles. 
+
+
+Visualising Output
+------------------
+
+We provide several functions for visualising different aspects of the output. 
+
+It is a good idea to first check the convergence of your model by plotting each iteration seperately in what we refer to as a rainbow plot. Specify the path to your output :code:`result.out` file and the path to a preferred file path to store the image.
+
+.. code-block:: python
+
+        result_path = 'output/result.out'
+        plot_path = 'output/rainbow.png'
+
+        smcsmc.plot_migration(result_path, plot_path)
+
+
+An example plot is shown below, note that we have additionally specified a model from which this data was simulated. For details, please refer to the tutorials. 
+
+.. figure:: ../img/rainbow.png
+   :align: center
+
+   Estimated population size over 15 EM iterations each plotted in a different colour. The model appears to have well converged to a solution. 
+
+Plotting migration and effective population size can be done similarly with :code:`smcsmc.plot_migration` and `smcsmc.plot_ne`. See the API documentation for more information. 
 
