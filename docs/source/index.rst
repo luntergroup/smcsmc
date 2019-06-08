@@ -6,7 +6,7 @@
 Welcome to the documentation for SMCSMC!
 ===========================================
 
-This is the reference manual for SMCSMC (or :code:`SMC2`), a method and program for inferring ancestral population size and migration from whole genome sequences.
+This is the reference manual for SMCSMC (or :code:`smcsmc`), a method and program for inferring ancestral population size and migration from whole genome sequences.
 
 .. toctree::
    :maxdepth: 2
@@ -14,7 +14,7 @@ This is the reference manual for SMCSMC (or :code:`SMC2`), a method and program 
 
    introduction 
    getting_started
-   tutorials/index.rst
+   tutorials/tutorials.rst
    api
    glossary
 

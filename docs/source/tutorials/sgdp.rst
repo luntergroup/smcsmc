@@ -1,2 +1,2 @@
-Analysing Simons Global Diversity Project Data
-================================================
+Simons Global Diversity Panel
+=============================
