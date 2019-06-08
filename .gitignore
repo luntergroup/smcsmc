@@ -50,13 +50,13 @@ test-driver
 *_exp
 smcsmc_dbg
 smcsmc_static
-smcsmc
 src/.dirstamp
 unittests
 tests/unittest/.dirstamp
 doxygen_sqlite3.db
 html/
 scrm
+.Rhistory        
 smcsmcSCRM_dbg
 tests/pfARGHIST
 tests/scrm_tmp_tree

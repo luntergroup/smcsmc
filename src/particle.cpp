@@ -27,6 +27,53 @@
 #include "descendants.hpp"
 
 
+inline double fastexp(double x) {
+    // Based on a generalized continued fraction.  Just two divisions, two multiplications.
+    // If |x|<0.71844823, the relative error is < 1e-6
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 0.516167859) {
+        return 1 + 2*x / (2 - x + xx / (6 + xx * 0.1));
+    } else {
+        return exp(x);
+    }
+}
+
+
+inline double fastexp_approx(double x) {
+    // Based on a generalized continued fraction.  Just one division, two multiplications.
+    // The approximate branch is used only for |x|<1.44885, where the relative error is < 1e-2
+    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
+    double xx = x*x;
+    if (xx < 2.099166) {
+        return 1 + 2*x / (2 - x + xx * (1.0/6));
+    } else {
+        return exp(x);
+    }
+}
+
+
+inline double nchoosek(int n, int k) {
+    double nCk = 1.0;
+    for (int i=1; i<=k; i++) {
+        nCk *= (n-i+1)/double(i);
+    }
+    return nCk;
+}
+
+
+inline double exp_digamma( double x ) {
+  if (x > 10) return x - 0.5 + (x+0.5)/(24*x*x);
+  double f = 0.0;
+  while (x < 6) {
+    f = f + 1.0/x; // psi(x) = psi(x+1) - 1/x
+    x = x + 1.0;
+  }
+  double psi = log(x) - 1/(2*x) - 1/(12*x*x);
+  return exp(psi - f);
+}
+
+
 /*! \brief Initialize a new ForestState.  A copy of model/random_generator is made if own_m_and_rg==True; either way the objects are not stolen
  * @ingroup group_pf_init
  * */
@@ -35,8 +82,10 @@ ForestState::ForestState( Model* model,
                           PfParam* pfparam,
                           bool own_model_and_random_generator)
             : Forest( model, random_generator ),
-              pfparam( *pfparam ),
-              recent_recombination_count(0) {
+              lookahead_weight_(1.0),
+              pfparam( *pfparam )
+              // , recent_recombination_count(0) 
+            {
 
     /*! Initialize base of a new ForestState, then do nothing, other members will be initialized at an upper level */
     setPosteriorWeight( 1.0 );
@@ -45,6 +94,8 @@ ForestState::ForestState( Model* model,
     total_delayed_adjustment_ = 1.0;
     setSiteWhereWeightWasUpdated(0.0);
     first_event_height_ = -1.0;
+    first_coal_height_ = -1.0;
+    last_coal_height_ = -1.0;
     owning_model_and_random_generator = own_model_and_random_generator;
     if (owning_model_and_random_generator) {
         // as we're owning it, we should make copies
@@ -61,8 +112,10 @@ ForestState::ForestState( Model* model,
 */
 ForestState::ForestState( const ForestState & copied_state )
             :Forest( copied_state ),
-             pfparam( copied_state.pfparam ),
-             recent_recombination_count( copied_state.recent_recombination_count) {
+             lookahead_weight_( copied_state.lookahead_weight_), 
+             pfparam( copied_state.pfparam )
+             // , recent_recombination_count( copied_state.recent_recombination_count) 
+           {
 
     setPosteriorWeight( copied_state.posteriorWeight() );
     setPilotWeight( copied_state.pilotWeight() );
@@ -96,7 +149,7 @@ void ForestState::copyEventContainers(const ForestState & copied_state ) {
 
 
 void ForestState::init_EventContainers( Model * model ) {
-    for (size_t i=0; i < model->change_times_.size(); i++) {
+    for (size_t i=0; i < model->change_times_.size() + 1; i++) {
         eventTrees.push_back( NULL );
     }
 }
@@ -134,11 +187,15 @@ void ForestState::clear_eventContainer() {
 }
 
 
+/*! Records recombination, coalescent and migration events as they occur while simulating a tree backwards in time.
+ *  Also applies Variational Bayes likelihood factor
+ */
 void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
     double start_base, end_base;
     double start_height, end_height;
     size_t start_height_epoch, end_height_epoch;
+    int record_mode = pfparam.record_event_in_epoch[ model().current_time_idx_ ];
 
     // find extent of time interval where an event may have occurred
     start_height = (*ti).start_height();
@@ -158,22 +215,38 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
 
         if (states_[i] == 2) {
             // node i is tracing an existing non-local branch; opportunities for recombination
-            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) continue;
+            if (!(record_mode & (PfParam::RECORD_RECOMB_EVENT | PfParam::RECORD_TREE_EVENT))) continue;
+            if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = get_rec_base(active_node(i)->last_update());
             end_base = this->current_base();
             if (end_base == start_base) continue;
-            void* event_mem = Arena::allocate( start_height_epoch );
-            EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
-                                                                                end_height, end_height_epoch,
-                                                                                start_base, end_base, 1 );
             double recomb_pos = -1;
             if (tmp_event_.isRecombination() && tmp_event_.active_node_nr() == i) {
                 recomb_pos = (start_base + end_base)/2;   // we should sample from [start,end], but the data isn't used
-                recomb_event->set_recomb_event_pos( recomb_pos );
-                recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
             }
-            // add event in tree data structure
-            recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            // recording recombination events?  Then add event / opportunity in tree data structure
+            if (record_mode & PfParam::RECORD_RECOMB_EVENT) {
+                void* event_mem = Arena::allocate( start_height_epoch );
+                EvolutionaryEvent* recomb_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                    end_height, end_height_epoch,
+                                                                                    start_base, end_base, 1 );
+                if (recomb_pos > -1) {
+                    recomb_event->set_recomb_event_pos( recomb_pos );
+                    recomb_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
+                }
+                recomb_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            }
+            // recording coalescent-tree-modifying events?
+            if ((record_mode & PfParam::RECORD_TREE_EVENT) && recomb_pos > -1) {
+                int tree_epoch = eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+                void* event_mem = Arena::allocate( tree_epoch );   // allocate memory
+                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( start_height, start_height_epoch,
+                                                                                  end_height, end_height_epoch,
+                                                                                  start_base, end_base, 1 );
+                tree_event->set_recomb_event_pos( recomb_pos );
+                tree_event->set_descendants( get_descendants( active_nodes_[i] ) ); // set signature for node's descendants
+                tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+            }
             assert(recomb_event->print_event());
         } else if (states_[i] == 1) {
             // node i is tracing out a new branch; opportunities for coalescences and migration
@@ -186,11 +259,20 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
                 coal_event |= tmp_event_.isPwCoalescence();
             }
             bool migr_event = (tmp_event_.isMigration() && tmp_event_.active_node_nr() == i);
-            if (first_event_height_ < 0.0) {
-                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COALMIGR && migr_event) first_event_height_ = end_height;
-                if (coal_event) first_event_height_ = end_height;
+            if (coal_event || migr_event) {
+                if (first_event_height_ < 0.0)              first_event_height_ = end_height;
+                if (coal_event && first_coal_height_ < 0.0) first_coal_height_ = end_height;
+                last_coal_height_ = end_height;
+                if (model().variational_bayes_correction_) {
+                    double event_count =
+                        coal_event ?
+                        model().coalescent_event_count( active_node(i)->population() ) :
+                        model().migration_event_count( active_node(i)->population(), tmp_event_.mig_pop() );
+                    adjustWeights( exp_digamma( event_count ) / event_count );
+                }
             }
-            if (!(pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (!(record_mode & PfParam::RECORD_COALMIGR_EVENT)) continue;
+            if (start_height_epoch > max_epoch_to_record_) continue;
             start_base = this->current_base();
             weight += ti.contemporaries_->size( active_node(i)->population() );
             // Record coalescence and migration opportunity (note: if weight=0, there is still opportunity for migration)
@@ -206,6 +288,14 @@ void ForestState::record_all_event(TimeIntervalIterator const &ti) {
             }
             // add event in tree data structure
             migrcoal_event->add_leaf_to_tree( &eventTrees[ model().current_time_idx_] );
+            // add coalescent-tree-modifying event in data structure.  Note - must be recording coal/migr events!
+            if ((record_mode & PfParam::RECORD_TREE_EVENT) && !migrcoal_event->is_no_event()) {
+                int tree_epoch = eventTrees.size() - 1;      // pseudo-epoch in which tree-modifying events are stored
+                event_mem = Arena::allocate( tree_epoch );   // allocate memory
+                EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *migrcoal_event );
+		tree_event->set_descendants( get_descendants( active_node(i) ) );   // set signature for node's descendants
+                tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+            }
             assert(migrcoal_event->print_event());
         }
     }
@@ -218,7 +308,9 @@ void ForestState::record_recomb_extension (){
     for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
         // Create a recombination event for this slice (which may be smaller than an epoch -- but in our case it usually won't be)
         int contemporaries = ti.contemporaries_->numberOfLocalContemporaries();
-        if (contemporaries > 0 && (pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT)) {
+        if (contemporaries > 0 && 
+            (pfparam.record_event_in_epoch[ model().current_time_idx_ ] & PfParam::RECORD_RECOMB_EVENT) &&
+            model().current_time_idx_ <= max_epoch_to_record_ ) {
             double start_height = (*ti).start_height();
             double end_height = (*ti).end_height();
             size_t start_height_epoch = ti.forest()->model().current_time_idx_;
@@ -269,17 +361,32 @@ void ForestState::record_recomb_event( double event_height )
 {
     this->writable_model()->resetTime( event_height );
     size_t epoch_i = this->model().current_time_idx_;
-    if (!(pfparam.record_event_in_epoch[ epoch_i ] & PfParam::RECORD_RECOMB_EVENT))
-        return;
-    // find the EvolutionaryEvent to add this event to.
-    EvolutionaryEvent* event = eventTrees[ epoch_i ];
-    while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
-        event = event->parent();
-        assert (event != NULL);
+    int record_mode = pfparam.record_event_in_epoch[ epoch_i ];
+    if (epoch_i > max_epoch_to_record_) return;    /* skip events in long missing data segments */
+    if (record_mode & PfParam::RECORD_RECOMB_EVENT) {
+        // find the EvolutionaryEvent to add this event to.
+        EvolutionaryEvent* event = eventTrees[ epoch_i ];
+        while ( !event->is_recomb() || !event->recomb_event_overlaps_opportunity_t( event_height ) ) {
+            event = event->parent();
+            assert (event != NULL);
+        }
+        if (event->start_base() == this->current_base()) { /* to deal with events on edge of long missing data segments */
+            event->set_recomb_event_time( event_height );
+            event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+        }
     }
-    assert (event->start_base() == this->current_base());
-    event->set_recomb_event_time( event_height );
-    event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+    // add coalescent-tree-modifying event in data structure.  Note - must be recording recombination events!
+    if ((record_mode & PfParam::RECORD_TREE_EVENT)) {
+        int tree_epoch = eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+        void* event_mem = Arena::allocate( tree_epoch );   // allocate memory
+        //EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( PfParam::RECORD_TREE_EVENT, *event );
+        EvolutionaryEvent* tree_event = new(event_mem) EvolutionaryEvent( event_height, epoch_i,
+                                                                          event_height, epoch_i,
+                                                                          this->current_base(), this->current_base(), 1 );
+        tree_event->set_recomb_event_time( event_height );
+        tree_event->set_descendants( get_descendants( rec_point.base_node() ) );  // calculate signature for descendants subtended by node
+        tree_event->add_leaf_to_tree( &eventTrees[ tree_epoch ] );
+    }
 }
 
 
@@ -290,8 +397,9 @@ void ForestState::resample_recombination_position(void) {
     this->resampleNextBase();
 
     // then, create private event records, in effect re-doing the work of record_recomb_event
-    for (int epoch = 0; epoch < eventTrees.size(); epoch++) {
-        if (pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) {
+    for (int epoch = 0; epoch < model().change_times_.size(); epoch++) {
+        if ((pfparam.record_event_in_epoch[ epoch ] & PfParam::RECORD_RECOMB_EVENT) &&
+            epoch <= max_epoch_to_record_) {
             EvolutionaryEvent* old_event = eventTrees[ epoch ];      // pointer to old event to be considered for copying
             EvolutionaryEvent** new_chain = &eventTrees[ epoch ];    // ptr to ptr to current event chain
             // break out the loop if no recombination opportunity has been recorded at this epoch,
@@ -314,9 +422,9 @@ void ForestState::resample_recombination_position(void) {
                     new_event->add_leaf_to_tree( new_chain, true );
                     new_chain = &(new_event->parent_);              // friend function access
                     // update record
-                    new_event->end_base_ = this->next_base();        // friend function access
+                    new_event->set_end_base( this->next_base() );
                 } else {
-                    old_event->end_base_ = this->next_base();
+                    old_event->set_end_base( this->next_base() );
                     new_chain = &(old_event->parent_);
                 }
                 old_event = old_event->parent();
@@ -328,23 +436,192 @@ void ForestState::resample_recombination_position(void) {
 }
 
 
+void ForestState::includeLookaheadLikelihood( const Segment& segment, const TerminalBranchLengthQuantiles& terminal_branch_lengths ) {
+
+    if (pfparam.auxiliary_particle_filter == 0)
+        return;
+
+    // extract rho and mu and nsam
+    // note: this assumes the current \rho is constant -- will not work well with hotspots and focused sampling!
+    int cur_rec_idx = model().get_position_index();
+    double cur_recomb_segment_start = model().change_position(cur_rec_idx);
+    if (current_base() <= cur_recomb_segment_start) --cur_rec_idx;
+    double recomb_rate = model().recombination_rate( cur_rec_idx );
+    if (pfparam.recomb_bias.using_posterior_biased_sampling()) {
+        recomb_rate = pfparam.recomb_bias.get_true_rate();
+    }
+    const double mut_rate = model().mutation_rate();
+    const int nsam = model().sample_size();
+    double rel_rho[] = {1.0, 0.5};
+    double rel_rho_p[] = {0.5, 0.5};
+    
+    // compute the likelihood.  First singletons
+    double likelihood = 1.0;
+    double rho_tbl = 2 * recomb_rate * (nsam - 1) / nsam;
+    Node* node = nodes()->first();
+    int num_leaves = 0;
+    vector<const Node*> leaves( nsam );
+    vector<double> mut_prob( nsam );
+    while (num_leaves < nsam) {
+        if (node->in_sample()) {
+            num_leaves++;
+            int i = node->label() - 1;
+            leaves[i] = node;
+	}
+	node = node->next();
+    }
+    for (int i=0; i<num_leaves; i++) {
+      double p = 0;
+      double si = segment.first_singleton_distance[i];
+      double li = leaves[i]->getLocalParent()->height();
+      if (segment.is_singleton_unphased[i]) {
+	// we don't know which branch contained the singleton, so add length of alternative branch
+	li += leaves[i+1]->getLocalParent()->height();
+      }
+      double rel_mut_rate = segment.relative_mutation_rate[i];
+      double li_mu = li * mut_rate * rel_mut_rate;
+      mut_prob[i] = li_mu;
+      if (segment.is_singleton_unphased[i]) {
+	// NOTE: adding mutation rates is not strictly correct for usage in the cherry model below, but
+	// as the terms is there to provide a soft landing in an edge case, this will not affect overall behaviour.
+	mut_prob[i+1] = li_mu;
+      }
+      for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+	// integrate over rate of change: expected, and half expected, to
+	// model autocorrelation of branch lengths across recombination events
+	double li_rho = li * rho_tbl * rel_rho[r];
+	double fe = fastexp_approx(-(li_rho + li_mu) * abs(si));
+	for (int q = 0; q < terminal_branch_lengths.quantiles.size(); ++q) {
+	  // integrate over the distribution of terminal branch lengths, for this branch i
+	  double qbot = (q == 0 ? 0.0 : terminal_branch_lengths.quantiles[q-1]);
+	  double qtop = (q == terminal_branch_lengths.quantiles.size()-1 ? 1.0 : terminal_branch_lengths.quantiles[q]);
+	  double l_prime = terminal_branch_lengths.lengths[ i ][ q ];
+	  double lprime_mu = l_prime * mut_rate * rel_mut_rate;
+	  double div = (li_rho + li_mu - lprime_mu);
+	  if (abs(div) < (li_rho + li_mu + lprime_mu) * 1e-5) {
+	    lprime_mu = lprime_mu * 1.0001;
+	  }
+	  if (si > 0) {
+	    // mutation present
+	    p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * lprime_mu * fastexp_approx(-lprime_mu * si) +
+						 (li_mu - lprime_mu) * (li_rho + li_mu) * fe )
+					       / (li_rho + li_mu - lprime_mu) );
+	  } else {
+	    // missing data - no mutation
+	    p += rel_rho_p[r] * (qtop-qbot) * (( li_rho * fastexp_approx(-lprime_mu * (-si)) +
+						 (li_mu - lprime_mu) * fe )
+					       / (li_rho + li_mu - lprime_mu) );
+	  }
+	}
+      }
+      //cout << " Leaf " << i << " d=" << si << " ht=" << li << " p=" << p;
+      likelihood *= p;
+      // do not double-count unphased singletons
+      if (segment.is_singleton_unphased[i]) {
+	i++;
+      }
+    }
+
+    // next doubletons
+    if (pfparam.auxiliary_particle_filter >= 2) {
+        double l_mean = 0.0;
+        for (int i=0; i<nsam; i++) l_mean += terminal_branch_lengths.lengths[ i ].back() / nsam;
+        double rho_c = 4 * recomb_rate * (nsam - 2) / nsam;
+        double rhoprime_c = recomb_rate * (nsam - 1);
+        double p_equilibrium = 2.0/(3*(nsam-1));
+        int ph1, ph2;
+        for (const Segment::Doubleton& d : segment.doubleton) {
+            // do we have the cherry?  Check greedily by considering all phasings
+            for (ph1 = 0; ph1 <= d.unphased_1; ph1++) {
+                for (ph2 = 0; ph2 <= d.unphased_2; ph2++) {
+                    if (leaves[d.seq_idx_1 + ph1]->parent() == leaves[d.seq_idx_2 + ph2]->parent()) {
+                        // we do
+                        double l = leaves[d.seq_idx_1 + ph1]->getLocalParent()->height();
+                        double p = 0;
+                        for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+                            // integrate over rate of change: expected, and half expected, to
+                            // model autocorrelation of branch lengths across recombination events
+                            double exp_rho = fastexp_approx(-rho_c * rel_rho[r] * l * d.last_evidence_distance);
+                            // note - do not include a factor for a mutation; we don't want to model the length of the cherry root branch
+                            p += rel_rho_p[r] * exp_rho + p_equilibrium * (1.0 - exp_rho);
+                        }
+                        likelihood *= p;
+                        //cout << " Ch " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " p=" << p;
+                        ph1 = ph2 = 99;
+                    }
+                }
+            }
+            if (ph1 < 99) {
+                // we don't have a cherry.
+                // include a term for a double mutation (i.e. a single one, since one mutation isn't included normally), to cover the case that first_evidence_distance == 0
+                // the mutation rate is taken to be average of the mutation rates in the two terminal branches
+                double mutprob = (mut_prob[d.seq_idx_1] + mut_prob[d.seq_idx_2]) * 0.5;
+                double p = 0;
+                for (int r = 0; r < sizeof(rel_rho)/sizeof(*rel_rho); r++) {
+                    // integrate over rate of change: expected, and half expected, to
+                    // model autocorrelation of branch lengths across recombination events
+                    p += rel_rho_p[r] * (mutprob + (1.0 - mutprob) * p_equilibrium * (1.0 - fastexp_approx(-rhoprime_c * rel_rho[r] * l_mean * d.first_evidence_distance)));
+                }
+                likelihood *= p;
+                //cout << " NoCh " << d.seq_idx_1+ph1 << d.seq_idx_2+ph2 << " fed=" << d.first_evidence_distance << " p=" << p;
+            }
+        }
+    }
+        
+    // finally, splits
+    if (segment.first_split_distance > -1 && pfparam.auxiliary_particle_filter >= 3) {
+        // probability of no change to the current topology.
+        // Assume 1/2 of recombinations cause change in split
+        double rate_of_change = getLocalTreeLength() * recomb_rate / 2;
+        double p_nochange = fastexp_approx( -rate_of_change * segment.first_split_distance );
+
+        // probability of split data given current tree.
+        bool ancestral_aware = false;
+        double p_splitdata = calculate_likelihood( ancestral_aware, segment.allelic_state_at_first_split );
+
+        // probability of correct split.  This would be n-choose-k at equilibrium.  But the current tree, if it is not
+        // supporting the split, is likely to be -almost- supporting the split; and in addition we need to have a heavy-tailed
+        // distribution.  So instead, assume that current tree has one lineage at the wrong side of the split.  We need a
+        // recombination in the correct branch (1/n) and need a coalescence into the split (k/n), together probability k/n^2,
+        // and recombiations and coalescences occuring quickly -- factor 1/4. (justify??)
+        // -- consider n-choose-k ?
+        int k = segment.mutation_count_at_first_split;
+        double p_correct_split = k / double(4.0 * nsam * nsam);
+        // for testing: let apf=2 do split distance, apf=4 uses n-choose-k factor
+        if (pfparam.auxiliary_particle_filter == 4)
+            p_correct_split = 1.0 / nchoosek( nsam, k );
+
+        // length of the split branch. Under constant-pop-size coalescent model (CCM) total length is l(n) = 2(1 + ... + 1/(n-1)).
+        // The split branch has k descendants; since hanging configurations are uniformly distributed (Xavier Didelot) other
+        // branches at that time have the same expected number of descendants, so the number of branches is in expectation
+        // n/k.  The length of the next branch to coalesce into this upper subtree is l( n/k + 1 ) - l( n/k ) = 2k / n, which
+        // is a measure of the length of the subtree supporting the split.  After all branches have coalesced into the tree,
+        // the branch will have undergone further coalescences, so we divide this length by 2 (justification?)
+        // Now, our model is not CCM, so scale by the ratio of total branch length under CCM, 2(gamma + ln(n)), to the
+        // empirical total branch length ETBL, to get for the  approximate length of the split branch,
+        //  k * ETBL / ( 2 * n * ( gamma + ln(n) ) ).
+        double etbl = terminal_branch_lengths.mean_total_branch_length;
+        double split_branch_length = k * etbl / ( 2 * nsam * ( 0.577 * log(nsam) ) );
+        double p = p_nochange * p_splitdata + (1.0 - p_nochange) * p_correct_split * mut_rate * split_branch_length;
+        likelihood *= p;
+        //double mut_branch_length = p_splitdata / (this->model().mutation_rate()); // only for display
+        //cout << " Split L=" << p_splitdata << " true brlen=" << mut_branch_length << " dist=" << segment.first_split_distance
+        //     << " p_noch=" << p_nochange << " p_avg=" << p_correct_split * mut_rate * split_branch_length << " p=" << p << endl;
+    }
+        
+    //cout << "Lookahead: " << likelihood << endl;
+    
+    // actually include the lookahead likelihood into the pilot weight
+    lookahead_weight_ *= likelihood;
+    pilot_weight_ *= likelihood;
+}
+
+
 /*!
  * Calculate the marginal likelihood of a node recursively.
  *
  * * */
 
-inline double fastexp(double x) {
-    // Based on a generalized continued fraction.  Just one division, two multiplications.
-    // The approximate branch is used only for |x|<0.03, where the relative error is < 1e-10
-    // See wikipedia Exponential_function, and L.Lorentzen and H. Waadeland, Continued Fractions, Atlantis Studies in Maths pg 268
-    double xx = x*x;
-    if (xx < 0.0009) {
-        return 1 + 2*x / (2 - x + xx * (1.0/6));
-    } else {
-        return exp(x);
-    }
-}
-    
 inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vector<int>& haplotype, double marginal_likelihood[2]) {
 
     // deal with the case that this node is a leaf node
@@ -379,6 +656,7 @@ inline void ForestState::cal_partial_likelihood_infinite(Node * node, const vect
 
     return;
 }
+
 
 
 /*!
@@ -463,7 +741,7 @@ double ForestState::find_delay( double coal_height ) {
 
 
 void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<int>& data_at_site,
-			       vector<ForestState*>* pParticleContainer) {
+                               vector<ForestState*>* pParticleContainer) {
 
     double updated_to = this->site_where_weight_was_updated();
     double track_local_tree_branch_length;
@@ -490,8 +768,8 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         // presence or absence of mutations on corresponding branches.
         // These branches do not contribute to localTreeBranchLength
         adjustWeights( fastexp( -model().mutation_rate()
-				* track_local_tree_branch_length
-				* (new_updated_to - updated_to) ) );
+                                * track_local_tree_branch_length
+                                * (new_updated_to - updated_to) ) );
 
         assert (abs(track_local_tree_branch_length - trackLocalTreeBranchLength( data_at_site )) < 1e-4);
         
@@ -531,7 +809,7 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         //
         // Note that the importance weight is for a single particle, even if multiplicity() > 1.
         if(model().biased_sampling) {
-	  adjustWeights( importance_weight_over_segment( updated_to, new_updated_to ) );
+          adjustWeights( importance_weight_over_segment( updated_to, new_updated_to ) );
         }
 
         // Rescue the invariant
@@ -541,45 +819,63 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
         // Next, if we haven't reached extend_to now, sample new genealogy, and a new recomb point
         if ( updated_to < extend_to ) {
 
-            if (multiplicity() > 1 && updated_to > model().getCurrentSequencePosition()) {
-                // A recombination has occurred on a particle with multiplicity > 1.
-                // Spawn a new particle with multiplicity one less, resample its recombination
-                //  position, and deal with it later in the loop in particleContainer.  At the
-                //  same time, make the current particle have multiplicity one, and deal with it
-                //  the normal way.
-                assert( pParticleContainer != NULL );
-                pParticleContainer->push_back( spawn() );
-                save_recomb_state();
-                pParticleContainer->back()->restore_recomb_state();
-                pParticleContainer->back()->set_current_base( updated_to );
-                pParticleContainer->back()->resample_recombination_position();
-                pParticleContainer->back()->save_recomb_state();
-                restore_recomb_state();
-            }
+	    if (updated_to == model().getCurrentSequencePosition()) {
 
-            // a recombination has occurred, or the recombination rate has changed;
-            // forest.cc/sampleNextGenealogy (which calls particle.cpp/samplePoint) deals with both.
-            first_event_height_ = -1.0;
-            recombination_bias_importance_weight_ = 1.0;
-            double importance_weight = this->sampleNextGenealogy( true );
-            
-            if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
-            if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
-            
-            if (importance_weight >= 0.0) {
-                // a recomb has occurred. Implement importance weight, with appropriate delay
+	        this->sampleNextGenealogy( true );    // only advances recombination event pointer in this case
+	        this->sampleNextBase( true );         // obtain nest recomb rate change event, and push it onto vector
+                record_recomb_extension();
 
-                if (first_event_height_ == -1.0)
-                    throw std::runtime_error("No coalescence found where one was expected");
+	    } else {
 
+		// a recombination has occurred
+                int mult = multiplicity();
+		first_event_height_ = -1.0;
+		first_coal_height_ = -1.0;
+
+                // We shall implement the change.  Spawn a new particle if necessary
+                if (mult > 1) {
+		      
+                    // A recombination has occurred on a particle with multiplicity > 1.
+                    // Spawn a new particle with multiplicity one less, resample its recombination
+                    //  position, and deal with it later in the loop in particleContainer.  At the
+                    //  same time, make the current particle have multiplicity one, and deal with it
+                    //  the normal way.
+                    assert( pParticleContainer != NULL );
+                    pParticleContainer->push_back( spawn() );
+                    pParticleContainer->back()->set_current_base( updated_to );
+                    pParticleContainer->back()->setMultiplicity( mult - 1 );
+                    // save recombination index, owned by singleton Model, into *this Particle, and restore from back() particle;
+                    // then sample new recombination locus for the new particle; and recover recombination index
+                    save_recomb_state();
+                    pParticleContainer->back()->restore_recomb_state();
+                    pParticleContainer->back()->resample_recombination_position();
+                    pParticleContainer->back()->save_recomb_state();
+                    restore_recomb_state();
+                }
+		    
+                // set new multiplicity
+                setMultiplicity( 1 );
+
+                // sample new tree
+                recombination_bias_importance_weight_ = 1.0;
+                double importance_weight = this->sampleNextGenealogy( true );
+
+                if (leaf_status == 0) track_local_tree_branch_length = trackLocalTreeBranchLength( data_at_site );
+                if (leaf_status == 1) track_local_tree_branch_length = getLocalTreeLength();
+		
+                // Implement importance weight, with appropriate delay
+                if (first_event_height_ == -1.0) throw std::runtime_error("No coalescence found where one was expected");
+		    
                 // If the coalescence occurred above top bias height, i.e. the sampling failed
                 // to produce an early coalescence as intended, then apply the importance weight
                 // factor due to the recombination bias immediately, so that we don't pollute
                 // the particles.  However, always apply the importance weight due to guiding
                 // with the appropriate delay
-                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) first_event_height_ = rec_point.height();
+                double delay_height = first_event_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_COAL)   delay_height = first_coal_height_;
+                if (pfparam.delay_type == PfParam::RESAMPLE_DELAY_RECOMB) delay_height = rec_point.height();
                 int idx = 0;
-                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < first_event_height_) ++idx;
+                while (idx+1 < model().bias_heights().size() && model().bias_heights()[idx+1] < delay_height) ++idx;
                 if (model().bias_strengths()[idx] == 1.0) {
                     // the height of the focal event (recombination, coalescence, or migration, as per delay_type)
                     // is not biased, so apply the importance weight for the recombination bias immediately, and factor
@@ -587,33 +883,28 @@ void ForestState::extend_ARG ( double extend_to, int leaf_status, const vector<i
                     adjustWeights( recombination_bias_importance_weight_ );
                     importance_weight /= recombination_bias_importance_weight_;
                 }
-                double delay = find_delay( first_event_height_ );
+                double delay = find_delay( delay_height );
                 // enter the importance weight, and apply it semi-continuously:
                 // in 3 equal factors, at geometric intervals (double each time)
                 // (See implementation in particle.hpp: void applyDelayedAdjustment(), and
                 //  class DelayedFactor)
                 adjustWeightsWithDelay( importance_weight, delay, 3 );
-            }
+		    
+                // sample a new recombination position (this calls the virtual overloaded
+                // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
+                // see comments in sampleNextBase below.
+                // The new recombination position does take account of multiplicity(), so that
+                // particles with high multiplicity() have higher effective recombination rates.
+                this->sampleNextBase( true );
+                this->record_recomb_extension();
 
-            // sample a new recombination position (this calls the virtual overloaded
-            // sampleNextBase())   Note: it returns an importance "rate", which is ignored;
-            // see comments in sampleNextBase below.
-            // The new recombination position does take account of multiplicity(), so that
-            // particles with high multiplicity() have higher effective recombination rates.
-            this->sampleNextBase( true );
-
-            record_recomb_extension();
-
-            // If this is an extension after an actual recombination, record the recomb event
-            if (importance_weight >= 0.0) {
-
+                // If this is an extension after an actual recombination, record the recomb event
                 record_recomb_event( rec_point.height() );
-                
-            }
+
+	    }
         }
         // record current position as recombination, so that resampling of recomb. position starts from here
         set_current_base( updated_to );
-
     }
 
     // apply weights that we passed during the extension above
@@ -705,7 +996,7 @@ double ForestState::sampleOrMeasureWeightedTree( const Node* node,
         if (recomb_guide) {
             const RecombBiasSegment& rbs = pfparam.recomb_bias.get_recomb_bias_segment(model().get_position_index());
             if (current_base() < rbs.get_locus() || current_base() > rbs.get_end()) {
-                cout << " current base: " << current_base() << endl;
+                cout << "Problem: current base: " << current_base() << endl;
                 cout << " rbs segment: [" << rbs.get_locus() << "," << rbs.get_end() << ")" << endl;
                 throw std::runtime_error("Current base not in expected rbs segment!  Should never happen!");
             }
@@ -748,8 +1039,9 @@ void inline ForestState::accumulateBranchLengths( double rate_above,
             local_weight = local_weight_;                                              // store local weight
             double sampled_height = lower_end + (-cumul_length) / local_weight_;       // compute height
             rec_point = TreePoint(const_cast<Node*>(node), sampled_height, false);     // store node and height
-            if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1])
-                recent_recombination_count++;  // DEBUG
+            if (model().bias_heights().size() >= 2 && sampled_height < model().bias_heights()[1]) {
+                //recent_recombination_count++;
+            }
         }
         cumul_length += weighted_branch_length;
         lower_end = upper_end;
@@ -944,7 +1236,7 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
         double current_position = current_base();
         double next_position = current_base() + length;
         if (current_position == next_position) {
-            cerr << "Next recombination position is identical due to underflow at "
+            cerr << "Warning: Next recombination position is identical due to underflow at "
                  << "pos=" << current_position << "; length=" << length << endl;
             cerr << "Check that recombination rates are sensible! (at this position, rate = " << recomb_rate << " per nt;"
                  << " tree length " << wtd_local_tree_len << " generations; multiplicity = " << multiplicity() << ")" << endl;
@@ -958,7 +1250,272 @@ double ForestState::sampleNextBase( bool record_and_bias ) {
 
     // the importance weight for this event is calculated by importance_weight_over_segment
     // the multiplicity is dealt with within extend_ARG
-
     return 1.0;
 }
 
+
+
+/**
+ * Function to modify the tree after we encountered a recombination on the
+ * sequence. Also samples a place for this recombination on the tree, marks the
+ * branch above as non-local (and updates invariants) if needed, cuts the
+ * subtree below away and starts a coalescence from it's root.
+ * @ingroup group_scrm_next
+ * @ingroup group_pf_update
+ */
+double ForestState::sampleNextGenealogyWithoutImplementing() {
+
+    // advance current_rec_ counter, so that current_base() is up to date, which will ensure
+    // that TimeIntervalIterator does all the necessary pruning, which ensures that this
+    // routine sees the exact same tree as sampleNextGenealogy
+    current_rec_++;
+  
+    // Prune the tree (test if this is necessary; it may not be for coalescences since
+    //  the tree may be pruned before branches are sampled from)
+    // Also set the primary root, which may get un-set due to pruning.
+    for (TimeIntervalIterator ti(this, this->nodes_.at(0)); ti.good(); ++ti) {
+      if ((*ti).time_interval_iterator()->end_node() != NULL &&
+	  (*ti).time_interval_iterator()->end_node()->is_root())
+	set_primary_root( (*ti).time_interval_iterator()->end_node() );
+    }
+
+    if (current_base() == model().getCurrentSequencePosition()) {
+        current_rec_--;   // undo the advance above
+        return -1;        // recombination rate change; signal that no recombination has occurred
+    }
+
+    contemporaries_.clear(true);
+
+    // Sample the recombination point into TreePoint rec_point member
+    double importance_weight = samplePoint( true );
+
+    // Virtual (local) root node that will be coalescing into the existing tree
+    Node start_node( rec_point.base_node()->height() );     // is_root() and local() by default
+    start_node.set_population( rec_point.base_node()->population() );
+    start_node.set_first_child( rec_point.base_node() );    // store actual node is first_child()
+
+    // We can have one or active local nodes: If the coalescing node passes the
+    // local root, it also starts a coalescence.
+    Node second_node( local_root()->height() );
+    second_node.set_population(  local_root()->population() );
+    second_node.set_parent(      local_root()->is_root() ? NULL : local_root()->parent() );      // sets is_root()
+    second_node.make_nonlocal(   local_root()->last_update() ); // sets local()
+    second_node.set_first_child( local_root() );                // store actual node in first_child()
+
+    // Initialize Temporary Variables
+    // tmp_event_.time() is the time of the current event, and may not be
+    // part of the tree (the "new" events will not be, as the tree won't be
+    // modified).  The time intervals processed in the main loop below will
+    // start at tmp_event_time().
+    tmp_event_ = Event();
+    coalescence_finished_ = false;
+
+    if (start_node.height() > second_node.height()) {
+        tmp_event_.set_time( second_node.height() );
+        set_active_node(0, &second_node);
+        set_active_node(1, &start_node);
+    } else {
+        tmp_event_.set_time( rec_point.height() );   // recombination height, not height of start_node
+        set_active_node(0, &start_node);
+        set_active_node(1, &second_node);
+    }
+
+    // Start iterator from rec_point.base_node(), possibly several nodes
+    // below recombination
+    for (TimeIntervalIterator ti(this, active_node(0)->first_child()); ti.good(); ++ti) {
+
+        // Skip intervals before first event;
+        // remain processing this TimeInterval until no new events occur within it.
+        while ( tmp_event_.time() < (*ti).end_height() ) {
+
+            // Update States & Rates (see their declaration for explanation);
+            states_[0] = getNodeState(active_node(0), tmp_event_.time());
+            states_[1] = getNodeState(active_node(1), tmp_event_.time());
+
+            // Fixed time events (e.g pop splits/merges & single migration events first
+            if (model().hasFixedTimeEvent( tmp_event_.time() ))
+                dontImplementFixedTimeEvent(ti);
+
+            // Calculate the rates of events in this time interval
+            TimeInterval interval( &ti, tmp_event_.time(), (*ti).end_height() );
+            calcRates(interval);
+
+            // Sample the time at which the next event happens (if any)
+            // If no event, tmp_event_time_ and tmp_event_.time() are set to -1
+            sampleEvent(interval, tmp_event_time_, tmp_event_);
+
+            // Implement the event
+            if ( tmp_event_.isNoEvent() ) {
+                this->dontImplementNoEvent(*ti, coalescence_finished_);
+            }
+
+            else if ( tmp_event_.isPwCoalescence() ) {
+                last_coal_height_ = tmp_event_time_;
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                if (first_coal_height_ < 0.0)  first_coal_height_  = tmp_event_time_;
+		tmp_event_time_ = primary_root()->height();          // Disable buffer for next genealogy.
+                this->coalescence_finished_ = true;                  // we're done
+            }
+
+            else if ( tmp_event_.isRecombination() ) {
+                this->dontImplementRecombination(tmp_event_, ti);
+            }
+
+            else if ( tmp_event_.isMigration() ) {
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                tmp_event_.node()->set_population(tmp_event_.mig_pop());  // implement
+            }
+
+            else if ( tmp_event_.isCoalescence() ) {
+                last_coal_height_ = tmp_event_time_;
+                if (first_event_height_ < 0.0) first_event_height_ = tmp_event_time_;
+                if (first_coal_height_ < 0.0)  first_coal_height_  = tmp_event_time_;
+                this->dontImplementCoalescence(tmp_event_, ti);
+            }
+
+            if (coalescence_finished()) {
+		tmp_event_time_ = primary_root()->height(); // Disable buffer for next genealogy.
+		current_rec_--;   // undo the advance above
+                return importance_weight;
+            }
+        }
+    }
+    throw std::logic_error("No final coalescence event was sampled!");
+}
+
+
+void ForestState::dontImplementFixedTimeEvent(TimeIntervalIterator &ti) {
+
+    double sample;
+    bool migrated;
+    size_t chain_cnt, pop_number = model().population_number();
+
+    for (size_t i = 0; i < 2; ++i) {
+        if (states_[i] != 1) continue;
+        chain_cnt = 0;
+        while (true) {
+            migrated = false;
+            sample = random_generator()->sample();
+            for (size_t j = 0; j < pop_number; ++j) {
+                sample -= model().single_mig_pop(active_node(i)->population(), j);
+                if (sample < 0) {
+                    tmp_event_ = Event((*ti).start_height());
+                    tmp_event_.setToMigration(active_node(i), i, j);
+                    tmp_event_.node()->set_population(tmp_event_.mig_pop());    // implement
+                    migrated = true;
+                    break;
+                }
+            }
+
+            // Stop if no migration occurred
+            if (!migrated) break;
+            
+            // Resolve a maximum of 10k chained events for each node
+            if (chain_cnt == 10000) throw std::logic_error("Cycle detected when moving individuals between populations");
+            ++chain_cnt;
+        }
+    }
+}
+
+
+void ForestState::dontImplementNoEvent(const TimeInterval &ti, bool &coalescence_finished) {
+
+    // set start-of-interval to end height
+    tmp_event_.set_time( ti.end_height() );
+
+    if (ti.end_height() == DBL_MAX) throw std::logic_error("Lines did not coalesce.");
+    if (states_[0] == 2) {
+        set_active_node(0, virtualPossiblyMoveUpwards(active_node(0), ti));
+        if (active_node(0)->local()) {
+	    coalescence_finished = true;
+	    tmp_event_time_ = primary_root()->height(); // Disable buffer for next genealogy.
+	    return;
+        }
+    }
+    
+    // There are no local node above the local root, which is the lowest node
+    // that active_node(1) can be.
+    if (states_[1] == 2) set_active_node(1, virtualPossiblyMoveUpwards(active_node(1), ti));
+    
+    if (active_node(0)->first_child() == active_node(1)->first_child()) {
+        coalescence_finished = true;
+	tmp_event_time_ = primary_root()->height(); // Disable buffer for next genealogy.
+    }
+}
+
+
+void ForestState::dontImplementRecombination(const Event &event, TimeIntervalIterator &ti) {
+
+    Node* recombining_node = event.node();
+    recombining_node->make_local();                // it is now coalescing
+    recombining_node->set_parent(NULL);            // make root
+    recombining_node->set_height( event.time() );
+}
+
+
+void ForestState::dontImplementCoalescence(const Event &event, TimeIntervalIterator &tii) {
+
+  // Coalescence: sample target point and implement the coalescence
+  Node* coal_node = event.node();
+  Node* target = contemporaries_.sample(coal_node->population());
+
+  coal_node->set_parent( target->parent() );
+  coal_node->make_local();
+  coal_node->make_nonlocal( target->last_update() );
+  coal_node->set_first_child( target );
+  // not necessary to update population, or set active node
+
+  if ( getOtherNodesState() == 2 ) {
+      // If the coalescing node coalesced into the branch directly above
+      // a recombining node, we are done.  The test here is a bit different
+      // from the test in forest.cc, because we don't implement the event,
+      // so we test for equality of the base nodes in the actual tree
+      if ( getOtherNode()->first_child() == getEventNode()->first_child() ) {
+          coalescence_finished_ = true;
+	  tmp_event_time_ = primary_root()->height(); // Disable buffer for next genealogy.
+          return;
+      }
+  }
+
+  if ( target->local() ) {
+    // Only active_node(0) can coalescence into local nodes. active_node(1) is
+    // at least the local root and hence above all local nodes.
+    // If active_node(0) coalescences into the local tree, there are no more
+    // active nodes and we are done.
+    tmp_event_time_ = primary_root()->height(); // Disable buffer for next genealogy.
+    coalescence_finished_ = true;
+  }
+}
+
+
+/**
+ * Helper function for doing a coalescence.
+ * Moves the 'active' flag (i.e. the node stored in root_1 or root_2 in sampleCoalescence)
+ * from a node to it's parent if the branch above the node
+ * ends this the current time interval.
+ *
+ * This function is used the pass the active flag upwards in the tree if the
+ * node is active, but neither coalescing nor a recombination happens on the
+ * branch above, e.g. after a local-branch became active because it was hit by a
+ * coalescence or a non-local branch was active and no recombination occurred.
+ *
+ * Also updates the active node if it moves up.
+ *
+ * \param node An active node
+ * \param time_interval The time interval the coalescence is currently in.
+ *
+ * \return  Either the parent of 'node' if we need to move upwards or 'node'
+ *          itself
+ */
+Node* ForestState::virtualPossiblyMoveUpwards(Node* node, const TimeInterval &time_interval) {
+  if ( node->parent_height() == time_interval.end_height() ) {
+      Node* newnode = node->parent();
+      node->set_height( newnode->height() );
+      node->set_population( newnode->population() );
+      node->make_local();
+      node->make_nonlocal( newnode->last_update() );
+      node->set_first_child( newnode );
+      node->set_parent( newnode->parent() );
+  }
+  return node;
+}

@@ -73,23 +73,23 @@ void PfParam::parse(int argc, char *argv[]) {
         } else if ( *argv_i == "-EM"   ){
             this->EM_steps = readNextInput<int>();
             this->EM_bool = true;
-        } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
+        } else if ( *argv_i == "-xr" || *argv_i == "-xc" || *argv_i == "-arg" ) {
             string tmpFlag = *argv_i;
             int last_epoch;
-            int first_epoch = readRange(last_epoch);        // obtain 1-based closed interval
-            first_epoch--;                                  // turn into 0-based half-open
+            int first_epoch = readRange(last_epoch);        // obtain 0-based closed interval
+            last_epoch++;                                   // turn into 0-based half-open
             for (int i=0; i<last_epoch; i++) {
                 if (record_event_in_epoch.size() <= i) {
-                    // extend vector, and set default: record both recomb and coal/migr events
+                    // extend vector, and set default: record both recomb and coal/migr events, don't record ARG
                     record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT
                                                      | PfParam::RECORD_RECOMB_EVENT );
                 }
                 if (i >= first_epoch) {
                     // reset bit signifying recording of either recombination or coal/migr events
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
-                    record_event_in_epoch[i] &= ~( (tmpFlag == "-xc") ?
-                                                   PfParam::RECORD_COALMIGR_EVENT :
-                                                   PfParam::RECORD_RECOMB_EVENT );
+                    if (tmpFlag == "-xc")      record_event_in_epoch[i] &= ~PfParam::RECORD_COALMIGR_EVENT;
+                    else if (tmpFlag == "-xr") record_event_in_epoch[i] &= ~PfParam::RECORD_RECOMB_EVENT;
+                    else                       record_event_in_epoch[i] |= PfParam::RECORD_TREE_EVENT;
                 }
             }
         } else if ( *argv_i == "-cap"  ){
@@ -137,6 +137,13 @@ void PfParam::parse(int argc, char *argv[]) {
             this->delay_type = RESAMPLE_DELAY_COALMIGR;
         } else if ( *argv_i == "-ancestral_aware" ){
             this->ancestral_aware = true;
+        } else if ( *argv_i == "-dephase" ){
+            this->dephase = true;
+	} else if ( *argv_i == "-apf" ) {
+	    this->auxiliary_particle_filter = this->readNextInput<int>();
+	    if (auxiliary_particle_filter < 0 || auxiliary_particle_filter > 4) {
+		throw OutOfRange( "-apf", *argv_i );
+	    }
         // ------------------------------------------------------------------
         // Output
         // ------------------------------------------------------------------
@@ -161,6 +168,10 @@ void PfParam::parse(int argc, char *argv[]) {
     }
 
     this->finalize( );
+
+    clog << "Command line:-" << endl << argv[0];
+    for (int i=1; i<argc; i++) clog << " " << argv[i];
+    clog << endl;
 }
 
 
@@ -200,14 +211,16 @@ void PfParam::init(){
     #endif
 
     this->original_recombination_rate_ = 0;
-    this->max_segment_length_factor_ = 4.0;  // allow segments of max length   mslf / (4 Ne rho)
+    this->max_segment_length_factor_ = 2.0;  // allow segments of max length   mslf / (4 Ne rho)
     this->N                = 100;
     this->lag              = 0.0;
     this->calibrate_lag    = true;
-    this->lag_fraction     = 4.0;
+    this->lag_fraction     = 2.0;
     this->delay            = 0.5;
     this->delay_type       = RESAMPLE_DELAY_RECOMB;
     this->ancestral_aware  = false;
+    this->dephase          = false;
+    this->auxiliary_particle_filter = 0;
     this->out_NAME_prefix  = "smcsmc";
     this->ESS_fraction     = 0.5;
     this->ESS_default_bool = true;
@@ -276,7 +289,6 @@ void PfParam::finalize_scrm_input (  ) {
     } else {
         this->scrm_input = "scrm " + this->scrm_input;
     }
-    clog << scrm_input << endl;
     this->convert_scrm_input ();
 }
 
@@ -285,6 +297,7 @@ void PfParam::convert_scrm_input (){
     enum { kMaxArgs = 1024 };
     int scrm_argc = 0;
     char *scrm_argv[kMaxArgs];
+    cout << "Scrm input: " << scrm_input << endl;//DEBUG
     char * p2 = strtok((char *)this->scrm_input.c_str(), " ");
     while (p2 && scrm_argc < kMaxArgs) {
         scrm_argv[scrm_argc++] = p2;
@@ -306,6 +319,12 @@ void PfParam::finalize(){
     this->log_NAME               = out_NAME_prefix + ".log";
     this->recombination_map_NAME = out_NAME_prefix + ".recomb.gz";
     this->resample_NAME          = out_NAME_prefix + ".resample";
+    this->tree_NAME              = out_NAME_prefix + ".trees.gz";
+
+    // currently, using guided sampling is incompatible with auxiliary particle filters (see includeLookaheadLikelihood)
+    if ( (input_RecombinationBiasFileName.size() > 0) && (auxiliary_particle_filter > 0) ) {
+	throw std::invalid_argument(std::string("Recombination guiding and auxiliary particle filters cannot currently be used together"));
+    }
 
     // remove any existing files with these names
     remove( this->outFileName.c_str() );
@@ -327,7 +346,7 @@ void PfParam::finalize(){
     }
     if (record_event_in_epoch.size() > this->model.change_times_.size()) {
         //throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
-        throw OutOfEpochRange(to_string(record_event_in_epoch.size()), to_string(this->model.change_times_.size()));
+        throw OutOfEpochRange(to_string(record_event_in_epoch.size()-1), to_string(this->model.change_times_.size()-1));
     }
 
      /*! Initialize seg file, and data up to the first data entry says "PASS"   */
@@ -426,9 +445,9 @@ void PfParam::writeLog(ostream * writeTo){
 
 void PfParam::outFileHeader(){
     string file_name = outFileName;
-    ofstream count_file( file_name.c_str(), ios::out | ios::app | ios::binary );
+    ofstream count_file( file_name.c_str(), ios::binary );
     int field_length_1 = 6;
-    int field_length_2 = 12;
+    int field_length_2 = 14;
     count_file << setw(field_length_1) << "Iter"   << " "
                << setw(field_length_1) << "Epoch"  << " "
                << setw(field_length_2) << "Start"  << " "
@@ -449,16 +468,16 @@ void PfParam::outFileHeader(){
 
 class FormatDouble {
 public:
-    FormatDouble( double d, double scientific_bound = 1.0 ) : d(d), scientific_bound(scientific_bound) {}
+    FormatDouble( double d, double scientific_bound = 0.1, int precision = 2 ) : d(d), scientific_bound(scientific_bound), precision(precision) {}
     double d, scientific_bound;
+    int precision;
 };
 
 ostream& operator<<(ostream& ostr, const FormatDouble& fd) {
-    const int field_length = 12;
-    const int precision = 2;
-    const double maxdouble = exp( (field_length - precision - 1) * log(10.0) );
+    const int field_length = 14;
+    const double maxdouble = exp( (field_length - fd.precision - 1) * log(10.0) );
     if (fd.d < maxdouble && (fd.d > fd.scientific_bound || fd.d == 0.0)) {
-        return ostr << setw(field_length) << fixed << setprecision(precision) << fd.d;
+        return ostr << setw(field_length) << fixed << setprecision(fd.precision) << fd.d;
     } else {
         return ostr << setw(field_length) << scientific << setprecision(field_length-7) << fd.d;
     }
@@ -489,7 +508,7 @@ void PfParam::appendToOutFile( size_t EMstep,
                << FormatDouble(count) << " "
                << FormatDouble(count/(opportunity+1e-10)) << " "
                << FormatDouble( (eventType=="Coal") ? (opportunity+1e-10)/(2.0*count) : 0.0 ) << " "
-               << FormatDouble( 1.0 / (weight/opportunity+1e-10) )
+               << FormatDouble( 1.0 / (weight/opportunity+1e-10), 1.0, 3 )
                << endl;
     count_file.close();
 }
@@ -509,27 +528,31 @@ void PfParam::append_resample_file( int position, double ESS) const {
 void PfParam::helpOption(){
     cout << "Options:" << endl;
     cout << setw(15)<<"-Np"            << setw(8) << "INT" << "  --  " << "Number of particles [ " << N << " ]" << endl;
-    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling (1 = use random likelihoods) [ " << ESS_fraction << " ]" << endl;
-    cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
-    cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum time, in unit of 4N0 [ 3 ]" <<endl;
-    cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
     cout << setw(15)<<"-seg"           << setw(8) << "STR" << "  --  " << "Data file in seg format [ Chrom1.seg ]" << endl;
-    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
-    cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
     cout << setw(15)<<"-o"             << setw(8) << "STR" << "  --  " << "Prefix for output files" << endl;
-    //cout << setw(15)<<"-online"        << setw(8) << " "   << "  --  " << "Perform online EM" << endl;
-    cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (1-based, closed)" << endl;
-    cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 1-10) to exclude from coalescent/migration EM" << endl;
-    cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
-    cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
+    cout << setw(15)<<"-EM"            << setw(8) << "INT" << "  --  " << "EM iterations [ 20 ]" << endl;
+    cout << setw(15)<<"-startpos"      << setw(8) << "INT" << "  --  " << "First nucleotide position to analyze [ 1 ]" << endl;
+    cout << setw(15)<<"-apf"           << setw(8) << "INT" << "  --  " << "Use auxiliary particle filter (0=no, 1=singletons, 2=+doubletons, 3=+first split) [ 0 ]" << endl;
+    cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
+    cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
+    cout << endl << "Inference tuning:" << endl;
+    cout << setw(15)<<"-dephase"       << setw(8) << " "   << "  --  " << "Dephase heterozygous sites (but use phasing for -apf) [ false ]" << endl;
     cout << setw(15)<<"-calibrate_lag" << setw(8) << "FLT" << "  --  " << "Lag before extracting events (multiple of survival time) [ " << lag_fraction << " ]" << endl;
+    cout << setw(15)<<"-tmax"          << setw(8) << "FLT" << "  --  " << "Maximum tree height, in unit of 4N0 [ 3 ]" <<endl;
+    cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling [ " << ESS_fraction << " ]" << endl;
+    cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (0-based, closed)" << endl;
+    cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 0-10) to exclude from coalescent/migration EM" << endl;
+    cout << setw(15)<<"-arg"           << setw(8) << "INT" << "  --  " << "Epoch or epoch range to record full ARG for" << endl;
+    cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
+    cout << endl << "Less frequently used options:" << endl;
+    cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
     cout << setw(15)<<"-delay"         << setw(8) << "FLT" << "  --  " << "How much to delay application of importance weight due to bias (fraction of survival time)[ " << delay << "]" << endl;
     cout << setw(15)<<"-delay_coal"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) coalescence event (default: recombination event)" << endl;
     cout << setw(15)<<"-delay_migr"    << setw(8) << " "   << "  --  " << "Application delay depends on time of (first) migration or coalescence event (default: recombination event)" << endl;
-    cout << setw(15)<<"-log"           << setw(8) << " "   << "  --  " << "Generate *.log file" << endl;
-    cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
-    cout << setw(15)<<"-v"             << setw(8) << " "   << "  --  " << "Display timestamp and git versions" << endl;
-}
+    cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
+    cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
+    //cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
+};
 
 
 void PfParam::helpExample(){
@@ -539,14 +562,14 @@ void PfParam::helpExample(){
     cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
     cout << "./smcsmc -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
     cout << "./smcsmc -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
-}
+};
 
 
 void PfParam::printHelp(){
     cout << "smcsmc --  Sha (Joe) Zhu, Donna Henderson and Gerton Lunter -- Version " << VERSION << endl;
     this->helpOption();
     this->helpExample();
-}
+};
 
 
 void PfParam::printVersion(std::ostream *output){

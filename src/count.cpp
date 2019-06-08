@@ -250,7 +250,7 @@ void CountModel::init_local_recomb() {
 
     local_recomb_opportunity.clear();
     local_recomb_counts.clear();
-    for (int sample = 0; sample < sample_size_; ++sample) {
+    for (int sample = 0; sample < sample_size_ + 2; ++sample) {
         local_recomb_counts.push_back( vector<double>() );
     }
 
@@ -540,8 +540,15 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
             double local_x_start = max( x_start, event->get_start_base() );
             double local_x_end = min( x_end, event->get_end_base() );
             if (local_x_start < local_x_end) {
+                double event_base = event->recomb_event_base();
+                double event_time = -1;
+                Descendants_t d = 0;
+                if (x_start <= event_base && event_base <= x_end) {
+                    event_time = event->recomb_event_time();
+                    d = event->get_descendants();
+                }
                 record_local_recomb_events( local_x_start, local_x_end, weight, recomb_opp,
-                                            event->recomb_event_base(), event->get_descendants() );
+                                            event_base, event_time, d );
             }
         }
     }
@@ -549,7 +556,8 @@ void CountModel::update_all_counts_single_evolevent( EvolutionaryEvent* event, d
 
 
 
-void CountModel::record_local_recomb_events( double x_start, double x_end, double weight, double opportunity, double event_base,
+void CountModel::record_local_recomb_events( double x_start, double x_end, double weight, double opportunity,
+                                             double event_base, double event_time,
                                              Descendants_t descendants ) {
 
     size_t first_index = size_t( x_start / local_recording_interval_ );
@@ -562,7 +570,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
     if (local_recomb_opportunity.size() <= last_index) {
         size_t new_size = last_index + 1 + (size_t)(1e7 / local_recording_interval_);
         local_recomb_opportunity.resize( new_size );
-        for (int sample = 0; sample < sample_size_; ++sample) {
+        for (int sample = 0; sample < sample_size_ + 2; ++sample) {
             local_recomb_counts[ sample ].resize( new_size );
         }
     }
@@ -597,11 +605,15 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
             assert (descendant <= sample_size_);
             local_recomb_counts[ descendant-1 ][ index ] += weight / num_descendants;
         }
+
+        // store time- and log-time-weighted counts
+        local_recomb_counts[ sample_size_ ][ index ] += weight * event_time;
+        local_recomb_counts[ sample_size_ + 1 ][ index ] += weight * log(event_time + 1.0);  // for safety; time is in generations
     }
-}
+};
 
 
-void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration ) {
+void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration, double start_position ) {
 
     // find last nonzero entry
     size_t last_idx = min( local_recomb_opportunity.size(), (size_t)(locus_length / local_recording_interval_) );
@@ -612,7 +624,7 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
         for (int sample = 0; sample < sample_size_; ++sample) {
             stream << "\t" << sample+1;
         }
-        stream << "\n";
+        stream << "\ttime\tlog_time\n";
     }
 
     // write data; convert local recomb opportunity CHANGES into absolute
@@ -625,7 +637,7 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
         stream << iteration
                << "\t" 
                << fixed << setprecision(0)
-               << idx * local_recording_interval_
+               << idx * local_recording_interval_ + start_position
                << "\t"
                << local_recording_interval_
                << "\t"
@@ -634,6 +646,8 @@ void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, i
         for (int sample = 0; sample < sample_size_; ++sample) {
             stream << "\t" << local_recomb_counts[ sample ][ idx ] / local_recording_interval_;
         }
+        stream << "\t" << local_recomb_counts[ sample_size_ ][ idx ] / local_recording_interval_;
+        stream << "\t" << local_recomb_counts[ sample_size_ + 1 ][ idx ] / local_recording_interval_;
         stream << "\n";
         ++idx;
     }

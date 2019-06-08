@@ -101,6 +101,16 @@ public:
 };
 
 
+// quantiles of the terminal branch lengths
+class TerminalBranchLengthQuantiles {
+public:
+    TerminalBranchLengthQuantiles() {}
+    vector<double> quantiles;        // between 0 and 1, ordered
+    vector<vector<double>> lengths;  // [lineage][quantile]
+    double mean_total_branch_length; // used in the approximate likelihood
+};
+
+
 /*!
  * \brief Derived class from Forest.
  * A particle is a special case of a Forest, with special members
@@ -161,11 +171,16 @@ private:
     double pilotWeight() const { return this->pilot_weight_; }
     int multiplicity() const { return multiplicity_; }
     void setMultiplicity( int multiplicity ) { multiplicity_ = multiplicity; }
+    void set_max_epoch_to_record( int max_epoch_to_record ) { max_epoch_to_record_ = max_epoch_to_record; }
 
     // Save and restore recombination rate index
     void save_recomb_state() { _current_seq_idx = model().get_position_index(); }
     void restore_recomb_state() { writable_model()->resetSequencePosition( _current_seq_idx ); }
 
+    // Auxiliary particle filter
+    void includeLookaheadLikelihood( const Segment& segment, const TerminalBranchLengthQuantiles& terminal_branch_lengths );
+    void removeLookaheadLikelihood() { pilot_weight_ /= lookahead_weight_; lookahead_weight_ = 1.0; }
+    
     // Biased sampling
     void adjustWeights(double adjustment) {
         posterior_weight_ *= adjustment;
@@ -193,13 +208,21 @@ private:
         assert( std::abs(posterior_weight_ - pilot_weight_ * total_delayed_adjustment_) <= .001 * posterior_weight_ );
     }
     
-    //// biased sampling    
+    // biased sampling    
     double find_delay( double coal_height );
     double importance_weight_over_segment( double previously_updated_to, double update_to );
     double sampleOrMeasureWeightedTree( const Node* node, double& length_left, double& local_weight, const bool recomb_bias, const bool recomb_guide );
     void inline accumulateBranchLengths( double rate, bool recomb_bias, const Node* node, double& length, double& weight );
     double getWeightedLocalTreeLength( const bool recomb_bias, const bool recomb_guide );
     Node* trackLocalNode(Node *node) const;
+
+    // trial sampling
+    double sampleNextGenealogyWithoutImplementing();
+    void dontImplementFixedTimeEvent(TimeIntervalIterator &ti);
+    void dontImplementNoEvent(const TimeInterval &ti, bool &coalescence_finished);
+    void dontImplementRecombination(const Event &event, TimeIntervalIterator &ti);
+    void dontImplementCoalescence(const Event &event, TimeIntervalIterator &tii);
+    Node* virtualPossiblyMoveUpwards(Node* node, const TimeInterval &time_interval);
 
     // below are overloaded
     virtual double sampleNextBase( bool record_and_bias );
@@ -213,9 +236,12 @@ private:
     double site_where_weight_was_updated_;
     double posterior_weight_;
     double pilot_weight_;
+    double lookahead_weight_;
     int    multiplicity_;
     int    _current_seq_idx;                         // stores variable model.h, so that each particle looks at correct recomb rate
     double first_event_height_;                      // NOTE: this is a temporary variable; move elsewhere?
+    double first_coal_height_;
+    double last_coal_height_;
     double total_local_branch_length_;               // NOTE: this is a temporary variable; move elsewhere?
     PfParam& pfparam;                                // to give access to record_event_in_epoch and recomb_bias.  NOTE: move elsewhere?
     double recombination_bias_importance_weight_;    // factor of importance weight due to recombination biasing; delay is treated specially for this IW
@@ -223,8 +249,9 @@ private:
     bool owning_model_and_random_generator;
 
     // DEBUG
-    int recent_recombination_count;
+    //int recent_recombination_count;
     double total_delayed_adjustment_;
+    int max_epoch_to_record_;
     
 };
 #endif

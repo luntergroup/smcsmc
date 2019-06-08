@@ -57,13 +57,17 @@ class ParticleContainer {
         //
         // Methods
         //
-        void update_state_to_data( Segment * Segfile, bool ancestral_aware );
-        void extend_ARGs( double extend_to, const vector<int>& data_at_site );
+        void update_state_to_data( Segment * Segfile, bool ancestral_aware, const TerminalBranchLengthQuantiles& term_branch_lengths, int max_record_epoch );
+        void extend_ARGs( double extend_to, const vector<int>& data_at_site, int max_record_epoch );
+
+        void extend_ARGs_importance_sampling( double extend_to, const vector<int>& data_at_site, const Segment& segment,
+                                              bool ancestral_aware, const TerminalBranchLengthQuantiles& terminal_branch_lengths );
         void set_particles_with_random_weight();
-        int  resample(int update_to, const PfParam &pfparam);
+        int  resample(int update_to, const PfParam &pfparam, vector<ForestState*>* particles = NULL, int to_sample = -1);
         void normalize_probability();
         void clear();
         double ln_normalization_factor() const { return this->ln_normalization_factor_; }
+        void printTrees( const PfParam& pfparam );
 
         //
         // Debugging tools
@@ -78,12 +82,19 @@ class ParticleContainer {
         // Methods
         //
         void update_data_status_at_leaf_nodes( const vector<int>& data_at_tips );
-        int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips ) const;
-        void update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware);
-        bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const;
+        int calculate_initial_haplotype_configuration( const vector<int>& data_at_tips, vector<int>& haplotype_at_tips, bool dephase ) const;
+        void update_weight_at_site( const Segment &segment,
+                                    const vector<ForestState*>& particles,
+                                    bool ancestral_aware,
+                                    const TerminalBranchLengthQuantiles& term_brach_len);
+        void update_lookahead_likelihood( const Segment& segment,
+                                          const vector<ForestState*>& particles,
+                                          bool ancestral_aware,
+                                          const TerminalBranchLengthQuantiles& terminal_branch_lengths );
+        bool next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips, bool dephase ) const;
         // Resampling
-        void implement_resampling(valarray<int> & sample_count, double total_pilot_weight);
-        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count);
+        vector<ForestState*> implement_resampling( const vector<ForestState*>& particles, valarray<int> & sample_count, double total_pilot_weight) const;
+        void systematic_resampling( valarray<double>& partial_sum, valarray<int>& sample_count, int N) const;
 
         //
         // Setters and getters:

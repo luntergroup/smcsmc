@@ -39,7 +39,6 @@
 #define EventRecorderdout 0 && (std::cout << "    EventRecorder ")
 #endif
 
-
 extern double recomb_opp; //DEBUG
 
 
@@ -120,6 +119,22 @@ public:
         event_data_ = obj.event_data_;
         children_updated_ = obj.children_updated_;
     }
+    // Copy constructor that does not steal the parent pointer -- used for building tree modifying events
+    EvolutionaryEvent( const int _dummy, const EvolutionaryEvent& obj ) :
+        start_height(obj.start_height),
+        end_height(obj.end_height),
+        start_base_(obj.start_base_),
+        end_base_(obj.end_base_),
+        a( obj.a.coal_migr_population ),
+        parent_(NULL),
+        weight(obj.weight),
+        event_data_(obj.event_data_),
+        descendants( obj.descendants )
+    {
+        this->init();
+        event_data_ = obj.event_data_;
+        children_updated_ = obj.children_updated_;
+    }
     // Destructor.  Should not be used when Arena and placement new is used for allocation
     ~EvolutionaryEvent() {
         std::cout << "Destructor is called -- problem!" << std::endl;
@@ -137,6 +152,7 @@ public:
     bool is_coalmigr() const          { return start_base_ < 0; }
     bool is_no_event() const          { return event_data_ == -2; }
     bool is_recomb_event() const      { assert(is_recomb()); return event_data_ > -2; }
+    bool is_time_recomb_event() const { assert(is_recomb()); return event_data_ == 0; }
     bool is_coal_event() const        { assert(is_coalmigr()); return event_data_ == -1; }
     bool is_migr_event() const        { assert(is_coalmigr()); return event_data_ >= 0; }
     int recomb_event_count() const    { return is_recomb_event(); }
@@ -222,7 +238,10 @@ public:
         // recombination events are recorded in the sequence segment following the event (arbitrary choice).  Therefore,
         // the sequence position of the recombination event is the start of the current event record's sequence segment
         // (for events that occur when sweeping in the x direction)
-        return event_data_ == -1 ? a.recomb_pos : start_base_; } 
+        return event_data_ == -1 ? a.recomb_pos : start_base_; }
+    double recomb_event_time() const {
+        if (!is_recomb_event()) return -1;
+        return event_data_ == 0 ? a.recomb_pos : end_height; }
     void set_descendants( const Descendants_t descendants_ ) {
         descendants = descendants_; }
     Descendants_t get_descendants() const {
@@ -235,6 +254,8 @@ public:
         return start_height; }
     double get_end_height() const {
         return end_height; }
+    double get_recomb_pos() const {
+        return a.recomb_pos; }
     int get_weight() const {
         return weight;
     }
@@ -316,8 +337,8 @@ private:
     // helper variables for the update algorithm (put here for packing / alignment)
     EvolutionaryEvent* parent_;
     double posterior_;
-    short children_updated_;
-    short ref_counter_;
+    int children_updated_;
+    int ref_counter_;
 
     // remainder of core variables
     short weight;         // number of lineages (for recombination and coalescence, not migration) contributing to opportunity
@@ -330,20 +351,20 @@ private:
     
     void set_posterior ( const double posterior ){ this->posterior_ =  posterior; }
     double posterior () const { return this->posterior_; }
-    void set_children_updated ( const short children ){ this->children_updated_ = children; }
-    short children_updated() const { return this->children_updated_; }
+    void set_children_updated ( const int children ){ this->children_updated_ = children; }
+    int children_updated() const { return this->children_updated_; }
     void set_event_data ( const short event_data ){ this->event_data_ = event_data; }
     short event_data() const { return this->event_data_; }
     void set_end_base( double end_base ) { end_base_ = end_base; }
 
-    void set_ref_counter ( const short ref_counter ){ this->ref_counter_ = ref_counter; }
-    short ref_counter() const { return this->ref_counter_; }
+    void set_ref_counter ( const int ref_counter ){ this->ref_counter_ = ref_counter; }
+    int ref_counter() const { return this->ref_counter_; }
 
     void init(){
         this->set_posterior(0.0);
-        this->set_children_updated( (short)0 );
+        this->set_children_updated( 0 );
         this->set_event_data ( (short)-2 );
-        this->set_ref_counter( (short) 1 );
+        this->set_ref_counter( 1 );
     }
 };
 

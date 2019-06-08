@@ -109,6 +109,60 @@ bool is_height_in_tree( const Forest& forest, double height ) {
     return false;
 }
 
+
+double parent_height_ignoring_migrations( const Node* node ) {
+    while (!node->is_root()) {
+        node = node->parent();
+        if ((!node->is_migrating()) && 
+            (node->countChildren( /* only_local = */ true ) == 2 )) {
+            break;
+        }
+    }
+    return node->height();
+}
+
+
+TerminalBranchLengthQuantiles calculate_terminal_branch_length_quantiles( Model& model ) {
+
+    const int max_iterations = 1000000;
+    MersenneTwister randomgenerator( true, 1 );
+    TerminalBranchLengthQuantiles tblq;
+    double total_length = 0.0;
+    tblq.quantiles = {0.001,0.003,0.01,0.03,0.1,0.5,0.95};
+    tblq.lengths.resize( model.sample_size() );
+    vector<vector<double>> tbls( model.sample_size() );
+
+    // (for auxiliary particle filter:)
+    cout << "Calculating terminal branch length quantiles..." << endl;
+    
+    for (int iterations = 0; iterations < max_iterations; iterations++) {
+
+        Forest tree( &model, &randomgenerator );
+        tree.buildInitialTree( false );
+        total_length += tree.getLocalTreeLength();
+        for ( auto it = tree.getNodes()->iterator(); it.good(); ++it) {
+            if ((*it)->in_sample()) {
+                double height = parent_height_ignoring_migrations( (*it) );
+                int sample = (*it)->label() - 1;
+                tbls[ sample ].push_back( height );
+            }
+        }
+    }
+    for (int sample = 0; sample < model.sample_size(); ++sample) {
+        cout << "Lineage " << sample << "; Terminal branch length quantiles:";
+        std::sort( tbls[ sample ].begin(), tbls[ sample ].end() );
+        for (int q = 0; q < tblq.quantiles.size(); ++q) {
+            tblq.lengths[ sample ].push_back( tbls[ sample ][ (int)(tblq.quantiles[q] * max_iterations) ] );
+            cout << " [" << tblq.quantiles[q] << ":] " << tblq.lengths[ sample ].back();
+        }
+        cout << endl;
+    }
+    tblq.mean_total_branch_length = total_length / max_iterations;
+    
+    return tblq;
+}
+
+
 vector<double> calculate_median_survival_distances( Model model, int min_num_events_per_epoch = 200 ) {
 
     // we want to change model attributes inside this function only
@@ -138,7 +192,8 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
       arg.buildInitialTree( false );
       std::set<double> original_node_heights;
       for ( auto it = arg.getNodes()->iterator(); it.good(); ++it) {
-          if (!(*it)->in_sample()) {
+          if ((!(*it)->in_sample()) &&
+              (!(*it)->is_migrating())) {
               double height = (*it)->height();
               original_node_heights.insert( height );
               for (epoch_idx = 0;
@@ -173,9 +228,6 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
         }
       }
     }
-    clog << "Median survival: " << iterations << " iterations; per-epoch counts";
-    for (size_t idx = 0; idx < survival_distances.size(); idx++ ) clog << " " << survival_distances[idx].size();
-    clog << endl;
 
     // now deal with the possiblity that no or insufficient events have been sampled for an epoch
     vector <double> median_survival_distances;
@@ -201,46 +253,23 @@ vector<double> calculate_median_survival_distances( Model model, int min_num_eve
                 median_survival_distances[epoch_idx] = earliest_survival_distance;
             }
         }
-        clog << " Epoch " << epoch_idx << " contains " << survival_distances[epoch_idx].size() << " coalescent events" << endl;
-        clog << "   Survival distance set to " << median_survival_distances[epoch_idx] << endl;
+        clog << " Epoch " << epoch_idx << " (" << survival_distances[epoch_idx].size()
+             << " events): survival distance " << median_survival_distances[epoch_idx] << endl;
     }
     return median_survival_distances;
 }
 
 
-/*
-void calibrate_bias_ratios(Model* model, double top_t_value) {
-
-    if (model->biased_sampling) {
-        clog << "model has bias heights " << model->bias_heights() << endl;
-        clog << "model has bias strengths " << model->bias_strengths() << endl;
-
-        int Num_bias_ratio_simulation_trees = 10000;
-        ModelSummary model_summary = ModelSummary(model, top_t_value);
-        for(size_t tree_idx = 0 ; tree_idx < Num_bias_ratio_simulation_trees ; tree_idx++){
-            model_summary.addTree();
-        }
-        model_summary.finalize();
-        
-        clog << "Information from pre-sequence-analysis tree simulation:" << endl;
-        clog << "    model_summary.times_: " << model_summary.times_ << endl;
-        clog << "    avg B: " << model_summary.avg_B() << endl;
-        clog << "    avg B below: " << model_summary.avg_B_below() << endl;
-        clog << "    avg B within: " << model_summary.avg_B_within() << endl;
-        clog << "    avg B below bh: " << model_summary.avg_B_below_bh() << endl;
-        clog << "    avg lineage count: " << model_summary.avg_lineage_count() << endl;
-        clog << "    single lineage count: " << model_summary.single_lineage_count() << endl;
-        clog << "    tree count: " << model_summary.tree_count_ << endl;
-        
-        model->clearBiasRatios();
-        for( size_t idx=0; idx < model->bias_strengths().size(); idx++ ){
-            model->addToBiasRatios( model_summary.getBiasRatio(idx) );
-        }
-        clog << "    Bias ratios set to: " << model->bias_ratios() << endl;
-    }
-    assert( model->bias_ratios().size() == model->bias_heights().size()-1 );
+int max_epoch_to_update( const vector<double>& lags, double distance_to_mutation ) {
+    int epoch = 0;
+    // There's not real justification for the factor 0.5 below; but large gaps in the data are infrequent,
+    // and cause significant memory usage, so stop recording events a bit sooner than you would idealy want to do.
+    double scale_factor = 0.5;
+    while (epoch < lags.size() && 
+           distance_to_mutation < scale_factor * lags[epoch])
+        epoch++;
+    return epoch - 1;
 }
-*/
 
 
 void pfARG_core(PfParam &pfARG_para,
@@ -253,7 +282,8 @@ void pfARG_core(PfParam &pfARG_para,
     Segment *Segfile     = pfARG_para.Segfile;
 
     vector<double> median_survival = calculate_median_survival_distances( *model );
-
+    TerminalBranchLengthQuantiles tblq = calculate_terminal_branch_length_quantiles( *model );
+    
     /* load the recombination guide rates into the model */
     pfARG_para.setModelRates();
 
@@ -272,26 +302,30 @@ void pfARG_core(PfParam &pfARG_para,
 
     // lags_to_application_delays sets app delay to half the argument, we want the app delay to be half the survival
     model->lags_to_application_delays( median_survival, pfARG_para.delay );
-    for( size_t i=0; i<model->application_delays.size(); i++ ){
+    if (pfARG_para.delay > 0) {
+        for( size_t i=0; i<model->application_delays.size(); i++ ){
 	    clog << " Application delay for epoch " << i << " set to " << model->application_delays.at(i) << endl;
+        }
     }
     // Now set the lag correctly according to the command
     if ( pfARG_para.calibrate_lag ){
       countNe->reset_lag( median_survival, pfARG_para.lag_fraction );
     }
-    clog << "    Lags set to: " << countNe->check_lags() << endl;
-
+    const vector<double>& lags = countNe->get_lags();
+    clog << "    Lags set to: " << lags << endl;
+    clog << " Starting position: " << fixed << setprecision(0) << pfARG_para.start_position << setprecision(6) << scientific << endl;
 
     /*! Go through seg data */
     bool force_update = false;
     int total_resample_count = 0;
     do{
-        dout <<"Current base is "<<Segfile->segment_start() << endl;
+        dout <<"Current base is " << fixed << setprecision(0) << Segfile->segment_start() << setprecision(6) << scientific << endl;
 
         /*!     Sample the next genealogy, before the new data entry is updated to the particles
          *      In this case, we will be update till Segfile->site()
          */
-        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware );
+        int max_update_epoch = max_epoch_to_update( lags, Segfile->distance_to_mutation() );
+        current_states.update_state_to_data( Segfile, pfARG_para.ancestral_aware, tblq, max_update_epoch );
 
         /*! Add posterior event counts to global counters */
         countNe->extract_and_update_count( current_states , min(Segfile->segment_end(), (double)model->loci_length()) );
@@ -342,7 +376,7 @@ void pfARG_core(PfParam &pfARG_para,
         boost::iostreams::filtering_ostream out;
         out.push( boost::iostreams::gzip_compressor() );
         out.push( recombFile );
-        countNe->dump_local_recomb_logs( out, model->loci_length(), pfARG_para.EMcounter() );
+        countNe->dump_local_recomb_logs( out, model->loci_length(), pfARG_para.EMcounter(), pfARG_para.start_position );
     }
     
     countNe->reset_model_parameters(sequence_end, model, pfARG_para.useCap, pfARG_para.Ne_cap,
@@ -353,6 +387,10 @@ void pfARG_core(PfParam &pfARG_para,
     // write log likelihood to out file
     pfARG_para.appendToOutFile( pfARG_para.EMcounter(), -1, 0, 1e+99, "LogL", -1, -1, 1.0, current_states.ln_normalization_factor(), 1.0 );
     clog << " Estimated log likelihood: " << current_states.ln_normalization_factor() << endl;
+
+    // write out trees
+    current_states.resample( (double)model->loci_length(), pfARG_para, NULL, 1 );
+    current_states.printTrees( pfARG_para );
     
     current_states.clear();
     Segfile->reset_data_to_first_entry();

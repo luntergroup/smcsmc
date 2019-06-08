@@ -22,6 +22,8 @@
 */
 
 #include "particleContainer.hpp"
+#include "descendants.hpp"
+
 
 /*! \brief Particle filtering Initialization
  * Create particle initial states in the simulation
@@ -76,12 +78,14 @@ void ParticleContainer::print_recent_recombination_histogram() {
         cout << i << "\t" << hist[i] << endl;
     }
     */
+    /*
     double rec_acc = 0, rec_wt = 0;
     for (size_t i=0; i<particles.size(); i++) {
         rec_acc += particles[i]->recent_recombination_count * particles[i]->posteriorWeight() * particles[i]->multiplicity();
         rec_wt  += particles[i]->posteriorWeight() * particles[i]->multiplicity();
     }
     cout << "Posterior mean recent recombination count: " << rec_acc / rec_wt << endl;
+    */
     
 }
 
@@ -91,9 +95,9 @@ void ParticleContainer::print_recent_recombination_histogram() {
  * \brief Update the current state to the next state, at the given site, update all particles to its latest genealogy state.  
  * \brief Also include the likelihood for no mutations.
  */
-void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site ){
+void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_at_site, int max_record_epoch ){
 
-    dout << endl<<" We are extending particles" << endl<<endl;
+    dout << endl<<" We are extending " << particles.size() << " particles" << endl<<endl;
 
     // Calculate number of leaves with missing data (for speeding up the likelihood calculation)
     int num_leaves_missing = 0;
@@ -114,17 +118,26 @@ void ParticleContainer::extend_ARGs( double extend_to, const vector<int>& data_a
          * Invariant: the likelihood is correct up to 'updated_to'
          * Note that extend_ARG may enter additional particles in the particles vector.
          */
-        dout << " before extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
+        dout << " before extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult " << particles[particle_i]->multiplicity() << endl;
         particles[particle_i]->restore_recomb_state();
+        particles[particle_i]->set_max_epoch_to_record( max_record_epoch );
         particles[particle_i]->extend_ARG ( extend_to, leaf_status, data_at_site, &particles );
         particles[particle_i]->save_recomb_state();
-        dout << " after extend ARG particle weight is " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
+        if (particles[particle_i]->multiplicity() == 0) {
+            // particle committed suicide -- remove, replace by back() of the array, and process
+            delete particles[particle_i];
+            particles[particle_i] = particles.back();
+            particles.pop_back();
+            particle_i--;
+        }
+        dout << " after extend ARG: weight " << particles[particle_i]->posteriorWeight() << " mult is " << particles[particle_i]->multiplicity() << endl;
     }
 }
 
 
 int ParticleContainer::calculate_initial_haplotype_configuration( const vector<int>& data_at_tips,
-                                                                  vector<int>& haplotype_at_tips ) const {
+                                                                  vector<int>& haplotype_at_tips,
+                                                                  bool dephase ) const {
 
     // just copy any phased haplotype or homozygous genotype data across -- as this is provided in pairs, this is
     // automatically correct haplotype data.  For unphased het sites, which are encoded as pairs of '2's, assign
@@ -133,62 +146,96 @@ int ParticleContainer::calculate_initial_haplotype_configuration( const vector<i
     haplotype_at_tips = data_at_tips;
     int num_configurations = 1;
     for (int i=0; i < data_at_tips.size(); i+=2) {
-        if (data_at_tips[i] == 2) {
+        bool is_unphased_het = (data_at_tips[i] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1);
+        if (is_unphased_het) {
             num_configurations *= 2;
-            assert (data_at_tips[i+1] == 2);
+            assert ((data_at_tips[i+1] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1));
             haplotype_at_tips[i] = 0;    // initialize phase vector
             haplotype_at_tips[i+1] = 1;
         } else {
-            assert (data_at_tips[i+1] != 2);
+            assert ((data_at_tips[i+1] != 2) && (!(dephase && data_at_tips[i] + data_at_tips[i+1] == 1)));
         }
     }
     return num_configurations;
 }
 
 
-bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips ) const {
+bool ParticleContainer::next_haplotype( vector<int>& haplotype_at_tips, const vector<int>& data_at_tips, bool dephase ) const {
 
-        // find the next haplotype that is compatible with the genotype encoded in data_at_tips
-        for (int i=0; i<haplotype_at_tips.size(); i+=2) {
+    // find the next haplotype that is compatible with the genotype encoded in data_at_tips
+    for (int i=0; i<haplotype_at_tips.size(); i+=2) {
 
-                if (data_at_tips[i] != 2) continue;   // phased site -- ignore
-                if (haplotype_at_tips[i] == 0) {      // phase 0 -- change to phase 1, and done
-                        haplotype_at_tips[i] = 1;
-                        haplotype_at_tips[i+1] = 0;
-                        return true;
-                }
-                haplotype_at_tips[i] = 0;             // phase 1 -- flip back, and continue
-                haplotype_at_tips[i+1] = 1;
-
+        bool is_unphased_het = (data_at_tips[i] == 2) || (dephase && data_at_tips[i] + data_at_tips[i+1] == 1);
+        if (!is_unphased_het) continue;        // phased site -- ignore
+        if (haplotype_at_tips[i] == 0) {       // phase 0 -- change to phase 1, and done
+            haplotype_at_tips[i] = 1;
+            haplotype_at_tips[i+1] = 0;
+            return true;
         }
-        // we fell through, so we have considered all haplotypes; stop main loop
-        return false;
+        haplotype_at_tips[i] = 0;              // phase 1 -- flip back, and continue
+        haplotype_at_tips[i+1] = 1;
+        
+    }
+    // we fell through, so we have considered all haplotypes; stop main loop
+    return false;
 }
 
 
 /*! \brief Update particle weight according to the haplotype or genotype data
  *      @ingroup group_pf_update
  */
-void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips, bool ancestral_aware ){
+void ParticleContainer::update_weight_at_site( const Segment& segment,
+                                               const vector<ForestState*>& particles,
+					       bool ancestral_aware,
+					       const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
 
+    if (segment.segment_state() != SEGMENT_INVARIANT) {
+        // only account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
+        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
+        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
+        // for a mutation in a MISSING segment.
+        return;
+    }
+
+    // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
+    //   position. This would replace the blanket ancestral_aware with a segment->ancestral_aware.
+    //   We could also include a likelihood of 0 being ancestral.
+    
+    const vector<int>& data_at_tips = segment.allelic_state_at_Segment_end;
     vector<int> haplotype_at_tips;
-    int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips );
+    bool dephase = particles[0]->pfparam.dephase;
+    int num_configurations = calculate_initial_haplotype_configuration( data_at_tips, haplotype_at_tips, dephase );
     double normalization_factor = 1.0 / num_configurations;
 
     // now update the weights of all particles, by calculating the likelihood of the data over the previous segment
     for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+	// marginalize over haplotype configurations consistent with (possibly unphased) genotype configuration
         double likelihood_of_haplotype_at_tips = 0;
         do {
-
             likelihood_of_haplotype_at_tips += particles[particle_i]->calculate_likelihood( ancestral_aware, haplotype_at_tips );
-
-        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips));
+        } while ((num_configurations > 1) && next_haplotype(haplotype_at_tips, data_at_tips, dephase));
 
         likelihood_of_haplotype_at_tips *= normalization_factor;
 
-        // the following assertion checks appropriate importance factors have been accounted for
-        //   if we ever change the emission factor of the sampling distribution, this assertion should fail
-        this->particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
+	// include likelihood
+        particles[particle_i]->adjustWeights( likelihood_of_haplotype_at_tips );
+
+    }
+}
+
+
+void ParticleContainer::update_lookahead_likelihood( const Segment& segment,
+                                                     const vector<ForestState*>& particles,
+                                                     bool ancestral_aware,
+                                                     const TerminalBranchLengthQuantiles& terminal_branch_lengths ){
+
+    for (size_t particle_i = 0; particle_i < particles.size(); particle_i++) {
+    
+	// remove possible previous lookahead likelihood for auxiliary particle filter
+	particles[particle_i]->removeLookaheadLikelihood();
+
+	// include lookahead likelihood into pilotWeight, to guide resampling
+	particles[particle_i]->includeLookaheadLikelihood( segment, terminal_branch_lengths );
     }
 }
 
@@ -197,9 +244,10 @@ void ParticleContainer::update_weight_at_site( const vector <int> &data_at_tips,
  *  If the effective sample size is less than the ESS threshold, do a resample, currently using systemetic resampling scheme.
  */
 
-int ParticleContainer::resample(int update_to, const PfParam &pfparam)
+int ParticleContainer::resample(int update_to, const PfParam &pfparam, vector<ForestState*>* particles, int to_sample)
 {
-    size_t num_particle_records = particles.size();
+    if (particles == NULL) particles = &(this->particles);
+    size_t num_particle_records = particles->size();
     valarray<double> partial_sums( num_particle_records + 1 );
     int actual_num_particles = 0;
     double wi_sum = 0;
@@ -207,45 +255,59 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
 
     for (size_t i = 0; i < num_particle_records; i++) {
         partial_sums[i] = wi_sum;
-        double w_i = particles[i]->pilotWeight();
-        int mult   = particles[i]->multiplicity();
+        double w_i = (*particles)[i]->pilotWeight();
+        int mult   = (*particles)[i]->multiplicity();
         actual_num_particles += mult;
         wi_sum += w_i * mult;
-        wi_sq_sum += w_i * w_i * mult;
+    }
+    double scaling = 1.0/wi_sum;
+    for (size_t i = 0; i < num_particle_records; i++) {
+        double w_i = (*particles)[i]->pilotWeight();
+        int mult   = (*particles)[i]->multiplicity();
+        wi_sq_sum += (w_i * scaling) * (w_i * scaling * mult);
     }
     partial_sums[ num_particle_records ] = wi_sum;
-    double ess = wi_sum * wi_sum / wi_sq_sum;
+    double ess = 1.0 / wi_sq_sum;
 
-    if (actual_num_particles != num_particles) {
+    if (to_sample == -1 && actual_num_particles != num_particles) {    // only check if used for main particle set, not importance sampling
         cout << "Problem: expected " << num_particles << " particles but found " << actual_num_particles << endl;
         exit(1);
     }
-    
-    dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << num_particle_records
-         << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
-    
-    if ( ess < pfparam.ESSthreshold - 1e-6 ) {
 
-        // Dropped below ESS threshold -- resample
+    if (to_sample == -1) {
+        dout << "At pos " << update_to << " ESS is " << ess <<", number of particles is " << num_particle_records
+             << " threshold is " << pfparam.ESSthreshold << " diff=" << pfparam.ESSthreshold - ess << endl;
+    }
+
+    int result;
+    if ( to_sample > 0 || ess < pfparam.ESSthreshold - 1e-6 ) {
+
+        // Resample
         valarray<int> sample_count( num_particle_records );
-        pfparam.append_resample_file( update_to, ess );
-        systematic_resampling( partial_sums, sample_count );
-        implement_resampling( sample_count, wi_sum);
-        return 1;
+        if (to_sample == -1) {
+            pfparam.append_resample_file( update_to, ess );
+            to_sample = num_particles;
+        }
+        systematic_resampling( partial_sums, sample_count, to_sample );
+        *particles = implement_resampling( *particles, sample_count, wi_sum);
+        result = 1;
         
     } else {
 
         // The sampling procedure will flush old recombinations, but this won't happen in the absence of data.
         // Ensure that even in the absence of data, old recombinations do not build up and cause memory overflows
-        bool flush = particles[0]->segment_count() > 50;
+        bool flush = (*particles)[0]->segment_count() > 50;
         if (flush) {
             for (size_t state_index = 0; state_index < num_particle_records; state_index++) {
-                particles[state_index]->flushOldRecombinations();
+                (*particles)[state_index]->flushOldRecombinations();
             }
         }
-        return 0;
+        result = 0;
 
     }
+
+    return result;
+
 }
 
 
@@ -256,11 +318,17 @@ int ParticleContainer::resample(int update_to, const PfParam &pfparam)
  *
  * \ingroup group_resample
  */
-void ParticleContainer::implement_resampling(valarray<int> & sample_count, double sum_of_delayed_weights) {
+vector<ForestState*> ParticleContainer::implement_resampling( const vector<ForestState*>& particles,
+                                                              valarray<int> & sample_count,
+                                                              double sum_of_delayed_weights) const {
 
     size_t number_of_records = sample_count.size();
-    bool flush = this->particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
+    bool flush = particles[0]->segment_count() > 50;  // keep Forest::rec_bases_ vector down to reasonable size
     vector<ForestState*> new_particles;
+    size_t number_of_particles = 0;
+    for (size_t particle_idx = 0; particle_idx < number_of_records; particle_idx++) {
+        number_of_particles += sample_count[particle_idx];
+    }
 
     for (size_t particle_idx = 0; particle_idx < number_of_records; particle_idx++) {
 
@@ -279,7 +347,7 @@ void ParticleContainer::implement_resampling(valarray<int> & sample_count, doubl
 
             // calculate weight adjustment:
             // the ratio of the desired weight, sum_of_delayed_weights / num_particles, to current weight, pilotWeight()
-            double adjustment = sum_of_delayed_weights / ( num_particles * current_state->pilotWeight() );
+            double adjustment = sum_of_delayed_weights / ( number_of_particles * current_state->pilotWeight() );
             current_state->adjustWeights( adjustment );
 
             // if we're using multiplicity, use that to implement the new particle count
@@ -320,8 +388,7 @@ void ParticleContainer::implement_resampling(valarray<int> & sample_count, doubl
         }
     }
 
-    // update particle container
-    particles = new_particles;
+    return new_particles;
 }
 
 
@@ -371,29 +438,26 @@ void ParticleContainer::normalize_probability() {
 }
 
 
-void ParticleContainer::update_state_to_data( Segment * Segfile, bool ancestral_aware ) {
+void ParticleContainer::update_state_to_data( Segment * segment,
+					      bool ancestral_aware,
+					      const TerminalBranchLengthQuantiles& terminal_branch_lengths,
+                                              int max_update_epoch ) {
 
     dout <<  " ******************** Update the weight of the particles  ********** " <<endl;
-    dout << " ### PROGRESS: update weight at " << Segfile->segment_start()<<endl;
+    dout << " ### PROGRESS: update weight at " << segment->segment_start()<<endl;
 
     // Allelic state; -1 = absent, 0,1 are ref/alt, 2 = part of het site
-    const vector<int>& data_at_site = Segfile->allelic_state_at_Segment_end;
+    const vector<int>& data_at_site = segment->allelic_state_at_Segment_end;
+    double extend_to = (double)min(segment->segment_end(), (double)model->loci_length() );
 
     //Extend ARGs and update weight for not seeing mutations along the sequences
-    extend_ARGs( (double)min(Segfile->segment_end(), (double)model->loci_length() ), data_at_site );
+    extend_ARGs( extend_to, data_at_site, max_update_epoch );
 
+    //Update the lookahead likelihood
+    update_lookahead_likelihood( *segment, particles, ancestral_aware, terminal_branch_lengths );
+    
     //Update weight for seeing mutation at the position
-    dout << " Update state weight at a SNP "<<endl;
-    if (Segfile->segment_state() == SEGMENT_INVARIANT) {
-        // account for the mutation at the end of an INVARIANT segment (which ends in a mutation).
-        // Do not account for a mutation in an INVARIANT_PARTIAL segment (which is an initial fragment
-        // of an INVARIANT segment, and therefore does not end with a mutation).  Also don't account
-        // for a mutation in a MISSING segment.
-        update_weight_at_site( Segfile->allelic_state_at_Segment_end, ancestral_aware );
-        // TODO: Consider adding a column to the segfile which specifies if the ancestral allele is known for this
-        //   position. This would replace the blanket ancestral_aware with a Segfile->ancestral_aware.
-        //   We could also include a likelihood of 0 being ancestral.
-    }
+    update_weight_at_site( *segment, particles, ancestral_aware, terminal_branch_lengths );
 
     dout << "Extended until " << particles[0]->current_base() <<endl;
 
@@ -408,8 +472,8 @@ void ParticleContainer::update_state_to_data( Segment * Segfile, bool ancestral_
  * \brief Use systematic resampling \cite Doucet2008 to generate sample count for each particle
  */
 void ParticleContainer::systematic_resampling(std::valarray<double>& partial_sum,
-                                              std::valarray<int>& sample_count) {
-    int N = num_particles;
+                                              std::valarray<int>& sample_count,
+                                              int N ) const {
     int num_records = sample_count.size();
     size_t sample_i = 0;                                             // sample counter, 1 to N
     double u_j = random_generator()->sample() / N;                   // quantile of record to sample
@@ -447,3 +511,45 @@ void ParticleContainer::set_particles_with_random_weight(){
     }
 }
 
+
+void ParticleContainer::printTrees( const PfParam& pfparam ) {
+
+    int tree_epoch = particles[0]->eventTrees.size() - 1;            // pseudo-epoch in which tree-modifying events are stored
+    EvolutionaryEvent* event = particles[0]->eventTrees[ tree_epoch ];
+    if (event == NULL) return;                                       // no trees were stored
+    {
+        // put in a scope to close the files automatically after dumping trees
+        ofstream tree_file( pfparam.tree_NAME.c_str(), ios::out | ios::binary );
+        boost::iostreams::filtering_ostream out;
+        out.push( boost::iostreams::gzip_compressor() );
+        out.push( tree_file );
+        out << setiosflags(ios::fixed) << setprecision(1);
+        while (event) {
+            double x = event->end_base();
+            double t = event->get_end_height();
+            int from_pop = -1;
+            int to_pop = -1;
+            string eventcode = "R";
+            if (event->is_recomb()) {
+                if (event->is_time_recomb_event()) {
+                    t = event->get_recomb_pos();
+                    x = event->start_base();   // a recombination event is associated to the opportunity of subsequent recombinations
+                } else {
+                    x = event->get_recomb_pos();
+                }
+            }
+            if (event->is_coalmigr()) {
+                from_pop = event->get_population();
+                eventcode = "C";
+                if (event->is_migr_event()) {
+                    to_pop = event->get_migr_to_population();
+                    eventcode = "M";
+                }
+            }
+            out << eventcode << "\t" << x + pfparam.start_position - 1 << "\t" << t << "\t" << from_pop << "\t" << to_pop << "\t";
+            print_descendants( out, event->get_descendants() );
+            out << endl;
+            event = event->parent();
+        }
+    }
+}

@@ -277,6 +277,7 @@ class PfParam{
     // ------------------------------------------------------------------
     static const int RECORD_RECOMB_EVENT = 1;
     static const int RECORD_COALMIGR_EVENT = 2;
+    static const int RECORD_TREE_EVENT = 4;
     enum ResampleDelayType { RESAMPLE_DELAY_RECOMB, RESAMPLE_DELAY_COAL, RESAMPLE_DELAY_COALMIGR };
 
     double lag;
@@ -285,7 +286,9 @@ class PfParam{
     double delay;
     ResampleDelayType delay_type;
     bool ancestral_aware;
+    bool dephase;
     bool online_bool;
+    int auxiliary_particle_filter;
     double start_position;
 
     Segment * Segfile;
@@ -356,7 +359,7 @@ class PfParam{
         std::stringstream ss(*argv_i);
         ss >> input;
         second = input;
-        if (ss.fail() || input < 1) throw std::invalid_argument(std::string("Failed to parse int (e.g. '1') or int range (e.g. '1-10'): ") + *argv_i);
+        if (ss.fail() || input < 0) throw std::invalid_argument(std::string("Failed to parse int (e.g. '1') or int range (e.g. '0-10'): ") + *argv_i);
         if (!ss.get(c)) return input;
         if (c != '-') throw std::invalid_argument(std::string("Parsing failure: expected '-' after int in range expression: ") + *argv_i);
         ss >> second;
@@ -407,6 +410,7 @@ class PfParam{
     string recombination_map_NAME;
     string log_NAME;
     string resample_NAME;
+    string tree_NAME;
 
     // ------------------------------------------------------------------
     // Version Info
