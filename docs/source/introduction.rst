@@ -2,11 +2,11 @@ Introduction
 ============
 
 
-SMCSMC, short for **S**\ equential **M**\ onte **C**\ arlo for the **S**\ equentially **M**\ arkovian **C**\ oalescent, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when inferring asymetric migration models. 
+SMCSMC, short for :term:`Sequential Monte Carlo<Particle Filter>` for the :term:`Sequentially Markovian Coalescent`, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when inferring asymetric migration models. 
 
-The method simulates many trees (:term:`particles<Particle>`) from a coalescent model and updates them using information about genetic variation along the sequence. Stochastic expectation maximization is used to update demographic parameters (population sizes, migration matrix) in iterative steps until convergence is reached. 
+The method uses a :term:`particle filter<Particle Filter>` to approximate the state space of trees along the sequence and :term:`Variational Bayes` to infer epoch specific :term:`demographic parameters<Demographic Parameters>` over a given number of iterations. 
 
-SMCSMC takes as input optionally phased sequencing data formatted as segments, and provides utilities for data conversion from common formats.
+:code:`smcsmc` takes as input optionally phased sequencing data formatted as segments, and provides utilities for analysing and visualising the inferred ancestral rates.
 
 
 Installation
@@ -41,7 +41,7 @@ To use SMCSMC, start a :code:`python` session and import the :code:`smcsmc` modu
         smcsmc.utils.run_smcsmc(test_args)
                         
 
-Follow the Getting Started guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. 
+Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`.
 
 Other Methods
 ------------
@@ -58,7 +58,7 @@ SMCSMC is part of the `PopSim consortium <https://github.com/popgensims>`_\ , an
 Citation
 --------
 
-If you use :code:`SMC2` in your work, please cite the following article:
+If you use :code:`smcsmc` in your work, please cite the following article:
 
         1. Henderson, D., Zhu, S. (Joe), & Lunter, G. (2018). Demographic inference using particle filters for continuous Markov jump processes. BioRxiv, 382218. https://doi.org/10.1101/382218
         2. Staab, P. R., Zhu, S., Metzler, D., & Lunter, G. (2015). scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics, 31(10), 1680–1682. https://doi.org/10.1093/bioinformatics/btu861 

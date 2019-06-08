@@ -1,15 +1,17 @@
+.. _getting_started:
+
 Getting Started
 ===============
 
-This guide will familiarise your with the concepts necessary to run analyses in SMCSMC and take you through the basic aspects of an analysis using  toy data. You may also be interested in one of several tutorials using real and simulated data below. 
+This guide will familiarise your with the concepts necessary to run analyses in SMCSMC and take you through the basic aspects of an analysis using  toy data. You may also be interested in one of several examples using real and simulated data in the :ref:`tutorial` section.
 
 .. note::
-        This tutorial is intended to be run on a personal computer, and values have been scaled accordingly. For analysis on real data, we expect that a user will have access to a compute cluster, and we provide guidance about setting up :code:`smcsmc` to function with common architechtures.  
+        This tutorial is intended to be run on a personal computer, and values have been scaled accordingly. For analysis on real data, we expect that a user will have access to a compute cluster, and we provide guidance about setting up :code:`smcsmc` to function with common architechtures in :ref:`cluster`.  
 
 Basic Concepts
 --------------
 
-SMCSMC is a particle filter, which means that a given number of :term:`particles<Particle>` are simulated, evaluated for an approximate likelihood, and resampled until demographic parameters have converged. Many of the options relate to the behaviour of this particle filter, and the remainder deal with the demographic model that you wish to infer. SMCSMC can infer complex demographic models involving several populations, though you should be weary of overspecifying your model. Run time increases drastically with the number of parameters needed to specify the model.   
+SMCSMC is a :term:`particle filter<Particle Filter>`, which means that a given number of :term:`particles<Particle>` are simulated, evaluated for an approximate likelihood, and resampled until demographic parameters have converged. Many of the options relate to the behaviour of this particle filter, and the remainder deal with the demographic model that you wish to infer. SMCSMC can infer complex demographic models involving several populations, though you should be weary of overspecifying your model. Run time increases drastically with the number of parameters needed to specify the model.   
 
 Input Format
 ++++++++++++++
@@ -187,3 +189,9 @@ An example plot is shown below, note that we have additionally specified a model
 
 Plotting migration and effective population size can be done similarly with :code:`smcsmc.plot_migration` and `smcsmc.plot_ne`. See the API documentation for more information. 
 
+
+.. toctree:: 
+    :maxdepth: 1
+    :caption: Other guides in this section
+
+    cluster
