@@ -8,4 +8,5 @@ Explore this section to learn more about how to use various aspects of :code:`sm
     :caption: Guides in this section
 
     args
+    inference
     cluster
