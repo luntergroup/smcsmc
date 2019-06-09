@@ -1,0 +1,59 @@
+SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - demographic inference with particle filters
+       Donna Henderson, Sha (Joe) Zhu and Gerton Lunter
+
+
+Population-model related options (fixed)
+ -nsam n                  [*] Set the total number of samples to n
+ -N0 N                    [+] Set (unscaled) initial population size to N
+ -mu s                    [+] Set mutation rate (per nucleotide per generation)
+ -t th                    [+] Set mutation rate (expected number of mutations) for the locus (=4 N0 mu L )
+ -length L                [+] Set locus length (nucleotides)
+ -I n s1..sn              Use an n-population island model with si individuals sampled
+ -ej t i j                Speciation event at t*4N0; creates population i from population j in forward direction
+ -eI t s1..sn             Sample s1..sn indiviuals from their populations at time t*4N0 generations
+
+Population-model related options (inferred; initial values)
+ -rho rh                  [+] Set recombination rate (per nucleotide per generation)
+ -r r L                   [+] Set initial per locus recombination rate (=4 N0 L rho) and locus length (L)
+ -eN t n                  Change the size of all populations to n*N0 at time t*4N0
+ -en t i n                Change the size of population i to n*N0 at time t*4N0
+ -eM t m                  Change the symmetric backward migration rate to m/(npop-1) at time t*4N0
+ -em t i j m              Change the backward migration rate, from population i to population j, to m/(npop-1) at time t*4N0
+ -ema t s11 s12 ...       Set backward migration rate matrix at time t*4N0
+
+Inference-related options
+ -o f                     [*] Output prefix
+ -seg f                   [+] Input .seg file
+ -segs f1 f2 ...          [+] Input .seg files (will be merged into a single .seg file
+ -maxgap n                Split .seg files over gaps larger than maxgap (200 kb)
+ -minseg n                After splitting ignore segments shorter than minseg (500 kb)
+ -startpos x              First locus to process (1)
+ -P s e p                 Divide time interval [s,e] (generations; s>0) equally on log scale, using pattern p (e.g. 1*2+8*1)
+ -Np n                    Number of particles
+ -seed s                  Random number seed
+ -calibrate_lag s         Accumulate inferred events with a lag of  s  times the survival time (2)
+ -apf b                   Auxiliary particle filter: none (0), singletons (1), cherries (2)  (0)
+ -dephase                 Dephase heterozygous sites (but use phasing for -apf)
+ -ancestral_aware         Assume that haplotype 0 is ancestral
+ -bias_heights t0..tn     Set recombination bias times to h0..hn * 4N0
+ -bias_strengths s1..sn   Set recombination bias strenghts
+ -arg range               Sample posterior ARG at given epoch or epoch range (0-based, closed; e.g. 0-10)
+
+Options related to the EM process
+ -EM n                    Number of EM (or VB) iterations-1 (0)
+ -VB                      Use Variational Bayes rather than EM (uniform prior for all rates)
+ -cap n                   Set (unscaled) upper bound on effective population size
+ -chunks n                Number of chunks computed in parallel (1)
+ -no_infer_recomb         Do not infer recombination rate
+ -no_m_step               Do not update parameters (but do infer recombination guide)
+ -alpha t                 Fraction of posterior recombination to mix in to recombination guide (0.0); negative removes files
+ -c                       Use qsub to submit job(s) to cluster (overrides use of threads)
+ -C opts                  Qsub config parameter(s) e.g. "-P project.prj -q long.q"; overrides ./qsub.conf
+ -nothreads               Calculate chunks sequentially rather than in parallel threads
+ -smcsmcpath f            Path to smcsmc executable (/gpfs0/users/lunter/ccole/repos/smcsmc/smcsmc)
+ -log f                   Log file (stdout)
+ -@ f                     File with line-, space-, or tab-separated options
+ -v                       Show version of underlying smcsmc and scrm implementations
+ -help                    This help
+
+([*], required; [+], optional but one of group is required)

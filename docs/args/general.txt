@@ -1,0 +1,9 @@
+Key, Value, Description
+c,, Use qsub to submit job(s) to cluster (overrides use of threads)
+C, opts, Qsub config parameter(s) e.g. "-P project.prj -q long.q"; overrides ./qsub.conf
+nothreads,, Calculate chunks sequentially rather than in parallel threads
+smcsmcpath, f, Path to smcsmc executable (/gpfs0/users/lunter/ccole/repos/smcsmc/smcsmc)
+log, f, Log file (stdout)
+@, f, File with line-, space-, or tab-separated options
+v,, Show version of underlying smcsmc and scrm implementations
+help,, Display help about all available options.

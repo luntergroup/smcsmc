@@ -1,0 +1,9 @@
+Key, Value, Description
+nsam, n, [*] Set the total number of samples to n
+N0, N, [+] Set (unscaled) initial population size to N
+mu, s, [+] Set mutation rate (per nucleotide per generation)
+t, th, [+] Set mutation rate (expected number of mutations) for the locus (=4 N0 mu L )
+length, L, [+] Set locus length (nucleotides)
+I, n s1..sn, Use an n-population island model with si individuals sampled
+ej, t i j, Speciation event at t*4N0; creates population i from population j in forward direction
+eI, t s1..sn, Sample s1..sn indiviuals from their populations at time t*4N0 generations

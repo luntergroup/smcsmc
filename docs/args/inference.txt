@@ -1,0 +1,17 @@
+Key, value, Description
+o, f, [*] Output prefix
+seg, f, [+] Input .seg file
+segs, f1 f2 ..., [+] Input .seg files (will be merged into a single .seg file
+maxgap, n, Split .seg files over gaps larger than maxgap (200 kb)
+minseg, n, After splitting ignore segments shorter than minseg (500 kb)
+startpos, x, First locus to process (1)
+P, s e p, Divide time interval [s - e] (generations; s>0) equally on log scale using pattern p (e.g. 1*2+8*1)
+Np, n, Number of particles
+seed, s, Random number seed
+calibrate_lag, s, Accumulate inferred events with a lag of s times the survival time (2)
+apf, b, Auxiliary particle filter: none (0) singletons (1) cherries (2)
+dephase,, Dephase heterozygous sites (but use phasing for -apf)
+ancestral_aware,, Assume that haplotype 0 is ancestral
+bias_heights, t0..tn, Set recombination bias times to h0..hn * 4N0
+bias_strengths, s1..sn, Set recombination bias strenghts
+arg, range, Sample posterior ARG at given epoch or epoch range (0-based closed; e.g. 0-10)

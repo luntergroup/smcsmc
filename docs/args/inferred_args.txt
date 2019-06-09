@@ -1,0 +1,8 @@
+Key, Value, Description
+rho, rho, [+] Set recombination rate (per nucleotide per generation)
+r, r L, [+] Set initial per locus recombination rate (=4 N0 L rho) and locus length (L)
+eN, t n, Change the size of all populations to n*N0 at time t*4N0
+en, t i n, Change the size of population i to n*N0 at time t*4N0
+eM, t m, Change the symmetric backward migration rate to m/(npop-1) at time t*4N0
+em, t i j m, Change the backward migration rate from population i to population j to m/(npop-1) at time t*4N0
+ema, t s11 s12 ..., Set backward migration rate matrix at time t*4N0

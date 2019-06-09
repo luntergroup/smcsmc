@@ -1,0 +1,8 @@
+Key, Value, Description
+EM, n, Number of EM (or VB) iterations-1 (0)
+VB,, Use Variational Bayes rather than EM (uniform prior for all rates)
+cap, n, Set (unscaled) upper bound on effective population size
+chunks, n, Number of chunks computed in parallel (1)
+no_infer_recomb,, Do not infer recombination rate
+no_m_step,, Do not update parameters (but do infer recombination guide)
+alpha, t, Fraction of posterior recombination to mix in to recombination guide (0.0); negative removes files
