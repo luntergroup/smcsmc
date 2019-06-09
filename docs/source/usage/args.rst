@@ -48,3 +48,33 @@ There are three main kinds of arguments to :code:`smcsmc`.
 
 Arguments
 -------------------------------------------
+
+:code:`[*]` arguments are required. :code:`[+]` arguments are optional, but one amungst the group is required.
+
+The following are arguments that define properties of the population you are studying. They are fixed and do not change.
+
+.. csv-table::
+   :file: ../../pop_args.txt
+   :widths: 20, 20, 60
+   :header-rows: 1
+
+The following arguements describe initial values which will be inferred and updated during runtime.
+
+.. csv-table:: 
+   :file: ../../inferred_args.txt
+   :widths: 20,20, 60
+   :header-rows: 1
+
+The following arguements define inference related options.
+
+.. csv-table::
+   :file: ../../inference.txt
+   :widths: 20,20,60
+   :header-rows: 1
+
+These arguments define the behaviour of the parameter updates via stochastic EM or Variational Bayes.
+
+.. csv-table::
+   :file: ../../em.txt
+   :widths: 20,20,60
+   :header-rows: 1
