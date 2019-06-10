@@ -38,14 +38,40 @@ This is not a guide for *using* :code:`msprime`, and if you are unfamiliar with 
 
 We include functions to convert from tree sequence dumps to the :code:`seg` files necessary for :code:`smcsmc` analysis.
 
-.. todo::
-
-        Export the ts_to_seg function outside the utils submodule. Also make the number of haplotypes optional.
-
 .. code-block:: python
 
         import smcsmc
 
         smcsmc.ts_to_seg('msprime.tree')
 
-Which will write :code:`msprime.seg` in the current working directory.
+Which will write :code:`msprime.seg` in the current working directory. We now, fairly straightforwardly, analysing this seg data using the same procedure outlined in :ref:`getting_started`.
+
+.. code-block:: python
+
+        import smcsmc
+
+        args = {
+                'EM': 				'15',
+                'Np': 				'10000',
+                
+                # Submission Parameters
+                'chunks': 			'100',
+                'c':				'',
+                'no_infer_recomb': 	        '',
+
+                # Other inference parameters
+                'mu': 				'1.25e-9',
+                'N0':				'14312',
+                'rho':				'3e-9',
+                'calibrate_lag':	        '1.0',
+                'tmax':				'3.5',
+                'alpha': 			'0',
+                'apf': 				'2',
+                'P': 				'133 133016 31*1',
+                'VB':				'',
+                'nsam':				'4',
+
+                # Files
+                'o':                            'run',
+                'seg':                          'msprime.seg'
+        }

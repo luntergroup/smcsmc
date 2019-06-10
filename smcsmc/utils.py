@@ -67,28 +67,6 @@ def ts_to_seg(path, n = None):
             fi.close()
     return None
 
-def run_smcsmc(args):
-    """
-    Run SMCSMC.
-
-    Requires a list of arguements akin to optparse, basically as if
-    they had been entered on the command line. I will get around to 
-    making this cleaner, but I want to get it working first.
-    """
-    run = Smcsmc(args)
-    run.print_help_and_exit()
-    run.load_option_file()
-    run.parse_opts()
-    run.validate()
-    run.process_segfiles()
-    run.set_environment()
-    run.define_chunks()
-    run.validate_parameters()
-    run.set_pattern()
-    for em_iter in range(0, run.emiters+1):
-        run.do_iteration(em_iter)
-    run.merge_outfiles()
-
 def dict_to_args(smcsmc_params):
     args = []
     [args.extend(['-' + k, v]) for k, v in smcsmc_params.items()]
@@ -108,6 +86,29 @@ def dict_to_args(smcsmc_params):
     args = [a for b in args for a in b.split()]
 
     return(args)
+
+def run_smcsmc(args):
+    """
+    Run SMCSMC.
+
+    Requires a list of arguements akin to optparse, basically as if
+    they had been entered on the command line. I will get around to 
+    making this cleaner, but I want to get it working first.
+    """
+    args = dict_to_args(args)
+    run = Smcsmc(args)
+    run.print_help_and_exit()
+    run.load_option_file()
+    run.parse_opts()
+    run.validate()
+    run.process_segfiles()
+    run.set_environment()
+    run.define_chunks()
+    run.validate_parameters()
+    run.set_pattern()
+    for em_iter in range(0, run.emiters+1):
+        run.do_iteration(em_iter)
+    run.merge_outfiles()
 
 def convert_smcsmc_output(results_file, output, generation_time, iter):
     out_fp = open(output, "w")
