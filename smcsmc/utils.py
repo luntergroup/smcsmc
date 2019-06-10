@@ -35,7 +35,6 @@ def ts_to_seg(path, n = None):
         dirr = os.path.dirname(path)
         filen = os.path.basename(path)
         sep = filen.split(".")
-        chrom = sep[0]
         output = os.path.join(dirr,".".join(sep) + ".seg")
         fi = open(output, "w")
         prev = 1
