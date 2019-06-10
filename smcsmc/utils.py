@@ -22,20 +22,20 @@ def prune_tree_sequence(tree_sequence_path, num_samples):
     return ts
 
 
-def ts_to_seg(path, n):
+def ts_to_seg(path, n = None):
     """
     take one .trees file and write out 
     path.seg which acts as a single input to smcsmc. 
 
     Based off of the msmc multihep version.
     """
-    for sample_size in n:
-        ts = prune_tree_sequence(path, sample_size)
+
+    if n is None:
+        ts = tskit.load(pathe)
         dirr = os.path.dirname(path)
         filen = os.path.basename(path)
         sep = filen.split(".")
         chrom = sep[0]
-        sep.insert(0,str(sample_size))
         output = os.path.join(dirr,".".join(sep) + ".seg")
         fi = open(output, "w")
         prev = 1
@@ -47,6 +47,25 @@ def ts_to_seg(path, n):
                 fi.write(f"{prev}\t{cur-prev}\t{geno}\n")
             prev = cur
         fi.close()
+    else: 
+        for sample_size in n:
+            ts = prune_tree_sequence(path, sample_size)
+            dirr = os.path.dirname(path)
+            filen = os.path.basename(path)
+            sep = filen.split(".")
+            chrom = sep[0]
+            sep.insert(0,str(sample_size))
+            output = os.path.join(dirr,".".join(sep) + ".seg")
+            fi = open(output, "w")
+            prev = 1
+            cur = 0
+            for var in ts.variants():
+                cur = int(var.site.position)
+                if cur > prev:
+                    geno = ''.join(map(str,var.genotypes))
+                    fi.write(f"{prev}\t{cur-prev}\t{geno}\n")
+                prev = cur
+            fi.close()
     return None
 
 def run_smcsmc(args):
