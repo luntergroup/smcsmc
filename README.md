@@ -10,9 +10,24 @@ This repository contains two effectively independant components, and both must b
 conda install -c terhorst, conda-forge smcsmc
 ```
 
+## Running
+
+```./smc2
+```
+
+For examples see the documentation in `docs/build/html/` or [online](https://github.com/luntergroup/smcsmc/tree/master/docs/build/html/)
+
 ### Installation from Source
 
 Alternatively, a combination of `cmake` and `pip` can be used to install the python and core components.
+
+#### To install dependencies
+
+Download, or use a package manager, to install the following packages:
+
+- boost
+- cmake
+- tcmalloc
 
 #### To install the backend
 
@@ -25,5 +40,6 @@ cmake
 #### To install the frontend
 
 ```sh
+pip install -r dependencies
 pip install .
 ```

@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+import sys
+
+if (sys.version_info < (3, 0)):
+    print ("Please run with python3\n")
+    sys.exit(1)
+
+try:
+    import smcsmc
+except ModuleNotFoundError as e:
+    if e == "No module named 'smcsmc'":
+        print ("\nPlease build and install smcsmc before running this script:")
+        print ("\n  mkdir build\n  cd build\n  cmake ..\n  make\n  cd ..; pip install .\n\n")
+        print ("For more details see https://github.com/luntergroup/smcsmc\n")
+        sys.exit(1)
+    raise
+
+run = smcsmc.Smcsmc(sys.argv[1:])
+run.print_help_and_exit()
+run.load_option_file()
+run.parse_opts()
+run.validate()
+run.process_segfiles()
+run.set_environment()
+run.define_chunks()
+run.validate_parameters()
+run.set_pattern()
+for em_iter in range(0, run.emiters+1):
+    run.do_iteration(em_iter)
+run.merge_outfiles()
+

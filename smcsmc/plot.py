@@ -3,9 +3,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import msprime
-import stdpopsim
 
-matplotlib.use('Agg')
+try:
+    import stdpopsim
+except:
+    stdpopsim = None
+
+#matplotlib.use('Agg')
 
 def plot_migration(input='result.out', output='result.png', g = 30, ymax=0.00025):
     """
@@ -100,7 +104,11 @@ def plot_rainbow(input, output, g = 30, model = None, steps = None, pop_id = 1):
     ax.set_xlim([1e3, 1e6])
 
     if model == "ooa":
-        model = getattr(stdpopsim.homo_sapiens,"GutenkunstThreePopOutOfAfrica")()
+        if stdpopsim is not None:
+            model = getattr(stdpopsim.homo_sapiens,"GutenkunstThreePopOutOfAfrica")()
+        else:
+            print ("Module stdpopsim not available - cannot go on.")
+            sys.exit(1)
 
     if model is not None:
         ddb = msprime.DemographyDebugger(**model.asdict())

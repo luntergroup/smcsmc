@@ -143,7 +143,7 @@ class Smcsmc:
         if set(self.opts).isdisjoint( set(['-help','--help','-h', '-?']) ) and len(self.opts)>0:
             return
         print ("SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - demographic inference with particle filters")
-        print ("       Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
+        print ("       Chris Cole, Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
         for idx, clas in enumerate(self.classes):
             print ("\n"+clas)
             for _, option, args, hlp in [opt for opt in self.options if opt[0] == idx]:
