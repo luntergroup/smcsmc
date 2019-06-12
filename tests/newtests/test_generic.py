@@ -47,8 +47,8 @@ class TestGeneric(unittest.TestCase):
         self.name = name
         self.pop = None
         # the following are all default values, and may be changed:
-        self.scrmpath = "../scrm"
-        self.smcsmcpath = "../smcsmc"
+        self.scrmpath = "scrm"
+        self.smcsmcpath = "smcsmc"
         self.np = 100
         self.em = 0
         self.seed = (1,)

@@ -12,7 +12,6 @@ def prune_tree_sequence(tree_sequence_path, num_samples):
 
     Parameters
     ----------
-
     tree_sequence_path : str
         File path to tree sequence file produced by `ts.dump`.
     num_samples : int
@@ -41,7 +40,6 @@ def ts_to_seg(path, n = None):
     
     Parameters
     ----------
-
     path : str
         The path to the tree sequence file produced by `ts.dump`.
     n : list of int
@@ -50,6 +48,10 @@ def ts_to_seg(path, n = None):
     Returns
     -------
     None
+
+    See Also
+    ---------
+    prune_tree_sequence
 
     This is adapted from the multihep conversion in PopSim Analysis.
     """
@@ -72,7 +74,7 @@ def ts_to_seg(path, n = None):
         fi.close()
     else: 
         for sample_size in n:
-            ts = prune_tree_sequence(path, sample_size)
+            ts = smcsmc.utils.prune_tree_sequence(path, sample_size)
             dirr = os.path.dirname(path)
             filen = os.path.basename(path)
             sep = filen.split(".")
@@ -92,6 +94,23 @@ def ts_to_seg(path, n = None):
     return None
 
 def dict_to_args(smcsmc_params):
+    '''
+    Converts a dictionary of arguments into smcsmc compatible input.
+
+    Parameters
+    ----------
+    smcsmc_params : dict
+        A dictionary of arguments. See documentation for details.
+
+    Returns
+    -------
+    args : list of arguments
+        A list of arguments suitable for processing by `smcsmc.Smcsmc`.
+
+    See Also
+    --------
+    run_smcsmc : Use these arguments to run `smcsmc`.
+    '''
     args = []
     [args.extend(['-' + k, v]) for k, v in smcsmc_params.items()]
 
@@ -115,9 +134,19 @@ def run_smcsmc(args):
     """
     Run SMCSMC.
 
-    Requires a list of arguements akin to optparse, basically as if
-    they had been entered on the command line. I will get around to 
-    making this cleaner, but I want to get it working first.
+    Parameters
+    ----------
+    args : dict
+        A dictionary of arguments. See the documentation for a complete list of options. To see how they are parsed, look at `smcsmc.utils.dict_to_args`.
+
+    Returns
+    -------
+    None
+
+    See Also
+    --------
+    dict_to_args
+
     """
     args = dict_to_args(args)
     run = Smcsmc(args)
