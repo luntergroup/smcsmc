@@ -6,14 +6,28 @@ import numpy as np
 import pandas as pd
 import glob
 
-
 def prune_tree_sequence(tree_sequence_path, num_samples):
     """
-    take in a tree sequence, and a number of samples
-    less than the number of samples in the tree, 
-    then simplify the tree sequence on that subset.
+    Subsamples from a Tree Sequence.
 
-    Identical to the one in msmc. 
+    Parameters
+    ----------
+
+    tree_sequence_path : str
+        File path to tree sequence file produced by `ts.dump`.
+    num_samples : int
+        The number of samples to sample.
+
+    Returns
+    -------
+    ts : tree_sequence
+        A pruned tree sequence.
+
+    See Also
+    --------
+    ts_to_seg
+    
+    This function is identical to the one in PopSim analysis repository.
     """
     ts = tskit.load(tree_sequence_path)
     if ts.num_samples > num_samples:
@@ -21,13 +35,23 @@ def prune_tree_sequence(tree_sequence_path, num_samples):
         ts = ts.simplify(subset)
     return ts
 
-
 def ts_to_seg(path, n = None):
     """
-    take one .trees file and write out 
-    path.seg which acts as a single input to smcsmc. 
+    Converts a tree seqeunce to a seg file. 
+    
+    Parameters
+    ----------
 
-    Based off of the msmc multihep version.
+    path : str
+        The path to the tree sequence file produced by `ts.dump`.
+    n : list of int
+        A list of the various numbers of haplotypoes used in this analysis. `None` if only using one haplotype value.
+
+    Returns
+    -------
+    None
+
+    This is adapted from the multihep conversion in PopSim Analysis.
     """
 
     if n is None:
