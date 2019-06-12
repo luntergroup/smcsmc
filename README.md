@@ -12,10 +12,11 @@ conda install -c terhorst, conda-forge smcsmc
 
 ## Running
 
-```./smc2
+```
+./smc2
 ```
 
-For examples see the documentation in `docs/build/html/` or [online](https://github.com/luntergroup/smcsmc/tree/master/docs/build/html/)
+For examples see the documentation in `docs/build/html/` or [online](https://broken)
 
 ### Installation from Source
 
