@@ -1,0 +1,21 @@
+package:
+  name: smcsmc
+  version: 0.1
+
+source:
+  path: ~/repos/smcsmc-core-clean
+  #git_rev: 0.1
+  #git_url: httdfkldsjfs://github.com/Chris1221/smcsmc-core
+
+requirements:
+  build:
+    - {{ compiler('cxx') }} 
+    - gperftools 
+    - cmake
+    - boost
+
+  host:
+    - gperftools
+    - boost 
+    - python
+    - boost

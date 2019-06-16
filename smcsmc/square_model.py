@@ -5,11 +5,17 @@ import smcsmc.populationmodels
 import pandas as pd
  
 class Simulation:
-    def __init__(self, L, midpoint, duration, proportion, flatarg = True):
+    def __init__(self, L, midpoint, duration, proportion, flatarg = False):
+
+        if isinstance(midpoint, set):
+            midpoint = int(*midpoint)
+            duration = int(*duration)
+            proportion = float(*proportion)
+
         g0 = 133.0
         g1 = 133016.0
         g_split = 200000/29
-        epochs = 100
+        epochs = 27
         N0 = 14312
         self.samples = 4
         eps = 0.99  # make sure we set the new pop size / migration rate just before the change time
