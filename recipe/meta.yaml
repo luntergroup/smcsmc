@@ -3,9 +3,7 @@ package:
   version: 0.1
 
 source:
-  path: ~/repos/smcsmc-core-clean
-  #git_rev: 0.1
-  #git_url: httdfkldsjfs://github.com/Chris1221/smcsmc-core
+  path: ..
 
 requirements:
   build:
@@ -13,9 +11,11 @@ requirements:
     - gperftools 
     - cmake
     - boost
+    - zlib
 
   host:
     - gperftools
     - boost 
     - python
     - boost
+    - zlib
