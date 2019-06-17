@@ -1,22 +1,23 @@
-## Demographic Inference using Particle Filters
+# Demographic Inference using a Particle Filter
+[![Anaconda-Server Badge](https://anaconda.org/anaconda/anaconda/badges/installer/conda.svg)](https://conda.anaconda.org/anaconda)
 
-SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. 
+SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. It includes both a python package `smcsmc` and a command line interface `smc2` along with two backend binaries `smcsmc`/`scrm`.
 
-### Installation
+For examples and explaination, please see the documentation in `docs/`. 
 
-This repository contains two components, and both must be installed to properly use SMC2. We have automated this process in a `conda` package, and we highly recommend installing it this way.
+## Installation
+
+This repository contains two components, and both must be installed to properly use `smcsmc`.
+
+### Recommended Installation via `conda`
+
+We have automated this process in a `conda` package, and we highly recommend installing it this way.
 
 ```sh
-conda install -c terhorst, conda-forge smcsmc
+conda install -c terhorst -c conda-forge smcsmc
 ```
 
-### Running
-
-```sh
-./smc2
-```
-
-For examples see the documentation in `docs/build/html/` or [online](https://broken)
+> **We are in the process of uploading our package to `conda` and will remove this message when it is available. Until then, please use the manual installation method given below.**
 
 ### Installation from Source
 
@@ -53,3 +54,13 @@ cmake
 pip install -r dependencies
 pip install .
 ```
+
+## Citation
+
+If you use `smcsmc` in your work, please cite the following articles:
+
+1. Henderson, D., Zhu, S. (Joe), & Lunter, G. (2018). Demographic inference using particle filters for continuous Markov jump processes. BioRxiv, 382218. https://doi.org/10.1101/382218
+
+2. Staab, P. R., Zhu, S., Metzler, D., & Lunter, G. (2015). scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics, 31(10), 1680–1682. https://doi.org/10.1093/bioinformatics/btu861
+
+
