@@ -2,7 +2,7 @@ Introduction
 ============
 
 
-SMCSMC, short for :term:`Sequential Monte Carlo<Particle Filter>` for the :term:`Sequentially Markovian Coalescent`, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when inferring asymetric migration models. 
+SMCSMC, short for :term:`Sequential Monte Carlo<Particle Filter>` for the :term:`Sequentially Markovian Coalescent`, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when you are interested in analysing complex demographic models. 
 
 The method uses a :term:`particle filter<Particle Filter>` to sample from the posterior distribution of trees along the sequence and :term:`Variational Bayes` to infer epoch specific :term:`demographic parameters<Demographic Parameters>` over a given number of iterations. 
 
@@ -41,7 +41,7 @@ To use SMCSMC, start a :code:`python` session and import the :code:`smcsmc` modu
         smcsmc.utils.run_smcsmc(test_args)
                         
 
-Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`.
+Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`. Alternatively the :ref:`cli` can be used with identical results. 
 
 Other Methods
 ------------
