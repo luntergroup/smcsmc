@@ -5,6 +5,11 @@ package:
 source:
   path: ..
 
+build:
+  number: 0
+  entry_points:
+    - smc2=smcsmc.cli:smcsmc_main
+
 requirements:
   build:
     - {{ compiler('cxx') }} 
