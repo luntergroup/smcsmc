@@ -43,6 +43,10 @@ To use SMCSMC, start a :code:`python` session and import the :code:`smcsmc` modu
 
 Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`. Alternatively the :ref:`cli` can be used with identical results. 
 
+.. code-block:: bash
+
+        smc2 -nsam 4 -seg test_seg.seg
+
 Other Methods
 ------------
 
