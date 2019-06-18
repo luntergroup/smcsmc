@@ -3,7 +3,7 @@
 
 SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. It includes both a python package `smcsmc` and a command line interface `smc2` along with two backend binaries `smcsmc`/`scrm`.
 
-For examples and explaination, please see the documentation in `docs/`. 
+For examples and explaination, please see the documentation in `docs/` or [online](https://smcsmc.readthedocs.io).
 
 ## Installation
 
@@ -34,7 +34,7 @@ git submodule update
 
 #### Install dependencies
 
-Download, or use a package manager, to install the following packages:
+Download and install the following packages (or use a package manager):
 
 - boost
 - cmake
@@ -45,7 +45,7 @@ Download, or use a package manager, to install the following packages:
 ```sh
 mkdir build; cd build
 cmake ..
-cmake
+make
 ```
 
 #### Install the frontend

@@ -1,0 +1,491 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Input Arguments &mdash; smcsmc 0.1beta documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Overview of Inference Procedure" href="inference.html" />
+    <link rel="prev" title="General Usage" href="usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> smcsmc
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="usage.html">General Usage</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Input Arguments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general-structure">General Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#processing-of-arguments">Processing of Arguments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="inference.html">Overview of Inference Procedure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html">Clustering Computing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">smcsmc</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="usage.html">General Usage</a> &raquo;</li>
+        
+      <li>Input Arguments</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/usage/args.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="input-arguments">
+<span id="args"></span><h1>Input Arguments<a class="headerlink" href="#input-arguments" title="Permalink to this headline">¶</a></h1>
+<p>This section describes the general structure of <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> arguments and provides information on how they are interpreted.</p>
+<div class="section" id="general-structure">
+<h2>General Structure<a class="headerlink" href="#general-structure" title="Permalink to this headline">¶</a></h2>
+<p>The user has a single entry point into <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>, <code class="code docutils literal notranslate"><span class="pre">smcsmc.run_smcsmc</span></code>. This function takes a single main argument.</p>
+<p>Input arguments are always formatted into a <a class="reference external" href="https://developers.google.com/edu/python/dict-files">dict</a> and require both a key and a value. The key is always the name of the argument, and the value is generally the value of the arguement. In some cases they differ, and it is important to understand when this is the case. All values should be given as strings unless otherwise noted. This is simply a convenience to avoid complicated post processing.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">smcsmc</span>
+
+<span class="hll"><span class="n">args</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class="hll">   <span class="s1">&#39;seg&#39;</span><span class="p">:</span>    <span class="s1">&#39;test_seg.seg&#39;</span>
+</span><span class="hll">   <span class="s1">&#39;nsam&#39;</span><span class="p">:</span>   <span class="s1">&#39;4&#39;</span>
+</span><span class="hll">
+</span><span class="hll"><span class="p">}</span>
+</span>
+<span class="n">smcsmc</span><span class="o">.</span><span class="n">run_smcsmc</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The arguments given entirely determine the <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> inference.</p>
+</div>
+<div class="section" id="processing-of-arguments">
+<h2>Processing of Arguments<a class="headerlink" href="#processing-of-arguments" title="Permalink to this headline">¶</a></h2>
+<p>There are three main kinds of arguments to <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>.</p>
+<ul class="simple">
+<li><p><strong>Key value pairings</strong>: These are the most common arguments, and require both a key and value.</p>
+<ul>
+<li><p>e.g. <code class="code docutils literal notranslate"><span class="pre">{'chunk':</span> <span class="pre">'100'}</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Boolean arguments</strong>: To input a boolean, the name of the argument should be given and an empty string passed as its value. This will be picked up in processing and treated correctly.</p>
+<ul>
+<li><p>e.g. <code class="code docutils literal notranslate"><span class="pre">{'no-infer-recomb':</span> <span class="pre">''}</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Mulitple arguments of the same name</strong>: Some arguements to <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> are passed directly to <code class="code docutils literal notranslate"><span class="pre">SCRM</span></code> and act as psuedo-<code class="code docutils literal notranslate"><span class="pre">ms</span></code> code. In this case, pass arguements having the same name as a vector and <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> will process them into the correct number of identically named arguements.</p>
+<ul>
+<li><p>e.g. <code class="code docutils literal notranslate"><span class="pre">{'eM':</span> <span class="pre">['0.0092</span> <span class="pre">10',</span> <span class="pre">'0</span> <span class="pre">5']}</span></code></p></li>
+</ul>
+</li>
+</ul>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>This is not yet implemented.</p>
+</div>
+<p><code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> will also understand that an argument passed with <code class="code docutils literal notranslate"><span class="pre">None</span></code> as a value will be removed entirely. This is a convenience for reusing input.</p>
+</div>
+<div class="section" id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<p><code class="code docutils literal notranslate"><span class="pre">[*]</span></code> arguments are required. <code class="code docutils literal notranslate"><span class="pre">[+]</span></code> arguments are optional, but one amungst the group is required.</p>
+<p>The following are arguments that define properties of the population you are studying. They are fixed and do not change.</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>nsam</p></td>
+<td><p>n</p></td>
+<td><p>[*] Set the total number of samples to n</p></td>
+</tr>
+<tr class="row-odd"><td><p>N0</p></td>
+<td><p>N</p></td>
+<td><p>[+] Set (unscaled) initial population size to N</p></td>
+</tr>
+<tr class="row-even"><td><p>mu</p></td>
+<td><p>s</p></td>
+<td><p>[+] Set mutation rate (per nucleotide per generation)</p></td>
+</tr>
+<tr class="row-odd"><td><p>t</p></td>
+<td><p>th</p></td>
+<td><p>[+] Set mutation rate (expected number of mutations) for the locus (=4 N0 mu L )</p></td>
+</tr>
+<tr class="row-even"><td><p>length</p></td>
+<td><p>L</p></td>
+<td><p>[+] Set locus length (nucleotides)</p></td>
+</tr>
+<tr class="row-odd"><td><p>I</p></td>
+<td><p>n s1..sn</p></td>
+<td><p>Use an n-population island model with si individuals sampled</p></td>
+</tr>
+<tr class="row-even"><td><p>ej</p></td>
+<td><p>t i j</p></td>
+<td><p>Speciation event at t*4N0; creates population i from population j in forward direction</p></td>
+</tr>
+<tr class="row-odd"><td><p>eI</p></td>
+<td><p>t s1..sn</p></td>
+<td><p>Sample s1..sn indiviuals from their populations at time t*4N0 generations</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following arguements describe initial values which will be inferred and updated during runtime.</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>rho</p></td>
+<td><p>rho</p></td>
+<td><p>[+] Set recombination rate (per nucleotide per generation)</p></td>
+</tr>
+<tr class="row-odd"><td><p>r</p></td>
+<td><p>r L</p></td>
+<td><p>[+] Set initial per locus recombination rate (=4 N0 L rho) and locus length (L)</p></td>
+</tr>
+<tr class="row-even"><td><p>eN</p></td>
+<td><p>t n</p></td>
+<td><p>Change the size of all populations to n*N0 at time t*4N0</p></td>
+</tr>
+<tr class="row-odd"><td><p>en</p></td>
+<td><p>t i n</p></td>
+<td><p>Change the size of population i to n*N0 at time t*4N0</p></td>
+</tr>
+<tr class="row-even"><td><p>eM</p></td>
+<td><p>t m</p></td>
+<td><p>Change the symmetric backward migration rate to m/(npop-1) at time t*4N0</p></td>
+</tr>
+<tr class="row-odd"><td><p>em</p></td>
+<td><p>t i j m</p></td>
+<td><p>Change the backward migration rate from population i to population j to m/(npop-1) at time t*4N0</p></td>
+</tr>
+<tr class="row-even"><td><p>ema</p></td>
+<td><p>t s11 s12 …</p></td>
+<td><p>Set backward migration rate matrix at time t*4N0</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following arguements define inference related options.</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>o</p></td>
+<td><p>f</p></td>
+<td><p>[*] Output prefix</p></td>
+</tr>
+<tr class="row-odd"><td><p>seg</p></td>
+<td><p>f</p></td>
+<td><p>[+] Input .seg file</p></td>
+</tr>
+<tr class="row-even"><td><p>segs</p></td>
+<td><p>f1 f2 …</p></td>
+<td><p>[+] Input .seg files (will be merged into a single .seg file</p></td>
+</tr>
+<tr class="row-odd"><td><p>maxgap</p></td>
+<td><p>n</p></td>
+<td><p>Split .seg files over gaps larger than maxgap (200 kb)</p></td>
+</tr>
+<tr class="row-even"><td><p>minseg</p></td>
+<td><p>n</p></td>
+<td><p>After splitting ignore segments shorter than minseg (500 kb)</p></td>
+</tr>
+<tr class="row-odd"><td><p>startpos</p></td>
+<td><p>x</p></td>
+<td><p>First locus to process (1)</p></td>
+</tr>
+<tr class="row-even"><td><p>P</p></td>
+<td><p>s e p</p></td>
+<td><p>Divide time interval [s - e] (generations; s&gt;0) equally on log scale using pattern p (e.g. 1*2+8*1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Np</p></td>
+<td><p>n</p></td>
+<td><p>Number of particles</p></td>
+</tr>
+<tr class="row-even"><td><p>seed</p></td>
+<td><p>s</p></td>
+<td><p>Random number seed</p></td>
+</tr>
+<tr class="row-odd"><td><p>calibrate_lag</p></td>
+<td><p>s</p></td>
+<td><p>Accumulate inferred events with a lag of s times the survival time (2)</p></td>
+</tr>
+<tr class="row-even"><td><p>apf</p></td>
+<td><p>b</p></td>
+<td><p>Auxiliary particle filter: none (0) singletons (1) cherries (2)</p></td>
+</tr>
+<tr class="row-odd"><td><p>dephase</p></td>
+<td></td>
+<td><p>Dephase heterozygous sites (but use phasing for -apf)</p></td>
+</tr>
+<tr class="row-even"><td><p>ancestral_aware</p></td>
+<td></td>
+<td><p>Assume that haplotype 0 is ancestral</p></td>
+</tr>
+<tr class="row-odd"><td><p>bias_heights</p></td>
+<td><p>t0..tn</p></td>
+<td><p>Set recombination bias times to h0..hn * 4N0</p></td>
+</tr>
+<tr class="row-even"><td><p>bias_strengths</p></td>
+<td><p>s1..sn</p></td>
+<td><p>Set recombination bias strenghts</p></td>
+</tr>
+<tr class="row-odd"><td><p>arg</p></td>
+<td><p>range</p></td>
+<td><p>Sample posterior ARG at given epoch or epoch range (0-based closed; e.g. 0-10)</p></td>
+</tr>
+</tbody>
+</table>
+<p>These arguments define the behaviour of the parameter updates via stochastic EM or Variational Bayes.</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>EM</p></td>
+<td><p>n</p></td>
+<td><p>Number of EM (or VB) iterations-1 (0)</p></td>
+</tr>
+<tr class="row-odd"><td><p>VB</p></td>
+<td></td>
+<td><p>Use Variational Bayes rather than EM (uniform prior for all rates)</p></td>
+</tr>
+<tr class="row-even"><td><p>cap</p></td>
+<td><p>n</p></td>
+<td><p>Set (unscaled) upper bound on effective population size</p></td>
+</tr>
+<tr class="row-odd"><td><p>chunks</p></td>
+<td><p>n</p></td>
+<td><p>Number of chunks computed in parallel (1)</p></td>
+</tr>
+<tr class="row-even"><td><p>no_infer_recomb</p></td>
+<td></td>
+<td><p>Do not infer recombination rate</p></td>
+</tr>
+<tr class="row-odd"><td><p>no_m_step</p></td>
+<td></td>
+<td><p>Do not update parameters (but do infer recombination guide)</p></td>
+</tr>
+<tr class="row-even"><td><p>alpha</p></td>
+<td><p>t</p></td>
+<td><p>Fraction of posterior recombination to mix in to recombination guide (0.0); negative removes files</p></td>
+</tr>
+</tbody>
+</table>
+<p>These are general options.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="inference.html" class="btn btn-neutral float-right" title="Overview of Inference Procedure" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="usage.html" class="btn btn-neutral float-left" title="General Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Christopher B Cole, Donna Henderson, Sha (Joe) Zhu, Gerton Lunter
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
