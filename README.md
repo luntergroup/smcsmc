@@ -1,22 +1,24 @@
-## Demographic Inference using Particle Filters
+# A Particle Filter for Demographic Inference
+[![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/version.svg)](https://anaconda.org/luntergroup/smcsmc) [![Documentation Status](https://readthedocs.org/projects/smcsmc/badge/?version=latest)](https://smcsmc.readthedocs.io/en/latest/?badge=latest) [![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/downloads.svg)](https://anaconda.org/luntergroup/smcsmc)
+ 
 
-SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. 
+SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. It includes both a python package `smcsmc` and a command line interface `smc2` along with two backend binaries `smcsmc`/`scrm`.
 
-### Installation
+For examples and explaination, please see the documentation in `docs/` or [online](https://smcsmc.readthedocs.io).
 
-This repository contains two components, and both must be installed to properly use SMC2. We have automated this process in a `conda` package, and we highly recommend installing it this way.
+## Installation
+
+This repository contains two components, and both must be installed to properly use `smcsmc`.
+
+### Recommended Installation via `conda`
+
+We have automated this process in a `conda` package, and we highly recommend installing it this way.
 
 ```sh
-conda install -c terhorst, conda-forge smcsmc
+conda install -c terhorst -c conda-forge smcsmc
 ```
 
-### Running
-
-```sh
-./smc2
-```
-
-For examples see the documentation in `docs/build/html/` or [online](https://broken)
+> **We are in the process of uploading our package to `conda` and will remove this message when it is available. Until then, please use the manual installation method given below.**
 
 ### Installation from Source
 
@@ -33,7 +35,7 @@ git submodule update
 
 #### Install dependencies
 
-Download, or use a package manager, to install the following packages:
+Download and install the following packages (or use a package manager):
 
 - boost
 - cmake
@@ -44,7 +46,7 @@ Download, or use a package manager, to install the following packages:
 ```sh
 mkdir build; cd build
 cmake ..
-cmake
+make
 ```
 
 #### Install the frontend
@@ -53,3 +55,13 @@ cmake
 pip install -r dependencies
 pip install .
 ```
+
+## Citation
+
+If you use `smcsmc` in your work, please cite the following articles:
+
+1. Henderson, D., Zhu, S. (Joe), & Lunter, G. (2018). Demographic inference using particle filters for continuous Markov jump processes. BioRxiv, 382218. https://doi.org/10.1101/382218
+
+2. Staab, P. R., Zhu, S., Metzler, D., & Lunter, G. (2015). scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics, 31(10), 1680–1682. https://doi.org/10.1093/bioinformatics/btu861
+
+

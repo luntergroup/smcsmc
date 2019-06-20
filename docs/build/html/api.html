@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Glossary" href="glossary.html" />
+    <link rel="next" title="Command Line Interface" href="cli.html" />
     <link rel="prev" title="Simulated Data with msprime" href="tutorials/msprime.html" /> 
 </head>
 
@@ -91,7 +91,12 @@
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage/usage.html">General Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#format-conversions">Format Conversions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smcsmc.plot">Plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 
@@ -159,11 +164,177 @@
             
   <div class="section" id="api-documentation">
 <span id="sec-api"></span><h1>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="format-conversions">
+<span id="sec-api-file-formats"></span><h2>Format Conversions<a class="headerlink" href="#format-conversions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="smcsmc.utils.ts_to_seg">
+<code class="sig-prename descclassname">smcsmc.utils.</code><code class="sig-name descname">ts_to_seg</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">n=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/utils.html#ts_to_seg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.utils.ts_to_seg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a tree sequence into a seg file for use by <code class="code docutils literal notranslate"><span class="pre">smcsmc.run_smcsmcs()</span></code>. This is especially
+useful if you are simulating data from <code class="code docutils literal notranslate"><span class="pre">msprime</span></code> and would like to directly 
+use it in <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>. For details of how to do this, please see the tutorial on simulation using <code class="code docutils literal notranslate"><span class="pre">msprime</span></code>.</p>
+<p>Provide the path to the tree sequence, and the suffix will be replaced by <code class="code docutils literal notranslate"><span class="pre">.seg</span></code>. This code is adapted from PopSim.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Full file path to the tree sequence created by <code class="code docutils literal notranslate"><span class="pre">ts.dump</span></code>.</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – If more than one sample of haplotypes is being analysed simulateously, provide it here as a list. Otherwise, simply provide the number of haplotypes as a single-element list.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="smcsmc.utils.vcf_to_seg">
+<code class="sig-prename descclassname">smcsmc.utils.</code><code class="sig-name descname">vcf_to_seg</code><span class="sig-paren">(</span><em class="sig-param">vcfs</em>, <em class="sig-param">samples</em>, <em class="sig-param">key</em>, <em class="sig-param">vcfdir='tmp'</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">chroms=range(1</em>, <em class="sig-param">23)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/utils.html#vcf_to_seg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.utils.vcf_to_seg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes given samples from given VCFs and creates seg files for 
+input to <code class="code docutils literal notranslate"><span class="pre">smcsmc.run_smcsmc()</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This function is not fully implemented yet and will not work as expected (or at all!)</p>
+</div>
+<p>Input VCFs do not have to phased, but you should be aware that 
+if they are not, this will decrease the effectiveness of the lookahead likelihood
+calculation.</p>
+<p>Provide a list of VCFs to merge together and a list of sample names 
+from each to include. These must match up identically.</p>
+<p>Additionally provide mask files, and an output directory to place
+the VCFs. By default all somatic chromosomes are anlaysed, but 
+you can change this by providing an iterator to the chroms
+argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vcfs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of paths to the VCFs which you wish to pull samples from.</p></li>
+<li><p><strong>samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of sample names to extract from the VCFs. The order must be the same.</p></li>
+<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of your output seg files.</p></li>
+<li><p><strong>vcfdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Serves as a staging ground for intermediate seg files.</p></li>
+<li><p><strong>mask</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory of similarly named mask files. Currently not implemented.</p></li>
+<li><p><strong>chroms</strong> (<em>iterable</em>) – An iterator of the chromosomes you wish to convert.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Nothing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-smcsmc.plot">
+<span id="plotting"></span><h2>Plotting<a class="headerlink" href="#module-smcsmc.plot" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="smcsmc.plot.plot_migration">
+<code class="sig-prename descclassname">smcsmc.plot.</code><code class="sig-name descname">plot_migration</code><span class="sig-paren">(</span><em class="sig-param">input='result.out'</em>, <em class="sig-param">output='result.png'</em>, <em class="sig-param">g=30</em>, <em class="sig-param">ymax=0.00025</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/plot.html#plot_migration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.plot.plot_migration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the migration between <em>two</em> groups.</p>
+<p>The function pulls from the input, which must be some sort of aggregated output from <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>, and plots the migration rate over time for a given 
+generational time <code class="code docutils literal notranslate"><span class="pre">g</span></code>, which scales the number of generations to years. The Y axis (which can be modified with the <code class="code docutils literal notranslate"><span class="pre">ymax</span></code> parameter) represents 
+<span class="math notranslate nohighlight">\(m_{ij}\)</span>, or the proportion of population j being placed by migration from population i <em>backwards in time</em>. This is important, as most intution about migration
+is understood forward in time.</p>
+<p>This is a barebones function and there is no option to provide a “truth” bar. See the other plotting functions for various definitions of “truth”.</p>
+<p>As an example, here is the resulting (symmetric) migration from a simulation:</p>
+<div class="figure align-default">
+<img alt="_images/plot_migration.png" src="_images/plot_migration.png" />
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – This must be the file path to some sort of aggregated output from <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>. 
+This means that it can be either a <code class="code docutils literal notranslate"><span class="pre">chunkfinal.out</span></code> or <code class="code docutils literal notranslate"><span class="pre">result.out</span></code> but <em>not</em> an
+individual chunk. We need all the data here.</p></li>
+<li><p><strong>output</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Filepath to save the plot.</p></li>
+<li><p><strong>g</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The length of one generation in years. This is used to scale the x axis.</p></li>
+<li><p><strong>ymax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The maximum y value to plot. This is used to scale the plots up or down.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="smcsmc.plot.plot_rainbow">
+<code class="sig-prename descclassname">smcsmc.plot.</code><code class="sig-name descname">plot_rainbow</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">output</em>, <em class="sig-param">g=30</em>, <em class="sig-param">model=None</em>, <em class="sig-param">steps=None</em>, <em class="sig-param">pop_id=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/plot.html#plot_rainbow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.plot.plot_rainbow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a plot of all iterations by colour. This plot is useful for assessing convergence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The full file path to an aggregated output file from <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>.</p></li>
+<li><p><strong>output</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Filepath to save the plot.</p></li>
+<li><p><strong>g</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The length of one generation in years. This is used to scale the x axis.</p></li>
+<li><p><strong>model</strong> (<em>stdpopsim.Model</em>) – Model for plotting.</p></li>
+<li><p><strong>ymax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The maximum y value to plot. This is used to scale the plots up or down.</p></li>
+<li><p><strong>steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Don’t worry about this.</p></li>
+<li><p><strong>pop_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – If your model includes multiple populations, which one do you want to plot?</p></li>
+</ul>
+</dd>
+</dl>
+<div class="figure align-center">
+<img alt="_images/rainbow.png" src="_images/rainbow.png" />
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="smcsmc.plot.plot_with_guide">
+<code class="sig-prename descclassname">smcsmc.plot.</code><code class="sig-name descname">plot_with_guide</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">guide</em>, <em class="sig-param">output</em>, <em class="sig-param">g=30</em>, <em class="sig-param">ymax=0.00025</em>, <em class="sig-param">N0=14312</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/plot.html#plot_with_guide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.plot.plot_with_guide" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is very similar to <a class="reference internal" href="#smcsmc.plot.plot_migration" title="smcsmc.plot.plot_migration"><code class="xref py py-meth docutils literal notranslate"><span class="pre">smcsmc.plot.plot_migration()</span></code></a>  except that it includes the ability to add a bar of “truth”. In this case, the function uses a specific form of “truth”
+generated from recording all epochs output by <code class="code docutils literal notranslate"><span class="pre">SCRM</span></code>. Additionally, we provide both the effective population size and the migration rates.</p>
+<p>The structure of the truth guide is like so:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Start Time</p></td>
+<td><p>Pop_1 Ne</p></td>
+<td><p>Pop_2 Ne</p></td>
+<td><p>Pop_1 M</p></td>
+<td><p>Pop_2 M</p></td>
+</tr>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>3</p></td>
+<td><p>6</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>100</p></td>
+<td><p>0.65</p></td>
+<td><p>0.3</p></td>
+<td><p>14</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>…</p></td>
+<td><p>.</p></td>
+<td><p>.</p></td>
+<td><p>.</p></td>
+<td><p>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>10000</p></td>
+<td><p>0.4</p></td>
+<td><p>0.4</p></td>
+<td><p>8</p></td>
+<td><p>6</p></td>
+</tr>
+</tbody>
+</table>
+<p>Saved as a CSV file for the <code class="code docutils literal notranslate"><span class="pre">guide</span></code> argument.</p>
 <div class="admonition-todo admonition" id="id1">
 <p class="admonition-title">Todo</p>
-<ol class="arabic simple">
-<li><p>Add documentation</p></li>
-</ol>
+<p>This function is part of a WIP tutorial on simulating with <code class="code docutils literal notranslate"><span class="pre">SCRM</span></code>. More details and convenience functions to come.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The full file path to an aggregated output file from <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code>.</p></li>
+<li><p><strong>guide</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – The full file path to a CSV formated as above with the truth of a simulation.</p></li>
+<li><p><strong>output</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Filepath to save the plot.</p></li>
+<li><p><strong>g</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The length of one generation in years. This is used to scale the x axis.</p></li>
+<li><p><strong>ymax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The maximum y value to plot. This is used to scale the plots up or down.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 </div>
 
@@ -175,7 +346,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="cli.html" class="btn btn-neutral float-right" title="Command Line Interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="tutorials/msprime.html" class="btn btn-neutral float-left" title="Simulated Data with msprime" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

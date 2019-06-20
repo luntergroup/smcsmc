@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usage/usage.html">General Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 
@@ -165,7 +166,7 @@
             
   <div class="section" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
-<p>SMCSMC, short for <a class="reference internal" href="glossary.html#term-particle-filter"><span class="xref std std-term">Sequential Monte Carlo</span></a> for the <a class="reference internal" href="glossary.html#term-sequentially-markovian-coalescent"><span class="xref std std-term">Sequentially Markovian Coalescent</span></a>, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when inferring asymetric migration models.</p>
+<p>SMCSMC, short for <a class="reference internal" href="glossary.html#term-particle-filter"><span class="xref std std-term">Sequential Monte Carlo</span></a> for the <a class="reference internal" href="glossary.html#term-sequentially-markovian-coalescent"><span class="xref std std-term">Sequentially Markovian Coalescent</span></a>, is a method for estimating ancestral population size and migration history from sequence data. It has several advantages over comparable methods, especially when you are interested in analysing complex demographic models.</p>
 <p>The method uses a <a class="reference internal" href="glossary.html#term-particle-filter"><span class="xref std std-term">particle filter</span></a> to sample from the posterior distribution of trees along the sequence and <a class="reference internal" href="glossary.html#term-variational-bayes"><span class="xref std std-term">Variational Bayes</span></a> to infer epoch specific <a class="reference internal" href="glossary.html#term-demographic-parameters"><span class="xref std std-term">demographic parameters</span></a> over a given number of iterations.</p>
 <p><code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> takes as input optionally phased sequencing data formatted as segments, and provides utilities for analysing and visualising the inferred ancestral rates.</p>
 <div class="section" id="installation">
@@ -192,7 +193,10 @@ conda install smcsmc
 <span class="n">smcsmc</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">run_smcsmc</span><span class="p">(</span><span class="n">test_args</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Follow the <a class="reference internal" href="getting_started.html#getting-started"><span class="std std-ref">Getting Started</span></a> guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see <a class="reference internal" href="usage/args.html#args"><span class="std std-ref">Input Arguments</span></a>.</p>
+<p>Follow the <a class="reference internal" href="getting_started.html#getting-started"><span class="std std-ref">Getting Started</span></a> guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see <a class="reference internal" href="usage/args.html#args"><span class="std std-ref">Input Arguments</span></a>. Alternatively the <span class="xref std std-ref">cli</span> can be used with identical results.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>smc2 -nsam <span class="m">4</span> -seg test_seg.seg
+</pre></div>
+</div>
 </div>
 <div class="section" id="other-methods">
 <h2>Other Methods<a class="headerlink" href="#other-methods" title="Permalink to this headline">¶</a></h2>

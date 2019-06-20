@@ -5,6 +5,7 @@ import pdb
 import numpy as np
 import pandas as pd
 import glob
+import gzip
 
 def prune_tree_sequence(tree_sequence_path, num_samples):
     """
@@ -36,24 +37,14 @@ def prune_tree_sequence(tree_sequence_path, num_samples):
 
 def ts_to_seg(path, n = None):
     """
-    Converts a tree seqeunce to a seg file. 
-    
-    Parameters
-    ----------
-    path : str
-        The path to the tree sequence file produced by `ts.dump`.
-    n : list of int
-        A list of the various numbers of haplotypoes used in this analysis. `None` if only using one haplotype value.
+    Converts a tree sequence into a seg file for use by :code:`smcsmc.run_smcsmcs()`. This is especially
+    useful if you are simulating data from :code:`msprime` and would like to directly 
+    use it in :code:`smcsmc`. For details of how to do this, please see the tutorial on simulation using :code:`msprime`.
 
-    Returns
-    -------
-    None
+    Provide the path to the tree sequence, and the suffix will be replaced by :code:`.seg`. This code is adapted from PopSim.
 
-    See Also
-    ---------
-    prune_tree_sequence
-
-    This is adapted from the multihep conversion in PopSim Analysis.
+    :param str path: Full file path to the tree sequence created by :code:`ts.dump`.
+    :param list n: If more than one sample of haplotypes is being analysed simulateously, provide it here as a list. Otherwise, simply provide the number of haplotypes as a single-element list. 
     """
 
     if n is None:
@@ -196,4 +187,73 @@ class Expectations:
         for path in glob.glob(paths):
             counts = self.count_events(path)
             self.update_table(counts)
+
+def vcf_to_seg(vcfs, samples, key, vcfdir="tmp", mask = None, chroms = range(1,23)):
+    """
+    Takes given samples from given VCFs and creates seg files for 
+    input to :code:`smcsmc.run_smcsmc()`. 
+
+    .. warning:: 
+        This function is not fully implemented yet and will not work as expected (or at all!)  
+
+    Input VCFs do not have to phased, but you should be aware that 
+    if they are not, this will decrease the effectiveness of the lookahead likelihood
+    calculation. 
+
+    Provide a list of VCFs to merge together and a list of sample names 
+    from each to include. These must match up identically. 
+
+    Additionally provide mask files, and an output directory to place
+    the VCFs. By default all somatic chromosomes are anlaysed, but 
+    you can change this by providing an iterator to the chroms
+    argument.
+
+    :param list vcfs: List of paths to the VCFs which you wish to pull samples from.
+    :param list samples: List of sample names to extract from the VCFs. The order must be the same.
+    :param str key: Name of your output seg files.
+    :param str vcfdir: Serves as a staging ground for intermediate seg files.  
+    :param str mask: Directory of similarly named mask files. Currently not implemented.
+    :param iterable chroms: An iterator of the chromosomes you wish to convert. 
+
+    :return: Nothing.
+    """ 
+    raise NotImplementedError
+    assert (len(vcfs)==len(samples)), "Your lists of samples and VCFs must be the same length." 
+    #for chrom in chroms:
+    #    for vcf, sample in zip(vcfs, samples):
+    #        fname =  f"{vcfdir}/tmp{key}.{sample}.chr{chrom}.vcf.gz"
+
+    #        try:
+    #            try_open = gzip.GzipFile( fname, 'r')
+    #            have_files = True
+    #            print(f"You have already created {fname}")
+    #        except:
+    #            have_files = False
+
+    #        if not have_files:
+    #            if not os.path.exists(vcfdir):
+    #                os.makedirs(args.vcfdir)
+
+    #            fout = gzip.GzipFile (fname, 'w')
+    #            fin = gzip.GzipFile( vcf.format(chrom), 'r')
+    #            print "Reading:\t", vcf.format(chrom)
+
+    #            cols = []
+
+    #            for line in fin:
+    #                elts = line.strip().split('\t')
+    #                if line.startswith('#CHROM'):
+    #                        col = [i for i, e in enumerate(elts) if e == sample]
+    #                        if len(col) == 0:
+    #                            raise ValueError("Could not find individual {}".format(sample))
+    #                        cols.append(col[0])
+    #                if line.startswith('#') and not line.startswith('#CHROM'):
+    #                        fout.write(line)
+    #                else:
+    #                        # filter out hom ref calls, and indel calls
+    #                        if (not elts[cols[0]].startswith("0|0")) and len(elts[3]) == 1 and len(elts[4]) == 1:
+    #                            fout.write('\t'.join(elts[:9] + [elts[cols[0]]] + ["\n"]))
+
+
+
 

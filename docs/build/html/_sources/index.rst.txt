@@ -17,5 +17,6 @@ This is the reference manual for SMCSMC (or :code:`smcsmc`), a method and progra
    usage/usage.rst
    tutorials/tutorials.rst
    api
+   cli
    glossary
 

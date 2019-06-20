@@ -6,16 +6,16 @@ API Documentation
 
 .. _sec_api_file_formats:
 
-+++++++++++++++
-File Formats
-++++++++++++++
+Format Conversions
+-------------------
 
-.. autoclass:: smcsmc.Smcsmc
-        :members:
+.. autofunction:: smcsmc.utils.ts_to_seg
 
-.. autoclass:: smcsmc.Population
-        :members:
+.. autofunction:: smcsmc.utils.vcf_to_seg
 
-.. todo::
+Plotting
+---------
 
-        1. Add documentation
+.. automodule:: smcsmc.plot
+   :members:
+

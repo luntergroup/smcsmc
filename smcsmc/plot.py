@@ -13,10 +13,29 @@ matplotlib.use('Agg')
 
 def plot_migration(input='result.out', output='result.png', g = 30, ymax=0.00025):
     """
-    Plot migration between two groups.
+    Plot the migration between *two* groups. 
 
-    Give the path to the result file and the path to the output file. The ymax can
-    be adjusted for larger or smaller ranges."""
+    .. admonition::
+        It would make a lot more sense if this could plot any number of migrations, but at present it can only do two.
+
+    The function pulls from the input, which must be some sort of aggregated output from :code:`smcsmc`, and plots the migration rate over time for a given 
+    generational time :code:`g`, which scales the number of generations to years. The Y axis (which can be modified with the :code:`ymax` parameter) represents 
+    :math:`m_{ij}`, or the proportion of population j being placed by migration from population i *backwards in time*. This is important, as most intution about migration
+    is understood forward in time. 
+
+    This is a barebones function and there is no option to provide a "truth" bar. See the other plotting functions for various definitions of "truth".
+
+    As an example, here is the resulting (symmetric) migration from a simulation:
+
+    .. figure:: ../img/plot_migration.png
+
+    :param str input: This must be the file path to some sort of aggregated output from :code:`smcsmc`. 
+                        This means that it can be either a :code:`chunkfinal.out` or :code:`result.out` but *not* an
+                        individual chunk. We need all the data here.
+    :param str output: Filepath to save the plot.
+    :param int g: The length of one generation in years. This is used to scale the x axis.
+    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down. 
+    """
     df = pd.read_csv(input, sep = "\s+")
     df = df[df['Iter'] == max(df['Iter'])][df['Clump'] == -1]
     zto = df[df['Type'] == 'Migr'][df['From'] == 0]
@@ -40,7 +59,34 @@ def plot_migration(input='result.out', output='result.png', g = 30, ymax=0.00025
     
 def plot_with_guide(input, guide, output, g = 30, ymax = 0.00025, N0=14312):
     """
-    Plots migration along with a guide from a simulations."""
+    This function is very similar to :meth:`smcsmc.plot.plot_migration`  except that it includes the ability to add a bar of "truth". In this case, the function uses a specific form of "truth"
+    generated from recording all epochs output by :code:`SCRM`. Additionally, we provide both the effective population size and the migration rates.
+
+    The structure of the truth guide is like so:
+    
+    +------------+----------+----------+---------+---------+
+    | Start Time | Pop_1 Ne | Pop_2 Ne | Pop_1 M | Pop_2 M |
+    +------------+----------+----------+---------+---------+
+    | 0          | 3        | 3        | 6       | 2       |
+    +------------+----------+----------+---------+---------+
+    | 100        | 0.65     | 0.3      | 14      | 0       |
+    +------------+----------+----------+---------+---------+
+    | ...        | .        | .        | .       | .       |
+    +------------+----------+----------+---------+---------+
+    | 10000      | 0.4      | 0.4      | 8       | 6       |
+    +------------+----------+----------+---------+---------+
+   
+    Saved as a CSV file for the :code:`guide` argument.
+
+    .. todo::
+        This function is part of a WIP tutorial on simulating with :code:`SCRM`. More details and convenience functions to come.
+
+    :param str input: The full file path to an aggregated output file from :code:`smcsmc`.
+    :param str guide: The full file path to a CSV formated as above with the truth of a simulation. 
+    :param str output: Filepath to save the plot.
+    :param int g: The length of one generation in years. This is used to scale the x axis.
+    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down.  
+    """
     df = pd.read_csv(input, sep = "\s+")
     df = df[df['Iter'] == max(df['Iter'])][df['Clump'] == -1]
     zto_m = df[df['Type'] == 'Migr'][df['From'] == 0]
@@ -92,11 +138,19 @@ def plot_with_guide(input, guide, output, g = 30, ymax = 0.00025, N0=14312):
 
 def plot_rainbow(input, output, g = 30, model = None, steps = None, pop_id = 1):
     """ 
-    Creates a plot of all iterations by colour.
+    Creates a plot of all iterations by colour. This plot is useful for assessing convergence.
 
-    Give the path to the full result file and each 
-    iteration will be displayed in a different colour.
-    Useful for assessing convergence."""
+    :param str input: The full file path to an aggregated output file from :code:`smcsmc`.
+    :param str output: Filepath to save the plot.
+    :param int g: The length of one generation in years. This is used to scale the x axis.
+    :param stdpopsim.Model model: Model for plotting.
+    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down.  
+    :param int steps: Don't worry about this.
+    :param int pop_id: If your model includes multiple populations, which one do you want to plot?
+
+    .. figure:: ../img/rainbow.png
+        :align: center
+ """
 
     f, ax = plt.subplots(figsize=(7, 7))
     ax.set(xscale="log", yscale="log")

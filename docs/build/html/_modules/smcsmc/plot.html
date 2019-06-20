@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>smcsmc.plot &mdash; smcsmc 0.1beta documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> smcsmc
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                latest
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/usage.html">General Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">smcsmc</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>smcsmc.plot</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for smcsmc.plot</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">msprime</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">stdpopsim</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">stdpopsim</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Agg&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="plot_migration"><a class="viewcode-back" href="../../api.html#smcsmc.plot.plot_migration">[docs]</a><span class="k">def</span> <span class="nf">plot_migration</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="s1">&#39;result.out&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;result.png&#39;</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="mf">0.00025</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the migration between *two* groups. </span>
+
+<span class="sd">    .. admonition::</span>
+<span class="sd">        It would make a lot more sense if this could plot any number of migrations, but at present it can only do two.</span>
+
+<span class="sd">    The function pulls from the input, which must be some sort of aggregated output from :code:`smcsmc`, and plots the migration rate over time for a given </span>
+<span class="sd">    generational time :code:`g`, which scales the number of generations to years. The Y axis (which can be modified with the :code:`ymax` parameter) represents </span>
+<span class="sd">    :math:`m_{ij}`, or the proportion of population j being placed by migration from population i *backwards in time*. This is important, as most intution about migration</span>
+<span class="sd">    is understood forward in time. </span>
+
+<span class="sd">    This is a barebones function and there is no option to provide a &quot;truth&quot; bar. See the other plotting functions for various definitions of &quot;truth&quot;.</span>
+
+<span class="sd">    As an example, here is the resulting (symmetric) migration from a simulation:</span>
+
+<span class="sd">    .. figure:: ../img/plot_migration.png</span>
+
+<span class="sd">    :param str input: This must be the file path to some sort of aggregated output from :code:`smcsmc`. </span>
+<span class="sd">                        This means that it can be either a :code:`chunkfinal.out` or :code:`result.out` but *not* an</span>
+<span class="sd">                        individual chunk. We need all the data here.</span>
+<span class="sd">    :param str output: Filepath to save the plot.</span>
+<span class="sd">    :param int g: The length of one generation in years. This is used to scale the x axis.</span>
+<span class="sd">    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s2">&quot;\s+&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Iter&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Iter&#39;</span><span class="p">])][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Clump&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">zto</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Migr&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">otz</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Migr&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zto</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="n">zto</span><span class="p">[</span><span class="s1">&#39;Rate&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">otz</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="n">otz</span><span class="p">[</span><span class="s1">&#39;Rate&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mf">5e5</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;Population 0 to 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Population 1 to 0&#39;</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Migration&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Log Years (g = </span><span class="si">{g}</span><span class="s2">)&quot;</span><span class="p">)</span> 
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Migration Rate (4N0m)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> </div>
+    
+<div class="viewcode-block" id="plot_with_guide"><a class="viewcode-back" href="../../api.html#smcsmc.plot.plot_with_guide">[docs]</a><span class="k">def</span> <span class="nf">plot_with_guide</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="mf">0.00025</span><span class="p">,</span> <span class="n">N0</span><span class="o">=</span><span class="mi">14312</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is very similar to :meth:`smcsmc.plot.plot_migration`  except that it includes the ability to add a bar of &quot;truth&quot;. In this case, the function uses a specific form of &quot;truth&quot;</span>
+<span class="sd">    generated from recording all epochs output by :code:`SCRM`. Additionally, we provide both the effective population size and the migration rates.</span>
+
+<span class="sd">    The structure of the truth guide is like so:</span>
+<span class="sd">    </span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">    | Start Time | Pop_1 Ne | Pop_2 Ne | Pop_1 M | Pop_2 M |</span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">    | 0          | 3        | 3        | 6       | 2       |</span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">    | 100        | 0.65     | 0.3      | 14      | 0       |</span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">    | ...        | .        | .        | .       | .       |</span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">    | 10000      | 0.4      | 0.4      | 8       | 6       |</span>
+<span class="sd">    +------------+----------+----------+---------+---------+</span>
+<span class="sd">   </span>
+<span class="sd">    Saved as a CSV file for the :code:`guide` argument.</span>
+
+<span class="sd">    .. todo::</span>
+<span class="sd">        This function is part of a WIP tutorial on simulating with :code:`SCRM`. More details and convenience functions to come.</span>
+
+<span class="sd">    :param str input: The full file path to an aggregated output file from :code:`smcsmc`.</span>
+<span class="sd">    :param str guide: The full file path to a CSV formated as above with the truth of a simulation. </span>
+<span class="sd">    :param str output: Filepath to save the plot.</span>
+<span class="sd">    :param int g: The length of one generation in years. This is used to scale the x axis.</span>
+<span class="sd">    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down.  </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s2">&quot;\s+&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Iter&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Iter&#39;</span><span class="p">])][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Clump&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">zto_m</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Migr&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">otz_m</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Migr&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">zto_ne</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Coal&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">otz_ne</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Coal&#39;</span><span class="p">][</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;From&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">truth</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">guide</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+    <span class="c1"># Plot Ne</span>
+    <span class="c1">#ax1.subplot(2,1,1)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">((</span><span class="mf">1e3</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">))</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zto_ne</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">zto_ne</span><span class="p">[</span><span class="s1">&#39;Ne&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">otz_ne</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">otz_ne</span><span class="p">[</span><span class="s1">&#39;Ne&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;ceu_ne&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">N0</span><span class="p">,</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;yri_ne&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">N0</span><span class="p">,</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">))</span>
+    <span class="c1">#ax1.legend([&#39;Population 0 to 1&#39;, &#39;Population 1 to 0&#39;])</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Population Size&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Log Years (g = </span><span class="si">{g}</span><span class="s2">)&quot;</span><span class="p">)</span> 
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Migration Rate (4N0m)&quot;</span><span class="p">)</span>
+   <span class="c1"># ax1.tight_layout()</span>
+
+    <span class="c1">#ax2.subplot(2,1,2)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zto_m</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="n">zto_m</span><span class="p">[</span><span class="s1">&#39;Rate&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">otz_m</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="n">otz_m</span><span class="p">[</span><span class="s1">&#39;Rate&#39;</span><span class="p">],</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;ceu_m&#39;</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">N0</span><span class="p">),</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">g</span><span class="p">,</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;yri_m&#39;</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">N0</span><span class="p">),</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span>
+
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span><span class="p">))</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">))</span>
+  <span class="c1">#  ax2.set_legend([&#39;Population 0 to 1&#39;, &#39;Population 1 to 0&#39;])</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Migration&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Log Years (g = </span><span class="si">{g}</span><span class="s2">)&quot;</span><span class="p">)</span> 
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Migration Rate (4N0m)&quot;</span><span class="p">)</span>
+  <span class="c1">#  ax2.tight_layout()</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="plot_rainbow"><a class="viewcode-back" href="../../api.html#smcsmc.plot.plot_rainbow">[docs]</a><span class="k">def</span> <span class="nf">plot_rainbow</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">steps</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pop_id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    Creates a plot of all iterations by colour. This plot is useful for assessing convergence.</span>
+
+<span class="sd">    :param str input: The full file path to an aggregated output file from :code:`smcsmc`.</span>
+<span class="sd">    :param str output: Filepath to save the plot.</span>
+<span class="sd">    :param int g: The length of one generation in years. This is used to scale the x axis.</span>
+<span class="sd">    :param stdpopsim.Model model: Model for plotting.</span>
+<span class="sd">    :param float ymax: The maximum y value to plot. This is used to scale the plots up or down.  </span>
+<span class="sd">    :param int steps: Don&#39;t worry about this.</span>
+<span class="sd">    :param int pop_id: If your model includes multiple populations, which one do you want to plot?</span>
+
+<span class="sd">    .. figure:: ../img/rainbow.png</span>
+<span class="sd">        :align: center</span>
+<span class="sd"> &quot;&quot;&quot;</span>
+
+    <span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xscale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">10e2</span><span class="p">,</span> <span class="mf">10e4</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">1e3</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;ooa&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">stdpopsim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">stdpopsim</span><span class="o">.</span><span class="n">homo_sapiens</span><span class="p">,</span><span class="s2">&quot;GutenkunstThreePopOutOfAfrica&quot;</span><span class="p">)()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Module stdpopsim not available - cannot go on.&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ddb</span> <span class="o">=</span> <span class="n">msprime</span><span class="o">.</span><span class="n">DemographyDebugger</span><span class="p">(</span><span class="o">**</span><span class="n">model</span><span class="o">.</span><span class="n">asdict</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">ddb</span><span class="o">.</span><span class="n">epochs</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">end_time</span> <span class="o">+</span> <span class="mi">10000</span>
+            <span class="n">steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">end_time</span><span class="p">),</span><span class="mi">31</span><span class="p">))</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ddb</span><span class="o">.</span><span class="n">num_populations</span><span class="p">)]</span>
+        <span class="n">num_samples</span><span class="p">[</span><span class="n">pop_id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="n">coal_rate</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">ddb</span><span class="o">.</span><span class="n">coalescence_rate_trajectory</span><span class="p">(</span><span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span>
+            <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">double_step_validation</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">steps</span> <span class="o">*</span> <span class="n">g</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">coal_rate</span><span class="p">),</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">)</span>
+
+    <span class="n">nt</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">sep</span> <span class="o">=</span> <span class="s1">&#39;\s+&#39;</span><span class="p">)</span>
+    <span class="n">nt</span><span class="p">[</span><span class="s1">&#39;Start&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">g</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">nt</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;Iter&#39;</span><span class="p">]):</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Start&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;Ne&#39;</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">,</span> <span class="n">drawstyle</span> <span class="o">=</span> <span class="s1">&#39;steps-pre&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;EM Iterations&#39;</span><span class="p">,</span> <span class="n">ncol</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+    
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Christopher B Cole, Donna Henderson, Sha (Joe) Zhu, Gerton Lunter
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
