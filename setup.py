@@ -4,8 +4,13 @@ setup(name='smcsmc',
       version='0.1',
       description='Demographic Inference using Particle Filters',
       url='https://github.com/luntergroup/smcsmc',
-      author='Gerton Lunter',
-      author_email='gerton.lunter@imm.ox.ac.uk',
+      author='Chris Cole, Donna Henderson, Sha (Joe) Zhu, Gerton Lunter',
+      author_email='ccole@well.ox.ac.uk, donnah@well.ox.ac.uk, sha.joe.zhu@gmail.com, gerton.lunter@imm.ox.ac.uk',
       license='CC-BY-4.0',
       packages=['smcsmc'],
+      setup_requires=[
+          'numpy',
+          'pandas',
+          'msprime'
+          ],
       zip_safe=False)

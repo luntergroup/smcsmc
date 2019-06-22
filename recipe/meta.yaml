@@ -17,10 +17,30 @@ requirements:
     - cmake
     - boost
     - zlib
+    - msprime
 
   host:
+    - python
+    - msprime
+    - numpy
+    - pandas
+
+  run:
     - gperftools
+    - numpy
+    - pandas
+    - msprime
     - boost 
     - python
     - boost
-    - zlib
+    - zlib 
+    - matplotlib
+
+test:
+  imports:
+    - smcsmc
+
+about:
+  home: https://github.com/luntergroup/smcsmc
+  doc_url: https://smcsmc.readthedocs.io
+  summary: 'A particle filter for demographic inference.'
