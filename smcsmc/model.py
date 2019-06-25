@@ -328,7 +328,10 @@ class Smcsmc:
 
 
     def read_segline(self, line):
-        elts = line.strip().split('\t')
+        try:
+            elts = line.decode().strip().split('\t')
+        except AttributeError:
+            elts = line.strip().split('\t')
         if len(elts) == 3:
             return elts
         elif len(elts) == 6:
