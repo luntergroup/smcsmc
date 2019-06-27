@@ -1,0 +1,26 @@
+function test_smcsmc {
+  objPath="./"
+  echo -n " ${testObj} $@ "
+  for i in `seq ${begin} ${end}`; do
+    echo -n "."
+
+    # Test using testObj self-checks
+    ${objPath}${testObjDbg} $@ -seed $i > /dev/null
+    if [ $? -ne 0 ]; then
+      echo ""
+      echo "Executing \"${testObjDbg} $@ -seed $i\" failed."
+      echo "Debug Call: make -mj2 ${testObjDbg} && ${testObjDbg} $@ -seed $i 2>&1 | less"
+      exit 1
+    fi
+
+    # Test for memory leaks
+    valgrind --error-exitcode=1 --leak-check=full -q ${objPath}${testObj} $@ -seed $i > /dev/null
+    if [ $? -ne 0 ]; then
+      echo ""
+      echo "Valgrind check of \"${testObj} $@ -seed $i\" failed."
+      exit 1
+    fi
+
+  done
+  echo " done."
+}
