@@ -11,6 +11,7 @@ import copy
 import argparse
 import io
 import collections
+import os
 
 class MaskIterator:
     def __init__(self, filename, negative=False):
@@ -169,20 +170,15 @@ class JoinedVcfIterator:
                     minIndices = [a[0]]
             return minIndices
     
-
-#parser = argparse.ArgumentParser()
-#parser.add_argument("files", nargs="+", help="Input VCF files")
-#parser.add_argument("--mask", action="append", help="apply masks in bed format, should be given once for the calling mask from each individual, in the same order, and in addition can be given for e.g. mappability or admixture masks. Mask can be gzipped, if indicated by .gz file ending.")
-#parser.add_argument("--negative_mask", action="append", help="same as mask, but not associated to individual, and interpreted as negative mask, so places where sites should be excluded.  ")
-#parser.add_argument("--trio", action="append", help="declare trio-relationships. This should be a string with a format <child_index>,<father_index>,<mother_index>, where the three fields are the indices of the samples in the trio. This option will automatically phase parental and maternal haplotypes where possible and remove the child VCF file from the resulting file. Can be given multiple times if you have multiple trios.")
-#parser.add_argument("--chr", help="overwrite chromosomes in input files. Useful if chromosome names differ, such as chr1 vs. 1")
-#parser.add_argument("--minsize", help="minimum size of empty record (default 1000)")
-
-#args = parser.parse_args()
-
-
  
-def run_multihetsep(files, mask = None, negative_mask = None, trio = None, minsize = 1000):
+def run_multihetsep(files, output, mask = None, negative_mask = None, trio = None, minsize = 1000):
+    """
+    This is the right one
+
+    .. todo: Docuemnt this
+    """
+
+    fout = gzip.GzipFile(output, 'w')
     
     trios = []
     if trio is not None:
@@ -239,8 +235,8 @@ def run_multihetsep(files, mask = None, negative_mask = None, trio = None, minsi
             patt = pattern( maskIterators, mergedMask, pos )
             nr_called_by_pattern[patt] += 1
             if pos % 1000000 == 0:
-                print("processing pos {}".format(pos), file=sys.stderr)
-        if any( patt ):
+                print("processing pos {}".format(pos), file=sys.stderr) 
+        if any( patt ): 
             calledAllele = ''.join([['.',a][m] for a,m in zip(alleles,dup(patt))])  # replace masked alleles with '.'
             if is_segregating(calledAllele):
                 removePatterns = [p for p,c in nr_called_by_pattern.items()         # find patterns that we do NOT want to output
@@ -256,14 +252,67 @@ def run_multihetsep(files, mask = None, negative_mask = None, trio = None, minsi
                 c = chrom 
                 for p,count in nr_called_by_pattern.items():                        # output the patterns, including the empty record, but excluding the one for the mutation
                     if p != patt:
-                        print(last_pos, count, ''.join(['.0'[m] for m in dup(p)]), sep="\t")
+                        out = str(last_pos) + '\t' + str(count) + '\t' + ''.join(['.0'[m] for m in dup(p)]) + '\n'
+                        fout.write(out.encode('ascii'))
+                        #print(last_pos, count, ''.join(['.0'[m] for m in dup(p)]), sep="\t")
                         last_pos += count
                 # output mutation
                 count = nr_called_by_pattern[ patt ]
-                print(last_pos, count, calledAllele, sep="\t")
+                #print(last_pos, count, calledAllele, sep="\t")
+                out = str(last_pos) + '\t' + str(count) + '\t' + str(calledAllele) + '\n'
+                fout.write(out.encode('ascii'))
                 last_pos += count
                 assert last_pos == snp_pos
                 nr_called_by_pattern = collections.defaultdict(int)            
       
       
-      
+def split_vcfs(input, vcfdir, key, chroms = range(1,23)):
+    """
+    Splits samples into VCFs by themselves.
+
+    :param list of tuples input: A list of (vcf, sample_name) pairings.
+    :param str vcfdir: Path to the temporary folder where you wish to store the individual VCFs.
+    :param str key: Prefix for the files.
+    :param list chroms: Chromosomes to process."""
+    for chrom in chroms:
+        for vcf, sample in input:
+            fname =  "{}/tmp{}.{}.chr{}.vcf.gz".format(vcfdir, key, sample, chrom)
+
+            try:
+                try_open = gzip.GzipFile( fname, 'r')
+                print("Found:\t\t", fname, "\tso not doing anything...")
+                have_files = True
+            except:
+                have_files = False
+
+            if not have_files:
+                if not os.path.exists(vcfdir):
+                    os.makedirs(vcfdir)
+
+                fout = gzip.GzipFile (fname, 'w')
+                fin = gzip.GzipFile( vcf.format(chrom), 'r')
+                print("Reading:\t", vcf.format(chrom))
+
+                cols = []
+
+                for line in fin:
+                    #try:
+                     #   elts = line.strip().split('\t')
+                    #except TypeError:
+                    elts = line.decode().strip().split('\t')
+                    if line.startswith(b'#CHROM'):
+                            col = [i for i, e in enumerate(elts) if e == sample]
+                            if len(col) == 0:
+                                raise ValueError("Could not find individual {}".format(sample))
+                            cols.append(col[0])
+                    if line.startswith(b'#') and not line.startswith(b'#CHROM'):
+                            fout.write(line)
+                    else:
+                            # filter out hom ref calls, and indel calls
+                            if (not elts[cols[0]].startswith("0|0")) and len(elts[3]) == 1 and len(elts[4]) == 1:
+                                fout.write('\t'.join(elts[:9] + [elts[cols[0]]] + ["\n"]).encode('ascii'))
+                    
+
+
+
+

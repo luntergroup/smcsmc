@@ -190,7 +190,7 @@ class Expectations:
             self.update_table(counts)
 
 
-def vcf_to_seg(input, masks, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
+def vcf_to_seg(input, masks, output, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
     """
     Takes given samples from given VCFs and creates seg files for 
     input to :code:`smcsmc.run_smcsmc()`. 
@@ -207,10 +207,12 @@ def vcf_to_seg(input, masks, tmpdir = ".tmp", key = "tmp", chroms = range(1,23))
     """ 
     smcsmc.generate_smcsmcinput.split_vcfs(input, tmpdir, key, chroms)
     for chr in chroms:
-        for n_sample in range(len(input):
+        for n_sample in range(len(input)):
             file = [f"{tmpdir}/tmp{key}.{input[n_sample][1]}.chr{chr}.vcf.gz"]
-            mask = masks[n_sample].format(chr) 
-            smcsmc.generate_smcsmcinput.run_multihetsep(file, mask)
+            mask = [masks[n_sample].format(chr) ]
+            #pdb.set_trace()
+            smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
+ 
     
    
     
