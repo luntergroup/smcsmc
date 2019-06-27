@@ -163,6 +163,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">io</span>
 
 <span class="k">def</span> <span class="nf">prune_tree_sequence</span><span class="p">(</span><span class="n">tree_sequence_path</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -345,74 +346,142 @@
             <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_events</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_table</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
 
-<div class="viewcode-block" id="vcf_to_seg"><a class="viewcode-back" href="../../api.html#smcsmc.utils.vcf_to_seg">[docs]</a><span class="k">def</span> <span class="nf">vcf_to_seg</span><span class="p">(</span><span class="n">vcfs</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">vcfdir</span><span class="o">=</span><span class="s2">&quot;tmp&quot;</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">chroms</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">23</span><span class="p">)):</span>
+
+<span class="k">class</span> <span class="nc">VcfIter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initiate a VCF class for reading raw genotype data.</span>
+
+<span class="sd">        :param str filename: Path to the (optionally GZIPPED) VCF file. </span>
+<span class="sd">                            We support VCF versions above 4.0</span>
+<span class="sd">        :return iterator: An iterator over the lines of the VCF in a structured way.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Next item in the VCF, return is a tuple where the elements, in order, are:</span>
+
+<span class="sd">        0. chrom (str)</span>
+<span class="sd">        1. pos (int)</span>
+<span class="sd">        2. alleles (list of str)</span>
+<span class="sd">        3. geno 1 (int) </span>
+<span class="sd">        4. geno 2 (int)</span>
+<span class="sd">        5. phased (bool)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">)</span> <span class="c1"># Grab the next line of the VCF. Is this safe?</span>
+        <span class="k">while</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;#&quot;</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="n">chrom</span> <span class="o">=</span>         <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pos</span> <span class="o">=</span>           <span class="nb">int</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> 
+        
+        <span class="n">alleles</span> <span class="o">=</span>       <span class="p">[</span><span class="n">items</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">alt_a</span> <span class="ow">in</span> <span class="n">items</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">):</span> 
+            <span class="n">alleles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alt_a</span><span class="p">)</span> 
+
+        <span class="c1"># There should always be at least one allele</span>
+        <span class="k">assert</span> <span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">alleles</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span>
+
+        <span class="n">geno</span> <span class="o">=</span>          <span class="n">items</span><span class="p">[</span><span class="mi">9</span><span class="p">][:</span><span class="mi">3</span><span class="p">]</span> 
+        <span class="n">phased</span> <span class="o">=</span> <span class="n">geno</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;|&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">alleles</span><span class="p">),</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">geno</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">geno</span><span class="p">[</span><span class="mi">2</span><span class="p">])),</span> <span class="n">phased</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MaskIter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">==</span> <span class="s2">&quot;.gz&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">TextIOWrapper</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastPos</span> <span class="o">=</span> <span class="mi">1</span>
+ 
+        <span class="bp">self</span><span class="o">.</span><span class="n">readLine</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">readLine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span> 
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">)</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eof</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">getVal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastPos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastPos</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="k">while</span> <span class="n">pos</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">eof</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">readLine</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="ow">and</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">class</span> <span class="nc">MergedMask</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Strictly stolen from Stephen Schiffels&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask_iterators</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maskIterators</span> <span class="o">=</span> <span class="n">mask_iterators</span>
+  
+    <span class="k">def</span> <span class="nf">getVal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">((</span><span class="n">m</span><span class="o">.</span><span class="n">getVal</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">maskIterators</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">MergedVcf</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vcf_iterators</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">VcfIterators</span> <span class="o">=</span> <span class="n">vcf_iterators</span>
+
+    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">vcf</span><span class="p">)</span> <span class="k">for</span> <span class="n">vcf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VcfIterators</span><span class="p">]</span>
+
+
+
+
+<div class="viewcode-block" id="vcf_to_seg"><a class="viewcode-back" href="../../api.html#smcsmc.utils.vcf_to_seg">[docs]</a><span class="k">def</span> <span class="nf">vcf_to_seg</span><span class="p">(</span><span class="n">vcfs</span><span class="p">,</span> <span class="n">masks</span><span class="p">,</span> <span class="n">minsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Takes given samples from given VCFs and creates seg files for </span>
 <span class="sd">    input to :code:`smcsmc.run_smcsmc()`. </span>
 
-<span class="sd">    .. warning:: </span>
-<span class="sd">        This function is not fully implemented yet and will not work as expected (or at all!)  </span>
-
 <span class="sd">    Input VCFs do not have to phased, but you should be aware that </span>
-<span class="sd">    if they are not, this will decrease the effectiveness of the lookahead likelihood</span>
-<span class="sd">    calculation. </span>
+<span class="sd">    if they are not, this will decrease the effectiveness of the lookahead likelihood.</span>
 
-<span class="sd">    Provide a list of VCFs to merge together and a list of sample names </span>
-<span class="sd">    from each to include. These must match up identically. </span>
-
-<span class="sd">    Additionally provide mask files, and an output directory to place</span>
-<span class="sd">    the VCFs. By default all somatic chromosomes are anlaysed, but </span>
-<span class="sd">    you can change this by providing an iterator to the chroms</span>
-<span class="sd">    argument.</span>
+<span class="sd">    Provide a list of VCFs to merge together and masks for each individual in bed format.</span>
 
 <span class="sd">    :param list vcfs: List of paths to the VCFs which you wish to pull samples from.</span>
-<span class="sd">    :param list samples: List of sample names to extract from the VCFs. The order must be the same.</span>
-<span class="sd">    :param str key: Name of your output seg files.</span>
-<span class="sd">    :param str vcfdir: Serves as a staging ground for intermediate seg files.  </span>
 <span class="sd">    :param str mask: Directory of similarly named mask files. Currently not implemented.</span>
-<span class="sd">    :param iterable chroms: An iterator of the chromosomes you wish to convert. </span>
-
+<span class="sd">   </span>
 <span class="sd">    :return: Nothing.</span>
 <span class="sd">    &quot;&quot;&quot;</span> 
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-    <span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vcfs</span><span class="p">)</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)),</span> <span class="s2">&quot;Your lists of samples and VCFs must be the same length.&quot;</span> </div>
-    <span class="c1">#for chrom in chroms:</span>
-    <span class="c1">#    for vcf, sample in zip(vcfs, samples):</span>
-    <span class="c1">#        fname =  f&quot;{vcfdir}/tmp{key}.{sample}.chr{chrom}.vcf.gz&quot;</span>
+    <span class="n">nInd</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vcfs</span><span class="p">)</span>
 
-    <span class="c1">#        try:</span>
-    <span class="c1">#            try_open = gzip.GzipFile( fname, &#39;r&#39;)</span>
-    <span class="c1">#            have_files = True</span>
-    <span class="c1">#            print(f&quot;You have already created {fname}&quot;)</span>
-    <span class="c1">#        except:</span>
-    <span class="c1">#            have_files = False</span>
+    <span class="c1"># Need to progress along the sequence </span>
+    <span class="c1"># Filter out hom ref and indels for simplicity</span>
 
-    <span class="c1">#        if not have_files:</span>
-    <span class="c1">#            if not os.path.exists(vcfdir):</span>
-    <span class="c1">#                os.makedirs(args.vcfdir)</span>
+    <span class="n">vcf_iters</span> <span class="o">=</span> <span class="n">MergedVcf</span><span class="p">([</span><span class="n">VcfIter</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">vcfs</span><span class="p">])</span>
+    <span class="n">mask_iters</span> <span class="o">=</span> <span class="n">MergedMask</span><span class="p">([</span><span class="n">MaskIter</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">masks</span><span class="p">])</span>
 
-    <span class="c1">#            fout = gzip.GzipFile (fname, &#39;w&#39;)</span>
-    <span class="c1">#            fin = gzip.GzipFile( vcf.format(chrom), &#39;r&#39;)</span>
-    <span class="c1">#            print &quot;Reading:\t&quot;, vcf.format(chrom)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">last_pos</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="c1">#            cols = []</span>
-
-    <span class="c1">#            for line in fin:</span>
-    <span class="c1">#                elts = line.strip().split(&#39;\t&#39;)</span>
-    <span class="c1">#                if line.startswith(&#39;#CHROM&#39;):</span>
-    <span class="c1">#                        col = [i for i, e in enumerate(elts) if e == sample]</span>
-    <span class="c1">#                        if len(col) == 0:</span>
-    <span class="c1">#                            raise ValueError(&quot;Could not find individual {}&quot;.format(sample))</span>
-    <span class="c1">#                        cols.append(col[0])</span>
-    <span class="c1">#                if line.startswith(&#39;#&#39;) and not line.startswith(&#39;#CHROM&#39;):</span>
-    <span class="c1">#                        fout.write(line)</span>
-    <span class="c1">#                else:</span>
-    <span class="c1">#                        # filter out hom ref calls, and indel calls</span>
-    <span class="c1">#                        if (not elts[cols[0]].startswith(&quot;0|0&quot;)) and len(elts[3]) == 1 and len(elts[4]) == 1:</span>
-    <span class="c1">#                            fout.write(&#39;\t&#39;.join(elts[:9] + [elts[cols[0]]] + [&quot;\n&quot;]))</span>
+    <span class="k">for</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">snp_pos</span><span class="p">,</span> <span class="n">alelles</span> <span class="ow">in</span> <span class="n">vcf_iters</span><span class="p">:</span>
+        <span class="k">while</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="n">snp_pos</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span></div>
+            
 
 
 
+    
+    
+    
+    
 
 </pre></div>
 

@@ -239,18 +239,7 @@
 </pre></div>
 </div>
 <p>Which creates the following output <code class="code docutils literal notranslate"><span class="pre">result.out</span></code>:</p>
-<script type="text/javascript">
-    function showhide(element){
-        if (!document.getElementById)
-            return
-
-        if (element.style.display == "block")
-            element.style.display = "none"
-        else
-            element.style.display = "block"
-    };
-</script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock1'))">+ show/hide code</a><br /><div id="hiddencodeblock1" style="display: none"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Iter  Epoch       Start         End   Type   From     To            Opp          Count           Rate             Ne         ESS  Clump
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Iter  Epoch       Start         End   Type   From     To            Opp          Count           Rate             Ne         ESS  Clump
 <span class="m">15</span>      <span class="m">0</span>           <span class="m">0</span>         <span class="m">133</span>   Coal      <span class="m">0</span>     -1      <span class="m">1646116</span>.6       <span class="m">21</span>.30762  <span class="m">1</span>.2944174e-05      <span class="m">38627</span>.416      <span class="m">1</span>.3013     -1
 <span class="m">15</span>      <span class="m">1</span>         <span class="m">133</span>       <span class="m">166</span>.2   Coal      <span class="m">0</span>     -1      <span class="m">872269</span>.46      <span class="m">26</span>.817873  <span class="m">3</span>.0744941e-05      <span class="m">16262</span>.838      <span class="m">1</span>.9003     -1
 <span class="m">15</span>      <span class="m">2</span>       <span class="m">166</span>.2      <span class="m">207</span>.68   Coal      <span class="m">0</span>     -1      <span class="m">1357402</span>.8      <span class="m">2</span>.1042327  <span class="m">1</span>.5501903e-06      <span class="m">322541</span>.04      <span class="m">2</span>.1558     -1
@@ -289,7 +278,7 @@
 <span class="m">15</span>     -1           <span class="m">0</span>       1e+99 Resamp     -1     -1  <span class="m">3</span>.0934923e+09         <span class="m">882448</span>  <span class="m">0</span>.00028525948              <span class="m">0</span>           <span class="m">1</span>     -1
 </pre></div>
 </div>
-</div><p>Of course your output will not be the same, but if you have properly set up <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> to use a compute cluster and given it sufficient time to execute, then the resulting trends will be highly similar.</p>
+<p>Of course your output will not be the same, but if you have properly set up <code class="code docutils literal notranslate"><span class="pre">smcsmc</span></code> to use a compute cluster and given it sufficient time to execute, then the resulting trends will be highly similar.</p>
 <div class="admonition-todo admonition" id="id1">
 <p class="admonition-title">Todo</p>
 <p>Combine the functions to produce a plot with a guide so that I can show it here. Currently I have a SCRM plot with guide and an msprime plot from stdpopsim but not both.</p>

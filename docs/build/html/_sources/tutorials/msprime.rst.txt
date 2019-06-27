@@ -80,7 +80,7 @@ Which will write :code:`msprime.seg` in the current working directory. We now, f
 
 Which creates the following output :code:`result.out`:
 
-.. hidden-code-block:: bash
+.. code-block:: bash
 
         Iter  Epoch       Start         End   Type   From     To            Opp          Count           Rate             Ne         ESS  Clump
         15      0           0         133   Coal      0     -1      1646116.6       21.30762  1.2944174e-05      38627.416      1.3013     -1

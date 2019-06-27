@@ -185,31 +185,17 @@ use it in <code class="code docutils literal notranslate"><span class="pre">smcs
 
 <dl class="function">
 <dt id="smcsmc.utils.vcf_to_seg">
-<code class="sig-prename descclassname">smcsmc.utils.</code><code class="sig-name descname">vcf_to_seg</code><span class="sig-paren">(</span><em class="sig-param">vcfs</em>, <em class="sig-param">samples</em>, <em class="sig-param">key</em>, <em class="sig-param">vcfdir='tmp'</em>, <em class="sig-param">mask=None</em>, <em class="sig-param">chroms=range(1</em>, <em class="sig-param">23)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/utils.html#vcf_to_seg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.utils.vcf_to_seg" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">smcsmc.utils.</code><code class="sig-name descname">vcf_to_seg</code><span class="sig-paren">(</span><em class="sig-param">vcfs</em>, <em class="sig-param">masks</em>, <em class="sig-param">minsize=1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smcsmc/utils.html#vcf_to_seg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#smcsmc.utils.vcf_to_seg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes given samples from given VCFs and creates seg files for 
 input to <code class="code docutils literal notranslate"><span class="pre">smcsmc.run_smcsmc()</span></code>.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This function is not fully implemented yet and will not work as expected (or at all!)</p>
-</div>
 <p>Input VCFs do not have to phased, but you should be aware that 
-if they are not, this will decrease the effectiveness of the lookahead likelihood
-calculation.</p>
-<p>Provide a list of VCFs to merge together and a list of sample names 
-from each to include. These must match up identically.</p>
-<p>Additionally provide mask files, and an output directory to place
-the VCFs. By default all somatic chromosomes are anlaysed, but 
-you can change this by providing an iterator to the chroms
-argument.</p>
+if they are not, this will decrease the effectiveness of the lookahead likelihood.</p>
+<p>Provide a list of VCFs to merge together and masks for each individual in bed format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>vcfs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of paths to the VCFs which you wish to pull samples from.</p></li>
-<li><p><strong>samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of sample names to extract from the VCFs. The order must be the same.</p></li>
-<li><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of your output seg files.</p></li>
-<li><p><strong>vcfdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Serves as a staging ground for intermediate seg files.</p></li>
 <li><p><strong>mask</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory of similarly named mask files. Currently not implemented.</p></li>
-<li><p><strong>chroms</strong> (<em>iterable</em>) – An iterator of the chromosomes you wish to convert.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
