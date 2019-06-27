@@ -190,105 +190,7 @@ class Expectations:
             self.update_table(counts)
 
 
-class VcfIter:
-    def __init__(self, filename):
-        """
-        Initiate a VCF class for reading raw genotype data.
-
-        :param str filename: Path to the (optionally GZIPPED) VCF file. 
-                            We support VCF versions above 4.0
-        :return iterator: An iterator over the lines of the VCF in a structured way."""
-        self.file = io.TextIOWrapper(gzip.open(filename, mode = 'rb'))
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        """
-        Next item in the VCF, return is a tuple where the elements, in order, are:
-
-        0. chrom (str)
-        1. pos (int)
-        2. alleles (list of str)
-        3. geno 1 (int) 
-        4. geno 2 (int)
-        5. phased (bool)
-
-        """
-        line = next(self.file) # Grab the next line of the VCF. Is this safe?
-        while line[0] == "#":
-            line = next(self.file)
-        items = line.strip().split()
-
-        chrom =         items[0]
-        pos =           int(items[1]) 
-        
-        alleles =       [items[3]]
-        for alt_a in items[4].split(","): 
-            alleles.append(alt_a) 
-
-        # There should always be at least one allele
-        assert ( len(alleles) > 0 )
-
-        geno =          items[9][:3] 
-        phased = geno[1] == "|"
-
-        return (chrom, pos, tuple(alleles), (int(geno[0]), int(geno[2])), phased)
-
-
-class MaskIter:
-    def __init__(self, filename):
-        if filename[-3:] == ".gz":
-            self.file = io.TextIOWrapper(gzip.open(filename, "r"))
-        else:
-            self.file = open(filename, "r")
-        self.eof = False
-        self.lastPos = 1
- 
-        self.readLine()
-
-    def readLine(self):
-        try: 
-            line = next(self.file)
-            fields = line.strip().split()
-            if len(fields) == 2:
-                self.start = int(fields[0])
-                self.end = int(fields[1])
-            else:
-                self.start = int(fields[1]) + 1
-                self.end = int(fields[2])
-        except StopIteration:
-            self.eof = True
-
-    def getVal(self, pos):
-        assert pos >= self.lastPos
-        self.lastPos = pos
-        while pos > self.end and not self.eof:
-            self.readLine()
-        if pos >= self.start and pos <= self.end:
-            return True 
-        else:
-            return False
-
-class MergedMask:
-    """Strictly stolen from Stephen Schiffels"""
-    def __init__(self, mask_iterators):
-        self.maskIterators = mask_iterators
-  
-    def getVal(self, pos):
-        return all((m.getVal(pos) for m in self.maskIterators))
-
-class MergedVcf:
-    def __init__(self, vcf_iterators):
-        self.VcfIterators = vcf_iterators
-
-    def __next__(self):
-        states = [next(vcf) for vcf in self.VcfIterators]
-
-
-
-
-def vcf_to_seg(vcfs, masks, minsize=1000):
+def vcf_to_seg(input, masks, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
     """
     Takes given samples from given VCFs and creates seg files for 
     input to :code:`smcsmc.run_smcsmc()`. 
@@ -303,26 +205,14 @@ def vcf_to_seg(vcfs, masks, minsize=1000):
    
     :return: Nothing.
     """ 
-    nInd = len(vcfs)
-
-    # Need to progress along the sequence 
-    # Filter out hom ref and indels for simplicity
-
-    vcf_iters = MergedVcf([VcfIter(file) for file in vcfs])
-    mask_iters = MergedMask([MaskIter(file) for file in masks])
-
-    pos = 1
-    last_pos = 1
-
-    for chrom, snp_pos, alelles in vcf_iters:
-        while pos < snp_pos:
-            pos += 1
-            
-
-
-
+    smcsmc.generate_smcsmcinput.split_vcfs(input, tmpdir, key, chroms)
+    for chr in chroms:
+        for n_sample in range(len(input):
+            file = [f"{tmpdir}/tmp{key}.{input[n_sample][1]}.chr{chr}.vcf.gz"]
+            mask = masks[n_sample].format(chr) 
+            smcsmc.generate_smcsmcinput.run_multihetsep(file, mask)
     
-    
+   
     
     
 

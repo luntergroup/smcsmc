@@ -180,26 +180,9 @@ class JoinedVcfIterator:
 
 #args = parser.parse_args()
 
-def is_segregating(alleles):
-    orders = alleles.split(",")
-    for o in orders:
-        o = [a for a in o if a != '.']
-        if len(o)>0:
-            for a in o[1:]:
-                if a != o[0] or a == '/':
-                    return True
-    return False
 
-def pattern(mi, mm, pos):
-    if mm.getVal(pos):
-        return tuple([m.getVal(pos) for m in mi[:nrIndividuals]])
-    else:
-        return (False,) * nrIndividuals
-
-def dup(lst):
-    return [ lst[i//2] for i in range(2*len(lst)) ]
  
-def run_multihetsep(files, mask = None, negative_mask = False, trio = None, minsize = 1000):
+def run_multihetsep(files, mask = None, negative_mask = None, trio = None, minsize = 1000):
     
     trios = []
     if trio is not None:
@@ -214,9 +197,9 @@ def run_multihetsep(files, mask = None, negative_mask = False, trio = None, mins
     if mask is not None:
         for f in mask:
             if len(maskIterators) < nrIndividuals:
-                #sys.stderr.write("adding mask for individual {}: {}\n".format(len(maskIterators)+1,f))
+                sys.stderr.write("adding mask for individual {}: {}\n".format(len(maskIterators)+1,f))
             else:
-                #sys.stderr.write("adding mask: {}\n".format(f))
+                sys.stderr.write("adding mask: {}\n".format(f))
             maskIterators.append(MaskIterator(f))
     if len(maskIterators) < nrIndividuals:
         raise ValueError("Must have at least {} masks\n".format(nrIndividuals))
@@ -226,7 +209,26 @@ def run_multihetsep(files, mask = None, negative_mask = False, trio = None, mins
             maskIterators.append(MaskIterator(nm, True))
 
     mergedMask = MergedMask(maskIterators[nrIndividuals:])
-   
+
+    def is_segregating(alleles):
+        orders = alleles.split(",")
+        for o in orders:
+            o = [a for a in o if a != '.']
+            if len(o)>0:
+                for a in o[1:]:
+                    if a != o[0] or a == '/':
+                        return True
+        return False
+
+    def pattern(mi, mm, pos):
+        if mm.getVal(pos):
+            return tuple([m.getVal(pos) for m in mi[:nrIndividuals]])
+        else:
+            return (False,) * nrIndividuals
+
+    def dup(lst):
+        return [ lst[i//2] for i in range(2*len(lst)) ]
+
     pos = 1
     last_pos = 1
     nr_called_by_pattern = collections.defaultdict(int)
