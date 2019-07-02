@@ -124,21 +124,23 @@ def dict_to_args(smcsmc_params):
 
 def run_smcsmc(args):
     """
-    Run SMCSMC.
+    The main entry point to :code:`smcsmc`, this function runs the whole analysis portion from start to finish. The one single argument is a dictionary of arguments as detailed on the :ref:`args`. 
 
-    Parameters
-    ----------
-    args : dict
-        A dictionary of arguments. See the documentation for a complete list of options. To see how they are parsed, look at `smcsmc.utils.dict_to_args`.
+    .. tip::
 
-    Returns
-    -------
-    None
+        It's a really good idea to run :code:`smcsmc` in a :code:`tmux` session on the login node of your cluster if you are doing large analyses. The main loop takes very little memory, and spawns off cluster jobs if it is configured to do so (:ref:`cluster`).
+    
+    :param dict args: A dictionary of arguments as per :ref:`args`. 
 
-    See Also
-    --------
-    dict_to_args
+    An entirely equivalent entry point is the command line interface called :code:`smc2`. See :ref:`sec_cli` for examples.
 
+    :code:`smcsmc` requires **segment files** as input. Below we detail three main ways to create them.
+
+    - From VCF files
+    - From :code:`msprime` sufficient tree sequences
+    - From :code:`SCRM` simulations
+
+    If you are using a different data type and would like help converting it to *seg* format, please let us know. For more details on converting files and interpreting the output of the algorithm, please see :ref:`getting_started`.
     """
     args = dict_to_args(args)
     run = Smcsmc(args)

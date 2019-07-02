@@ -6,6 +6,11 @@ API Documentation
 
 .. _sec_api_file_formats:
 
+Main Function
+--------------
+
+ .. autofunction:: smcsmc.run_smcsmc
+
 Format Conversions
 -------------------
 
