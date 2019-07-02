@@ -2,6 +2,5 @@ Sphinx
 numpydoc
 sphinx_rtd_theme
 pandas
-msprime
 numpy
 matplotlib
