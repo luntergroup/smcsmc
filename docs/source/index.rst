@@ -21,4 +21,5 @@ There are two versions of this documentation. The `stable <https://smcsmc.readth
    api
    cli
    glossary
+   changelog
 
