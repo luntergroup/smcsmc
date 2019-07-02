@@ -14,8 +14,8 @@ def test_vcf_to_seg():
              (test_vcf.format(chr), sample_2)],
             [test_mask, 
              test_mask],
-            "data/test.seg.gz",
-            tmpdir = "data/tmp",
+            "out/test.seg.gz",
+            tmpdir = "out/tmp",
             key = "testconv",
             chroms = [2]) 
 

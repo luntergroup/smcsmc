@@ -12,6 +12,7 @@ import argparse
 import io
 import collections
 import os
+import pdb
 
 class MaskIterator:
     def __init__(self, filename, negative=False):
@@ -254,6 +255,7 @@ def run_multihetsep(files, output, mask = None, negative_mask = None, trio = Non
                     if p != patt:
                         out = str(last_pos) + '\t' + str(count) + '\t' + ''.join(['.0'[m] for m in dup(p)]) + '\n'
                         fout.write(out.encode('ascii'))
+                        #pdb.set_trace()
                         #print(last_pos, count, ''.join(['.0'[m] for m in dup(p)]), sep="\t")
                         last_pos += count
                 # output mutation

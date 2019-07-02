@@ -207,12 +207,13 @@ def vcf_to_seg(input, masks, output, tmpdir = ".tmp", key = "tmp", chroms = rang
     """ 
     smcsmc.generate_smcsmcinput.split_vcfs(input, tmpdir, key, chroms)
     for chr in chroms:
-        for n_sample in range(len(input)):
-            file = [f"{tmpdir}/tmp{key}.{input[n_sample][1]}.chr{chr}.vcf.gz"]
-            mask = [masks[n_sample].format(chr) ]
-            #pdb.set_trace()
-            smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
- 
+        #for n_sample in range(len(input)):
+        names = [t[1] for t in input]
+        file = [f"{tmpdir}/tmp{key}.{name}.chr{chr}.vcf.gz" for name in names]
+        mask = [mask.format(chr) for mask in masks]
+        #pdb.set_trace()
+        smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
+
     
    
     
