@@ -192,16 +192,68 @@ class Expectations:
 
 def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
     """
-    Takes given samples from given VCFs and creates seg files for 
-    input to :code:`smcsmc.run_smcsmc()`. 
+    This function converts data from a VCF to the segment type required for :code:`smcsmc`. You can also (optionally) include masks 
+    for the VCF (for example, from 1000 genomes) to indicate callable regions. This function first creates a number of 
+    intermediary VCF files in :code:`tmpdir`, identifiable by their :code:`key` and sample IDs. The function, by default, will loop over all
+    chromosomes and create seperate :code:`seg.gz` files for each of them, however you can specify only a subset of chromosomes by providing a list
+    to :code:`chroms`.
 
-    Input VCFs do not have to phased, but you should be aware that 
-    if they are not, this will decrease the effectiveness of the lookahead likelihood.
+    It is preferable for VCFs to be phased, but it is by no means necessary. Phasing helps to improve the effectiveness of the lookahead likelihood. 
 
-    Provide a list of VCFs to merge together and masks for each individual in bed format.
+    .. warning:: 
+        This function does not take a lot of memory, but it can run for quite a while with genome-scale VCFs. 
 
-    :param list vcfs: List of paths to the VCFs which you wish to pull samples from.
-    :param str mask: Directory of similarly named mask files. Currently not implemented.
+    The format of the input argument is as follows:
+    
+    .. code-block:: python
+
+        input = [
+            ("path_to_vcf", "sample_ID_1"),
+            ("path_to_vcf", "sample_ID_2)
+        ]
+
+    For each individual that you would like to include in the segment file, you must specify its 
+    identifier and the path to its VCF. This means, in some cases, that you will be repeating the VCF paths. That's okay. Give the pairing of the VCF path and Sample ID (in that order) as a tuple, and give the list of tuples as the input argument. This is the same order in which individual's genotypes will appear in the seg file.
+
+    **Chromosomes**
+
+    *If you have one VCF with many chromsoomes*, specify the chromosomes that you want to use in the anlaysis in the :code:`chrom` option, as mentioned above. *If you have many VCFs for each chromosome*, you will have to run this function separately for each, specifying the correct chromsome each time. 
+
+    **Masks**
+
+    Masks are bed files which indicate the callable regions from a VCF file, and may be included. If you do include masks, please make sure to include at least as many masks as individuals. 
+
+    **Example**
+
+    If you wanted to convert two individuals from two different VCFs, whilst specifying masks, for chromosomes 5,6, and 7:
+
+    .. code-block:: python
+
+        smcsmc.vcf_to_seg(
+            input = [
+                ("/path/to/vcf1", "name_of_individual_1"),
+                ("/path/to/vcf2", "name_of_individual_2")],
+            output = "chrs567.seg.gz",
+            masks = [
+                "/path/to/mask1.bed.gz",
+                "/path/to/mask2.bed.gz"],
+            key = "chrs567",
+            chroms = [5,6,7]
+        )
+
+    Which would create :code:`chr567.seg.gz` in the current working directory.
+
+    :param list input: List of tuples, where the first element is the path to the VCF file and the second is the individual to be included. 
+    :param str output: Path to the output segment file. Gzipped if the suffix indicates so.
+    :param list masks: List of masks for each of the individuals given in :code:`input`. These are **positive masks**. Masks are given as bed files, optionally gzipped.
+    :param str tempdir: Directory to write intermediary vcf files. This is *not cleaned* after runs, so make sure you know where it is! This is to preserve the files for any further conversions. 
+
+    .. todo:: 
+
+        It would be good to have a "cleanup = True" option to get rid of the intermediary files. This would be highly inefficient for rerunning but maybe worth it for some people.
+
+    :param str key: Unique identifier of this run.
+    :param list chroms: Either a list or range of chromosomes codes to use in this particular run. 
    
     :return: Nothing.
     """ 
