@@ -247,13 +247,13 @@ def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms
     :param str output: Path to the output segment file. Gzipped if the suffix indicates so.
     :param list masks: List of masks for each of the individuals given in :code:`input`. These are **positive masks**. Masks are given as bed files, optionally gzipped.
     :param str tempdir: Directory to write intermediary vcf files. This is *not cleaned* after runs, so make sure you know where it is! This is to preserve the files for any further conversions. 
+    :param str key: Unique identifier of this run.
+    :param list chroms: Either a list or range of chromosomes codes to use in this particular run. 
+
 
     .. todo:: 
 
         It would be good to have a "cleanup = True" option to get rid of the intermediary files. This would be highly inefficient for rerunning but maybe worth it for some people.
-
-    :param str key: Unique identifier of this run.
-    :param list chroms: Either a list or range of chromosomes codes to use in this particular run. 
    
     :return: Nothing.
     """ 
