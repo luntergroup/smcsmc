@@ -12,6 +12,7 @@ import argparse
 import io
 import collections
 import os
+import logging
 import pdb
 
 class MaskIterator:
@@ -53,7 +54,10 @@ class MergedMask:
         self.maskIterators = mask_iterators
   
     def getVal(self, pos):
-        return all((m.getVal(pos) for m in self.maskIterators))
+        if len(self.maskIterators) == 0:
+            return True
+        else:
+            return all((m.getVal(pos) for m in self.maskIterators))
 
 class VcfIterator:
     def __init__(self, filename):
@@ -194,19 +198,19 @@ def run_multihetsep(files, output, mask = None, negative_mask = None, trio = Non
     if mask is not None:
         for f in mask:
             if len(maskIterators) < nrIndividuals:
-                sys.stderr.write("adding mask for individual {}: {}\n".format(len(maskIterators)+1,f))
+                logging.debug("adding mask for individual {}: {}\n".format(len(maskIterators)+1,f))
             else:
-                sys.stderr.write("adding mask: {}\n".format(f))
+                logging.debug("adding mask: {}\n".format(f))
             maskIterators.append(MaskIterator(f))
-    if len(maskIterators) < nrIndividuals:
+    if len(maskIterators) < nrIndividuals and len(maskIterators) > 0:
         raise ValueError("Must have at least {} masks\n".format(nrIndividuals))
     if negative_mask is not None:
         for nm in negative_mask:
             sys.stderr.write("adding negative mask: {}\n".format(nm))
             maskIterators.append(MaskIterator(nm, True))
 
-    mergedMask = MergedMask(maskIterators[nrIndividuals:])
-
+    mergedMask = MergedMask(maskIterators)
+    #pdb.set_trace()
     def is_segregating(alleles):
         orders = alleles.split(",")
         for o in orders:
@@ -218,14 +222,18 @@ def run_multihetsep(files, output, mask = None, negative_mask = None, trio = Non
         return False
 
     def pattern(mi, mm, pos):
-        if mm.getVal(pos):
-            return tuple([m.getVal(pos) for m in mi[:nrIndividuals]])
+        if len(mi) == 0:
+            return tuple([True for i in range(nrIndividuals)])
         else:
-            return (False,) * nrIndividuals
+            if mm.getVal(pos):
+                return tuple([m.getVal(pos) for m in mi[:nrIndividuals]])
+            else:
+                return (False,) * nrIndividuals
 
     def dup(lst):
         return [ lst[i//2] for i in range(2*len(lst)) ]
 
+    #pdb.set_trace()
     pos = 1
     last_pos = 1
     nr_called_by_pattern = collections.defaultdict(int)
@@ -236,7 +244,7 @@ def run_multihetsep(files, output, mask = None, negative_mask = None, trio = Non
             patt = pattern( maskIterators, mergedMask, pos )
             nr_called_by_pattern[patt] += 1
             if pos % 1000000 == 0:
-                print("processing pos {}".format(pos), file=sys.stderr) 
+                logging.debug("processing pos {}".format(pos), file=sys.stderr) 
         if any( patt ): 
             calledAllele = ''.join([['.',a][m] for a,m in zip(alleles,dup(patt))])  # replace masked alleles with '.'
             if is_segregating(calledAllele):

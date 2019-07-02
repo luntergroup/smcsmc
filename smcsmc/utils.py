@@ -190,7 +190,7 @@ class Expectations:
             self.update_table(counts)
 
 
-def vcf_to_seg(input, masks, output, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
+def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
     """
     Takes given samples from given VCFs and creates seg files for 
     input to :code:`smcsmc.run_smcsmc()`. 
@@ -206,12 +206,15 @@ def vcf_to_seg(input, masks, output, tmpdir = ".tmp", key = "tmp", chroms = rang
     :return: Nothing.
     """ 
     smcsmc.generate_smcsmcinput.split_vcfs(input, tmpdir, key, chroms)
+
     for chr in chroms:
         #for n_sample in range(len(input)):
         names = [t[1] for t in input]
         file = [f"{tmpdir}/tmp{key}.{name}.chr{chr}.vcf.gz" for name in names]
-        mask = [mask.format(chr) for mask in masks]
-        #pdb.set_trace()
+        try:
+            mask = [mask.format(chr) for mask in masks]
+        except TypeError:
+            mask = None
         smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
 
     
