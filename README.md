@@ -15,10 +15,10 @@ This repository contains two components, and both must be installed to properly 
 We have automated this process in a `conda` package, and we highly recommend installing it this way.
 
 ```sh
-conda install -c terhorst -c conda-forge smcsmc
+conda config --add channels conda-forge
+conda config --add channels terhorst
+conda install -c luntergroup smcsmc
 ```
-
-> **We are in the process of uploading our package to `conda` and will remove this message when it is available. Until then, please use the manual installation method given below.**
 
 ### Installation from Source
 
@@ -26,9 +26,12 @@ Alternatively, a combination of `cmake` and `pip` can be used to install the pyt
 
 #### Obtain the code
 
+To use the latest version of the code, use the `devel` branch.
+
 ```sh
 git clone git@github.com:luntergroup/smcsmc.git git-smcsmc
 cd git-smcsmc
+git checkout devel
 git submodule init
 git submodule update
 ```
