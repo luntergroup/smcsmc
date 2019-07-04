@@ -18,10 +18,10 @@ First add both :code:`conda-forge` and :code:`terhorst` to your channel lists (i
 
 .. code-block:: bash
 
-   conda --add channel conda-forge
-   conda --add channel terhorst
+   conda config --add channels conda-forge
+   conda config --add channels terhorst
 
-   conda install smcsmc
+   conda install -c luntergroup smcsmc
 
 
 Basic Usage
