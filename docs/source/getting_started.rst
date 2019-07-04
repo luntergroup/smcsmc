@@ -16,11 +16,11 @@ SMCSMC is a :term:`particle filter<Particle Filter>`, which means that a given n
 Input Format
 ++++++++++++++
 
-Suppose we have the following data, saved into a file named :code:`toy.seg`. 
+Suppose we have the following data, saved into a file named :code:`toy.seg`. You can also download it `here <https://github.com/luntergroup/smcsmc/tree/devel/docs/files/toy.seg>`_.
 
 .. csv-table::
    :header: segment start, segment length, invariant, break, chr, genotype
-   :widths: 5, 5, 5, 5, 5, 5
+   :widths: 5, 5, 2, 2, 2, 5
 
     1,       521,     T,       F,       1,       01\.0
     522,     2721,    T,       F,       1,       0111
@@ -70,18 +70,25 @@ Once :code:`smcsmc` is installed, we can format the arguements detailed above in
 
 .. code-block:: python
 
+   import os
+
    args = {
-        'seg':                  'test.seg',
-        'nsam':                 '4',
-        'Np':                   '10',
-        'EM':                   '1',
-        'mu':                   '1.25e-8',
-        'rho':                  'rho',
-        'N0':                   '10000',
-        'tmax':                 '3.5'
-        'P':                    '133 133032 31*1'
-        'no-infer-recomb':      '',
-        'o':                    'smcsmc_output'
+      'seg':                  'toy.seg',
+      'nsam':                 '4',
+      'Np':                   '10',
+      'EM':                   '1',
+      'mu':                   '1.25e-8',
+      'rho':                  '3e-9',
+      'N0':                   '10000',
+      'tmax':                 '3.5',
+      'P':                    '133 133032 31*1',
+      'no_infer_recomb':      '',
+      'smcsmcpath':           os.path.expandvars('${CONDA_PREFIX}/bin/smcsmc'),
+      # The minimum segment length is usually best left
+      # as the default, however for this tutorial we set it 
+      # artifically low.
+      'minseg':               '10', 
+      'o':                    'smcsmc_output'
    }
 
 We directly use this dictionary with the :code:`run_smcsmc` command, which takes as its only arguement a dictionary of arguements.
