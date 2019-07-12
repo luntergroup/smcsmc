@@ -317,9 +317,10 @@ def split_vcfs(input, vcfdir, key, chroms = range(1,23)):
                             cols.append(col[0])
                     if line.startswith(b'#') and not line.startswith(b'#CHROM'):
                             fout.write(line)
-                    else:
-                            # filter out hom ref calls, and indel calls
-                            if (not elts[cols[0]].startswith("0|0")) and len(elts[3]) == 1 and len(elts[4]) == 1:
+                    else: 
+                            # filter out hom ref calls, and indel calls 
+                            if (not elts[cols[0]].startswith("0|0")) and '.' not in elts[cols[0]][:3] and len(elts[3]) == 1 and len(elts[4]) == 1:
+                                 
                                 fout.write('\t'.join(elts[:9] + [elts[cols[0]]] + ["\n"]).encode('ascii'))
                     
 
