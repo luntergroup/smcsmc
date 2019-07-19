@@ -3,7 +3,7 @@ library(grid)
 library(gridExtra)
 library(extrafont)
 
-##font_import() ## once
+font_import() ## once
 
 source("stat-stepribbon.R")
 source("plot-utils.R")
@@ -30,7 +30,7 @@ if (talk) {
 quartiles <- calculate.quartiles( plot.data, min=minne, max=maxne, mint=t0/g, maxt=t1/g )
 quartiles$Population <- "Inferred"
 
-quartiles$phased <- factor( quartiles$int_parameter, labels = c("unphased","phased") )
+quartiles$phased <- factor( quartiles$int_parameter, labels = c("phased","unphased"), levels = c(0,-1) )
 quartiles$aux_part_filt <- factor( quartiles$aux_part_filt, labels = c("","lookahead"))
 quartiles$np_label <- factor( quartiles$np, labels=c("N=1,000","N=3,000","N=10,000","N=30,000"))
 
@@ -41,7 +41,7 @@ p <- p + geom_ribbon(aes(ymin=Q0, ymax=Q4), stat="stepribbon", fill="blue", alph
 p <- p + geom_ribbon(aes(ymin=Q1, ymax=Q3), stat="stepribbon", fill="blue", alpha=.25)
 p <- p + geom_step(aes( y=Q2, x=start*g, colour=Population), lwd=0.5 )
 p <- p + geom_step(data=truth, aes( y=Ne, x=t*g, colour="Truth"), lwd=0.25 )
-p <- p + annotation_logticks(sides="bl", short=unit(0.05,"cm"), mid=unit(0.05,"cm"),long=unit(0.05,"cm"))
+p <- p + annotation_logticks(sides="bl", short=unit(0.05,"cm"), mid=unit(0.05,"cm"),long=unit(0.05,"cm"), size=0.2)
 p <- p + xlab("time [years ago]")
 p <- p + ylab("Ne")
 p <- p + theme(text = element_text(size=16), legend.position="top")
@@ -50,7 +50,7 @@ p <- p + scale_colour_manual("",
                              breaks = c("Inferred","Truth"),
                              values = c("Inferred"="blue","Truth"="black"))
 p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0, size=9))
-p <- p + theme(axis.text.y = element_text(size=9))    
+p <- p + theme(axis.text.y = element_text(size=9))
 #p <- p + theme( panel.grid.minor = element_line(colour="#f0f0f0")
 p <- p + theme_Publication(base_size=10,base_family="Helvetica",legend.title=element_blank())
 p <- p + theme(axis.line.x=element_blank())
@@ -61,10 +61,11 @@ if (talk) {
     ggsave("cps_apf_phasing.pdf",
            width = 13, height = 7, units = "cm")
 } else {
-    p <- p + facet_grid( aux_part_filt + phased ~ np_label)
+    p <- p + facet_grid( phased + aux_part_filt ~ np_label)
     ggsave("cps_apf_phasing.pdf",
            width = 11, height = 11, units = "cm")
 }
+
 
 
 # <- plot.ribbon( p, subset(quartiles, Population=="ceu4-vb"), "darkcyan", g=g, lwd=0.5 )
