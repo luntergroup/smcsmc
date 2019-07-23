@@ -29,6 +29,10 @@ def plot_migration(input='result.out', output='result.png', g = 30, ymax=0.00025
 
     .. figure:: ../img/plot_migration.png
 
+    .. todo::
+
+        Typo above, it is not log years, rather years and the axis is logged.
+
     :param str input: This must be the file path to some sort of aggregated output from :code:`smcsmc`. 
                         This means that it can be either a :code:`chunkfinal.out` or :code:`result.out` but *not* an
                         individual chunk. We need all the data here.

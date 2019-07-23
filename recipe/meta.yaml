@@ -1,9 +1,13 @@
 package:
   name: smcsmc
-  version: 1.0
+  version: 1.0.1
 
 source:
   path: ..
+
+python:
+   - 3.6.8
+   - 3.7.3
 
 build:
   number: 0
@@ -12,7 +16,7 @@ build:
 
 requirements:
   build:
-    - {{ compiler('cxx') }} 
+    - {{ compiler('cxx') }}
     - gperftools 
     - cmake
     - boost

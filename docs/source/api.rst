@@ -6,12 +6,17 @@ API Documentation
 
 .. _sec_api_file_formats:
 
+Main Function
+--------------
+
+ .. autofunction:: smcsmc.run_smcsmc
+
 Format Conversions
 -------------------
 
-.. autofunction:: smcsmc.utils.ts_to_seg
+.. autofunction:: smcsmc.ts_to_seg
 
-.. autofunction:: smcsmc.utils.vcf_to_seg
+.. autofunction:: smcsmc.vcf_to_seg
 
 Plotting
 ---------

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import glob
 import gzip
+import io
 
 def prune_tree_sequence(tree_sequence_path, num_samples):
     """
@@ -123,21 +124,23 @@ def dict_to_args(smcsmc_params):
 
 def run_smcsmc(args):
     """
-    Run SMCSMC.
+    The main entry point to :code:`smcsmc`, this function runs the whole analysis portion from start to finish. The one single argument is a dictionary of arguments as detailed on the :ref:`args`. 
 
-    Parameters
-    ----------
-    args : dict
-        A dictionary of arguments. See the documentation for a complete list of options. To see how they are parsed, look at `smcsmc.utils.dict_to_args`.
+    .. tip::
 
-    Returns
-    -------
-    None
+        It's a really good idea to run :code:`smcsmc` in a :code:`tmux` session on the login node of your cluster if you are doing large analyses. The main loop takes very little memory, and spawns off cluster jobs if it is configured to do so (:ref:`cluster`).
+    
+    :param dict args: A dictionary of arguments as per :ref:`args`. 
 
-    See Also
-    --------
-    dict_to_args
+    An entirely equivalent entry point is the command line interface called :code:`smc2`. See :ref:`sec_cli` for examples.
 
+    :code:`smcsmc` requires **segment files** as input. Below we detail three main ways to create them.
+
+    - From VCF files
+    - From :code:`msprime` sufficient tree sequences
+    - From :code:`SCRM` simulations
+
+    If you are using a different data type and would like help converting it to *seg* format, please let us know. For more details on converting files and interpreting the output of the algorithm, please see :ref:`getting_started`.
     """
     args = dict_to_args(args)
     run = Smcsmc(args)
@@ -188,72 +191,88 @@ class Expectations:
             counts = self.count_events(path)
             self.update_table(counts)
 
-def vcf_to_seg(vcfs, samples, key, vcfdir="tmp", mask = None, chroms = range(1,23)):
+
+def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms = range(1,23)):
     """
-    Takes given samples from given VCFs and creates seg files for 
-    input to :code:`smcsmc.run_smcsmc()`. 
+    This function converts data from a VCF to the segment type required for :code:`smcsmc`. You can also (optionally) include masks 
+    for the VCF (for example, from 1000 genomes) to indicate callable regions. This function first creates a number of 
+    intermediary VCF files in :code:`tmpdir`, identifiable by their :code:`key` and sample IDs. The function, by default, will loop over all
+    chromosomes and create seperate :code:`seg.gz` files for each of them, however you can specify only a subset of chromosomes by providing a list
+    to :code:`chroms`.
+
+    It is preferable for VCFs to be phased, but it is by no means necessary. Phasing helps to improve the effectiveness of the lookahead likelihood. 
 
     .. warning:: 
-        This function is not fully implemented yet and will not work as expected (or at all!)  
+        This function does not take a lot of memory, but it can run for quite a while with genome-scale VCFs. 
 
-    Input VCFs do not have to phased, but you should be aware that 
-    if they are not, this will decrease the effectiveness of the lookahead likelihood
-    calculation. 
+    The format of the input argument is as follows:
+    
+    .. code-block:: python
 
-    Provide a list of VCFs to merge together and a list of sample names 
-    from each to include. These must match up identically. 
+        input = [
+            ("path_to_vcf", "sample_ID_1"),
+            ("path_to_vcf", "sample_ID_2)
+        ]
 
-    Additionally provide mask files, and an output directory to place
-    the VCFs. By default all somatic chromosomes are anlaysed, but 
-    you can change this by providing an iterator to the chroms
-    argument.
+    For each individual that you would like to include in the segment file, you must specify its 
+    identifier and the path to its VCF. This means, in some cases, that you will be repeating the VCF paths. That's okay. Give the pairing of the VCF path and Sample ID (in that order) as a tuple, and give the list of tuples as the input argument. This is the same order in which individual's genotypes will appear in the seg file.
 
-    :param list vcfs: List of paths to the VCFs which you wish to pull samples from.
-    :param list samples: List of sample names to extract from the VCFs. The order must be the same.
-    :param str key: Name of your output seg files.
-    :param str vcfdir: Serves as a staging ground for intermediate seg files.  
-    :param str mask: Directory of similarly named mask files. Currently not implemented.
-    :param iterable chroms: An iterator of the chromosomes you wish to convert. 
+    **Chromosomes**
 
+    *If you have one VCF with many chromsoomes*, specify the chromosomes that you want to use in the anlaysis in the :code:`chrom` option, as mentioned above. *If you have many VCFs for each chromosome*, you will have to run this function separately for each, specifying the correct chromsome each time. 
+
+    **Masks**
+
+    Masks are bed files which indicate the callable regions from a VCF file, and may be included. If you do include masks, please make sure to include at least as many masks as individuals. 
+
+    **Example**
+
+    If you wanted to convert two individuals from two different VCFs, whilst specifying masks, for chromosomes 5,6, and 7:
+
+    .. code-block:: python
+
+        smcsmc.vcf_to_seg(
+            input = [
+                ("/path/to/vcf1", "name_of_individual_1"),
+                ("/path/to/vcf2", "name_of_individual_2")],
+            output = "chrs567.seg.gz",
+            masks = [
+                "/path/to/mask1.bed.gz",
+                "/path/to/mask2.bed.gz"],
+            key = "chrs567",
+            chroms = [5,6,7]
+        )
+
+    Which would create :code:`chr567.seg.gz` in the current working directory.
+
+    :param list input: List of tuples, where the first element is the path to the VCF file and the second is the individual to be included. 
+    :param str output: Path to the output segment file. Gzipped if the suffix indicates so.
+    :param list masks: List of masks for each of the individuals given in :code:`input`. These are **positive masks**. Masks are given as bed files, optionally gzipped.
+    :param str tempdir: Directory to write intermediary vcf files. This is *not cleaned* after runs, so make sure you know where it is! This is to preserve the files for any further conversions. 
+    :param str key: Unique identifier of this run.
+    :param list chroms: Either a list or range of chromosomes codes to use in this particular run. 
+
+
+    .. todo:: 
+
+        It would be good to have a "cleanup = True" option to get rid of the intermediary files. This would be highly inefficient for rerunning but maybe worth it for some people.
+   
     :return: Nothing.
     """ 
-    raise NotImplementedError
-    assert (len(vcfs)==len(samples)), "Your lists of samples and VCFs must be the same length." 
-    #for chrom in chroms:
-    #    for vcf, sample in zip(vcfs, samples):
-    #        fname =  f"{vcfdir}/tmp{key}.{sample}.chr{chrom}.vcf.gz"
+    smcsmc.generate_smcsmcinput.split_vcfs(input, tmpdir, key, chroms)
 
-    #        try:
-    #            try_open = gzip.GzipFile( fname, 'r')
-    #            have_files = True
-    #            print(f"You have already created {fname}")
-    #        except:
-    #            have_files = False
+    for chr in chroms:
+        #for n_sample in range(len(input)):
+        names = [t[1] for t in input]
+        file = [f"{tmpdir}/tmp{key}.{name}.chr{chr}.vcf.gz" for name in names]
+        try:
+            mask = [mask.format(chr) for mask in masks]
+        except TypeError:
+            mask = None
+        smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
 
-    #        if not have_files:
-    #            if not os.path.exists(vcfdir):
-    #                os.makedirs(args.vcfdir)
-
-    #            fout = gzip.GzipFile (fname, 'w')
-    #            fin = gzip.GzipFile( vcf.format(chrom), 'r')
-    #            print "Reading:\t", vcf.format(chrom)
-
-    #            cols = []
-
-    #            for line in fin:
-    #                elts = line.strip().split('\t')
-    #                if line.startswith('#CHROM'):
-    #                        col = [i for i, e in enumerate(elts) if e == sample]
-    #                        if len(col) == 0:
-    #                            raise ValueError("Could not find individual {}".format(sample))
-    #                        cols.append(col[0])
-    #                if line.startswith('#') and not line.startswith('#CHROM'):
-    #                        fout.write(line)
-    #                else:
-    #                        # filter out hom ref calls, and indel calls
-    #                        if (not elts[cols[0]].startswith("0|0")) and len(elts[3]) == 1 and len(elts[4]) == 1:
-    #                            fout.write('\t'.join(elts[:9] + [elts[cols[0]]] + ["\n"]))
-
-
-
+    
+   
+    
+    
 

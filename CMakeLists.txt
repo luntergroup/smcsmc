@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
-set (CMAKE_BUILD_WITH_INSTALL_RPATH  TRUE)
-#set (CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/")
+set(Boost_DEBUG 1) 
+set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 project(smcsmc)
@@ -54,7 +54,7 @@ execute_process(COMMAND bash -c "git describe --tags | tr -d '\n'" OUTPUT_VARIAB
 execute_process(COMMAND bash -c "date -u | sed -e 's/ /-/g' | tr -d '\n'" OUTPUT_VARIABLE COMPILEDATE)
 
 string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}"
-			      "-DNDEBUG "
+			      " -DNDEBUG "
                               "-Wall -Wno-unknown-pragmas -pedantic -g -O3 -DLANE_MAX_SIZE=50 "
                               "-Wno-deprecated-declarations "                     # avoid complaints about auto_ptr
                               "-DSMCSMCVERSION=\\\"${SMCSMCVERSION}\\\" "
@@ -62,17 +62,17 @@ string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}"
                               "-DCOMPILEDATE=\\\"${COMPILEDATE}\\\" "
                               "-DVERSION=\\\"${VERSION}\\\" ")
 
-		      #find_package(Tcmalloc)
-
-find_package(Boost 1.45.0 COMPONENTS iostreams regex)
+find_package(Boost 1.69.0 COMPONENTS iostreams regex)
+find_package(ZLIB)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CONDA_PREFIX}/include)
-
 
 add_executable(smcsmc ${SMCSMC_SRC} ${SCRM_SRC} src/smcsmc.cpp)
 add_executable(scrm ${SCRM_SRC} src/scrm/src/scrm.cc)
 
 target_link_libraries(smcsmc ${Boost_LIBRARIES})
+message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
+target_link_libraries(smcsmc ${ZLIB_LIBRARIES})
 target_include_directories(smcsmc PRIVATE src/scrm/src src/scrm/src/random)
 
 install(TARGETS smcsmc scrm

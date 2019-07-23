@@ -8,6 +8,8 @@ Welcome to the documentation for SMCSMC!
 
 This is the reference manual for SMCSMC (or :code:`smcsmc`), a method and program for inferring ancestral population size and migration from whole genome sequences.
 
+There are two versions of this documentation. The `stable <https://smcsmc.readthedocs.io/en/stable/>`_ version describes functionality of the most recent :code:`conda` release, while the `latest <https://smcsmc.readthedocs.io/en/latest/>`_ version documents new features in the development branch. 
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -19,4 +21,5 @@ This is the reference manual for SMCSMC (or :code:`smcsmc`), a method and progra
    api
    cli
    glossary
+   changelog
 

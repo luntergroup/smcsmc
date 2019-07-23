@@ -18,34 +18,23 @@ First add both :code:`conda-forge` and :code:`terhorst` to your channel lists (i
 
 .. code-block:: bash
 
-   conda --add channel conda-forge
-   conda --add channel terhorst
+   conda config --add channels conda-forge
+   conda config --add channels terhorst
 
-   conda install smcsmc
+   conda install -c luntergroup smcsmc
 
 
 Basic Usage
 ----------
 
-To use SMCSMC, start a :code:`python` session and import the :code:`smcsmc` module. As a part of the installation above, two binaries are installed into the :code:`conda-bin`, `smcsmc` (inference) and `scrm` (simulation). The front end, :code:`smcsmc` is a wrapper around these binaries providing convenient functions for data manipulation, conversion, plotting, and utilities surrounding the workflow for analysing sequences with SMCSMC. With a test seg file such as `this one <https://github.com>`_\ , the following will run a default session of SMCSMC.
+:code:`smcsmc` can be run on the command line with :code:`smc2` or through the python API.
 
-.. code-block:: python
+.. code-block:: sh
 
-        import smcsmc
+        smc2 -h
 
-        test_args = {
-                `seg`: `test_seg.seg`,
-                `nsam`: 4
-        }
 
-        smcsmc.utils.run_smcsmc(test_args)
-                        
-
-Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`. Alternatively the :ref:`cli` can be used with identical results. 
-
-.. code-block:: bash
-
-        smc2 -nsam 4 -seg test_seg.seg
+Follow the :ref:`getting_started` guide to become familiar with the basic structure and function of SMCSMC commands, then look at one of the tutorials for analysing simulated or real data. For a more complete guide to arguments, see :ref:`args`. 
 
 Other Methods
 ------------
