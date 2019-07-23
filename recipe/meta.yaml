@@ -5,6 +5,10 @@ package:
 source:
   path: ..
 
+python:
+   - 3.6.8
+   - 3.7.3
+
 build:
   number: 0
   entry_points:
@@ -12,7 +16,7 @@ build:
 
 requirements:
   build:
-    - {{ compiler('cxx') }} 
+    - {{ compiler('cxx') }}
     - gperftools 
     - cmake
     - boost
