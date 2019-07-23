@@ -1,5 +1,5 @@
 # A Particle Filter for Demographic Inference
-[![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/version.svg)](https://anaconda.org/luntergroup/smcsmc) [![Documentation Status](https://readthedocs.org/projects/smcsmc/badge/?version=latest)](https://smcsmc.readthedocs.io/en/latest/?badge=latest) [![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/downloads.svg)](https://anaconda.org/luntergroup/smcsmc)
+[![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/version.svg)](https://anaconda.org/luntergroup/smcsmc) [![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/platforms.svg)](https://anaconda.org/luntergroup/smcsmc) [![Documentation Status](https://readthedocs.org/projects/smcsmc/badge/?version=latest)](https://smcsmc.readthedocs.io/en/latest/?badge=latest) [![Anaconda-Server Badge](https://anaconda.org/luntergroup/smcsmc/badges/downloads.svg)](https://anaconda.org/luntergroup/smcsmc)
  
 
 SMCSMC (Sequential Monte Carlo for the Sequential Markovian Coalescent) or SMC2 is a program for inferring population history from multiple genome sequences. It includes both a python package `smcsmc` and a command line interface `smc2` along with two backend binaries `smcsmc`/`scrm`.
@@ -14,6 +14,8 @@ This repository contains two components, and both must be installed to properly 
 
 We have automated this process in a `conda` package, and we highly recommend installing it this way.
 
+> NOTE: **We currently only support `conda` installation on 64 bit Linux** and if you are using a different operating system you *must install manually*. 
+
 ```sh
 conda config --add channels conda-forge
 conda config --add channels terhorst
@@ -26,12 +28,9 @@ Alternatively, a combination of `cmake` and `pip` can be used to install the pyt
 
 #### Obtain the code
 
-To use the latest version of the code, use the `devel` branch.
-
 ```sh
 git clone git@github.com:luntergroup/smcsmc.git git-smcsmc
 cd git-smcsmc
-git checkout devel
 git submodule init
 git submodule update
 ```
