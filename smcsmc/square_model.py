@@ -3,7 +3,6 @@ import sys
 import subprocess
 import smcsmc.populationmodels
 import pandas as pd
-import pdb
  
 class Simulation:
     def __init__(self, L, midpoint, duration, proportion, flatarg = False):
@@ -68,8 +67,7 @@ class Simulation:
 
         for i,g_set in enumerate(set_times):
             g_eval = eval_times[i]
-            #pdb.set_trace()
-
+            
             # set model parameters for standard (P) model
             unscaled_time_set = g_set / (4*N0)
             ceu_popsize_unscaled = self.ceu(g_eval) / N0
@@ -94,9 +92,7 @@ class Simulation:
             self.params['yri_m'].append(yri_migr_unscaled)
 
         self.df = pd.DataFrame(self.params)
-
-        pdb.set_trace()
-
+ 
         self.model = " ".join(self.model)
 
     def write_df(self, output):
@@ -174,7 +170,6 @@ class Simulation:
     """
     def new_migr_yri(self, x, midpoint, years, total, flat = False):
             start, end = (midpoint - (years / 2)) / 29, (midpoint + (years / 2) ) / 29
-            #pdb.set_trace()
             if flat: 
                     proportion = 0.00025
             else:
