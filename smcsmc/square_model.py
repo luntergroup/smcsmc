@@ -3,6 +3,7 @@ import sys
 import subprocess
 import smcsmc.populationmodels
 import pandas as pd
+import pdb
  
 class Simulation:
     def __init__(self, L, midpoint, duration, proportion, flatarg = False):
@@ -19,20 +20,26 @@ class Simulation:
         N0 = 14312
         self.samples = 4
         eps = 0.99  # make sure we set the new pop size / migration rate just before the change time
-        mid = math.exp( math.log(g1/g0)/(2*(epochs-1)) ) / eps
-        set_times = [ g0 * eps * math.exp( (math.log(g1/g0)*i) / (epochs-1) ) for i in range(epochs) ]
-        eval_times = [ time * mid for time in set_times ]
-        eval_times = [ set_times[0] / mid ] + eval_times
-        set_times = [0] + set_times
-
         mu = 1.25e-8
         rho = 3e-9
         #L = 13223520
         g=29
 
+        #mid = math.exp( math.log(g1/g0)/(2*(epochs-1)) ) / eps
+        mid = math.exp( math.log(g1/g0)/(2*(epochs+1)) ) / eps
+        set_times = [ g0 * eps * math.exp( (math.log(g1/g0)*i) / (epochs-1) ) for i in range(epochs) ]
+        set_times.append( (midpoint - (duration / 2)) / g)
+        set_times.append( (midpoint + (duration / 2)) / g)
+        set_times.sort()
+        eval_times = [ time * mid for time in set_times ]
+        eval_times = [ set_times[0] / mid ] + eval_times
+        set_times = [0] + set_times
+        # Append times for the migration event to make sure we get the whole thing.
+   
+
         self.L = L
-        self.midpoint = midpoint / g
-        self.duration = duration / g
+        self.midpoint = midpoint
+        self.duration = duration
         self.proportion = proportion
        
         #if type == "scrm2seg":
@@ -53,6 +60,7 @@ class Simulation:
 
         self.params = {}
         self.params['time'] = []
+        self.params['scaled_time'] = []
         self.params['ceu_ne'] = []
         self.params['yri_ne'] = []
         self.params['ceu_m'] = []
@@ -60,6 +68,7 @@ class Simulation:
 
         for i,g_set in enumerate(set_times):
             g_eval = eval_times[i]
+            #pdb.set_trace()
 
             # set model parameters for standard (P) model
             unscaled_time_set = g_set / (4*N0)
@@ -67,7 +76,7 @@ class Simulation:
             yri_popsize_unscaled = self.yri(g_eval) / N0
 
             ceu_migr_unscaled = self.migr_ceu(g_eval) * 4 * N0
-            yri_migr_unscaled = self.new_migr_yri(g_eval,  midpoint = self.midpoint, years = self.duration, total = self.proportion, flat=flatarg) * 4 * N0
+            yri_migr_unscaled = self.new_migr_yri(g_set,  midpoint = self.midpoint, years = self.duration, total = self.proportion, flat=flatarg) * 4 * N0
 
             self.model.append("-en {} 1 {}".format(unscaled_time_set, ceu_popsize_unscaled))
             self.model.append("-en {} 2 {}".format(unscaled_time_set, yri_popsize_unscaled))
@@ -78,12 +87,15 @@ class Simulation:
                 split = True
 
             self.params['time'].append(unscaled_time_set * 4 * N0)
+            self.params['scaled_time'].append( g_eval )
             self.params['ceu_ne'].append(ceu_popsize_unscaled)
             self.params['yri_ne'].append(yri_popsize_unscaled)
             self.params['ceu_m'].append(ceu_migr_unscaled)
             self.params['yri_m'].append(yri_migr_unscaled)
 
         self.df = pd.DataFrame(self.params)
+
+        pdb.set_trace()
 
         self.model = " ".join(self.model)
 
@@ -161,15 +173,16 @@ class Simulation:
     Note that input times here must be in terms of generations.
     """
     def new_migr_yri(self, x, midpoint, years, total, flat = False):
-            start, end = (midpoint - (years / 2)), (midpoint + (years / 2) ) 
+            start, end = (midpoint - (years / 2)) / 29, (midpoint + (years / 2) ) / 29
+            #pdb.set_trace()
             if flat: 
                     proportion = 0.00025
             else:
-                    proportion = total / years 
+                    proportion = total / (years/29) 
 
             # If its before or after the migration return 0
             if x < start: return 0
-            if x > end: return 0
+            if x >= end: return 0
             return proportion
 
     def run_scrm(self, output):
