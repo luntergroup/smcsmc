@@ -36,7 +36,7 @@ def prune_tree_sequence(tree_sequence_path, num_samples):
         ts = ts.simplify(subset)
     return ts
 
-def ts_to_seg(path, n = None):
+def ts_to_seg(path, n, mask_file = None):
     """
     Converts a tree sequence into a seg file for use by :code:`smcsmc.run_smcsmcs()`. This is especially
     useful if you are simulating data from :code:`msprime` and would like to directly 
@@ -46,36 +46,94 @@ def ts_to_seg(path, n = None):
 
     :param str path: Full file path to the tree sequence created by :code:`ts.dump`.
     :param list n: If more than one sample of haplotypes is being analysed simulateously, provide it here as a list. Otherwise, simply provide the number of haplotypes as a single-element list. 
+    :param str mask_file: Path to a bed file that you wish to mask out. 
     """
 
-    if n is None:
-        ts = tskit.load(pathe)
+    def mask(mask_dict, chr):
+        for d in mask_dict[chr]:
+            yield d
+
+    def get_next_m(iter):
+            try: 
+                m = next(miter)
+            except StopIteration:
+                m = pd.Interval(left = 0, right = 1)
+
+            return(m)
+
+
+    if mask_file:
+        mask_table = pd.read_csv(mask_file, sep="\t", header=None)
+        mask_dict = {}
+        for key in mask_table[0].unique():
+            sub = mask_table[mask_table[0] == key]
+            mask_dict[key] = pd.IntervalIndex.from_arrays(sub[1], sub[2])
+        
+
+    for sample_size in n:
+        ts = smcsmc.utils.prune_tree_sequence(path, sample_size)
         dirr = os.path.dirname(path)
         filen = os.path.basename(path)
         sep = filen.split(".")
+        chrom = sep[0]
+        sep.insert(0,str(sample_size))
         output = os.path.join(dirr,".".join(sep) + ".seg")
         fi = open(output, "w")
         prev = 1
-        cur = 0
-        for var in ts.variants():
-            cur = int(var.site.position)
-            if cur > prev:
-                geno = ''.join(map(str,var.genotypes))
-                fi.write(f"{prev}\t{cur-prev}\t{geno}\n")
-            prev = cur
-        fi.close()
-    else: 
-        for sample_size in n:
-            ts = smcsmc.utils.prune_tree_sequence(path, sample_size)
-            dirr = os.path.dirname(path)
-            filen = os.path.basename(path)
-            sep = filen.split(".")
-            chrom = sep[0]
-            sep.insert(0,str(sample_size))
-            output = os.path.join(dirr,".".join(sep) + ".seg")
-            fi = open(output, "w")
-            prev = 1
-            cur = 0
+        cur = 0   
+        last_masked = 0
+       
+        if mask_file:
+            miter = mask(mask_dict, chrom) 
+
+            m = get_next_m(miter)
+            last_m = pd.Interval(left = 0, right = 1)
+
+            for var in ts.variants():
+                cur = int(var.site.position)
+
+                if m.left > prev:
+                    if m.right < cur:
+                        geno = "."*sample_size
+                        # Write the missing segment
+                        right = m.left - prev
+                        fi.write(f"{m.left}\t{m.left-prev}\t{geno}")
+                        # And fill in the missing bit with the previous
+                        # genotype
+                        prev_geno = ''.join(map(str,var.genotypes))
+                        right = m.right-m.left
+                        fi.write(f"{m.right}\t{right}\t{prev_geno}\n")
+
+                        pdb.set_trace()
+                        last_m = m 
+                        m = get_next_m(miter)
+
+                    elif m.right > cur and m.left < cur:
+                        geno = '.'*sample_size
+                        right = m.right-m.left
+                        fi.write(f"{m.left}\t{right}\t{geno}\n")
+                        cur = m.right
+                        last_m = m
+ 
+                        m = get_next_m(miter)                        
+
+                if cur > prev and cur > last_m.right:
+
+                    if last_m.right < cur and prev > last_m.left and last_m.left > 0:
+                        geno = ''.join(map(str,var.genotypes))
+                        fi.write(f"{last_m.right}\t{cur-last_m.right}\t{geno}\n")
+                        last_m = pd.Interval(left = 0, right = 1)
+
+
+                    geno = ''.join(map(str,var.genotypes))
+                    fi.write(f"{prev}\t{cur-prev}\t{geno}\n")
+
+                prev = cur
+                prev_var = var
+            
+            fi.close()
+
+        else:
             for var in ts.variants():
                 cur = int(var.site.position)
                 if cur > prev:
@@ -83,7 +141,7 @@ def ts_to_seg(path, n = None):
                     fi.write(f"{prev}\t{cur-prev}\t{geno}\n")
                 prev = cur
             fi.close()
-    return None
+
 
 def dict_to_args(smcsmc_params):
     '''
