@@ -328,9 +328,5 @@ def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms
         except TypeError:
             mask = None
         smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
-
-    
-   
-    
     
 

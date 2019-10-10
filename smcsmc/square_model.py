@@ -59,7 +59,7 @@ class Simulation:
 
         self.params = {}
         self.params['time'] = []
-        self.params['scaled_time'] = []
+        #self.params['scaled_time'] = []
         self.params['ceu_ne'] = []
         self.params['yri_ne'] = []
         self.params['ceu_m'] = []
@@ -85,7 +85,7 @@ class Simulation:
                 split = True
 
             self.params['time'].append(unscaled_time_set * 4 * N0)
-            self.params['scaled_time'].append( g_eval )
+            #self.params['scaled_time'].append( g_eval )
             self.params['ceu_ne'].append(ceu_popsize_unscaled)
             self.params['yri_ne'].append(yri_popsize_unscaled)
             self.params['ceu_m'].append(ceu_migr_unscaled)
