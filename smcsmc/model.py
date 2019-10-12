@@ -65,7 +65,7 @@ class Smcsmc:
         self.alpha = 0.0            # posterior mix-in; 0 means use prior; <0 means remove .recomb.gz files
         self.beta = 4               # smoothness parameter; see processrecombination.py
         self.maxNE = 1e99
-        self.argv = None
+        self.sampletrees = False
         self._processes = []
         self.threads = True
         self.cluster = False
@@ -115,7 +115,7 @@ class Smcsmc:
             (2, '-ancestral_aware', '', 'Assume that haplotype 0 is ancestral'),
             (2, '-bias_heights', 't0..tn', 'Set recombination bias times to h0..hn * 4N0'),
             (2, '-bias_strengths','s1..sn','Set recombination bias strenghts'),
-	    (2, '-arg','range','Sample posterior ARG at given epoch or epoch range (0-based, closed; e.g. 0-10)'),
+	    (2, '-arg','',      'Sample posterior ARG; produce .trees file'),
 
             (3, '-EM', 'n',     'Number of EM (or VB) iterations-1 ({})'.format(self.emiters)),
             (3, '-VB', '',      'Use Variational Bayes rather than EM (uniform prior for all rates)'),
@@ -244,8 +244,8 @@ class Smcsmc:
                 self.cconfig = opts[idx+1]
                 idx += 2
             elif opts[idx] == '-arg':
-                self.argv = opts[idx+1]
-                idx += 2
+                self.sampletrees = True
+                idx += 1
             elif opts[idx] == '-nothreads':
                 self.threads = False
                 idx += 1
@@ -693,8 +693,8 @@ class Smcsmc:
             command.append( "-xr 0-{}".format( len(self.pop.change_points)-1 ) )
         if self.recombination_guide != None:
             command.append( "-guide {}".format( self.recombination_guide ) )
-        if self.argv:
-            command.append( "-arg {}".format( self.argv ) )
+        if self.sampletrees:
+            command.append( "-arg" )
 
         command += self.smcsmc_opts
         command += ["-nsam", str(len(self.pop.sample_populations)),

@@ -404,6 +404,7 @@ class PfParam{
     // Output Related
     // ------------------------------------------------------------------
     bool log_bool;
+    bool record_trees;
     bool record_resample_file;
     string out_NAME_prefix;
     string outFileName;

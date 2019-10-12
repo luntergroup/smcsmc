@@ -70,10 +70,12 @@ void PfParam::parse(int argc, char *argv[]) {
             if ( this->ESS_fraction > 1.0 || this->ESS_fraction < 0.0 ){
                 throw OutOfRange ("-ESS", *argv_i );
             }
+        } else if ( *argv_i == "-arg" ) {
+            record_trees = true;
         } else if ( *argv_i == "-EM"   ){
             this->EM_steps = readNextInput<int>();
             this->EM_bool = true;
-        } else if ( *argv_i == "-xr" || *argv_i == "-xc" || *argv_i == "-arg" ) {
+        } else if ( *argv_i == "-xr" || *argv_i == "-xc" ) {
             string tmpFlag = *argv_i;
             int last_epoch;
             int first_epoch = readRange(last_epoch);        // obtain 0-based closed interval
@@ -89,7 +91,6 @@ void PfParam::parse(int argc, char *argv[]) {
                     // " &= " is and-update (cf. +=, sum-update); " ~ " is bitwise not
                     if (tmpFlag == "-xc")      record_event_in_epoch[i] &= ~PfParam::RECORD_COALMIGR_EVENT;
                     else if (tmpFlag == "-xr") record_event_in_epoch[i] &= ~PfParam::RECORD_RECOMB_EVENT;
-                    else                       record_event_in_epoch[i] |= PfParam::RECORD_TREE_EVENT;
                 }
             }
         } else if ( *argv_i == "-cap"  ){
@@ -240,6 +241,7 @@ void PfParam::init(){
     this->useCap           = false;
     this->Ne_cap           = 200000;
     this->record_resample_file = false;
+    this->record_trees     = false;
     this->setHelp(false);
     this->setVersion(false);
     this->input_SegmentDataFileName = "";
@@ -343,6 +345,11 @@ void PfParam::finalize(){
     // but clearly the user specified something that's silly and should hear that.)
     while (record_event_in_epoch.size() < this->model.change_times_.size()) {
         record_event_in_epoch.push_back( PfParam::RECORD_COALMIGR_EVENT | PfParam::RECORD_RECOMB_EVENT );
+    }
+    if (record_trees) {
+        for (unsigned int i = 0; i < record_event_in_epoch.size(); i++) {
+            record_event_in_epoch[i] |= PfParam::RECORD_TREE_EVENT;
+        }
     }
     if (record_event_in_epoch.size() > this->model.change_times_.size()) {
         //throw std::invalid_argument(std::string("Problem: epochs specified in -xr/-xc options out of range"));
@@ -542,7 +549,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-ESS"           << setw(8) << "FLT" << "  --  " << "Fractional ESS threshold for resampling [ " << ESS_fraction << " ]" << endl;
     cout << setw(15)<<"-xr"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range to exclude from recombination EM (0-based, closed)" << endl;
     cout << setw(15)<<"-xc"            << setw(8) << "INT" << "  --  " << "Epoch or epoch range (e.g. 0-10) to exclude from coalescent/migration EM" << endl;
-    cout << setw(15)<<"-arg"           << setw(8) << "INT" << "  --  " << "Epoch or epoch range to record full ARG for" << endl;
+    cout << setw(15)<<"-arg"           << setw(8) << " "   << "  --  " << "Record ARGs in .trees file" << endl;
     cout << setw(15)<<"-guide"         << setw(8) << "STR" << "  --  " << "Recombination guide file [ none ]" << endl;
     cout << endl << "Less frequently used options:" << endl;
     cout << setw(15)<<"-record_ess"    << setw(8) << " "   << "  --  " << "Generate *.resample file" << endl;
