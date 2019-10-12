@@ -1,19 +1,22 @@
 #import smcsmc
 import gzip
-
-#class NodeTable:
-#    def __init__(self)
-
-#class EdgeTable: 
-#    def __init__(self)
+import pandas as pd
+from collections import OrderedDict
+from numpy import unique
 
 class Event:
     def __init__(self, tokens):
-        self.pos = tokens[1]
+        self.right = tokens[1]
         self.time = tokens[2]
         self.lineages = self.parse_lineages(tokens[5])
         self.migration_events = []
         self.nmig = 0
+
+        self.nhaps = 4 
+        self.pops = [0,0,1,1]
+        self.ids = [0,0,1,1]
+
+
 
     def parse_lineages(self, lineages):
         out = [c for c in range(len(lineages)) if lineages[c] == '1']
@@ -33,12 +36,46 @@ class Event:
             self.nmig += 1
 
     def print(self):
-        print("Event at " + self.pos + " in " + ''.join([str(int(s)) for s in self.lineages])+"\n" +
+        print("Event at " + self.right + " in " + ''.join([str(int(s)) for s in self.lineages])+"\n" +
                "-\tTime: " + self.time + '\n' +
                '-\tCoal Time: ' + self.coal + '\n' +
                '-\tN Migration: ' + str(self.nmig))
         for e in self.migration_events:
             e.print()
+
+    def initialiseTables(self):
+        self.NodeTable = NodeTable()
+        self.IndividualTable = IndividualTable()
+        self.EdgeTable = EdgeTable()
+        self.PopulationTable = PopulationTable()
+        
+        # Base entries
+        for i in range(self.nhaps):
+            self.NodeTable.table.loc[i] = ['1', '0', self.pops[i], self.ids[i], None] 
+            self.IndividualTable.table.loc[self.ids[i]] = ['1', None, None]
+
+        for i in range(len(unique(self.pops))):
+            self.PopulationTable.add(None)
+
+        # Have some entries for initialising 
+        # internal nodes
+        time1 = 100000
+        time2 = 100000
+        self.NodeTable.add(time1, '0', '0')
+        self.NodeTable.add(time2, '1', '1')
+
+        self.EdgeTable.add(self.right, self.left, self.nhaps, 0)
+        self.EdgeTable.add(self.right, self.left, self.nhaps, 1)
+        
+        self.EdgeTable.add(self.right, self.left, self.nhaps+1, 2)
+        self.EdgeTable.add(self.right, self.left, self.nhaps+1, 3)
+        
+
+    def printTables(self):   
+        self.IndividualTable.print()
+        self.PopulationTable.print()
+        self.NodeTable.print()
+        self.EdgeTable.print()
 
 
 class Migration(Event):
@@ -53,22 +90,83 @@ class Migration(Event):
         print("*\t[" + ''.join([str(s) for s in self.lineages]) + "] \tMigration " + self.From + " -> " + self.To + " @ " + str(self.time) + '\n')
 
         
-class Record:i
+class Record:
     def __init__(self, tree):
-        self.events = {}
+        self.events = OrderedDict()
+        # These are some hardcoded parameters that should
+        # be inferred from the record when I have a moment.
+        self.nhaps = 4 
+        self.pops = [0,0,1,1]
+        self.ids = [0,0,1,1]
 
         with gzip.open(tree, 'rb') as f:
             current_event = Event([s.decode("utf-8") for s in f.readline().strip().split()])
             for line in f:
                 tokens = [s.decode("utf-8") for s in line.strip().split(b'\t')]
-                if tokens[0] == "R":
-                    #import pdb; pdb.set_trace()
+                if tokens[0] == "R": 
                     self.addEvent(current_event)
                     current_event = Event(tokens)
+                    # This update is based on the fact
+                    # that the tree files decrease in position
+                    # Should the opposite occur,
+                    # this would be backwards.
+                    self.events[list(self.events.keys())[-1]].left = current_event.right
+                    #assert(self.events[list(self.events.keys())[-1]].right < current_event.left) 
                 else:
                     current_event.append(tokens)
 
     def addEvent(self, event):
-        self.events[event.pos] = event
+        self.events[event.right] =event
+
+ 
+class TableCollection:
+    def __init__(self, dict):
+        self.dict = dict
+
+class Table: 
+    def __init__(self, columns):
+        self.table = pd.DataFrame(columns = columns) 
+        self.name = "Generic"
+
+    def print(self):
+        print("\n**" + self.name )
+        print(self.table) 
+
+
+class NodeTable(Table):
+    def __init__(self): 
+        super().__init__(columns = ['flags', 'time', 'population', 'individual', 'metadata'])
+        self.name = "Node Table"
+
+    def add(self, time, population, individual):
+        row = {'flags': 0, 'time': time, 'population': population, 'individual': individual, 'metadata': None}
+        self.table = self.table.append(pd.DataFrame(row, index = [0]))
+
+
+class IndividualTable(Table):
+    def __init__(self):
+        super().__init__(columns = ['flags', 'location', 'metadata'])
+        self.name = "Individual Table"
+
+class EdgeTable(Table): 
+    def __init__(self):
+        self.columns = ['left', 'right', 'parent', 'child']
+        super().__init__(columns = self.columns)
+        self.name = "Edge Table"
+
+    def add(self, left, right, parent, child):
+        row = {'left': left, 'right': right, 'parent': parent, 'child': child}
+        self.table = self.table.append(pd.DataFrame(row, index = [0]))
+
+class PopulationTable(Table):
+    def __init__(self):
+        self.columns = ['metadata']
+        super().__init__(columns = self.columns)
+        self.name = "Population Table"
+
+    def add(self, metadata):
+        row = {'metadata': metadata}
+        self.table = self.table.append(pd.DataFrame(row, index = [0]))
+
 
 
