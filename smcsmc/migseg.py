@@ -1,14 +1,6 @@
 import gzip
 import sys
 from optparse import OptionParser
-from pandas import read_csv
-
-
-class Output:
-    """Contains all the information from the output of SMC2, as well as convenience functions for interacting with it."""
-    def __init__(self, path, N0 = 14312, g=29):
-        self.df = pd.read_csv(
-
 
 class Event:
 
