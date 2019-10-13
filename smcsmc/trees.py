@@ -173,6 +173,9 @@ class TableCollection:
                 self.root = recombining_node
                 entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
 
+            if recombining_node == mrc_recipient:
+                entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
+
             #if len(entry.tables.dict['Edge'].table.loc[entry.tables.dict['Edge'].table['parent'] == parent]) > 0:
             #    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
         except NoEdgeFound:
@@ -318,7 +321,7 @@ class EdgeTable(Table):
             #self.add(right, left, recipient, new)
             print("This must connect directly to the Root")
 
-        self.add(left, right, new, recipient)
+        self.add(left, right, new, recipient) 
 
     def prune(self):
         # Find internal nodes and reroute them.
