@@ -2,7 +2,7 @@
 import gzip
 import pandas as pd
 from collections import OrderedDict
-from numpy import unique
+from numpy import unique, argmin
 
 class Event:
     def __init__(self, tokens):
@@ -79,6 +79,7 @@ class Event:
         for v in self.tables.dict.values():
             v.print()
 
+
 class Migration(Event):
     def __init__(self, tokens):
         assert(tokens[0] == "M")
@@ -132,16 +133,40 @@ class TableCollection:
         # 4. Destroy their parents 
         # 5. Check that it still forms a connected tree
 
-    def return_parents(self,node):
-        return(self.parents(node, table = self.dict['Edge'].table))
+    def parents(self,node): 
+        """Find all parents of a node on the path to the root"""
+        try: 
+            table = self.dict['Edge'].table
+        except KeyError:
+            raise("You must update with the filled tables before finding parents.") 
 
-    def parents(self,node, table): 
         if int(self.dict['Node'].table.loc[node]['individual']) == -1: 
             return ["Root"]
         else: 
-            #p2.extend([int(table.loc[table['child'] == node]['parent'])])
             new_node = int(table.loc[table['child'] == node]['parent'])
-            return [new_node] + self.parents(new_node,  table = table)
+            return [new_node] + self.parents(new_node)
+
+    def intersect_parents(self, nodes): 
+        """Find the parents of a group of nodes, and find their intersection"""
+        list_of_parents = [set(self.parents(node)) for node in nodes]
+        assert(len(list_of_parents) > 1)
+        common_parents = list(list_of_parents[0].intersection(*list_of_parents[1:]))
+        common_parents = [node for node in common_parents if node != "Root"]
+        return common_parents
+
+    def find_times(self, nodes):
+        """Find the times of a group of nodes, minus the root""" 
+        return [self.dict['Node'].table.loc[node]['time'] for node in nodes]
+
+    def find_mrc_node(self, nodes):
+        """Identify the most recent common shared node for a group of samples."""
+        assert(type(nodes) == list)
+        common_parents = self.intersect_parents(nodes)
+        ages = self.find_times(common_parents)
+        assert(min(ages) > 0)
+        mrc = common_parents[argmin(ages)] 
+        return mrc
+
 
 class Table: 
     def __init__(self, columns):
@@ -161,14 +186,14 @@ class NodeTable(Table):
     def add(self, time, population, individual):
         row = {'flags': 0, 'time': time, 'population': population, 'individual': individual, 'metadata': None}
         self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)]))
-        self.table.reset_index()
-        #return(len(self.table.index))
+        self.table.reset_index() 
 
 
 class IndividualTable(Table):
     def __init__(self):
         super().__init__(columns = ['flags', 'location', 'metadata'])
         self.name = "Individual Table"
+
 
 class EdgeTable(Table): 
     def __init__(self):
@@ -178,8 +203,8 @@ class EdgeTable(Table):
 
     def add(self, left, right, parent, child):
         row = {'left': left, 'right': right, 'parent': parent, 'child': child}
-        self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)]))
-        #self.table.reset_index()
+        self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)])) 
+
 
 class PopulationTable(Table):
     def __init__(self):
@@ -190,7 +215,3 @@ class PopulationTable(Table):
     def add(self, metadata):
         row = {'metadata': metadata}
         self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)]))
-        #self.table.reset_index()
-
-
-
