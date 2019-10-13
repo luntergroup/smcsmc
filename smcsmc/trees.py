@@ -1,8 +1,15 @@
-#import smcsmc
 import gzip
-import pandas as pd
+from pandas import DataFrame
 from collections import OrderedDict
 from numpy import unique, argmin
+from copy import deepcopy
+import pdb
+
+class NoEdgeFound(Exception):
+    pass
+
+class RedundantNode(Exception):
+    pass
 
 class Event:
     def __init__(self, tokens):
@@ -28,6 +35,13 @@ class Event:
             self.coal = tokens[2]
             self.population = tokens[3]
             self.recipient = self.parse_lineages(tokens[5])
+            if self.recipient == "R":
+                self.recipient = [0,1,2,3]
+            #for x in self.lineages:
+            #    try: 
+            #        self.recipient.remove(x) # need to get rid of the donating branch.
+            #    except AttributeError:
+            #        self.recipient = [0,1,2,3] # This reroots the tree
         
         elif tokens[0] == "M":
             self.migration_events.append(Migration(tokens))
@@ -57,8 +71,8 @@ class Event:
 
         # Have some entries for initialising 
         # internal nodes
-        time1 = 50000
-        time2 = 50000
+        time1 = 1000
+        time2 = 1000
         self.NodeTable.add(time1, 0, 0)
         self.NodeTable.add(time2, 1, 1)
         self.NodeTable.add(time1+time2, 0, -1)
@@ -75,7 +89,10 @@ class Event:
                  'Edge': self.EdgeTable,
                  'Population': self.PopulationTable})
 
-    def printTables(self):   
+        self.tables.root = 6
+
+    def printTree(self):   
+        print("[" + self.right + ","+  self.left + ")")
         for v in self.tables.dict.values():
             v.print()
 
@@ -113,26 +130,59 @@ class Record:
                     # Should the opposite occur,
                     # this would be backwards.
                     self.events[list(self.events.keys())[-1]].left = current_event.right
-                    #assert(self.events[list(self.events.keys())[-1]].right < current_event.left) 
                 else:
                     current_event.append(tokens)
+
+                self.addEvent(current_event)
+                current_event.left = 1 # in preperation for scaling
 
     def addEvent(self, event):
         self.events[event.right] =event
 
- 
+    def updateTrees(self):
+        first = list(self.events.keys())[0]
+        self.events[first].initialiseTables()
+        tree = self.events[first].tables
+        for k, v in self.events.items():
+            self.events[k].tables = tree
+            self.events[k].tables.update(self.events[k])
+            tree = deepcopy(self.events[k].tables)
+
+
+
+     
 class TableCollection:
     def __init__(self, dict):
         self.dict = dict
 
     def update(self, entry):
         # 1. Add a coalescent node
-        entry.tables['Node'].add()
-        # 2. Attach the proper nodes to the new one
-        # 3. Find the entries that were cut off (if any)
-        # 4. Destroy their parents 
-        # 5. Check that it still forms a connected tree
+        pdb.set_trace()
+        recombining_node = self.find_mrc_node(entry.lineages)
+        mrc_recipient = self.find_mrc_node(entry.recipient)
 
+        coal_id = entry.tables.dict['Node'].add(time = entry.coal, population = entry.population, individual = entry.tables.dict['Node'].table.loc[recombining_node]['individual'])
+        # 2. Attach the proper nodes to the new one
+        #   Add an edge to represent the R to the C node
+                #   Remove the edge from the recombining node to any previous nodes
+        #   This potentially leaves redundant nodes... I'm hoping these will be removed by tskit
+        #pdb.set_trace()
+        try:
+            entry.tables.dict['Edge'].remove_parents(entry.right, entry.left, recombining_node)
+        except NoEdgeFound:
+            print("No edge found...?")
+
+        #pdb.set_trace()
+        #   Thread into the middle of the recipient node and its parent
+        if coal_id != recombining_node:
+            entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, recombining_node)
+
+        entry.tables.dict['Edge'].thread(self.dict['Node'].table, entry.right, entry.left, coal_id, mrc_recipient)
+
+        # Deal with the case where the threaded node is older than the upper join 
+
+        entry.tables.evaluate_reroot(entry.tables.dict['Edge'].table, coal_id, self.root, '0') 
+        
     def parents(self,node): 
         """Find all parents of a node on the path to the root"""
         try: 
@@ -161,16 +211,27 @@ class TableCollection:
     def find_mrc_node(self, nodes):
         """Identify the most recent common shared node for a group of samples."""
         assert(type(nodes) == list)
-        common_parents = self.intersect_parents(nodes)
-        ages = self.find_times(common_parents)
-        assert(min(ages) > 0)
-        mrc = common_parents[argmin(ages)] 
-        return mrc
+        if len(nodes) == 1:
+            return nodes[0]
+        else:
+            common_parents = self.intersect_parents(nodes)
+            ages = self.find_times(common_parents)
+            assert(float(min(ages)) > 0)
+            mrc = common_parents[argmin(ages)] 
+            return mrc
 
+    def evaluate_reroot(self, table, new_node, old_root, id):
+        # Do we have a connection between the old root and the new node?
+        if len(table.loc[(table['child'] == old_root) & (table['parent'] == new_node)]) != 0:
+            if float(self.dict['Node'].table.loc[old_root]['time']) < float(self.dict['Node'].table.loc[new_node]['time']):
+                # Then we have a new root.
+                self.dict['Node'].table.loc[old_root]['individual'] = id
+                self.dict['Node'].table.loc[new_node]['individual'] = -1
+                self.root = new_node
 
 class Table: 
     def __init__(self, columns):
-        self.table = pd.DataFrame(columns = columns) 
+        self.table = DataFrame(columns = columns) 
         self.name = "Generic"
 
     def print(self):
@@ -185,9 +246,9 @@ class NodeTable(Table):
 
     def add(self, time, population, individual):
         row = {'flags': 0, 'time': time, 'population': population, 'individual': individual, 'metadata': None}
-        self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)]))
-        self.table.reset_index() 
-
+        self.table = self.table.append(DataFrame(row, index = [len(self.table.index)]))
+        return( len(self.table.index)-1)
+        
 
 class IndividualTable(Table):
     def __init__(self):
@@ -202,8 +263,41 @@ class EdgeTable(Table):
         self.name = "Edge Table"
 
     def add(self, left, right, parent, child):
-        row = {'left': left, 'right': right, 'parent': parent, 'child': child}
-        self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)])) 
+        if parent != child: 
+            row = {'left': left, 'right': right, 'parent': parent, 'child': child}
+            self.table = self.table.append(DataFrame(row, index = [len(self.table.index)])) 
+
+    def remove(self, left, right, parent, child):
+        # I've made the indices a bit confusing here.
+        id = self.table.loc[(self.table['parent'] == parent) & (self.table['child'] == child)].index
+        if len(id) == 0:
+            raise NoEdgeFound()
+    
+        parent = self.table.loc[id]['parent']       
+        self.table.drop([self.table.index[int(id)]], inplace = True)
+        return(int(parent))
+
+    def remove_parents(self, left, right, child):
+        self.table.reset_index(drop = True, inplace = True)
+        id = self.table.loc[self.table['child'] == child].index
+        if len(id) == 0:
+            raise NoEdgeFound()
+
+        parent = self.table.loc[id]['parent']       
+        self.table.drop([self.table.index[id[0]]], inplace = True)
+        return(int(parent)) 
+        
+    def thread(self, table, left, right, new, recipient):
+        try:
+            #pdb.set_trace()
+            parent = self.remove_parents(right, left, recipient)
+            if float(table.loc[new]['time']) < float(table.loc[parent]['time']):
+                self.add(left, right, parent, new)
+        except NoEdgeFound:
+            #self.add(right, left, recipient, new)
+            print("This must connect directly to the Root")
+
+        self.add(left, right, new, recipient)
 
 
 class PopulationTable(Table):
@@ -214,4 +308,4 @@ class PopulationTable(Table):
 
     def add(self, metadata):
         row = {'metadata': metadata}
-        self.table = self.table.append(pd.DataFrame(row, index = [len(self.table.index)]))
+        self.table = self.table.append(DataFrame(row, index = [len(self.table.index)]))
