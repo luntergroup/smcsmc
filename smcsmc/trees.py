@@ -182,6 +182,7 @@ class TableCollection:
         # Deal with the case where the threaded node is older than the upper join 
 
         entry.tables.evaluate_reroot(entry.tables.dict['Edge'].table, coal_id, self.root, '0') 
+        entry.tables.dict['Edge'].prune()
         
     def parents(self,node): 
         """Find all parents of a node on the path to the root"""
@@ -298,6 +299,24 @@ class EdgeTable(Table):
             print("This must connect directly to the Root")
 
         self.add(left, right, new, recipient)
+
+    def prune(self):
+        # Find internal nodes and reroute them.
+        for child in self.table['child'].tolist():
+            try:
+                parent = self.table.loc[self.table['child'] == child]['parent'].tolist()[0]
+                grandparent = self.table.loc[self.table['child'] == parent]['parent'].tolist()[0]
+
+                if len( self.table.loc[self.table['parent'] == parent] ) == 1:
+                    if len( self.table.loc[self.table['parent'] == grandparent] ) == 1:
+                            parent_idx = self.table.loc[self.table['parent'] == parent].index[0]
+                            grandparent_idx = self.table.loc[self.table['parent'] == grandparent].index[0]
+                            self.table.drop([parent_idx], inplace = True)
+                            self.table.loc[grandparent_idx]['child'] = child
+            except IndexError: 
+                continue
+
+
 
 
 class PopulationTable(Table):
