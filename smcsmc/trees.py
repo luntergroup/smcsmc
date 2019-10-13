@@ -1,7 +1,7 @@
 import gzip
 from pandas import DataFrame
 from collections import OrderedDict
-from numpy import unique, argmin
+from numpy import unique, argmin, argmax
 from copy import deepcopy
 import pdb
 
@@ -134,7 +134,7 @@ class Record:
                     current_event.append(tokens)
 
                 self.addEvent(current_event)
-                current_event.left = 1 # in preperation for scaling
+                current_event.left = '1' # in preperation for scaling
 
     def addEvent(self, event):
         self.events[event.right] =event
@@ -156,23 +156,28 @@ class TableCollection:
         self.dict = dict
 
     def update(self, entry):
-        # 1. Add a coalescent node
-        pdb.set_trace()
-        recombining_node = self.find_mrc_node(entry.lineages)
-        mrc_recipient = self.find_mrc_node(entry.recipient)
+        # 1. Add a coalescent node 
+        recombining_node = self.find_mrc_node_older_than(entry.lineages, entry.time)
+        mrc_recipient = self.find_mrc_node_older_than(entry.recipient, entry.coal)
 
         coal_id = entry.tables.dict['Node'].add(time = entry.coal, population = entry.population, individual = entry.tables.dict['Node'].table.loc[recombining_node]['individual'])
+        if coal_id == 13:
+            pdb.set_trace()
         # 2. Attach the proper nodes to the new one
         #   Add an edge to represent the R to the C node
                 #   Remove the edge from the recombining node to any previous nodes
         #   This potentially leaves redundant nodes... I'm hoping these will be removed by tskit
-        #pdb.set_trace()
         try:
-            entry.tables.dict['Edge'].remove_parents(entry.right, entry.left, recombining_node)
+            parent = entry.tables.dict['Edge'].remove_parents(entry.right, entry.left, recombining_node)
+            if self.root == parent:
+                self.root = recombining_node
+                entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
+
+            #if len(entry.tables.dict['Edge'].table.loc[entry.tables.dict['Edge'].table['parent'] == parent]) > 0:
+            #    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
         except NoEdgeFound:
             print("No edge found...?")
 
-        #pdb.set_trace()
         #   Thread into the middle of the recipient node and its parent
         if coal_id != recombining_node:
             entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, recombining_node)
@@ -220,6 +225,21 @@ class TableCollection:
             assert(float(min(ages)) > 0)
             mrc = common_parents[argmin(ages)] 
             return mrc
+
+    def find_mrc_node_older_than(self, nodes, time):
+        """Identify the most recent common shared node for a group of samples."""
+        assert(type(nodes) == list)
+        if len(nodes) == 1:
+            return nodes[0]
+        else:
+            common_parents = self.intersect_parents(nodes)
+            ages = self.find_times(common_parents)
+            if len(ages) > 1: 
+                ages = [float(age) for age in ages if float(age) < float(time)]
+            assert(float(max(ages)) > 0)
+            mrc = common_parents[argmax(ages)] 
+            return mrc
+
 
     def evaluate_reroot(self, table, new_node, old_root, id):
         # Do we have a connection between the old root and the new node?
