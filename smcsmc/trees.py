@@ -147,6 +147,7 @@ class Record:
             self.events[k].tables = tree
             self.events[k].tables.update(self.events[k])
             tree = deepcopy(self.events[k].tables)
+        print("Done!")
 
 
 
@@ -156,42 +157,47 @@ class TableCollection:
         self.dict = dict
 
     def update(self, entry):
+        print("Updating tree at " + entry.right + "...")
         # 1. Add a coalescent node 
         recombining_node = self.find_mrc_node_older_than(entry.lineages, entry.time)
         mrc_recipient = self.find_mrc_node_older_than(entry.recipient, entry.coal)
 
-        coal_id = entry.tables.dict['Node'].add(time = entry.coal, population = entry.population, individual = entry.tables.dict['Node'].table.loc[recombining_node]['individual'])
-        if coal_id == 13:
-            pdb.set_trace()
-        # 2. Attach the proper nodes to the new one
-        #   Add an edge to represent the R to the C node
-                #   Remove the edge from the recombining node to any previous nodes
-        #   This potentially leaves redundant nodes... I'm hoping these will be removed by tskit
-        try:
-            parent = entry.tables.dict['Edge'].remove_parents(entry.right, entry.left, recombining_node)
-            if self.root == parent:
-                self.root = recombining_node
-                entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
+        # Edge case: If both the recombining lineage and the recipient lineage are the same, 
+        #           then there's nothing to do.
+        if recombining_node != mrc_recipient: 
 
-            if recombining_node == mrc_recipient:
-                entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
+            coal_id = entry.tables.dict['Node'].add(time = entry.coal, population = entry.population, individual = entry.tables.dict['Node'].table.loc[recombining_node]['individual'])
+            #if coal_id == 9:
+            #    pdb.set_trace()
+            # 2. Attach the proper nodes to the new one
+            #   Add an edge to represent the R to the C node
+            #   Remove the edge from the recombining node to any previous nodes
+            #   This potentially leaves redundant nodes... I'm hoping these will be removed by tskit
+            try:
+                parent = entry.tables.dict['Edge'].remove_parents(entry.right, entry.left, recombining_node)
+                if self.root == parent:
+                    self.change_root(recombining_node) 
+                    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
 
-            #if len(entry.tables.dict['Edge'].table.loc[entry.tables.dict['Edge'].table['parent'] == parent]) > 0:
-            #    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
-        except NoEdgeFound:
-            print("No edge found...?")
+                #if recombining_node == mrc_recipient:
+                #    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
 
-        #   Thread into the middle of the recipient node and its parent
-        if coal_id != recombining_node:
-            entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, recombining_node)
+                #if len(entry.tables.dict['Edge'].table.loc[entry.tables.dict['Edge'].table['parent'] == parent]) > 0:
+                #    entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, parent)
+            except NoEdgeFound:
+                print("No edge found...?")
 
-        entry.tables.dict['Edge'].thread(self.dict['Node'].table, entry.right, entry.left, coal_id, mrc_recipient)
+            #   Thread into the middle of the recipient node and its parent
+            if coal_id != recombining_node:
+                entry.tables.dict['Edge'].add(entry.right, entry.left, coal_id, recombining_node)
 
-        # Deal with the case where the threaded node is older than the upper join 
+            entry.tables.dict['Edge'].thread(self.dict['Node'].table, entry.right, entry.left, coal_id, mrc_recipient)
 
-        entry.tables.evaluate_reroot(entry.tables.dict['Edge'].table, coal_id, self.root, '0') 
-        entry.tables.dict['Edge'].prune()
-        
+            # Deal with the case where the threaded node is older than the upper join 
+
+            entry.tables.evaluate_reroot(entry.tables.dict['Edge'].table, coal_id, self.root, '0') 
+            entry.tables.dict['Edge'].prune()
+            
     def parents(self,node): 
         """Find all parents of a node on the path to the root"""
         try: 
@@ -242,6 +248,11 @@ class TableCollection:
             assert(float(max(ages)) > 0)
             mrc = common_parents[argmax(ages)] 
             return mrc
+
+    def change_root(self, new_root, id = '0'):
+        self.dict['Node'].table.loc[self.root]['individual'] = id
+        self.dict['Node'].table.loc[new_root]['individual'] = -1
+        self.root = new_root
 
 
     def evaluate_reroot(self, table, new_node, old_root, id):
