@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import gzip
 from collections import namedtuple
+import pdb
 
 ##
 ## To do:
@@ -22,6 +23,19 @@ Edge = namedtuple('Edge', 'left right parent child')
 Migration = namedtuple('Migration', 'left right node source dest time')
 Population = namedtuple('Population', 'metadata')
 
+class migrationSegment:
+    def __init__(self, event):
+        self.event = event
+        self.start = event.pos
+
+    def stop(self, pos):
+        self.stoppos = pos
+        self.complete = True
+
+    def to_event(self):
+        assert(self.complete)
+        return(Migration(self.start, self.stoppos, self.event.nodeid, self.event.frm, self.event.to, self.event.height))
+
 RECOMBINATION_ANCESTOR = 2 ** 62
 
 STORE_RECOMBINATION = True
@@ -35,7 +49,7 @@ def makeEvent( datum ):
     global nodelist
     type, pos, height, frm, to, desc = datum
     event = Event( float(height), type, float(pos), int(frm), int(to), int(''.join(reversed(desc)),2), len(nodelist) )
-    metadata = -1 if type != "R" else float(pos)
+    metadata = type if type != "R" else float(pos)
     nodelist.append( Node( 0, float(height), int(frm), -1, metadata) )
     return event
 
@@ -134,12 +148,13 @@ def normalize( tree ):
 #
 # update edges - enter rightmost sequence position into disappeared edges, and initialize new ones
 #
-def update_edges( current_edges, tree, edgelist, current_pos ):
+def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, current_migrations, segments):
     if tree == []:
         maxlineage = 1
     else:
         maxlineage = max( event.descendants for event in tree )
     new_edges = {}
+    new_migrations = {}
     ## map from lineage (encoded by descendants) to current event on that lineage
     ## tips correspond to null events; should represent explicitly
     lineages = {2**i : None for i in range(len(bin(maxlineage))-2) }
@@ -159,12 +174,41 @@ def update_edges( current_edges, tree, edgelist, current_pos ):
                 new_edges[ edge ] = current_edges[ edge ]
                 del current_edges[ edge ]
         lineages[parent] = event.nodeid
-    ## enter end sequence position for edges that are no longer current
-    for edge in current_edges:
+    ## enter end sequence position for edges that are no longer current: 
+    for edge in current_edges:          
         edgelist[ current_edges[ edge ] ] = setRight( edgelist[ current_edges[ edge ] ], current_pos )
     ## done
-    return new_edges
-    
+     
+    ## Add any new migration events to the list
+    migrations = [e for e in tree if e.type == 'M']
+    for m in migrations:
+        key = (m.pos, m.height)
+        #pdb.set_trace()
+        if key in current_migrations:
+            new_migrations[key] = current_migrations[key]
+            del current_migrations[key]
+        else: 
+            new_migrations[key] = migrationSegment(m)
+
+    ## Now we have a continueing list of the segments in the 
+    ## new_migrations object.
+    ## 
+    ## Now deal with the ones that are ending
+    for m in current_migrations.values():
+        m.stop(current_pos)
+        segments.append(m.to_event())
+        del m
+
+    return (new_edges, new_migrations, segments)
+
+
+
+
+   
+def is_migration_node(node):
+    ## Assuming data is global, which it seems to be
+    events = { datum.nodeid : datum for datum in data }
+    return (events[node].type == 'M')
 
 #
 # check various consistencies
@@ -192,6 +236,9 @@ idx = 0
 tree = []
 current_edges = {}
 edgelist = []
+segments = []
+migration_list = {}
+
 while idx < len(data):
     # idx points to the first of the events associated to the current recombination
     # first identify the corresponding recombination event
@@ -232,26 +279,27 @@ while idx < len(data):
     tree = normalize( tree )
 
     # update edges
-    current_edges = update_edges( current_edges, tree, edgelist, data[next_idx - 1].pos )
+    current_edges, migration_list, segments = update_edges_and_migrations( current_edges, tree, edgelist, data[next_idx - 1].pos, migration_list, segments)
 
     # done
     idx = next_idx
 
 # enter last position into remaining edges
-update_edges( current_edges, [], edgelist, data[next_idx - 1].pos )
+update_edges_and_migrations( current_edges, [], edgelist, data[next_idx - 1].pos, migration_list, segments)
 
 # build migration table.  tskit does not expected Nodes to be migration events,
 # and the documentation says that the migration time should be _strictly_ between
 # the parent and child node times.  We break that assumption, since migration events
 # coincide with nodes
 
-migrationlist = []
-nodeid2event = { datum.nodeid : datum for datum in data }
-for edge in edgelist:
-    child = edge.child
-    event = nodeid2event[ child ]
-    if event.type == 'M':
-        migrationlist.append( Migration( edge.left, edge.right, child, event.frm, event.to, event.height ) )
+pdb.set_trace()
+migrationlist = segments
+#nodeid2event = { datum.nodeid : datum for datum in data }
+#for edge in edgelist:
+#    child = edge.child
+#    event = nodeid2event[ child ]
+#    if event.type == 'M':
+#        migrationlist.append( Migration( edge.left, edge.right, child, event.frm, event.to, event.height ) )
 
 ## write the output
 
