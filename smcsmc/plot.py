@@ -1,4 +1,7 @@
 import matplotlib
+
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -9,7 +12,6 @@ try:
 except:
     stdpopsim = None
 
-matplotlib.use('Agg')
 
 def plot_migration(input='result.out', output='result.png', g = 30, ymax=0.00025):
     """
