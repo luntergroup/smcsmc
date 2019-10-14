@@ -22,25 +22,12 @@ static const Descendants_t NO_DESCENDANTS = 0;
 inline Descendants_t get_descendants( const Node* node ) {
 
     Descendants_t result = 0;
-    while (node->label() == 0) {
-
-	/* 02/18/19
-	 * When inferring recombination and reporting ARGs
-	 * getLocalChild1() occasionally returns a null pointer
-	 * as documented, causing a seg fault. Accounting for this possibility.
-	 *
-	 * Joe indicated that this is perhaps becuase the node is nonlocal
-	 * and after checking, this appears to always be the case. 
-	 *
-	 * To remedy this, I've ensured that the node is local prior
-	 * to retrieving children. */ 
-       	if(node->local()) {         
-              	result |= get_descendants( node->getLocalChild1() );
-	}
-	node = node->getLocalChild2();  // could be NULL
-         
-        if (!node) return result;
+    if (!node) return 0;
+    while (node && node->label() == 0) {
+        result |= get_descendants( node->getLocalChild1() );
+        node = node->getLocalChild2();
     }
+    if (!node) return result;
     assert (node->label() <= 64);
     return result | (((Descendants_t)1) << (node->label() - 1));
 }
