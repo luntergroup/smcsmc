@@ -7,6 +7,9 @@ import pandas as pd
 import glob
 import gzip
 import io
+from smcsmc.trees2tskit import trees2tskit
+from collections import namedtuple
+from tqdm import tqdm
 
 def prune_tree_sequence(tree_sequence_path, num_samples):
     """
@@ -328,5 +331,47 @@ def vcf_to_seg(input, output, masks = None, tmpdir = ".tmp", key = "tmp", chroms
         except TypeError:
             mask = None
         smcsmc.generate_smcsmcinput.run_multihetsep(file, output, mask)
-    
 
+def convert_position ( pos, map ) :
+        # I'm not sure why this is happening
+        if pos == 0.0:
+            pos = 1.1
+            #print("A weird position...")
+
+        idx = map[ map[1] < pos ][1].idxmax()
+        new_pos = int(round( pos - map[1][idx] ) )
+        chr = map[0][idx].split('.')[-1][3:]
+        return (new_pos, chr)
+
+
+def find_segments(path, frm, to, time_range, g = 29, suffix = ".trees.gz", pos_key = None, d=False):
+    """
+    Find segments which have migrated from one population to another within a specified time range.
+
+    :param str path: Path to the output folder which contains the trees of interest.
+    :param int frm: Source population (backwards in time).
+    :param int to: Sink population (backwards in time).
+    :param tuple time_range: Tuple with (start, end) in years.
+    :param int g: Years to a generation.
+    :param str suffix: String to search for trees files."""
+    Segment = namedtuple('Segment', 'chr left right orientation time')
+    pattern = path + "*" + suffix
+    files = glob.glob(pattern)
+
+    if pos_key is None: 
+        key = pd.read_csv(path + "../merged.map", header = None, sep = '\t')
+    else:
+        key = pd.read_csv(pos_key, header = None, sep = '\t')
+ 
+    subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time) for file in files for seg in trees2tskit(file, d = d).migrationlist if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
+    #segments = [segment for subsegments in segments for segment in subsegments]
+    #subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time)  for seg in segments if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
+
+    df = pd.DataFrame(subset)
+
+    print("Summary:")
+    print("\tMean length: " + str(np.mean(df['right'] - df['left'])))
+    print("\tTotal: " + str(np.sum(df['right']-df['left'])/3e9))
+    print("\tTime: " + str(1/(1e-8*np.mean(df['right'] - df['left']))))
+
+    return(df)

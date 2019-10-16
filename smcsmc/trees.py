@@ -259,10 +259,13 @@ class TableCollection:
         # Do we have a connection between the old root and the new node?
         if len(table.loc[(table['child'] == old_root) & (table['parent'] == new_node)]) != 0:
             if float(self.dict['Node'].table.loc[old_root]['time']) < float(self.dict['Node'].table.loc[new_node]['time']):
-                # Then we have a new root.
-                self.dict['Node'].table.loc[old_root]['individual'] = id
-                self.dict['Node'].table.loc[new_node]['individual'] = -1
-                self.root = new_node
+               self.change_root(new_node)
+
+    def is_root_oldest(self):
+        times = [float(x) for x in self.dict['Node'].table['time'].tolist()]
+        oldest = argmax(times)
+
+        return (oldest == self.root)
 
 class Table: 
     def __init__(self, columns):
@@ -348,11 +351,8 @@ class EdgeTable(Table):
                             self.table.drop([parent_idx], inplace = True)
                             self.table.loc[grandparent_idx]['child'] = child
             except IndexError: 
-                continue
-
-
-
-
+                continue   
+        
 class PopulationTable(Table):
     def __init__(self):
         self.columns = ['metadata']

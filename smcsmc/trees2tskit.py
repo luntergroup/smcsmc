@@ -95,6 +95,7 @@ def update( tree, event, start_height, lineage ):
     # trace ancestors of recombining lineage, and remove descendants from that line.
     # keep nodes, which now may have no descendants, and mark them as ancestors of recombination
     # if a tree currently has a loose branch, no ancestors will be present
+    #pdb.set_trace()
     for anc_idx in range( idx, len(tree) ):
         if lineage & tree[anc_idx].descendants:
             check( lineage & tree[anc_idx].descendants == lineage, "Inconsistent tree structure" )
@@ -147,8 +148,10 @@ def normalize( tree ):
 
 #
 # update edges - enter rightmost sequence position into disappeared edges, and initialize new ones
+#       now also updates a migration table in the same way as the edgelist, and outputs a list 
+#       of "completed" (i.e. having both start and end coordinates) migration events.
 #
-def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, current_migrations, segments):
+def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, current_migrations, segments, d = False):
     if tree == []:
         maxlineage = 1
     else:
@@ -180,7 +183,7 @@ def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, cur
     ## done
      
     ## Add any new migration events to the list
-    migrations = [e for e in tree if e.type == 'M']
+    migrations = [e for e in tree if e.type == 'M'] 
     for m in migrations:
         key = (m.pos, m.height)
         #pdb.set_trace()
@@ -193,12 +196,13 @@ def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, cur
     ## Now we have a continueing list of the segments in the 
     ## new_migrations object.
     ## 
-    ## Now deal with the ones that are ending
+    ## Now deal with the ones that are ending 
+    if d: print("ending " + str(len(current_migrations.keys())) + " segments")
     for m in current_migrations.values():
-        m.stop(current_pos)
+        if d: print(m.start)
+        m.stop(current_pos) 
         segments.append(m.to_event())
-        del m
-
+        
     return (new_edges, new_migrations, segments)
 
 
@@ -214,124 +218,133 @@ def is_migration_node(node):
 # check various consistencies
 #
 def check( isok, message ):
-    if not isok:
-        print(message,"\n")
+    'turn off the printing for now'
+    #if not isok:
+        #print(message,"\n")
+
+
+Output = namedtuple("Output", 'nodelist, edgelist, migrationlist')
 
 
 #
 # process data from bottom (leftmost) up
 #
+def trees2tskit(infile, suffix = '.trees.gz', write_all = False, d = False):
+    prefix = infile[ :-len(suffix) ]
+    data = gzip.open(infile).readlines()
+    data = [ makeEvent(line.decode('utf-8').strip().split()) for line in reversed(data) ]
 
-suffix = ".trees.gz"
-if len(sys.argv) != 2 or not sys.argv[1].endswith( suffix ):
-    print ("Usage: {} prefix{}\n".format(sys.argv[0], suffix))
-    sys.exit(1)
+    idx = 0
+    tree = []
+    current_edges = {}
+    edgelist = []
+    segments = []
+    migration_list = {}
 
-infile = sys.argv[1]
-prefix = infile[ :-len(suffix) ]
-data = gzip.open(infile).readlines()
-data = [ makeEvent(line.strip().split()) for line in reversed(data) ]
+    while idx < len(data):
+        # idx points to the first of the events associated to the current recombination
+        # first identify the corresponding recombination event
+        # this may not exist, in the case of the initial tree
+        end_idx = idx + 1
+        while (end_idx < len(data) and 
+               data[end_idx].type != 'R' and 
+               data[end_idx - 1].type != 'C' and 
+               data[end_idx].pos == data[end_idx - 1].pos):
+            end_idx = end_idx + 1
+            
+        # if we have a recombination event, process that first.
+        # if not, assume we are initializing a tree
+        if end_idx < len(data) and data[end_idx].type == 'R':
+            #print ("Recombination ",data[end_idx])
+            if STORE_RECOMBINATION:
+                ## enter population information into recombination node, using first event in block
+                nodelist[ data[end_idx].nodeid ] = setPopulation( nodelist[ data[end_idx].nodeid ], nodelist[ data[idx].nodeid ].population )
+            start_height = data[end_idx].height
+            lineage = data[end_idx].descendants
+            next_idx = end_idx + 1
+        else:
+            start_height = 0
+            lineage = 2 ** (len(bin(data[end_idx - 1].descendants)) - 3)  ## rightmost lineage of those participating in coalescent
+            #print("Novel lineage?  Desc=",data[end_idx - 1].descendants," lineage=",lineage)
+            next_idx = end_idx
+            
+        # process the events
+        for event in data[idx : end_idx]:
+            #print ("Processing ",event)
+            check( start_height < event.height, "****** Recombination occurred above coalescent or migration")
+            check( lineage & event.descendants == lineage, "****** Inconsistent tree structure" )
+            tree = update(tree, event, start_height, lineage)
+            start_height = event.height
+            lineage = event.descendants
 
-idx = 0
-tree = []
-current_edges = {}
-edgelist = []
-segments = []
-migration_list = {}
+        # normalize tree
+        tree = normalize( tree )
 
-while idx < len(data):
-    # idx points to the first of the events associated to the current recombination
-    # first identify the corresponding recombination event
-    # this may not exist, in the case of the initial tree
-    end_idx = idx + 1
-    while (end_idx < len(data) and 
-           data[end_idx].type != 'R' and 
-           data[end_idx - 1].type != 'C' and 
-           data[end_idx].pos == data[end_idx - 1].pos):
-        end_idx = end_idx + 1
+        # update edges
+        if d:
+            print(data[next_idx-1].pos)
+            print(treeRepr(tree))
+            
         
-    # if we have a recombination event, process that first.
-    # if not, assume we are initializing a tree
-    if end_idx < len(data) and data[end_idx].type == 'R':
-        #print ("Recombination ",data[end_idx])
-        if STORE_RECOMBINATION:
-            ## enter population information into recombination node, using first event in block
-            nodelist[ data[end_idx].nodeid ] = setPopulation( nodelist[ data[end_idx].nodeid ], nodelist[ data[idx].nodeid ].population )
-        start_height = data[end_idx].height
-        lineage = data[end_idx].descendants
-        next_idx = end_idx + 1
-    else:
-        start_height = 0
-        lineage = 2 ** (len(bin(data[end_idx - 1].descendants)) - 3)  ## rightmost lineage of those participating in coalescent
-        print("Novel lineage?  Desc=",data[end_idx - 1].descendants," lineage=",lineage)
-        next_idx = end_idx
+        current_edges, migration_list, segments = update_edges_and_migrations( current_edges, tree, edgelist, data[next_idx - 1].pos, migration_list, segments, d = d)
         
-    # process the events
-    for event in data[idx : end_idx]:
-        #print ("Processing ",event)
-        check( start_height < event.height, "****** Recombination occurred above coalescent or migration")
-        check( lineage & event.descendants == lineage, "****** Inconsistent tree structure" )
-        tree = update(tree, event, start_height, lineage)
-        start_height = event.height
-        lineage = event.descendants
+        if d:
+            print(len(segments))
 
-    # normalize tree
-    tree = normalize( tree )
+        # done
+        idx = next_idx
 
-    # update edges
-    current_edges, migration_list, segments = update_edges_and_migrations( current_edges, tree, edgelist, data[next_idx - 1].pos, migration_list, segments)
+    # enter last position into remaining edges
+    
+    #update_edges_and_migrations( current_edges, [], edgelist, data[next_idx - 1].pos, migration_list, segments)
+    #print(segments)
 
-    # done
-    idx = next_idx
+    # build migration table.  tskit does not expected Nodes to be migration events,
+    # and the documentation says that the migration time should be _strictly_ between
+    # the parent and child node times.  We break that assumption, since migration events
+    # coincide with nodes 
+    migrationlist = segments
+    #nodeid2event = { datum.nodeid : datum for datum in data }
+    #for edge in edgelist:
+    #    child = edge.child
+    #    event = nodeid2event[ child ]
+    #    if event.type == 'M':
+    #        migrationlist.append( Migration( edge.left, edge.right, child, event.frm, event.to, event.height ) )
 
-# enter last position into remaining edges
-update_edges_and_migrations( current_edges, [], edgelist, data[next_idx - 1].pos, migration_list, segments)
+    ## write the output
+    # Disable all this for now:
+    if write_all:
+        fout = open(prefix + ".node","w")
+        fout.write("is_sample\ttime\tpopulation\tindividual\tmetadata\n")
+        for node in nodelist:
+            fout.write("\t".join(map(str,list(node))) + "\n")
+        fout.close
 
-# build migration table.  tskit does not expected Nodes to be migration events,
-# and the documentation says that the migration time should be _strictly_ between
-# the parent and child node times.  We break that assumption, since migration events
-# coincide with nodes
+        fout = open(prefix + ".edge","w")
+        fout.write("left\tright\tparent\tchild\n")
+        for edge in edgelist:
+            fout.write("\t".join(map(str,list(edge))) + "\n")
+        fout.close()
 
-pdb.set_trace()
-migrationlist = segments
-#nodeid2event = { datum.nodeid : datum for datum in data }
-#for edge in edgelist:
-#    child = edge.child
-#    event = nodeid2event[ child ]
-#    if event.type == 'M':
-#        migrationlist.append( Migration( edge.left, edge.right, child, event.frm, event.to, event.height ) )
+        fout = open(prefix + ".migration","w")
+        fout.write("left\tright\tnode\tsource\tdest\ttime\n")
+        for migration in migrationlist:
+            fout.write("\t".join(map(str,list(migration))) + "\n")
+        fout.close()
 
-## write the output
+        populations = max( event.frm for event in data ) + 1
+        fout = open(prefix + ".population","w")
+        fout.write("metadata\n")
+        for pop in range(populations):
+            fout.write("0\n")
+        fout.close()
 
-fout = open(prefix + ".node","w")
-fout.write("is_sample\ttime\tpopulation\tindividual\tmetadata\n")
-for node in nodelist:
-    fout.write("\t".join(map(str,list(node))) + "\n")
-fout.close
+        if False:
+            for i,n in enumerate(nodelist):
+                print (i,n)
+            for e in edgelist:
+                print (e, e.right-e.left)
+            for m in migrationlist:
+                print (m)
 
-fout = open(prefix + ".edge","w")
-fout.write("left\tright\tparent\tchild\n")
-for edge in edgelist:
-    fout.write("\t".join(map(str,list(edge))) + "\n")
-fout.close()
-
-fout = open(prefix + ".migration","w")
-fout.write("left\tright\tnode\tsource\tdest\ttime\n")
-for migration in migrationlist:
-    fout.write("\t".join(map(str,list(migration))) + "\n")
-fout.close()
-
-populations = max( event.frm for event in data ) + 1
-fout = open(prefix + ".population","w")
-fout.write("metadata\n")
-for pop in range(populations):
-    fout.write("0\n")
-fout.close()
-
-if False:
-    for i,n in enumerate(nodelist):
-        print (i,n)
-    for e in edgelist:
-        print (e, e.right-e.left)
-    for m in migrationlist:
-        print (m)
+    return Output(nodelist, edgelist, migrationlist)
