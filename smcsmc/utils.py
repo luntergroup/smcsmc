@@ -344,7 +344,7 @@ def convert_position ( pos, map ) :
         return (new_pos, chr)
 
 
-def find_segments(path, frm, to, time_range, g = 29, suffix = ".trees.gz", pos_key = None, d=False):
+def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", pos_key = None, d=False):
     """
     Find segments which have migrated from one population to another within a specified time range.
 
@@ -354,7 +354,7 @@ def find_segments(path, frm, to, time_range, g = 29, suffix = ".trees.gz", pos_k
     :param tuple time_range: Tuple with (start, end) in years.
     :param int g: Years to a generation.
     :param str suffix: String to search for trees files."""
-    Segment = namedtuple('Segment', 'chr left right orientation time')
+    Segment = namedtuple('Segment', 'chr left right orientation time desc')
     pattern = path + "*" + suffix
     files = glob.glob(pattern)
 
@@ -363,15 +363,37 @@ def find_segments(path, frm, to, time_range, g = 29, suffix = ".trees.gz", pos_k
     else:
         key = pd.read_csv(pos_key, header = None, sep = '\t')
  
-    subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time) for file in files for seg in trees2tskit(file, d = d).migrationlist if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
+    #subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time, seg.descendants) for file in files for seg in trees2tskit(file, hap=hap,d = d).migrationlist if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
     #segments = [segment for subsegments in segments for segment in subsegments]
     #subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time)  for seg in segments if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
+
+
+    subset = []
+
+    h = False
+    if h: 
+        files = files[:2]
+
+    for file in tqdm(files):
+        for seg in trees2tskit(file, hap = hap, d = d).migrationlist:
+            if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]:
+                subset = subset + [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time, seg.descendants) ]
+        
+
 
     df = pd.DataFrame(subset)
 
     print("Summary:")
     print("\tMean length: " + str(np.mean(df['right'] - df['left'])))
     print("\tTotal: " + str(np.sum(df['right']-df['left'])/3e9))
+    print("\tN: " + str(len(df)))
     print("\tTime: " + str(1/(1e-8*np.mean(df['right'] - df['left']))))
 
     return(df)
+
+def bed_to_marey(df, out):
+    left = pd.DataFrame( {'map': 'Chromosome ' + df['chr'],'phys': df['left']})
+    right = pd.DataFrame( {'map': 'Chromosome ' + df['chr'],'phys': df['right']}) 
+    all = pd.concat([left, right])
+    all.to_csv(out, sep = ' ', index = False)
+

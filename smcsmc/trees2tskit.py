@@ -4,6 +4,8 @@ import sys
 import gzip
 from collections import namedtuple
 import pdb
+import logging
+import pandas as pd
 
 ##
 ## To do:
@@ -20,7 +22,7 @@ import pdb
 Event = namedtuple('Event', 'height type pos frm to descendants nodeid')
 Node = namedtuple('Node', 'flags time population individual metadata')
 Edge = namedtuple('Edge', 'left right parent child')
-Migration = namedtuple('Migration', 'left right node source dest time')
+Migration = namedtuple('Migration', 'left right node source dest time descendants')
 Population = namedtuple('Population', 'metadata')
 
 class migrationSegment:
@@ -34,7 +36,7 @@ class migrationSegment:
 
     def to_event(self):
         assert(self.complete)
-        return(Migration(self.start, self.stoppos, self.event.nodeid, self.event.frm, self.event.to, self.event.height))
+        return(Migration(self.start, self.stoppos, self.event.nodeid, self.event.frm, self.event.to, self.event.height, self.event.descendants))
 
 RECOMBINATION_ANCESTOR = 2 ** 62
 
@@ -113,10 +115,23 @@ def update( tree, event, start_height, lineage ):
 
     # for a coalescence, add descendants to ancestors of lineage that we coalesced with.
     # if coalescence was into own lineage, use recombination_ancestor mark to identify those nodes
+    global back_coals
     coalescence_lineage = event.descendants & ~lineage
     if coalescence_lineage == 0:
         coalescence_lineage = RECOMBINATION_ANCESTOR
+        back_coals['current'] = True
+        back_coals['nBC'] += 1
+        back_coals['time'] = event.height
+        back_coals['descendants'] = event.descendants
+    else:
+        back_coals['current'] = False
+        back_coals['nFC'] += 1
+
     idx += 1
+
+    #if coalescence_lineage & RECOMBINATION_ANCESTOR:
+      #  pdb.set_trace()
+
     while idx < len(tree):
         if tree[idx].descendants & coalescence_lineage:
             tree[idx] = setDescendants( tree[idx], tree[idx].descendants | lineage )
@@ -151,7 +166,7 @@ def normalize( tree ):
 #       now also updates a migration table in the same way as the edgelist, and outputs a list 
 #       of "completed" (i.e. having both start and end coordinates) migration events.
 #
-def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, current_migrations, segments, d = False):
+def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, current_migrations, segments, hap, d = False):
     if tree == []:
         maxlineage = 1
     else:
@@ -183,32 +198,73 @@ def update_edges_and_migrations( current_edges, tree, edgelist, current_pos, cur
     ## done
      
     ## Add any new migration events to the list
-    migrations = [e for e in tree if e.type == 'M'] 
-    for m in migrations:
+    migrations = [e for e in tree if e.type == 'M' and (e.descendants & hap)] 
+
+
+    global r_count
+    global back_coals
+    all_migrations = [ e for e in tree if e.type == 'M' ]
+    should_be_deleted = []
+    ## find migrations which have changed descendants and check if they are 
+    ## removed from the list. 
+    for e in all_migrations:
+        key = (e.pos, e.height)
+        if key in current_migrations:
+            if current_migrations[key].event.descendants & hap:
+                if e.descendants & hap != hap:
+                    #print("descendants present in previous tree but not in the one at " + str(e.pos) )
+                    r_count += 1
+                    should_be_deleted.append((e.pos, e.height))
+
+
+
+    ## This is all just debug
+    for m in migrations: 
         key = (m.pos, m.height)
         #pdb.set_trace()
         if key in current_migrations:
-            new_migrations[key] = current_migrations[key]
-            del current_migrations[key]
+            if not event_in_BC(m):
+                new_migrations[key] = migrationSegment(m)
+                del current_migrations[key]
+            #else:
+            #    pdb.set_trace()
+            #else:
+                #print("killed a semgnet")
         else: 
+            ## This line is changing the behaviour to examine the behavior if BM segments should be includded:
+            ## remove all the if statements if you want to revert to the original behaviour
             new_migrations[key] = migrationSegment(m)
+ 
+   
 
     ## Now we have a continueing list of the segments in the 
     ## new_migrations object.
     ## 
     ## Now deal with the ones that are ending 
+    global back_coals
     if d: print("ending " + str(len(current_migrations.keys())) + " segments")
     for m in current_migrations.values():
-        if d: print(m.start)
-        m.stop(current_pos) 
-        segments.append(m.to_event())
-        
+        m.stop(current_pos)
+        mig = m.to_event()
+        key = (mig.left, mig.time)
+        if key not in segments:
+            segments[key] = m.to_event()
+            if back_coals['current']:
+                back_coals['BC'] += 1
+            else:
+                back_coals['FC'] += 1
+           
     return (new_edges, new_migrations, segments)
 
 
+def event_in_BC(m):
+    global back_coals
+    if back_coals['current']:
+        if m.height < back_coals['time'] and m.height > back_coals['rtime']:
+            if m.descendants & back_coals['descendants']:
+                return True
+    return False
 
-
-   
 def is_migration_node(node):
     ## Assuming data is global, which it seems to be
     events = { datum.nodeid : datum for datum in data }
@@ -226,20 +282,26 @@ def check( isok, message ):
 Output = namedtuple("Output", 'nodelist, edgelist, migrationlist')
 
 
+# Globals for recording various things
+r_count = 0
+back_coals = {'nFC': 0, 'nBC': 0,'BC': 0, 'FC': 0, 'current': False, 'time': 0, 'rtime': 0, 'descendants':0}
+
+
 #
 # process data from bottom (leftmost) up
 #
-def trees2tskit(infile, suffix = '.trees.gz', write_all = False, d = False):
+def trees2tskit(infile, hap = 2, suffix = '.trees.gz', write_all = False, d = False):
     prefix = infile[ :-len(suffix) ]
     data = gzip.open(infile).readlines()
     data = [ makeEvent(line.decode('utf-8').strip().split()) for line in reversed(data) ]
+
 
     idx = 0
     tree = []
     current_edges = {}
     edgelist = []
-    segments = []
-    migration_list = {}
+    segments = {}
+    migration_list = {} 
 
     while idx < len(data):
         # idx points to the first of the events associated to the current recombination
@@ -267,6 +329,9 @@ def trees2tskit(infile, suffix = '.trees.gz', write_all = False, d = False):
             lineage = 2 ** (len(bin(data[end_idx - 1].descendants)) - 3)  ## rightmost lineage of those participating in coalescent
             #print("Novel lineage?  Desc=",data[end_idx - 1].descendants," lineage=",lineage)
             next_idx = end_idx
+
+        global back_coals
+        back_coals['rtime'] = start_height
             
         # process the events
         for event in data[idx : end_idx]:
@@ -286,7 +351,7 @@ def trees2tskit(infile, suffix = '.trees.gz', write_all = False, d = False):
             print(treeRepr(tree))
             
         
-        current_edges, migration_list, segments = update_edges_and_migrations( current_edges, tree, edgelist, data[next_idx - 1].pos, migration_list, segments, d = d)
+        current_edges, migration_list, segments = update_edges_and_migrations( current_edges, tree, edgelist, data[next_idx - 1].pos, migration_list, segments, hap = hap,d = d)
         
         if d:
             print(len(segments))
@@ -303,7 +368,18 @@ def trees2tskit(infile, suffix = '.trees.gz', write_all = False, d = False):
     # and the documentation says that the migration time should be _strictly_ between
     # the parent and child node times.  We break that assumption, since migration events
     # coincide with nodes 
-    migrationlist = segments
+    migrationlist = list(segments.values())
+    global r_count
+    #print("Total: " + str(r_count))
+    r_count = 0
+
+ 
+    with open('back_coals.txt', 'a') as f:
+        pd.DataFrame(back_coals, index = [0]).to_csv(f, header = False, index = False)
+ 
+    back_coals = {'nFC': 0, 'nBC': 0,'BC': 0, 'FC': 1, 'current': False, 'time': 0, 'rtime':0, 'descendants':0}
+
+
     #nodeid2event = { datum.nodeid : datum for datum in data }
     #for edge in edgelist:
     #    child = edge.child
