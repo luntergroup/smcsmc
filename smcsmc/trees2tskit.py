@@ -3,8 +3,6 @@ from __future__ import print_function
 import sys
 import gzip
 from collections import namedtuple
-import pdb
-import logging
 import pandas as pd
 
 ##

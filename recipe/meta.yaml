@@ -1,6 +1,6 @@
 package:
   name: smcsmc
-  version: 1.0.1
+  version: 1.0.2
 
 source:
   path: ..
@@ -22,6 +22,8 @@ requirements:
     - boost
     - zlib
     - msprime
+    - tskit
+    - tqdm 
 
   host:
     - python
@@ -39,6 +41,8 @@ requirements:
     - boost
     - zlib 
     - matplotlib
+    - tqdm
+    - tskit
 
 test:
   imports:

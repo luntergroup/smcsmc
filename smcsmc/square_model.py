@@ -5,7 +5,11 @@ import smcsmc.populationmodels
 import pandas as pd
  
 class Simulation:
-    def __init__(self, L, midpoint, duration, proportion, flatarg = False):
+    def __init__(self, L, midpoint, duration, proportion, direction = "forward" flatarg = False):
+        '''Direction can be either backward (Eurasian to African), forward (African to Eurasian), 
+        none (No migration, regardless of other arguments, or bidirectional (equal magnitude in both
+        directions), or realistic (with a backmigration of the given magnitude but also a little bit
+        of CEU migration, like we think it really happened).'''
 
         if isinstance(midpoint, set):
             midpoint = int(*midpoint)
@@ -34,22 +38,39 @@ class Simulation:
         eval_times = [ set_times[0] / mid ] + eval_times
         set_times = [0] + set_times
         # Append times for the migration event to make sure we get the whole thing.
+
+
+        ## Now dealing with the various scenarios for the more systematic version.
+        ## This one is the case of migration from AFRICANS to EURASIANS
+        ##  with no other migration, so we set that to zero. 
+        if direction == "forward":
+            migr_ceu = self.new_migr_yri
+            migr_yri = self.no_migration
+        ## This is the revese, or our typical back-migration scenario. 
+        ## except with NO migration in the other direction
+        elif direction == "backward":
+            migr_ceu = self.no_migration
+            migr_yri = self.new_migr_yri
+        ## This is the null case of zero migration
+        elif direction == "none":
+            migr_ceu = self.no_migration
+            migr_yri = self.no_migration
+        ## This is an extreme case of the specified pulse in BOTH directions
+        elif direction == "bidirectional":
+            migr_ceu = self.no_migration
+            migr_yri = self.no_migration
+        ## This is the case we've been doing so far, with the regular backmigration
+        # and a little bit of CEU migration.
+        elif direction == "realistic":
+            migr_ceu = self.migr_ceu
+            migr_yri = self.new_migr_yri
    
 
         self.L = L
         self.midpoint = midpoint
         self.duration = duration
         self.proportion = proportion
-       
-        #if type == "scrm2seg":
-         #   p = populationmodels.Population( num_samples = self.samples, sequence_length = L )
-         #   infilename = "/dev/stdin"
-         #   outfilename = "/dev/stdout"
-         #   missing_leaves = []
-         #   phased = True
-         #   p.convert_scrm_to_seg(infilename, outfilename, missing_leaves, phased )
-         #   sys.exit(0)
-
+      
         self.model = ["scrm {} 1".format(self.samples),
                  "-l 100000 -p 10",  ## do not seed!
                  "-t {} -r {} {}".format(self.L * mu * 4 *N0, self.L * rho * 4 * N0, self.L),
@@ -74,7 +95,7 @@ class Simulation:
             yri_popsize_unscaled = self.yri(g_eval) / N0
 
             ceu_migr_unscaled = self.migr_ceu(g_eval) * 4 * N0
-            yri_migr_unscaled = self.new_migr_yri(g_set,  midpoint = self.midpoint, years = self.duration, total = self.proportion, flat=flatarg) * 4 * N0
+            yri_migr_unscaled = self.new_migr_yri(g_set) * 4 * N0
 
             self.model.append("-en {} 1 {}".format(unscaled_time_set, ceu_popsize_unscaled))
             self.model.append("-en {} 2 {}".format(unscaled_time_set, yri_popsize_unscaled))
@@ -154,21 +175,24 @@ class Simulation:
             return strength * (1.0 - (math.log(x)-math.log(mid)) / (math.log(start)-math.log(mid)))
         return strength * (1.0 - (math.log(x)-math.log(mid)) / (math.log(end)-math.log(mid)))
 
-    """
-    This is a new version of the migration rate which is 
-            a) square, rather than peaked
-            b) consistent in terms of the proportion of migrating individuals
-            c) relatively systematic
-    Instead of distinct cases, we have a continum on three axis
-            a) The proportion of the population migrating (this is the integral under the 
-                    migration curve)
-            b) The midpoint of the migration
-            c) The length of the migration. This functions as as continuous transition between a "pulse"
-                    and "continuous" migration.
+    def new_migr_yri(self, x):
+        """This is a new version of the migration rate which is 
+                a) square, rather than peaked
+                b) consistent in terms of the proportion of migrating individuals
+                c) relatively systematic
+        Instead of distinct cases, we have a continum on three axis
+                a) The proportion of the population migrating (this is the integral under the 
+                        migration curve)
+                b) The midpoint of the migration
+                c) The length of the migration. This functions as as continuous transition between a "pulse"
+                        and "continuous" migration.
 
-    Note that input times here must be in terms of generations.
-    """
-    def new_migr_yri(self, x, midpoint, years, total, flat = False):
+        Note that input times here must be in terms of generations."""
+            midpoint = self.midpoint
+            years = self.duration
+            total = self.proportion
+
+
             start, end = (midpoint - (years / 2)) / 29, (midpoint + (years / 2) ) / 29
             if flat: 
                     proportion = 0.00025
@@ -179,6 +203,10 @@ class Simulation:
             if x < start: return 0
             if x >= end: return 0
             return proportion
+
+    def no_migration(self, x):
+        '''Just returns zero'''
+        return 0
 
     def run_scrm(self, output):
         self.model += f" > {output}"
