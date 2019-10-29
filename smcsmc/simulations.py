@@ -5,7 +5,7 @@ import smcsmc.populationmodels
 import pandas as pd
  
 class Simulation:
-    def __init__(self, L, midpoint, duration, proportion, direction = "forward" flatarg = False):
+    def __init__(self, L, midpoint, duration, proportion, direction = "forward", flatarg = False):
         '''Direction can be either backward (Eurasian to African), forward (African to Eurasian), 
         none (No migration, regardless of other arguments, or bidirectional (equal magnitude in both
         directions), or realistic (with a backmigration of the given magnitude but also a little bit
