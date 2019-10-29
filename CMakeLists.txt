@@ -62,7 +62,7 @@ string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}"
                               "-DCOMPILEDATE=\\\"${COMPILEDATE}\\\" "
                               "-DVERSION=\\\"${VERSION}\\\" ")
 
-find_package(Boost 1.69.0 COMPONENTS iostreams regex)
+find_package(Boost 1.67.0 COMPONENTS iostreams regex)
 find_package(ZLIB)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CONDA_PREFIX}/include)
@@ -74,6 +74,7 @@ target_link_libraries(smcsmc ${Boost_LIBRARIES})
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 target_link_libraries(smcsmc ${ZLIB_LIBRARIES})
 target_include_directories(smcsmc PRIVATE src/scrm/src src/scrm/src/random)
+set(CMAKE_INSTALL_RPATH "${CONDA_PREFIX}/lib")
 
 install(TARGETS smcsmc scrm
 	DESTINATION bin)

@@ -1,19 +1,15 @@
 # Locally building via `conda-build`
 
-Use this recipe for locally creating your own `conda` package. 
-
-## Operating Systems:
-
-- **Linux**: Tested, verified.
-- **MacOSX**: Work in progress, but follow [this](https://docs.conda.io/projects/conda-build/en/latest/resources/compiler-tools.html#macos-sdk) guide for installing the SDK which is *not* packaged with `conda-build`. 
-- **Windows**: Currently no support, nor is it planned.
+Use this recipe for locally creating your own `conda` package. It only works on Linux right now.
 
 ## Usage
 
-To build your package (after cloning the repository and installing `conda-build`)
+To build your package, you need quite a few dependencies specific to building conda packages. I've placed my (working) build environment in `build.yml`, which you can import to your own system.  
+
+Once this has been succesful, on Linux you can build the package with: 
 
 ```sh
-conda build . -c terhorst
+conda build .
 ```
 
 To install:
