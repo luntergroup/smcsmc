@@ -74,7 +74,7 @@ target_link_libraries(smcsmc ${Boost_LIBRARIES})
 message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
 target_link_libraries(smcsmc ${ZLIB_LIBRARIES})
 target_include_directories(smcsmc PRIVATE src/scrm/src src/scrm/src/random)
-set(CMAKE_INSTALL_RPATH "${CONDA_PREFIX}/lib")
+#SET(CMAKE_INSTALL_RPATH "${CMAKE_INSaTALL_PREFIX}/lib")
 
 install(TARGETS smcsmc scrm
 	DESTINATION bin)

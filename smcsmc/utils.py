@@ -344,7 +344,7 @@ def convert_position ( pos, map ) :
         return (new_pos, chr)
 
 
-def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", pos_key = None, d=False):
+def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", pos_key = None, d=False, nomap = False):
     """
     Find segments which have migrated from one population to another within a specified time range.
 
@@ -353,16 +353,21 @@ def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", 
     :param int to: Sink population (backwards in time).
     :param tuple time_range: Tuple with (start, end) in years.
     :param int g: Years to a generation.
-    :param str suffix: String to search for trees files."""
+    :param str suffix: String to search for trees files.
+    :param bool nomap: If there is no map."""
     Segment = namedtuple('Segment', 'chr left right orientation time desc')
     pattern = path + "*" + suffix
     files = glob.glob(pattern)
 
-    if pos_key is None: 
-        key = pd.read_csv(path + "../merged.map", header = None, sep = '\t')
+    if not nomap:
+        if pos_key is None: 
+            key = pd.read_csv(path + "../merged.map", header = None, sep = '\t')
+        else:
+            key = pd.read_csv(pos_key, header = None, sep = '\t')
     else:
-        key = pd.read_csv(pos_key, header = None, sep = '\t')
- 
+        key = pd.DataFrame({0: ['file', 'file2'], 1: [1, np.Inf]})
+
+    #pdb.set_trace() 
     #subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time, seg.descendants) for file in files for seg in trees2tskit(file, hap=hap,d = d).migrationlist if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]
     #segments = [segment for subsegments in segments for segment in subsegments]
     #subset = [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time)  for seg in segments if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]]

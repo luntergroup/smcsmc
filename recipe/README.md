@@ -19,3 +19,11 @@ conda install -c ${CONDA_PREFIX}/conda-bld smcsmc
 ```
 
 This will install both the python package and `smcsmc`/`scrm` binaries. 
+
+## Building for other Python versions
+
+We need to build several versions of this package for various python installations. To do so, just pass the python version as an argument to the build command.
+
+```sh
+conda build . --python=3.6.8
+```

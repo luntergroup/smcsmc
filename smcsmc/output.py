@@ -62,10 +62,20 @@ class Output:
         self.current = current
 
         self.current.sort_values(by = ['Epoch'], ascending = False, inplace=True)
+
+        #pdb.set_trace()
+        current = current.sort_values(by = ['Start'], ascending = False)
+        rates = sum([[c[1]['Rate']] * round(c[1]['End']-c[1]['Start']) for c in current.iterrows()], [])
+
+        for rate in rates: 
+            prop += rate*(1-prop)
+
+        return prop
+
  
-        for mig in self.current.iterrows():
-            gen = mig[1]['End'] - mig[1]['Start']
-            prop = prop + mig[1]['Rate'] * gen
+        #for mig in self.current.iterrows():
+        #    gen = mig[1]['End'] - mig[1]['Start']
+        #    prop = prop + mig[1]['Rate'] * gen
             #pdb.set_trace()
 
-        return(prop)
+        #return(prop)

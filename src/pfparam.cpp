@@ -421,6 +421,8 @@ void PfParam::writeLog(ostream * writeTo){
 
     (*writeTo)<<"scrm model parameters: \n";
     (*writeTo) << setw(17) <<"Extract window =" << setw(10) << this->model.window_length_seq()<< "\n";
+    (*writeTo) << setw(17) <<"Extract window R =" << setw(10) << this->model.window_length_rec()<< "\n";
+
     //(*writeTo) << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
 
     (*writeTo) << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";

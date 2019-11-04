@@ -10,7 +10,7 @@ python:
    - 3.7.3
 
 build:
-  number: 0
+  number: 2
   entry_points:
     - smc2=smcsmc.cli:smcsmc_main
 

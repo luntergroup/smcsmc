@@ -3,6 +3,7 @@ import sys
 import subprocess
 import smcsmc.populationmodels
 import pandas as pd
+import pdb
  
 class Simulation:
     def __init__(self, L, midpoint, duration, proportion, direction = "forward", flatarg = False):
@@ -39,6 +40,10 @@ class Simulation:
         set_times = [0] + set_times
         # Append times for the migration event to make sure we get the whole thing.
 
+        ## Workaround formatting from snakemake
+        d = list(direction)
+        direction = d[0]
+
 
         ## Now dealing with the various scenarios for the more systematic version.
         ## This one is the case of migration from AFRICANS to EURASIANS
@@ -57,19 +62,26 @@ class Simulation:
             migr_yri = self.no_migration
         ## This is an extreme case of the specified pulse in BOTH directions
         elif direction == "bidirectional":
-            migr_ceu = self.no_migration
-            migr_yri = self.no_migration
+            migr_ceu = self.new_migr_yri
+            migr_yri = self.new_migr_yri
         ## This is the case we've been doing so far, with the regular backmigration
         # and a little bit of CEU migration.
         elif direction == "realistic":
             migr_ceu = self.migr_ceu
             migr_yri = self.new_migr_yri
+        else:
+            raise ValueError("Improper Direction Given")
+
+        
+
+
    
 
         self.L = L
         self.midpoint = midpoint
         self.duration = duration
         self.proportion = proportion
+        self.flat = flatarg
       
         self.model = ["scrm {} 1".format(self.samples),
                  "-l 100000 -p 10",  ## do not seed!
@@ -92,10 +104,10 @@ class Simulation:
             # set model parameters for standard (P) model
             unscaled_time_set = g_set / (4*N0)
             ceu_popsize_unscaled = self.ceu(g_eval) / N0
-            yri_popsize_unscaled = self.yri(g_eval) / N0
+            yri_popsize_unscaled = self.yri(g_eval) / N0 
 
-            ceu_migr_unscaled = self.migr_ceu(g_eval) * 4 * N0
-            yri_migr_unscaled = self.new_migr_yri(g_set) * 4 * N0
+            ceu_migr_unscaled = migr_ceu(g_eval) * 4 * N0
+            yri_migr_unscaled = migr_yri(g_eval) * 4 * N0 # Changed from g_set becuase now I am specifically simulating the intervals.
 
             self.model.append("-en {} 1 {}".format(unscaled_time_set, ceu_popsize_unscaled))
             self.model.append("-en {} 2 {}".format(unscaled_time_set, yri_popsize_unscaled))
@@ -188,21 +200,21 @@ class Simulation:
                         and "continuous" migration.
 
         Note that input times here must be in terms of generations."""
-            midpoint = self.midpoint
-            years = self.duration
-            total = self.proportion
+        midpoint = self.midpoint
+        years = self.duration
+        total = self.proportion
 
 
-            start, end = (midpoint - (years / 2)) / 29, (midpoint + (years / 2) ) / 29
-            if flat: 
-                    proportion = 0.00025
-            else:
-                    proportion = total / (years/29) 
+        start, end = (midpoint - (years / 2)) / 29, (midpoint + (years / 2) ) / 29
+        if self.flat: 
+                proportion = 0.00025
+        else:
+                proportion = total / (years/29) 
 
-            # If its before or after the migration return 0
-            if x < start: return 0
-            if x >= end: return 0
-            return proportion
+        # If its before or after the migration return 0
+        if x < start: return 0
+        if x >= end: return 0
+        return proportion
 
     def no_migration(self, x):
         '''Just returns zero'''
