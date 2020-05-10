@@ -32,7 +32,7 @@ Suppose we have the following data, saved into a file named :code:`toy.seg`. You
     1,       708,     T,       F,       2,       1010
 
 
-This gives the state of four haplotypes along the sequence, indicating segment starts and their lengths. If a segment is the last in a block before coordinates reset (i.e. when including multiple chromosomes in a single :code:`seg` file, it is called a genetic break. Genotypes in terms of either major/minor or ancestral/derived are given for each haplotype. Missing data is coded with a period (:code:`.`) whilst unphased variants are given with a forward slash (:code:`/`). 
+This gives the state of four haplotypes along the sequence, indicating segment starts and their lengths. If a segment is the last in a block before coordinates reset (i.e. when including multiple chromosomes in a single :code:`seg` file, it is called a genetic break. Genotypes in terms of either major/minor or ancestral/derived are given for each haplotype. Missing data is coded with a period (:code:`.`) whilst unphased heterozygous variants are encoded as two forward slashes (:code:`/`). 
 
 .. note::
         This data format is similar to the input for `msmc <https://github.com/stschiff/msmc>`_ however, in the second column we require the length from the current segment to the next, rather than the number of called sites from the previous segment to the current one. 
@@ -40,16 +40,16 @@ This gives the state of four haplotypes along the sequence, indicating segment s
 
 Segment files are specified by the :code:`seg` flag, or if more than one are used, by the :code:`segs` flag. Globs are encouraged for readability. In the case of multiple files, genetic breaks are inferred from the beginnings and ends of files. Additionally, we tell :code:`smcsmc` the number of samples we expect with :code:`nsam`, so it knows to check the :code:`seg` file for formatting issues.
 
-Basic Arguements
+Basic Arguments
 ++++++++++++++++++
 
 In addition to the segment file, we need a few more pieces of information to kick off the particle filter.
 
-**Particle Count:** We must specify a particle count (:code:`Np`) or use the default value of 1000. The number of particles refers to the number of individual ARGs which are simulated by :code:`SCRM`, higher numbers means that the model is more likely to converge on a reasonable answer, but increasing the particle count is computationally expensive. We recommend particle counts between 25 and 50 thousand for analysis. However, for exploratory work, smaller particle counts (a good starting point is 10 thousand) can be used to more effectively use computational resources.  In this guide, intended for use on a personal computer, we will use 10 particles.
+**Particle Count:** We must specify a particle count (:code:`Np`) or use the default value of 1000. The number of particles refers to the number of individual ARGs which are simulated by :code:`SCRM`, higher numbers means that the model is more likely to converge on a reasonable answer, but increasing the particle count is computationally expensive. We recommend particle counts between 10000 and 50000 for analysis. However, for exploratory work, smaller particle counts (a good starting point is 10 thousand) can be used to more effectively use computational resources.  In this guide, intended for use on a personal computer, we will use 10 particles.
 
-**Number of Iterations:** We also explictly define the number of expectation maximization iterations that we want to use (:code:`EM`). A good place to start is 15 iterations. :code:`smcsmc` looks for output before starting, so should you be unsatisfied with the convergence after 15 iterations, simply run the exact same program with a higher number of iterations. :code:`smcsmc` will find the output for the iterations already run and simply continue from where it left off. 
+**Number of Iterations:** We also explictly define the number of expectation maximization iterations that we want to use (:code:`EM`). A good place to start is 15 iterations. :code:`smcsmc` looks for output before starting, so should you be unsatisfied with the convergence after 15 iterations, simply run the exact same program with a higher number of iterations. :code:`smcsmc` will find the output for the iterations already run and continue from where it left off. 
 
-**Demographic Parameters:** Several arguements are good to specify, especially when analysing real data as they help with convergence. Here we will use a mutation rate (:code:`mu`) of :code:`1.25e-8` and a recombination rate (:code:`rho`) of :code:`3e-9`. We give an effective population size (:code:`N0`) of 14312, and infer trees back to :code:`4*N0` generations with :code:`tmax`. We set this to 3.5, which is 1.2 Mya with an :code:`N0` of 10000. :code:`smcsmc` infers demographic parameters as discrete over intervals. We specify 31 intervals evenly spaced on the log scale with :code:`P 133 133032 31*1` giving the end times of the first and last epochs in generations, and the pattern for their generation. 
+**Demographic Parameters:** Several arguments are good to specify, especially when analysing real data as they help with convergence. Here we will use a mutation rate (:code:`mu`) of :code:`1.25e-8` and a recombination rate (:code:`rho`) of :code:`3e-9`.  These rates are given in units of events per generation.  We use an effective population size (:code:`N0`) of 10000, and infer trees back to :code:`4*N0` generations with :code:`tmax`, set by default to 3.5 (corresponding to 140k generations, or 1.2 Mya assuming a generation time of 25 years). :code:`smcsmc` infers demographic parameters as discrete over intervals. We specify 31 intervals evenly spaced on the log scale with :code:`P 133 133032 31*1` giving the end times of the first and last epochs in generations, and the pattern for their generation. 
 
 We also give the path to the output folder with :code:`o`.
 
@@ -66,7 +66,7 @@ Running :code:`smcsmc`
                 conda create --name smcsmc_tutorial
                 conda activate smcsmc_tutorial
 
-Once :code:`smcsmc` is installed, we can format the arguements detailed above into a dictionary. 
+Once :code:`smcsmc` is installed, we can format the arguments detailed above into a dictionary. 
 
 .. code-block:: python
 
@@ -91,7 +91,7 @@ Once :code:`smcsmc` is installed, we can format the arguements detailed above in
       'o':                    'smcsmc_output'
    }
 
-We directly use this dictionary with the :code:`run_smcsmc` command, which takes as its only arguement a dictionary of arguements.
+We directly use this dictionary with the :code:`run_smcsmc` command, which takes as its only argument a dictionary of arguments.
 
 
 .. code-block:: python
@@ -113,14 +113,14 @@ If your :code:`smcsmc` has run correctly, the resulting output directory will lo
                 emiterN/
                         chunkN.out
                         chunkN.stdout
-                        chunk.stderr
+                        chunkN.stderr
                         chunkfinal.out
                 merged.seg
                 merged.map
                 result.log
                 result.out
 
-If you are following this tutorial and are only using a single input :code:`seg` file, you will not see :code:`merged.seg` or :code:`merged.map` as there was no need to generate them. The output for each chunk is given, along with stdout and sterr, and results are aggregated over all chunks each epoch into :code:`chunkfinal.out`. The final epoch will be post processed into :code:`result.out`. Output and debugging information along with useful information to help interpret the results of your model are given in :code:`result.log`.
+If you are following this tutorial and are only using a single input :code:`seg` file, you will not see :code:`merged.seg` or :code:`merged.map` as there was no need to generate them. The output for each chunk is given, along with stdout and sterr, and results are aggregated over all chunks in :code:`chunkfinal.out`. The final epoch will be post processed into :code:`result.out`. Output and debugging information along with useful information to help interpret the results of your model are given in :code:`result.log`.
 
 An example of a `results.out` file is given here:
 
@@ -143,33 +143,30 @@ An example of a `results.out` file is given here:
         15      2       166.2      207.68   Migr      1      0      139267.34      6.0189739  4.3218847e-05              0      1.1565     -1
 
 
-
-The full interpretation of the output is somewhat involved, and we recommend referring to the supporting publication for a complete explaination of all relevant quantities. However, in brief: 
+The values in the columns have the following meaning:
 
 * **Iter**: The EM iteration to which this file refers. In the case of aggregated files (:code:`chunkfinal.out`, :code:`result.out`), multiple iterations are represented in the same file, and it is often useful either to graph each iteration seperately to show convergence, or to select the last iteration to show the final inference.
-* **Epoch**: The discrete piece of time in which rates are assumed to be constant. The pattern which epochs follow is set by the :code:`P` flag. 
-* **Start**: The beginning of the epoch, in generations. 
-* **End**: The end of the poch, in generations.
-* **Type**: Either :code:`Coal` (coalescence), :code:`Delay`, :code:`LogL` (Log likelihood), or :code:`Migr`. The important lines for interpreting output are:
+* **Epoch**: The time interval this row refers to. Rates are assumed to be constant in each epoch.  Epoch boundaries are set by the :code:`P` flag. 
+* **Start**: The beginning of the epoch, in generations (backwards in time). 
+* **End**: The end of the epoch, in generations.
+* **Type**: Either :code:`Coal` (coalescence), :code:`Migr` (migration), :code:`Delay` or :code:`LogL`. The important lines are:
 
-  * :code:`Coal`: This line refers to coalescent events. For :code:`Coal` events, the :code:`From` refers to the population of interest while the :code:`To` is meaningless. An estimate of :code:`Ne` is shown only in :code:`Coal` lines.
-  * :code:`Migr`: This line refers to migration events. :code:`From` and :code:`To` refer to the source and the sink of migration, backwards in time. 
+  * :code:`Coal`: This line refers to coalescent events. The :code:`From` field refers to the population deme in which coalescences occur; :code:`To` has no meaning.  For convenience the :code:`Ne` columns provides an estimate of the effective population size, equal to 1 over twice the estimated coalescent rate.
+  * :code:`Migr`: This line refers to migration events. :code:`From` and :code:`To` refer to the source and the sink of migration, **backwards** in time. 
 
-* **Opp**: The possible time where events of this can may happen in this sequence. For recombination inference, this refers to the amount of time multiplied by the amount of sequence. 
+* **Opp**: The opportunity for events of this type to have happened: the total time (in generations), or for recombinations, the amount of time times number of nucleotides. 
 * **Count**: The number of events of this type inferred in this epoch. 
-* **Rate**: Either the coalescent, recombination, or migration rate. This is equal to the :code:`Count` divided by :code:`Opp`. Coalescent rates are number of coalescentn events per generation. Migration rates represent proportion migration from the source (:code:`From`) to the sink (:code:`To`) **backwards in time**.
+* **Rate**: Either the coalescent, recombination, or migration rate. This is equal to the :code:`Count` divided by :code:`Opp`. Coalescent rates are number of coalescennt events per generation. Migration rates represent proportion migration from the source (:code:`From`) to the sink (:code:`To`) **backwards in time**.
 
 .. note::
 
         :code:`SCRM` reports migration rates **forwards in time** while :code:`smcsmc` reports it **backwards in time**.
 
 * **Ne**: The estimated population size in this epoch. Defined to be :code:`Opp` divded by :code:`2*Count`.
-* **ESS**: Effective sample size, which is an indicator of the diversity of our particles. This is used when deciding to resample, or when to spawn new particles.
-* **Clump**: This is defined in aggregated output, and not defined in intermediary files.
+* **ESS**: Effective sample size, which is an indicator of particle diversity.
+* **Clump**: This is defined in intermediary files, not in aggregated output.
 
-Important diagnostic information about the reliability of inferred rates is contained in the results file. For instance, it is often useful to look at the amount of events inferred for each epoch. In general, it should monotonically increase, though this will depend on the definition of your epochs.  Can you spot the oddity above?
-
-Very low counts in a particular epoch can be due to any number of reasons, but a good first step is to increase the number of particles. 
+Very low counts in a particular epoch may indicate a truly low or zero rate, but may also be a result of undersampling.  Try increasing the number of particles, or increasing the epoch sizes.
 
 
 Visualising Output
@@ -192,7 +189,7 @@ An example plot is shown below, note that we have additionally specified a model
 .. figure:: ../img/rainbow.png
    :align: center
 
-   Estimated population size over 15 EM iterations each plotted in a different colour. The model appears to have well converged to a solution. 
+   Estimated population size over 15 EM iterations, where each iteration is plotted in a different colour.
 
 Plotting migration and effective population size can be done similarly with :code:`smcsmc.plot_migration` and `smcsmc.plot_ne`. See the API documentation for more information. 
 
