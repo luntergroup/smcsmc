@@ -14,14 +14,11 @@ Installation
 
 We *highly* recommend installing SMCSMC from :code:`conda`, as it comes packaged with all necessary dependencies. A seperate guide for manual compilation may be found `in the developer reference <https::github.com>`_\ .  `See here <https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html>`_ for a helpful guide to installing and using :code:`conda` to manage programs. 
 
-First add both :code:`conda-forge` and :code:`terhorst` to your channel lists (if they are not there already), then install :code:`smcsmc`. 
+To install from :code:`conda` you must add both the :code:`luntergroup` and :code:`conda-forge` channels. The first contains :code:`smcsmc`, while the second is required for a more recent version of Boost.
 
 .. code-block:: bash
 
-   conda config --add channels conda-forge
-   conda config --add channels terhorst
-
-   conda install -c luntergroup smcsmc
+   conda install -c conda-forge -c luntergroup smcsmc
 
 
 Basic Usage
