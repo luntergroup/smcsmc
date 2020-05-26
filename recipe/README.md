@@ -4,26 +4,20 @@ Use this recipe for locally creating your own `conda` package. It only works on 
 
 ## Usage
 
-To build your package, you need quite a few dependencies specific to building conda packages. I've placed my (working) build environment in `build.yml`, which you can import to your own system.  
-
-Once this has been succesful, on Linux you can build the package with: 
+You can build the package with 
 
 ```sh
 conda build .
 ```
 
-To install:
+To install from the local build files:
 
 ```sh
-conda install -c ${CONDA_PREFIX}/conda-bld smcsmc
+conda install -c conda-forge -c ${CONDA_PREFIX}/conda-bld smcsmc
 ```
 
 This will install both the python package and `smcsmc`/`scrm` binaries. 
 
 ## Building for other Python versions
 
-We need to build several versions of this package for various python installations. To do so, just pass the python version as an argument to the build command.
-
-```sh
-conda build . --python=3.6.8
-```
+Build variants are included in the `conda_build_config.yaml`. The only real constraint on the python versions that we are able to build for is the `boost` package. Note that the version on `conda-forge` is more current than the default channels, so this should be set preferentially on the command line.

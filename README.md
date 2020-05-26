@@ -17,10 +17,10 @@ We have automated this process in a `conda` package, and we highly recommend ins
 > NOTE: **We currently only support `conda` installation on 64 bit Linux** and if you are using a different operating system you *must install manually*. 
 
 ```sh
-conda config --add channels conda-forge
-conda config --add channels terhorst
-conda install -c luntergroup smcsmc
+conda install -c conda-forge -c luntergroup smcsmc
 ```
+
+We must add `conda-forge` as a channel (with the `-c` flag) because the Boost version there is more current than default channels. 
 
 ### Installation from Source
 
