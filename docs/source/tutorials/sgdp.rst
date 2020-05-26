@@ -62,7 +62,7 @@ We are going to follow a very similar procedure as the :ref:`getting_started` gu
                 'smcsmcpath':                   smcsmcpath,
 
                 # Other inference parameters
-                'mu':                           '1.25e-9',
+                'mu':                           '1.25e-8',
                 'N0':                           '14312',
                 'rho':                          '3e-9',
                 'calibrate_lag':                '1.0',
