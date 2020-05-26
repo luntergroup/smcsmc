@@ -1,25 +1,23 @@
 # Locally building via `conda-build`
 
-Use this recipe for locally creating your own `conda` package. 
-
-## Operating Systems:
-
-- **Linux**: Tested, verified.
-- **MacOSX**: Work in progress, but follow [this](https://docs.conda.io/projects/conda-build/en/latest/resources/compiler-tools.html#macos-sdk) guide for installing the SDK which is *not* packaged with `conda-build`. 
-- **Windows**: Currently no support, nor is it planned.
+Use this recipe for locally creating your own `conda` package. It only works on Linux right now.
 
 ## Usage
 
-To build your package (after cloning the repository and installing `conda-build`)
+You can build the package with 
 
 ```sh
-conda build . -c terhorst
+conda build .
 ```
 
-To install:
+To install from the local build files:
 
 ```sh
-conda install -c ${CONDA_PREFIX}/conda-bld smcsmc
+conda install -c conda-forge -c ${CONDA_PREFIX}/conda-bld smcsmc
 ```
 
 This will install both the python package and `smcsmc`/`scrm` binaries. 
+
+## Building for other Python versions
+
+Build variants are included in the `conda_build_config.yaml`. The only real constraint on the python versions that we are able to build for is the `boost` package. Note that the version on `conda-forge` is more current than the default channels, so this should be set preferentially on the command line.

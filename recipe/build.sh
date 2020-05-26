@@ -1,3 +1,4 @@
+#$PYTHON -m pip install --ignore-installed --verbose .
 $PYTHON setup.py install
 rm -rf build
 mkdir -p build 

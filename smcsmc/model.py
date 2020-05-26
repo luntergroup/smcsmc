@@ -3,6 +3,8 @@ from __future__ import print_function
 import sys
 import os
 import logging
+import subprocess
+import stat
 import gzip
 import subprocess
 import time
@@ -31,9 +33,6 @@ else:
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-#
 # Todo: recomb.gz is emitted from position 1 rather than startpos; is it expected to start from 1?
 # If so, leave for now?
 #

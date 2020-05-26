@@ -5,7 +5,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import msprime
+#import msprime
 
 try:
     import stdpopsim
@@ -171,6 +171,7 @@ def plot_rainbow(input, output, g = 30, model = None, steps = None, pop_id = 1):
             sys.exit(1)
 
     if model is not None:
+        import msprime # needs to be installed.
         ddb = msprime.DemographyDebugger(**model.asdict())
         if steps is None:
             end_time = ddb.epochs[-2].end_time + 10000

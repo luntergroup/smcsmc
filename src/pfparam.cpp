@@ -421,6 +421,8 @@ void PfParam::writeLog(ostream * writeTo){
 
     (*writeTo)<<"scrm model parameters: \n";
     (*writeTo) << setw(17) <<"Extract window =" << setw(10) << this->model.window_length_seq()<< "\n";
+    (*writeTo) << setw(17) <<"Extract window R =" << setw(10) << this->model.window_length_rec()<< "\n";
+
     //(*writeTo) << setw(17) <<   "Random seed =" << setw(10) << this->SCRMparam->random_seed()    << "\n";
 
     (*writeTo) << setw(17) <<   "Sample size =" << setw(10) << this->model.sample_size()        << "\n";
@@ -559,7 +561,7 @@ void PfParam::helpOption(){
     cout << setw(15)<<"-bias_heights"  << setw(8) << "FLT(s)" << "  --  " << "Time boundaries (in generations) between time sections to focus sampling" << endl;
     cout << setw(15)<<"-bias_strengths"<< setw(8) << "FLT(s)" << "  --  " << "Relative sampling focus in time sections; should have one more value than bias_heights" << endl;
     //cout << setw(15)<<"-p"             << setw(8) << "STR" << "  --  " << "Pattern of time segments [ \"3*1+2*3+4\" ]" <<endl;
-};
+}
 
 
 void PfParam::helpExample(){
@@ -569,14 +571,14 @@ void PfParam::helpExample(){
     cout << "./smcsmc -Np 5 -t 0.002 -r 400 -npop 20000 -seg eg_seg.seg" << endl;
     cout << "./smcsmc -Np 6 -t 0.0002 -r 30 -npop 10000 -seed 1314 -seg eg_seg.seg" << endl;
     cout << "./smcsmc -Np 7 -t 0.002 -log -r 400 -seg eg_seg.seg " << endl;
-};
+}
 
 
 void PfParam::printHelp(){
     cout << "smcsmc --  Sha (Joe) Zhu, Donna Henderson and Gerton Lunter -- Version " << VERSION << endl;
     this->helpOption();
     this->helpExample();
-};
+}
 
 
 void PfParam::printVersion(std::ostream *output){

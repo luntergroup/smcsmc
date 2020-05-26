@@ -610,7 +610,7 @@ void CountModel::record_local_recomb_events( double x_start, double x_end, doubl
         local_recomb_counts[ sample_size_ ][ index ] += weight * event_time;
         local_recomb_counts[ sample_size_ + 1 ][ index ] += weight * log(event_time + 1.0);  // for safety; time is in generations
     }
-};
+}
 
 
 void CountModel::dump_local_recomb_logs( ostream& stream, double locus_length, int iteration, double start_position ) {

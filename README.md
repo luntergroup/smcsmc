@@ -12,17 +12,18 @@ This repository contains two components, and both must be installed to properly 
 
 ### Recommended Installation via `conda`
 
+> NOTE: We currently only support `conda` installation on **64 bit Linux**.  If you are using a different operating system you must install manually -- see below. 
+
 We have automated this process in a `conda` package, and we highly recommend installing it this way.
 
 ```sh
-conda config --add channels conda-forge
-conda config --add channels terhorst
-conda install -c luntergroup smcsmc
+conda install -c conda-forge -c luntergroup smcsmc
 ```
 
-> NOTE: We currently only support `conda` installation on **64 bit Linux**.  If you are using a different operating system you must install manually -- see below. 
 
-### Manual installation
+We must add `conda-forge` as a channel (with the `-c` flag) because the Boost version there is more current than default channels. 
+
+### Installation from Source
 
 Alternatively, a combination of `cmake` and `pip` can be used to install the python and core components:
 
