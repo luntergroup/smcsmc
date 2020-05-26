@@ -62,7 +62,7 @@ string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}"
                               "-DCOMPILEDATE=\\\"${COMPILEDATE}\\\" "
                               "-DVERSION=\\\"${VERSION}\\\" ")
 
-find_package(Boost 1.67.0 COMPONENTS iostreams regex)
+find_package(Boost COMPONENTS iostreams regex)
 find_package(ZLIB)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CONDA_PREFIX}/include)

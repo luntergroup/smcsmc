@@ -344,7 +344,7 @@ def convert_position ( pos, map ) :
         return (new_pos, chr)
 
 
-def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", pos_key = None, d=False, nomap = False):
+def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", pos_key = None, d=False, nomap = False, print_summary = False):
     """
     Find segments which have migrated from one population to another within a specified time range.
 
@@ -355,7 +355,7 @@ def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", 
     :param int g: Years to a generation.
     :param str suffix: String to search for trees files.
     :param bool nomap: If there is no map."""
-    Segment = namedtuple('Segment', 'chr left right orientation time desc')
+    Segment = namedtuple('Segment', 'chr left right orientation')
     pattern = path + "*" + suffix
     files = glob.glob(pattern)
 
@@ -382,17 +382,18 @@ def find_segments(path, frm, to, time_range, hap, g = 29, suffix = ".trees.gz", 
     for file in tqdm(files):
         for seg in trees2tskit(file, hap = hap, d = d).migrationlist:
             if seg.source == frm and seg.dest == to and seg.time > time_range[0] and seg.time < time_range[1]:
-                subset = subset + [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+', seg.time, seg.descendants) ]
+                subset = subset + [Segment(convert_position(seg.left, key)[1],convert_position(seg.left, key)[0], convert_position(seg.right, key)[0], '+') ]
         
 
 
     df = pd.DataFrame(subset)
 
-    print("Summary:")
-    print("\tMean length: " + str(np.mean(df['right'] - df['left'])))
-    print("\tTotal: " + str(np.sum(df['right']-df['left'])/3e9))
-    print("\tN: " + str(len(df)))
-    print("\tTime: " + str(1/(1e-8*np.mean(df['right'] - df['left']))))
+    if print_summary:
+        print("Summary:")
+        print("\tMean length: " + str(np.mean(df['right'] - df['left'])))
+        print("\tTotal: " + str(np.sum(df['right']-df['left'])/3e9))
+        print("\tN: " + str(len(df)))
+        print("\tTime: " + str(1/(1e-8*np.mean(df['right'] - df['left']))))
 
     return(df)
 

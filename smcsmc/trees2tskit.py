@@ -371,9 +371,9 @@ def trees2tskit(infile, hap = 2, suffix = '.trees.gz', write_all = False, d = Fa
     #print("Total: " + str(r_count))
     r_count = 0
 
- 
-    with open('back_coals.txt', 'a') as f:
-        pd.DataFrame(back_coals, index = [0]).to_csv(f, header = False, index = False)
+
+    #with open('back_coals.txt', 'a') as f:
+    #    pd.DataFrame(back_coals, index = [0]).to_csv(f, header = False, index = False)
  
     back_coals = {'nFC': 0, 'nBC': 0,'BC': 0, 'FC': 1, 'current': False, 'time': 0, 'rtime':0, 'descendants':0}
 

@@ -1,13 +1,9 @@
 package:
   name: smcsmc
-  version: 1.0.2
+  version: 1.0.2b
 
 source:
   path: ..
-
-python:
-   - 3.6.8
-   - 3.7.3
 
 build:
   number: 2
@@ -18,37 +14,44 @@ requirements:
   build:
     - {{ compiler('cxx') }}
     - gperftools 
+    - python {{ python }}
     - cmake
     - boost
     - zlib
-    - msprime
-    - tskit
-    - tqdm 
+    - tqdm
 
   host:
-    - python
-    - msprime
+    - python {{ python }}
     - numpy
     - pandas
+    - tqdm
+    - msprime
 
   run:
     - gperftools
     - numpy
     - pandas
-    - msprime
-    - boost 
-    - python
     - boost
+    - python
     - zlib 
     - matplotlib
     - tqdm
+    - msprime
     - tskit
 
 test:
   imports:
     - smcsmc
+  commands:
+    - smc2 -h
+    - smcsmc -h
+    - scrm -h
 
 about:
   home: https://github.com/luntergroup/smcsmc
   doc_url: https://smcsmc.readthedocs.io
   summary: 'A particle filter for demographic inference.'
+
+extra:
+  recipe-maintainers:
+    - Chris1221

@@ -6,7 +6,7 @@ import pandas as pd
 import pdb
  
 class Simulation:
-    def __init__(self, L, midpoint, duration, proportion, direction = "forward", flatarg = False):
+    def __init__(self, L, haps, midpoint, duration, proportion, direction = "forward", flatarg = False):
         '''Direction can be either backward (Eurasian to African), forward (African to Eurasian), 
         none (No migration, regardless of other arguments, or bidirectional (equal magnitude in both
         directions), or realistic (with a backmigration of the given magnitude but also a little bit
@@ -22,7 +22,7 @@ class Simulation:
         g_split = 200000/29
         epochs = 27
         N0 = 14312
-        self.samples = 4
+        self.samples = 8
         eps = 0.99  # make sure we set the new pop size / migration rate just before the change time
         mu = 1.25e-8
         rho = 3e-9
@@ -41,8 +41,9 @@ class Simulation:
         # Append times for the migration event to make sure we get the whole thing.
 
         ## Workaround formatting from snakemake
-        d = list(direction)
-        direction = d[0]
+        if type(direction) is set:
+            d = list(direction)
+            direction = d[0]
 
 
         ## Now dealing with the various scenarios for the more systematic version.
@@ -71,11 +72,6 @@ class Simulation:
             migr_yri = self.new_migr_yri
         else:
             raise ValueError("Improper Direction Given")
-
-        
-
-
-   
 
         self.L = L
         self.midpoint = midpoint
@@ -215,6 +211,9 @@ class Simulation:
         if x < start: return 0
         if x >= end: return 0
         return proportion
+
+    def half_new_yri(self, x):
+        return (self.new_migr_yri(x) * 0.5)
 
     def no_migration(self, x):
         '''Just returns zero'''
