@@ -25,6 +25,10 @@
 #include "pfparam.hpp"
 #include "pattern.hpp"
 #include <ostream>
+#include <iostream>
+#include <chrono>
+#include <ctime>
+
 PfParam::PfParam(){
     this->init();  // Initialize pfARG program parameters
 }
@@ -585,4 +589,14 @@ void PfParam::printVersion(std::ostream *output){
     (*output) << "Program was compiled on: " << this->compileTime << endl;
     (*output) << "smcsmc version: " << this->smcsmcVersion << endl;
     (*output) << "scrm version:   " << this->scrmVersion   << endl;
+}
+
+void PfParam::startTimer(){
+    start = std::chrono::system_clock::now();	
+}
+
+double PfParam::stopAndPrintTimer(){
+    end = std::chrono::system_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - this->start); 
+    return (double) duration.count();
 }

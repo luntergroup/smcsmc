@@ -28,6 +28,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <chrono>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -308,6 +309,12 @@ class PfParam{
     size_t EMcounter() const { return EMcounter_; }
     void setModelRates();
 
+    //
+    // Timer
+    //
+    void startTimer();
+    double stopAndPrintTimer();
+
   private:
 
     //
@@ -419,6 +426,12 @@ class PfParam{
     string smcsmcVersion;
     string scrmVersion;
     string compileTime;
+
+    // ------------------------------------------------------------------
+    // Timer
+    // ------------------------------------------------------------------
+    std::chrono::time_point<std::chrono::system_clock> start;
+    std::chrono::time_point<std::chrono::system_clock> end;
 
     // Help related
     bool help_;

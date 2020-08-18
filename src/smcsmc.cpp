@@ -54,8 +54,9 @@ int main(int argc, char *argv[]){
 #endif
     
     try {
-        /*! Extract pfARG parameters */
+        /*! Extract pfARG parameters and start timer */
         PfParam pfARG_para;
+	pfARG_para.startTimer();
         (void)pfARG_para.parse( argc, argv );
 
         if (pfARG_para.version()){
@@ -84,6 +85,8 @@ int main(int argc, char *argv[]){
                         print_update_count);
             pfARG_para.increaseEMcounter();
             clog << "End of EM step " << i << endl;
+	    /*! Print EM step timer */
+	    clog << "Elapsed time: " << setprecision(3) << pfARG_para.stopAndPrintTimer() << endl;
         }
 
         int exit_success = pfARG_para.log( );
