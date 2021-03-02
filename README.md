@@ -64,7 +64,7 @@ pip install .
 
 If you use `smcsmc` in your work, please cite the following articles:
 
-1. Henderson, D., Zhu, S. (Joe), & Lunter, G. (2018). Demographic inference using particle filters for continuous Markov jump processes. BioRxiv, 382218. https://doi.org/10.1101/382218
+1. Henderson D, Zhu S, Cole CB, Lunter G (2021) Demographic inference from multiple whole genomes using a particle filter for continuous Markov jump processes. PLOS ONE 16(3): e0247647. https://doi.org/10.1371/journal.pone.0247647
 
 2. Staab, P. R., Zhu, S., Metzler, D., & Lunter, G. (2015). scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics, 31(10), 1680–1682. https://doi.org/10.1093/bioinformatics/btu861
 
