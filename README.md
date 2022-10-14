@@ -65,7 +65,7 @@ pip install .
 You can use `smcsmc` through Docker, either by creating your own image or by using a pre-made one and mounting in your data.  The docker image comes with both the python and C++ code pre-installed and ready to use. 
 
 ```sh
-docker run chris1221/smcsmc 
+docker run chris1221/smcsmc:latest
 ```
 
 ## Citation

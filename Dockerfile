@@ -27,5 +27,4 @@ RUN python3 -m pip install /app/smcsmc
 RUN ln -s /app/smcsmc/smc2 /usr/local/bin/smc2; \
     chmod u+x /usr/local/bin/smc2
 
-#ENTRYPOINT ["/app/smcsmc/smc2 -h"]
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT smc2 --help
