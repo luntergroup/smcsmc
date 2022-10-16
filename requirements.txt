@@ -5,3 +5,5 @@ matplotlib
 Sphinx
 numpydoc
 sphinx_rtd_theme
+pytest
+tskit
