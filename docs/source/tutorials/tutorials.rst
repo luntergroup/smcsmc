@@ -12,3 +12,4 @@ Before embarking on any of these tutorials, it is *highly* recommended that you 
     sgdp
     scrm
     msprime
+    docker
