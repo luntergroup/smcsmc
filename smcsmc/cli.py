@@ -8,6 +8,9 @@ def smcsmc_main():
     This is create at build time by conda build, and otherwise
     not used. The process is identical to smcsmc.run_smcsmc.
     """
+
+    # Check if dependencies are available
+
     run = smcsmc.Smcsmc(sys.argv[1:])
     run.print_help_and_exit()
     run.load_option_file()

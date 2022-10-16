@@ -1,5 +1,4 @@
 import smcsmc
-import pdb
 import filecmp
 
 def test_vcf_to_seg():

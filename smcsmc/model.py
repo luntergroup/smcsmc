@@ -4,13 +4,11 @@ import sys
 import os
 import logging
 import subprocess
-import stat
 import gzip
 import subprocess
 import time
 import math
 from collections import defaultdict
-import pdb
 import smcsmc.populationmodels
 import smcsmc.processrecombination
 import smcsmc.execute
@@ -21,7 +19,6 @@ except AttributeError:
     # Python 3
     def listitems(d):
         return list(d.items())
-
 
 else:
     # Python 2
@@ -297,13 +294,37 @@ class Smcsmc:
             "SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - demographic inference with particle filters"
         )
         print("       Chris Cole, Donna Henderson, Sha (Joe) Zhu and Gerton Lunter\n")
+
         for idx, clas in enumerate(self.classes):
             print("\n" + clas)
             for _, option, args, hlp in [opt for opt in self.options if opt[0] == idx]:
                 print(" {:24} {}".format(option + " " + args, hlp))
         print("\n([*], required; [+], optional but one of group is required)")
 
+        self.check_dependencies()
+
         sys.exit(0)
+
+    def smcsmc_available(self) -> bool:
+        """Check if SMCSMC is availble."""
+        command = self.smcsmcpath + " -h"
+        return_code = subprocess.call(
+            command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        return not return_code
+
+    def check_dependencies(self) -> bool:
+        """Check if C++ code has been built.
+
+        Raises:
+            EnvironmentError: If C++ code has not been built.
+        """
+        if self.smcsmc_available():
+            return True
+        else:
+            raise EnvironmentError(
+                "SMCSMC is not available, have you followed the instructions to build it and add it to your PATH?"
+            )
 
     def load_option_file(self):
         for idx, opt in enumerate(self.opts):

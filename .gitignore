@@ -68,6 +68,8 @@ tests/tmplagCount
 tests/tmplagHIST
 tests/tmplagNe
 
+test/out
+
 # Coverage
 testCoverage/
 *gcda
@@ -81,3 +83,8 @@ performance/experiments/experimentsdb
 _build
 _cache
 _static
+
+# vscode
+
+.vscode
+smcsmc.egg-info

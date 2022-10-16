@@ -8,6 +8,8 @@ import glob
 from smcsmc.trees2tskit import trees2tskit
 from collections import namedtuple
 from tqdm import tqdm
+import subprocess
+from typing import Tuple
 
 
 def prune_tree_sequence(tree_sequence_path, num_samples):
@@ -422,10 +424,3 @@ def bed_to_marey(df, out):
     right = pd.DataFrame({"map": "Chromosome " + df["chr"], "phys": df["right"]})
     all = pd.concat([left, right])
     all.to_csv(out, sep=" ", index=False)
-
-
-def smcsmc_available():
-    try:
-        return True
-    except ImportError:
-        return False
