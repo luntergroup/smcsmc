@@ -70,10 +70,7 @@ smcsmc.vcf_to_seg(
 ```
 
 :::{note}
-We can send shell commands directly to the image without starting it first because the default `entrypoint` is set to be `/bin/bash`; if your image has a non-standard `entrypoint` you must override the entrypoint to be `/bin/bash` and then either 
-
-1. Start the container with an alterate `entrypoint` such as `--entrypoint /bin/bash` and invoke the `python /app/mount_directory/convert_vcf.py` command manually or
-2. Override the `entrypoint` 
+We can send shell commands directly to the image without starting it first because the default `entrypoint` is set to be `/bin/bash`; if your image has a non-standard `entrypoint` you must override the entrypoint to be `/bin/bash`. 
 :::
 
 Now run the docker container with the command to invoke the Python script, mounting the `mount_directory` to `/app/mount_directory`
