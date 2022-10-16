@@ -6,28 +6,39 @@ import os
 import stat
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # global configuration settings; None to not submit jobs to cluster
 qsub_config = None
 
 
-def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_submit=False, submit_local=False):
+def check_call(
+    cmd,
+    shell=True,
+    outputdir=None,
+    name=None,
+    use_popen=False,
+    use_submit=False,
+    submit_local=False,
+):
 
     if submit_local or (qsub_config is None):
         return subprocess.check_call(cmd, shell=True)
 
-    if outputdir is None: outputdir = "./"
-    if name is None: name = cmd.split(' ')[0]
-    name = name.split('/')[-1]
+    if outputdir is None:
+        outputdir = "./"
+    if name is None:
+        name = cmd.split(" ")[0]
+    name = name.split("/")[-1]
 
     # create output directory if necessary
-    dirname = os.path.abspath( outputdir )
-    if not os.path.isdir( dirname ):
+    dirname = os.path.abspath(outputdir)
+    if not os.path.isdir(dirname):
         try:
-            os.makedirs( dirname )
+            os.makedirs(dirname)
         except:
-            raise ValueError("Cannot find or create directory '{}'".format( dirname ))
+            raise ValueError("Cannot find or create directory '{}'".format(dirname))
 
     # execute using qrsh
     initial_cmd = cmd
@@ -35,19 +46,19 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
         qscript = "qsub -b y"
         stdoutname = "/dev/null"
         stderrname = "/dev/null"
-        cmdelts = cmd.split(' ')
+        cmdelts = cmd.split(" ")
         i = 0
         while i < len(cmdelts):
             elt = cmdelts[i]
             if elt.startswith(">"):
-                stdoutname = elt.lstrip('>')
+                stdoutname = elt.lstrip(">")
                 cmdelts[i] = ""
                 if stdoutname == "":
                     i += 1
                     stdoutname = cmdelts[i]
                     cmdelts[i] = ""
             if elt.startswith("2>"):
-                stderrname = elt[1:].lstrip('>')
+                stderrname = elt[1:].lstrip(">")
                 cmdelts[i] = ""
                 if stderrname == "":
                     i += 1
@@ -59,18 +70,22 @@ def check_call(cmd, shell=True, outputdir=None, name=None, use_popen=False, use_
         stdoutname = "{}/qrsh.{}.stdout".format(dirname, hex(hash(cmd)))
         stderrname = "{}/qrsh.{}.stderr".format(dirname, hex(hash(cmd)))
         qscript = "qrsh"
-    command = "{} -j y -cwd -now n -V -N {} -o {} -e {} {} {}".format(qscript, name, stdoutname, stderrname, qsub_config, cmd)
+    command = "{} -j y -cwd -now n -V -N {} -o {} -e {} {} {}".format(
+        qscript, name, stdoutname, stderrname, qsub_config, cmd
+    )
     logger.info("command={}".format(command))
     if use_popen:
-        popen = subprocess.Popen( command, shell=shell )
+        popen = subprocess.Popen(command, shell=shell)
         return popen
 
-    p = subprocess.Popen( command, shell=shell, stderr=subprocess.STDOUT, stdout=subprocess.PIPE )
+    p = subprocess.Popen(
+        command, shell=shell, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
+    )
     output = str(p.communicate()[0])
     exitcode = p.returncode
     logger.info(output)
 
-    #exitcode = subprocess.check_call( command, shell=shell )
+    # exitcode = subprocess.check_call( command, shell=shell )
 
     # clean up if successful
     if exitcode == 0 and not use_submit:

@@ -1,6 +1,7 @@
 import sys
 import smcsmc
 
+
 def smcsmc_main():
     """
     Creates a command line access point to the smcsmc internals.
@@ -17,6 +18,6 @@ def smcsmc_main():
     run.define_chunks()
     run.validate_parameters()
     run.set_pattern()
-    for em_iter in range(0, run.emiters+1):
+    for em_iter in range(0, run.emiters + 1):
         run.do_iteration(em_iter)
     run.merge_outfiles()

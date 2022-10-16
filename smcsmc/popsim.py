@@ -1,10 +1,10 @@
-'''
+"""
 This submodule interacts with the PopSim consortium's analysis respository
 
 found here: https://github.com/popgensims/analysis
 
 These functions are not explicitly exported for that reason.
-'''
+"""
 
 
 import tskit
@@ -30,5 +30,4 @@ def convert_smcsmc_output(results_file, output, generation_time, iter):
                     size = float(result[10])
                     out_fp.write(f"pop0,{time_years},{size},path,0\n")
     out_fp.close
-    return(None)
-
+    return None
