@@ -11,6 +11,7 @@ def smcsmc_main():
 
     run = smcsmc.Smcsmc(sys.argv[1:])
     run.print_help_and_exit()
+    run.check_dependencies()
     run.load_option_file()
     run.parse_opts()
     run.validate()

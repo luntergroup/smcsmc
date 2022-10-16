@@ -282,7 +282,8 @@ class Smcsmc:
         self.opts = opts
 
     def print_help_and_exit(self):
-        if len(self.opts) == 1 and self.opts[0] == "-v":
+        if len(self.opts) == 1 and self.opts[0].lower() in ["-v", "--version"]:
+            self.check_dependencies()
             subprocess.check_call(" ".join([self.smcsmcpath] + self.opts), shell=True)
             sys.exit(0)
         if (
@@ -290,6 +291,7 @@ class Smcsmc:
             and len(self.opts) > 0
         ):
             return
+
         print(
             "SMC2 - Sequential Monte Carlo Sequentially Markovian Coalescent - demographic inference with particle filters"
         )
@@ -300,8 +302,6 @@ class Smcsmc:
             for _, option, args, hlp in [opt for opt in self.options if opt[0] == idx]:
                 print(" {:24} {}".format(option + " " + args, hlp))
         print("\n([*], required; [+], optional but one of group is required)")
-
-        self.check_dependencies()
 
         sys.exit(0)
 
