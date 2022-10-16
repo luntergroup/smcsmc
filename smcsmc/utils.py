@@ -8,8 +8,6 @@ import glob
 from smcsmc.trees2tskit import trees2tskit
 from collections import namedtuple
 from tqdm import tqdm
-import subprocess
-from typing import Tuple
 
 
 def prune_tree_sequence(tree_sequence_path, num_samples):
