@@ -11,5 +11,5 @@ def test_help():
 def test_version():
     """This should fail right now on CI as we have not installed smcsmc yet."""
     command = "smc2 --version"
-    with raises(CalledProcessError):
-        run(command, shell=True, check=True, capture_output=True)
+    result = run(command, shell=True, check=True, capture_output=True)
+    assert result.returncode == 0
