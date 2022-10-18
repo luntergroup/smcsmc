@@ -8,12 +8,22 @@ branches:
     - master
 
 jobs:
-  build-and-test:
+  build-smcsmc:
+    executor: python/3.7
+    steps:
+      - checkout
+      - run:
+          command: sudo apt-get install -y gcc cmake libboost-all-dev google-perftools build-essential zlib1g-dev
+          name: SMCSMC dependencies
+      - run:
+          command: set -ex; mkdir build; cd build; cmake ..; make; ln -s $PWD/smcsmc /usr/local/bin/smcsmc
+          name: Build SMCSMC
+  build-and-test-python:
     executor: python/default
     steps:
       - checkout
       - run:
-          command: pip install -r requirements.txt
+          command: pip install setuptools_scm; pip install numpy; pip install -r requirements.txt
           name: Install dependencies
       - run:
           command: pip install .
