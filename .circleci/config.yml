@@ -19,10 +19,6 @@ jobs:
           command: set -ex; mkdir build; cd build; cmake ..; make; sudo ln -s $PWD/smcsmc /usr/local/bin/smcsmc
           name: Build SMCSMC
       - run: echo 'export PATH=${PWD}/build:${PATH}' >> $BASH_ENV
-  build-and-test-python:
-    executor: python/default
-    steps:
-      - checkout
       - run:
           command: pip install setuptools_scm; pip install numpy; pip install -r requirements.txt
           name: Install dependencies
@@ -37,4 +33,3 @@ workflows:
   main:
     jobs:
       - build-smcsmc
-      - build-and-test-python
