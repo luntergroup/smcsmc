@@ -282,7 +282,7 @@ class Smcsmc:
         self.opts = opts
 
     def print_help_and_exit(self):
-        if len(self.opts) == 1 and self.opts[0].lower() in ["-v", "--version"]:
+        if any([opt.lower() in ["-v", "--version"] for opt in self.opts]):
             self.check_dependencies()
             subprocess.check_call(" ".join([self.smcsmcpath] + self.opts), shell=True)
             sys.exit(0)
