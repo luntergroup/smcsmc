@@ -16,7 +16,7 @@ jobs:
           command: sudo apt-get update; sudo apt-get install -y gcc cmake libboost-all-dev google-perftools build-essential zlib1g-dev
           name: SMCSMC dependencies
       - run:
-          command: set -ex; mkdir build; cd build; cmake ..; make; ln -s $PWD/smcsmc /usr/local/bin/smcsmc
+          command: set -ex; mkdir build; cd build; cmake ..; make; sudo ln -s $PWD/smcsmc /usr/local/bin/smcsmc
           name: Build SMCSMC
   build-and-test-python:
     executor: python/default
