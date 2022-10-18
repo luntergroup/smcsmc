@@ -35,4 +35,5 @@ jobs:
 workflows:
   main:
     jobs:
-      - build-and-test
+      - build-smcsmc
+      - build-and-test-python
