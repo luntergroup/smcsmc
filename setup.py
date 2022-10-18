@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="smcsmc",
-    version="1.0.2",
+    version="1.1.0",
     description="Demographic Inference using Particle Filters",
     url="https://github.com/luntergroup/smcsmc",
     author="Chris Cole, Donna Henderson, Sha (Joe) Zhu, Gerton Lunter",
