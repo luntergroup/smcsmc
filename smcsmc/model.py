@@ -307,6 +307,8 @@ class Smcsmc:
 
     def smcsmc_available(self) -> bool:
         """Check if SMCSMC is availble."""
+        if "-smcsmcpath" in self.opts:
+            self.smcsmcpath = self.opts[self.opts.index("-smcsmcpath") + 1]
         command = self.smcsmcpath + " -h"
         return_code = subprocess.call(
             command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
