@@ -282,9 +282,9 @@ class Smcsmc:
         self.opts = opts
 
     def print_help_and_exit(self):
-        if len(self.opts) == 1 and self.opts[0].lower() in ["-v", "--version"]:
+        if any([opt.lower() in ["-v", "--version"] for opt in self.opts]):
             self.check_dependencies()
-            subprocess.check_call(" ".join([self.smcsmcpath] + self.opts), shell=True)
+            subprocess.check_call(" ".join([self.smcsmcpath] + ["-v"]), shell=True)
             sys.exit(0)
         if (
             set(self.opts).isdisjoint(set(["-help", "--help", "-h", "-?"]))
@@ -307,6 +307,8 @@ class Smcsmc:
 
     def smcsmc_available(self) -> bool:
         """Check if SMCSMC is availble."""
+        if "-smcsmcpath" in self.opts:
+            self.smcsmcpath = self.opts[self.opts.index("-smcsmcpath") + 1]
         command = self.smcsmcpath + " -h"
         return_code = subprocess.call(
             command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
