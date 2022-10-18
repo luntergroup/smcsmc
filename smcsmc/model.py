@@ -284,7 +284,7 @@ class Smcsmc:
     def print_help_and_exit(self):
         if any([opt.lower() in ["-v", "--version"] for opt in self.opts]):
             self.check_dependencies()
-            subprocess.check_call(" ".join([self.smcsmcpath] + self.opts), shell=True)
+            subprocess.check_call(" ".join([self.smcsmcpath] + "-v"), shell=True)
             sys.exit(0)
         if (
             set(self.opts).isdisjoint(set(["-help", "--help", "-h", "-?"]))
